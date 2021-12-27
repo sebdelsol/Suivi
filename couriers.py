@@ -85,7 +85,6 @@ class PKGE(Courier):
         self.init_existing()
 
     def _requests(self, method, url):
-        # return None  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         r = requests.request(method, self.url + url, headers = self.headers, timeout = self.request_timeout)
         code = r.json()['code']
         if code != 200:
