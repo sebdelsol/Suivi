@@ -193,6 +193,12 @@ class Trackers:
                 if courier:
                     courier.clean(valid_idships, archived_idships)
 
+    def close(self):
+        for courier_name in self.couriers.get_names():
+            courier = self.couriers.get(courier_name)
+            if courier:
+                courier.close()
+
     def get_not_deleted(self):
         return [tracker for tracker in self.trackers if tracker.state != 'deleted']
     
@@ -715,6 +721,7 @@ if __name__ == "__main__":
 
         trackers.save()
         trackers.clean_couriers()
+        trackers.close()
     except:
         _log (traceback.format_exc(), error = True)
 
