@@ -26,6 +26,8 @@ class MyLog:
         self.window = sg.Window('', layout, margins = (0, 0), modal = False, resizable = True, keep_on_top = no_border, no_titlebar = no_border, return_keyboard_events = True, finalize = True)
         self.window.disappear()
 
+        self.default_bindtags = self.output.Widget.bindtags()
+
         self.window.TKroot.resizable(width=False, height=True)
         sizegrip.bind('<ButtonPress-1>', '')
         sizegrip.bind('<ButtonRelease-1>', '')
@@ -55,12 +57,19 @@ class MyLog:
             elif event == 'Link':
                 self.linked =  not self.linked
                 if self.linked :
+                    # enable selection 
+                    self.output.Widget.bindtags(self.default_bindtags)
+                    
                     self.window.grab_any_where_off()
                     self.output.grab_anywhere_exclude()
                     self.link_button.update(self.link_txt)
                     self.move_left_to(main_window)
                 
                 else:
+                    # prevent selection 
+                    self.output.Widget.bindtags((str(self.output.Widget), str(self.window.TKroot), 'all'))
+                    self.output.Widget.tag_remove("sel", "sel.first", "sel.last")
+
                     self.window.grab_any_where_on()
                     self.output.grab_anywhere_include()
                     self.link_button.update(self.unlink_txt)
