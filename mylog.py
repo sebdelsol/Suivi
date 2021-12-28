@@ -5,9 +5,8 @@ from mybutton import MyButton
 
 class MyLog:
     
-    def vertical(txt): return '\n'.join(c for c in txt)
-    link_txt = vertical('❱❱❱❱❱')
-    unlink_txt = vertical('❰❰❰❰❰')
+    link_txt = '\n'.join('❱❱❱❱❱')
+    unlink_txt = '\n'.join('❰❰❰❰❰')
     close_txt = 'CLOSE'
    
     def __init__(self):
@@ -19,9 +18,9 @@ class MyLog:
         self.visible = False
 
         self.output = sg.MLine('', p = 0, font = log_font, s = (80, 50), auto_refresh = True, autoscroll  = True, disabled = True, border_width = 0, expand_x = True, expand_y = True, background_color = None)
-        self.link_button = MyButton(self.link_txt, p = 0, font = button_font, button_color = ('grey60', 'grey75'), mouseover_color = 'grey80', expand_y = True, expand_x = False, k = 'Link')
+        self.link_button = MyButton(self.link_txt, p = 0, font = button_font, button_color = ('grey60', 'grey75'), mouseover_color = 'grey80', expand_y = True, k = 'Link')
         sizegrip = sg.Sizegrip()
-        layout = [ [ self.output, sg.Col( [ [self.link_button], [ sizegrip ] ], p = 0, expand_y = True, expand_x = False) ] ]
+        layout = [ [ self.output, sg.Col( [ [self.link_button], [ sizegrip ] ], p = 0, expand_y = True) ] ]
 
         self.window = sg.Window('', layout, margins = (0, 0), modal = False, resizable = True, keep_on_top = no_border, no_titlebar = no_border, return_keyboard_events = True, finalize = True)
         self.window.disappear()
