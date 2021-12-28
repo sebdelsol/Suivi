@@ -46,6 +46,9 @@ class Couriers:
 #-------------
 class Courier:
     r_arrow = '→'
+    product = 'Envoi'
+    fromto = ''
+    request_timeout = 5
 
     def clean(self, valid_idships, archived_idships):
         pass
@@ -58,6 +61,25 @@ class Courier:
         url = self.get_url(idship)
         if url :
             webbrowser.open(url)
+
+    def update(self, idship):
+        ok, r = self._get_response(idship)
+        events, infos = self._update(r) if ok else ([], {})
+
+        status_date = infos.get('status_date', events[0]['date'] if events else get_local_now())
+
+        status = dict(  date = status_date, 
+                        ok_date = status_date if ok else None, 
+                        label = infos.get('status_label', events[0]['label'] if events else 'Erreur'), 
+                        warn = infos.get('status_warn', False if events else True), 
+                        delivered = infos.get('delivered', False))
+
+        return dict(ok = ok, 
+                    product = infos.get('product', self.product), 
+                    idship = idship, 
+                    fromto = infos.get('fromto', self.fromto), 
+                    status = status, 
+                    events = events)
 
 #-------------------
 class PKGE(Courier):
@@ -94,7 +116,7 @@ class PKGE(Courier):
         self.init_courier_ids()
         self.init_existing()
 
-    def _requests(self, method, url):
+    def request(self, method, url):
         r = requests.request(method, self.url + url, headers = self.headers, timeout = self.request_timeout)
         code = r.json()['code']
         if code != 200:
@@ -107,7 +129,7 @@ class PKGE(Courier):
         if self.lock.acquire(blocking=False):
             _log('PKGE init courier_id')
             try:
-                couriers = self._requests('GET', '/couriers/enabled')
+                couriers = self.request('GET', '/couriers/enabled')
                 if couriers:
                     couriers_ids = dict((c['name'], c['id']) for c in couriers)
                     self.courier_ids = [couriers_ids.get(courier) for courier in self.couriers]
@@ -126,7 +148,7 @@ class PKGE(Courier):
         if self.lock.acquire(blocking=False):
             _log('PKGE init existing')
             try:
-                trackings = self._requests('GET', '/packages/list')
+                trackings = self.request('GET', '/packages/list')
                 if trackings:
                     self.existing = dict( (t['track_number'], t) for t in trackings )
             except:
@@ -143,20 +165,9 @@ class PKGE(Courier):
         if not self.existing:
             self.init_existing()
 
-    def get_info(self, idship):
-        nb_retry = self.nb_retry
-        while True:
-            info = self._requests('GET', f'/packages?trackNumber={idship}')
-
-            ok = not (info is None or info=='Package not found' or info['updating'] or info['status'] in (0, 1, 2))
-            if ok or nb_retry <= 0:
-                return ok, info
-            nb_retry -= 1
-            time.sleep(self.time_between_retry) 
-
     def ask_update(self, idship):
         _log (f'PKGE update {idship}')
-        self._requests('POST', f'/packages/update?trackNumber={idship}')
+        self.request('POST', f'/packages/update?trackNumber={idship}')
         self.reinit_existing()
 
     def add(self, idship):
@@ -164,7 +175,7 @@ class PKGE(Courier):
 
         if self.courier_ids:
             _log (f'PKGE add {idship}')
-            self._requests('POST', f'/packages?trackNumber={idship}&courierId={self.courier_ids[0]}')
+            self.request('POST', f'/packages?trackNumber={idship}&courierId={self.courier_ids[0]}')
             self.reinit_existing()
             self.init_existing()
 
@@ -175,12 +186,13 @@ class PKGE(Courier):
         if set(self.courier_ids or ()) & set(self.get_existing(idship, 'couriers_ids')):
         # if self.courier_id and self.courier_id in self.get_existing(idship, 'couriers_ids'):
             _log (f'PKGE delete {idship}')
-            self._requests('DELETE', f'/packages?trackNumber={idship}')
+            self.request('DELETE', f'/packages?trackNumber={idship}')
 
     def get_existing(self, idship, attr):
         return self.existing.get(idship, {}).get(attr)
 
-    def update(self, idship): 
+
+    def _get_response(self, idship): 
         self.check_existing()
 
         if self.existing:
@@ -194,47 +206,40 @@ class PKGE(Courier):
             if not last_update or get_local_now() - get_local_time(last_update) > timedelta(hours = self.time_between_update):
                 self.ask_update(idship)
 
-        ok, info = self.get_info(idship)
 
+        nb_retry = self.nb_retry
+        while True:
+            r = self.request('GET', f'/packages?trackNumber={idship}')
+
+            ok = not (r is None or r=='Package not found' or r['updating'] or r['status'] in (0, 1, 2))
+            if ok or nb_retry <= 0:
+                return ok, r
+            nb_retry -= 1
+            time.sleep(self.time_between_retry) 
+
+
+    def _update(self, r): 
         events = []
 
-        if ok:
-            timeline = info['checkpoints']
+        timeline = r['checkpoints']
 
-            for event in timeline:
-                if event['courier_id'] in self.courier_ids:
-                    event_date = get_local_time(event['date'])
-                    event_label = f"{get_sentence(unescape(event['title']), 1)}"
-                    event_label = re.sub(r'^\W', '', event_label) # remove non words character at the beginning
-                    events.append(dict( courier = self.short_name, 
-                                        date = event_date, 
-                                        status = '', 
-                                        warn = 'error' in event_label.lower() or 'erreur' in event_label.lower(), 
-                                        label = event_label))
+        for event in timeline:
+            if event['courier_id'] in self.courier_ids:
+                event_date = get_local_time(event['date'])
+                event_label = f"{get_sentence(unescape(event['title']), 1)}"
+                event_label = re.sub(r'^\W', '', event_label) # remove non words character at the beginning
+                events.append(dict( courier = self.short_name, 
+                                    date = event_date, 
+                                    status = '', 
+                                    warn = 'error' in event_label.lower() or 'erreur' in event_label.lower(), 
+                                    label = event_label))
 
-            info_status = info['status']
-            status_label, status_warn = self.status[info_status]
-            status_delivered = info_status==5
-            status_date = get_local_time(info['last_status_date'])
-            status = dict(  date = status_date, 
-                            ok_date = status_date, 
-                            label = status_label, 
-                            warn = status_warn, 
-                            delivered = status_delivered)
-        
-        else:
-            status = dict(  date = get_local_now(), 
-                            ok_date = None, 
-                            label = 'erreur', 
-                            warn = True, 
-                            delivered = False)
+        info_status = r['status']
+        status_label, status_warn = self.status[info_status]
+        delivered = info_status==5
+        status_date = get_local_time(r['last_status_date'])
 
-        return dict(ok = ok, 
-                    product = self.product, 
-                    idship = idship, 
-                    fromto = self.fromto, 
-                    status = status, 
-                    events = events)
+        return events, dict(delivered = delivered, status_label = status_label, status_warn = status_warn, status_date = status_date)
 
     def clean(self, valid_idships, archived_idships):
         self.check_existing()
@@ -258,40 +263,16 @@ class Cainiao(PKGE):
     long_name = 'Cainiao'
     couriers = ('Aliexpress Standard Shipping', 'Aliexpress', 'Global Cainiao')
 
-    product = 'Envoi'
     fromto = f'CN{Courier.r_arrow}FR'
 
     def get_link(self, idship):
         return f'https://global.cainiao.com/detail.htm?mailNoList={idship}'
 
-#---------------------------
-class ScreenScrape(Courier):
-
-    def update(self, idship):
-        ok, r = self._request(idship)
-        events, delivered = self._update(ok, r)
-
-        status_label = events[0]['label'] if events else ''
-        status_date = events[0]['date'] if events else get_local_now()
-
-        status = dict(  date = status_date, 
-                        ok_date = status_date if ok else None, 
-                        label = status_label, 
-                        warn = False, 
-                        delivered = delivered)
-
-        return dict(ok = ok, 
-                    product = self.product, 
-                    idship = idship, 
-                    fromto = self.fromto, 
-                    status = status, 
-                    events = events)
 
 #---------------------------
-class Asendia(ScreenScrape):
+class Asendia(Courier):
     short_name = 'as'
     long_name = 'Asendia'
-    product = 'Envoi'
     fromto = f'CN{Courier.r_arrow}FR'
 
     headers = { 'Content-Type': 'application/json',
@@ -302,48 +283,46 @@ class Asendia(ScreenScrape):
     def get_link(self, idship):
         return f'https://tracking.asendia.com/tracking/{idship}'
 
-    def _request(self, idship): 
-        r = requests.post(self.url, json = {'criteria':[idship], 'shipped':False}, headers = self.headers)
-        ok = r.status_code == 200
-        return ok, r
+    def _get_response(self, idship): 
+        r = requests.post(self.url, json = {'criteria':[idship], 'shipped':False}, headers = self.headers, timeout = self.request_timeout)
+        return r.status_code == 200, r
 
-    def _update(self, ok, r): 
+    def _update(self, r): 
         events = []
         delivered = False
-        
-        if ok:
-            timeline = r.json()[0]['events']
-            for event in timeline:
-                label = event['translatedLabelBC']
-                location = event['location']['name']
+       
+        timeline = r.json()[0]['events']
+        for event in timeline:
+            label = event['translatedLabelBC']
+            location = event['location']['name']
 
-                if label and location:
-                    location = location.replace('Hong Kong', 'HK')
-                    country = event['location']['countryCode']
-                    
-                    if country not in location:
-                        location = ', '.join((location, country))
+            if label and location:
+                location = location.replace('Hong Kong', 'HK')
+                country = event['location']['countryCode']
+                
+                if country not in location:
+                    location = ', '.join((location, country))
 
-                    if 'Livré' in label:
-                        delivered = True
+                if 'Livré' in label:
+                    delivered = True
 
-                    date = datetime.utcfromtimestamp(event['date']/1000).replace(tzinfo=pytz.utc)
-                    # date = datetime.utcfromtimestamp(event['date']/1000).astimezone(get_localzone()) # crash !!!
+                date = datetime.utcfromtimestamp(event['date']/1000).replace(tzinfo=pytz.utc)
+                # date = datetime.utcfromtimestamp(event['date']/1000).astimezone(get_localzone()) # crash !!!
 
-                    events.append(dict( courier = self.short_name, 
-                                        date = date, 
-                                        status = location, 
-                                        warn = False, 
-                                        label = label))
+                events.append(dict( courier = self.short_name, 
+                                    date = date, 
+                                    status = location, 
+                                    warn = False, 
+                                    label = label))
 
-            events = set( tuple(evt.items()) for evt in events )
-            events = [ dict(evt) for evt in events ]
-            events.sort(key = lambda evt : evt['date'], reverse = True)
+        events = set( tuple(evt.items()) for evt in events )
+        events = [ dict(evt) for evt in events ]
+        events.sort(key = lambda evt : evt['date'], reverse = True)
 
-        return events, delivered
+        return events, dict(delivered = delivered)
 
 #----------------------
-class MondialRelay(ScreenScrape):
+class MondialRelay(Courier):
     short_name = 'mr'
     long_name = 'Mondial Relay'
     product = 'Colis'
@@ -355,45 +334,44 @@ class MondialRelay(ScreenScrape):
             number, zip_code = idship.split('-')
             return f'https://www.mondialrelay.fr/suivi-de-colis?numeroExpedition={number}&codePostal={zip_code}'
 
-    def _request(self, idship): 
+    def _get_response(self, idship): 
         url = self.get_link(idship)
         if url :
-            r = requests.get(url)
+            r = requests.get(url, timeout = self.request_timeout)
             return r.status_code == 200, r
         else:
             _log (f'!!! {self.long_name} needs tracking number-zipcode')
             return False, None
 
-    def _update(self, ok, r): 
+    def _update(self, r): 
         events = []
         delivered = False
         
-        if ok:
-            tree = lxml.html.fromstring(r.content)
-            event_by_days = tree.xpath('//div[@class="infos-account"]')
+        tree = lxml.html.fromstring(r.content)
+        event_by_days = tree.xpath('//div[@class="infos-account"]')
 
-            for event_this_day in event_by_days:
-                elts = event_this_day.xpath('./div')
-                date_text = elts[0].xpath('.//p//text()')[0]
-                event_by_hours = elts[1].xpath('./div')
+        for event_this_day in event_by_days:
+            elts = event_this_day.xpath('./div')
+            date_text = elts[0].xpath('.//p//text()')[0]
+            event_by_hours = elts[1].xpath('./div')
 
-                for event_this_hour in event_by_hours:
-                    elts = event_this_hour.xpath('./div/p//text()')
-                    hour_text = elts[0]
-                    label = elts[1].replace('.', '')
-                    
-                    date = datetime.strptime(f'{date_text} {hour_text}', '%d/%m/%Y %H:%M').astimezone(get_localzone())
-                    
-                    if 'livré' in label:
-                        delivered = True
-    
-                    events.append(dict( courier = self.short_name, 
-                                        date = date, 
-                                        status = '', 
-                                        warn = False, 
-                                        label = label))
+            for event_this_hour in event_by_hours:
+                elts = event_this_hour.xpath('./div/p//text()')
+                hour_text = elts[0]
+                label = elts[1].replace('.', '')
+                
+                date = datetime.strptime(f'{date_text} {hour_text}', '%d/%m/%Y %H:%M').astimezone(get_localzone())
+                
+                if 'livré' in label:
+                    delivered = True
 
-        return events, delivered
+                events.append(dict( courier = self.short_name, 
+                                    date = date, 
+                                    status = '', 
+                                    warn = False, 
+                                    label = label))
+
+        return events, dict(delivered = delivered)
 
 #----------------------
 class LaPoste(Courier):
@@ -432,13 +410,16 @@ class LaPoste(Courier):
     def get_link(self, idship):
         return f'https://www.laposte.fr/outils/suivre-vos-envois?code={idship}'
     
-    def update(self, idship): 
-        url = f'https://api.laposte.fr/suivi/v2/idships/{idship}?lang=fr_FR'
-        resp = requests.get(url, headers = self.headers, timeout = 10)
-        json = resp.json()
-        # PP.pprint(json)
 
+    def _get_response(self, idship): 
+        url = f'https://api.laposte.fr/suivi/v2/idships/{idship}?lang=fr_FR'
+        r = requests.get(url, headers = self.headers, timeout = self.request_timeout)
+        return r.status_code == 200, r
+
+    def _update(self, r): 
         events = []
+
+        json = r.json()
         shipment = json.get('shipment')
 
         if shipment:
@@ -450,12 +431,12 @@ class LaPoste(Courier):
             
             timeline = list(filter(lambda t : t['status'], shipment.get('timeline')))
             status_label = timeline[-1]['shortLabel']
-            status_delivered = False
+            delivered = False
             
             for event in shipment.get('event', ()):
                 code = event['code']
                 if code in ('DI1', 'DI2'):
-                    status_delivered = True
+                    delivered = True
 
                 event_date = get_local_time(event['date'])
                 event_status, event_warn = self.codes.get(code, '?')
@@ -468,32 +449,12 @@ class LaPoste(Courier):
                                     label = event_label))
 
             status_warn = events[-1]['warn'] if events else False
+            return events, dict(product = product, fromto = fromto, delivered = delivered, status_warn = status_warn, status_label = status_label.replace('.', ''))
 
         else:
-            product = 'Envoi'
-            fromto = ''
-
             return_msg = json.get('returnMessage', 'Erreur')
             status_label = get_sentence(return_msg, 1)
-            status_warn = True
-            status_delivered = False
-
-        ok = resp.status_code==200
-        status_label = status_label.replace('.', '')
-        status_date = events[0]['date'] if events else get_local_now()
-
-        status = dict(  date = status_date, 
-                        ok_date = status_date if ok else None, 
-                        label = status_label, 
-                        warn = status_warn, 
-                        delivered = status_delivered)
-
-        return dict(ok = ok, 
-                    product = product, 
-                    idship = idship, 
-                    fromto = fromto, 
-                    status = status, 
-                    events = events)
+            return events, dict(status_warn = True, status_label = status_label.replace('.', ''))
 
 #----------------------
 # class Ship24(Courier):
@@ -501,81 +462,58 @@ class LaPoste(Courier):
 #     url = 'https://api.ship24.com/public/v1'
 #     api_key = Ship24_key
 
-#     # courier available 'cainiao' 'fr-post' 'asendia', 'asendia-hk etc...
-
 #     def __init__(self):
 #         self.headers = {'Authorization': f'Bearer {self.api_key}',
 #                         'Content-Type': 'application/json',
 #                         'charset' : 'utf-8' }
 
-#     def requests(self, method, url, json = None):
-#         # return False, None
-#         r = requests.request(method, self.url + url, headers = self.headers, json = json)
+#     def request(self, method, url, json = None):
+#         r = requests.request(method, self.url + url, headers = self.headers, json = json, timeout = self.request_timeout)
 #         errors = r.json().get('errors')
 #         if errors:
 #             _log (f'Ship24 error request({url}): {errors}')
 #         return errors is None, r.json()['data']
 
-#     # def get_couriers(self):
-#     #     couriers = self.requests('GET', '/couriers')['couriers']
-#     #     self.couriers = dict((c['courierName'], c['courierCode']) for c in couriers)
+#     # use to know available couriers code
+#     # def show_couriers(self):
+#     #     couriers = self.request('GET', '/couriers')['couriers']
+#     #     for courier in couriers:
+#     #         print (f"FOR {courier['courierName']} USE '{courier['courierCode']}'")
 
-#     # def get_trackings(self):
-#     #     trackings = self.requests('GET', '/trackers?page=1&limit=20')['trackers']
-#     #     self.trackings = [t['trackingNumber'] for t in trackings]
-
-#     def get(self, idship):
+#     def _get_response(self, idship): 
 #         json = dict(trackingNumber = idship, courierCode = self.courier)
-#         return self.requests('POST', f'/trackers/track', json = json)
+#         return self.request('POST', f'/trackers/track', json = json)
 
-#     def update(self, idship): 
-#         ok, data = self.get(idship)
-
+#     def _update(self, r): 
 #         events = []
+#         delivered = False
 
-#         if ok:
-#             trackings = data['trackings'][0]
-#             timeline = [evt for evt in trackings['events'] if evt['courierCode'] == self.courier]
+#         trackings = r['trackings'][0]
+#         timeline = [evt for evt in trackings['events'] if evt['courierCode'] == self.courier]
 
-#             for event in timeline:
-#                 event_date = get_local_time(event['datetime'])  # event['utcOffset'] ???
-#                 event_status = re.sub(' +', ' ', event['location'].replace(self.long_name, '').strip())
-#                 event_label = re.sub(' +', ' ', event['status'])
-#                 events.append(dict( courier = self.short_name, 
-#                                     date = event_date, 
-#                                     status = event_status, 
-#                                     warn = False, 
-#                                     label = event_label))
+#         for event in timeline:
+#             event_date = get_local_time(event['datetime'])  # event['utcOffset'] ???
+#             event_status = re.sub(' +', ' ', event['location'].replace(self.long_name, '').strip())
+#             event_label = re.sub(' +', ' ', event['status'])
+#             events.append(dict( courier = self.short_name, 
+#                                 date = event_date, 
+#                                 status = event_status, 
+#                                 warn = False, 
+#                                 label = event_label))
 
+#             if 'delivered' in event_label.lower():
+#                 delivered = True
 
-#             shipment = trackings.get('shipment')
-#             fromto = f"{shipment['originCountryCode']}{Courier.r_arrow}{shipment['destinationCountryCode']}"
+#         shipment = trackings.get('shipment')
+#         fromto = f"{shipment['originCountryCode']}{Courier.r_arrow}{shipment['destinationCountryCode']}"
         
-#         else:
-#             fromto = None
-        
-#         last_event = events[0] if len(events) > 0 else None
+#         return events, dict(fromto = fromto, delivered = delivered)
 
-#         status_date = last_event['date'] if last_event else get_local_now()
-#         status_label = last_event['label'] if last_event else ''
-#         status_delivered = 'delivered' in status_label.lower()
-
-#         status = dict(  date = status_date, 
-#                         ok_date = status_date if ok else None, 
-#                         label = status_label, 
-#                         warn = False, 
-#                         delivered = status_delivered)
-
-#         return dict(ok = ok, 
-#                     product = self.product, 
-#                     idship = idship, 
-#                     fromto = fromto or '', 
-#                     status = status, 
-#                     events = events)
-
-# #----------------------
+#----------------------
 # class Asendia(Ship24):
 #     short_name = 'as'
 #     long_name = 'Asendia'
 #     courier = 'asendia'
-#     product = 'Envoi'
+
+#     def get_link(self, idship):
+#         return f'https://tracking.asendia.com/tracking/{idship}'
