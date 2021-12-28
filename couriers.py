@@ -43,6 +43,9 @@ class Couriers:
         return list( self.couriers.keys() )
 
 #-------------
+def get_simple_check(_min, _max):
+    return f'^\w{{{_min},{_max}}}$', f'{_min} à {_max} lettres ou chiffres'
+
 class Courier:
     r_arrow = '→'
     product = 'Envoi'
@@ -52,8 +55,10 @@ class Courier:
     nb_retry = 0 
     time_between_retry = 5 # sec
 
-    idship_check = r'^\w{8,20}$'
-    idship_format_msg = 'entre 8 et 20 lettres ou chiffres'
+    idship_check_pattern, idship_check_msg = get_simple_check(8,20)
+
+    def check_idship(self, idship):
+        return re.match(self.idship_check_pattern, idship)
 
     def clean(self, valid_idships, archived_idships):
         pass
@@ -64,13 +69,10 @@ class Courier:
 
     def _prepare_response(self, idship): 
         pass
-    
-    def check_idship(self, idship):
-        return re.match(self.idship_check, idship)
 
     def update(self, idship):
         if not self.check_idship(idship):
-            _log (f"'{idship}' mal formé : il faut {self.idship_format_msg}", error = True)
+            _log (f"'{idship}' mal formé : il faut {self.idship_check_msg}", error = True)
         
         else:
             try:
@@ -348,8 +350,8 @@ class MondialRelay(Courier):
     product = 'Colis'
     fromto = f'FR{Courier.r_arrow}FR'
 
-    idship_check = r'^\d{8}(\d{2})?(\d{2})?\-\d{5}$'
-    idship_format_msg = '8, 10 ou 12 chiffres-code postal'
+    idship_check_pattern = r'^\d{8}(\d{2})?(\d{2})?\-\d{5}$'
+    idship_check_msg = '8, 10 ou 12 chiffres-code postal'
 
     def _get_url_for_browser(self, idship):
         number, zip_code = idship.split('-')
@@ -397,8 +399,7 @@ class LaPoste(Courier):
     long_name = 'La Poste'
     api_key = LaPoste_key
 
-    idship_check = r'^\w{11,15}$'
-    idship_format_msg = '11 à 15 lettres ou chiffres'
+    idship_check_pattern, idship_check_msg = get_simple_check(11,15)
 
     codes = dict(
         DR1 = ('Déclaratif réceptionné', False),

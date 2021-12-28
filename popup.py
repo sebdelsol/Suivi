@@ -67,7 +67,7 @@ def edit(title, idship, description, used_couriers, couriers):
         courier = couriers.get(name)
 
         cb = sg.CB(f' {name}', default = name in used_couriers, font = (FixFont, 12), k = name)
-        msg = sg.T(f'({courier.idship_format_msg})', font = (FixFont, 7), expand_x = True)
+        msg = sg.T(f'({courier.idship_check_msg})', font = (FixFont, 7), expand_x = True)
         button = MyButton('voir', font = (FixFont, 8), button_color ='grey90', k = courier)
 
         idship_widgets.append((msg, button))
