@@ -1,4 +1,4 @@
-TrackingFile = 'Trackings.trck'
+TrackersFile = 'Trackers.trck'
 
 # --------------------------------------------------------------------------
 import traceback
@@ -34,18 +34,18 @@ def draw_rounded_box(widget, x, y, w, h, r, color):
     # widget.draw_rectangle((x-w2, y+h2), (x+w2, y-h2), fill_color = None, line_color = 'black')
 
 #-------------------------------------------------------------------------------------------
-class SavedTrack:
-    def __init__(self, track):
-        track.enter_critical()
+class SavedTracker:
+    def __init__(self, tracker):
+        tracker.enter_critical()
 
-        # track attribute to save
+        # tracker attribute to save
         for attr in ('idship', 'description', 'used_couriers', 'state', 'contents'):
-            self.__dict__[attr] = track.__dict__[attr]
+            self.__dict__[attr] = tracker.__dict__[attr]
 
-        track.exit_critical()
+        tracker.exit_critical()
 
 #-----------
-class Track:
+class Tracker:
     def __init__(self, idship, description, used_couriers, available_couriers, state = 'ok', contents = None):
         self.set_id(idship, description, used_couriers)
         self.state = state
@@ -60,7 +60,7 @@ class Track:
     def set_id(self, idship, description, used_couriers):
         self.used_couriers = used_couriers
         self.description = description.title()
-        self.idship = idship
+        self.idship = idship.strip()
     
     def enter_critical(self):
         self.critical.acquire()
@@ -149,61 +149,61 @@ class Track:
         return content and content.get('status', {}).get('delivered')
 
 #------------
-class Tracks:
-    def __init__(self, filename, tracks = None):
+class Trackers:
+    def __init__(self, filename, trackers = None):
         self.filename = filename
         self.couriers = Couriers()
 
-        if tracks is None:
+        if trackers is None:
             if os.path.exists(filename):
                 with open(filename, 'rb') as f:
-                    tracks = pickle.load(f)
-                    _log(f'tracks loaded from {filename}')
+                    trackers = pickle.load(f)
+                    _log(f'trackers loaded from {filename}')
 
-        if tracks:
-            tracks = [Track(track.idship, track.description, track.used_couriers, self.couriers, track.state, track.contents) for track in tracks]
+        if trackers:
+            trackers = [Tracker(tracker.idship, tracker.description, tracker.used_couriers, self.couriers, tracker.state, tracker.contents) for tracker in trackers]
 
-        self.tracks = tracks or []
-        self.tracks.sort(key = lambda t : t.get_last_event(), reverse = True)
+        self.trackers = trackers or []
+        self.trackers.sort(key = lambda t : t.get_last_event(), reverse = True)
 
     def save(self):
-        self.tracks = self.get_not_deleted()
+        self.trackers = self.get_not_deleted()
 
-        saved_tracks = [SavedTrack(track) for track in self.tracks]
+        saved_trackers = [SavedTracker(tracker) for tracker in self.trackers]
 
         with open(self.filename, 'wb') as f:
-            pickle.dump(saved_tracks, f)
-            _log(f'tracks saved from {self.filename}')
+            pickle.dump(saved_trackers, f)
+            _log(f'trackers saved from {self.filename}')
 
     def new(self, idship, description, used_couriers):
         if idship is not None:
-            track = Track(idship, description, used_couriers, self.couriers)
-            self.tracks.append(track)
-            return track
+            tracker = Tracker(idship, description, used_couriers, self.couriers)
+            self.trackers.append(tracker)
+            return tracker
 
     def clean_couriers(self):
         not_deleted = self.get_not_deleted()
         archived = self.get_archived()
         
         for courier_name in self.couriers.get_names():
-            valid_idships = [track.idship for track in not_deleted if courier_name in track.used_couriers]
+            valid_idships = [tracker.idship for tracker in not_deleted if courier_name in tracker.used_couriers]
             if valid_idships:
-                archived_idships = [track.idship for track in archived if courier_name in track.used_couriers]
+                archived_idships = [tracker.idship for tracker in archived if courier_name in tracker.used_couriers]
                 courier = self.couriers.get(courier_name)
                 if courier:
                     courier.clean(valid_idships, archived_idships)
 
     def get_not_deleted(self):
-        return [track for track in self.tracks if track.state != 'deleted']
+        return [tracker for tracker in self.trackers if tracker.state != 'deleted']
     
     def get_archived(self):
-        return [track for track in self.tracks if track.state == 'archived']
+        return [tracker for tracker in self.trackers if tracker.state == 'archived']
 
     def count_archived(self):
         return len(self.get_archived())
 
 #------------------------------------------------------------------------------
-class TrackWidget:
+class TrackerWidget:
 
     min_events_shown = 1
     days_intervals = [10, 20, 30]
@@ -211,8 +211,8 @@ class TrackWidget:
 
     layout_pad = 10
 
-    def __init__(self, track):
-        self.track = track
+    def __init__(self, tracker):
+        self.tracker = tracker
         self.lock = threading.Lock()
         self.min_events_shown = self.min_events_shown
         self.reset_size()
@@ -253,7 +253,7 @@ class TrackWidget:
                  [  sg.Col([ [self.updating_widget, self.ago_widget, self.status_widget, self.expand_button] ], p = ((0, 0), (5, 0)), background_color = bg_color, expand_x = True) ],
                  [  sg.pin(sg.Col([ [self.events_widget] ], p = 0, background_color = bg_color, expand_x = True), expand_x = False) ]]
 
-        self.layout = sg.Col(layout, expand_x = True, p = ((self.layout_pad, self.layout_pad), (self.layout_pad, 0)), visible = self.track.state == 'ok', background_color = bg_color)
+        self.layout = sg.Col(layout, expand_x = True, p = ((self.layout_pad, self.layout_pad), (self.layout_pad, 0)), visible = self.tracker.state == 'ok', background_color = bg_color)
         return [ sg.pin(self.layout, expand_x = True) ] # collapse when hidden
     
     def finalize(self, window):
@@ -305,10 +305,10 @@ class TrackWidget:
         self.id_widget.set_size((w, 1))
 
     def show_current_content(self, window):
-        self.show(self.track.get_consolidated_content(), window)
+        self.show(self.tracker.get_consolidated_content(), window)
 
     def update(self, window):
-        if self.track.state == 'ok' and self.lock.acquire(blocking = False):
+        if self.tracker.state == 'ok' and self.lock.acquire(blocking = False):
 
             for button in  self.buttons:
                 button.update(disabled = True)
@@ -321,7 +321,7 @@ class TrackWidget:
     def update_thread(self, window): 
         try:
             content = None
-            for content in self.track.update(): # generator multithreaded
+            for content in self.tracker.update(): # generator multithreaded
                 window.write_event_value(lambda window: self.show(content, window), '')
 
             # nothing updated
@@ -342,10 +342,10 @@ class TrackWidget:
             button.update(disabled = False)
 
     def show(self, content, window):
-        if self.track.state == 'ok':
+        if self.tracker.state == 'ok':
             
             delivered = '✔' if content and content.get('status', {}).get('delivered') else ''
-            self.desc_widget.update(f'{self.track.description.strip()}{delivered}') 
+            self.desc_widget.update(f'{self.tracker.description.strip()}{delivered}') 
             self.events_widget.update('')
 
             if content and content.get('ok'):
@@ -451,7 +451,7 @@ class TrackWidget:
         product = (content and content.get('product')) or 'Envoi'
         self.id_widget.print(f'{spaces}{product}', autoscroll = False, t = 'grey50', end = '')
 
-        idship = self.track.idship if self.track.idship else 'Pas de N°'
+        idship = self.tracker.idship if self.tracker.idship else 'Pas de N°'
         self.id_widget.print(f' {idship}', autoscroll = False, t = 'blue', end = '')
 
     def show_couriers(self, content, spaces):
@@ -475,17 +475,17 @@ class TrackWidget:
             self.couriers_widget.update('Pas de trackers', text_color = 'red')
 
     def edit(self, window):
-        idship, description, used_couriers = popup.edit('Édition', self.track.idship, self.track.description, self.track.used_couriers, self.track.available_couriers)
+        idship, description, used_couriers = popup.edit('Édition', self.tracker.idship, self.tracker.description, self.tracker.used_couriers, self.tracker.available_couriers)
 
         if idship is not None:
-            self.track.set_id(idship, description, used_couriers)
+            self.tracker.set_id(idship, description, used_couriers)
             self.reset_size()
             self.update(window)
 
     def set_state(self, state, action_name, window, ask, visible):
-        if not ask or popup.warning(action_name.capitalize(), self.track.description):
+        if not ask or popup.warning(action_name.capitalize(), self.tracker.description):
             if self.lock.acquire(blocking=False): # needed ?
-                self.track.state = state
+                self.tracker.state = state
 
                 self.layout.update(visible = visible)
                 self.reset_size()
@@ -495,7 +495,7 @@ class TrackWidget:
 
     def archive_or_delete(self, window):
         choices = { 'Archiver': self.archive, 'Supprimer': self.delete }
-        choice = popup.one_choice(choices.keys(), f'{self.track.description} {self.track.idship}', 'Archiver ou Supprimer ?')
+        choice = popup.one_choice(choices.keys(), f'{self.tracker.description} {self.tracker.idship}', 'Archiver ou Supprimer ?')
         if choice:
             choices[choice](window)
 
@@ -512,17 +512,17 @@ class TrackWidget:
         self.update(window)
 
 # -----------------------------------
-class TrackWidgets:
-    def __init__(self, window, tracks):
+class TrackerWidgets:
+    def __init__(self, window, trackers):
         self.widgets = []
 
-        for track in tracks.tracks:
-            self.create_widget(window, track)
+        for tracker in trackers.trackers:
+            self.create_widget(window, tracker)
 
         window.write_event_value('-ARCHIVE UPDATED-', '')
 
-    def create_widget(self, window, track):
-        widget = TrackWidget(track)
+    def create_widget(self, window, tracker):
+        widget = TrackerWidget(tracker)
 
         window.extend_layout(window['TRACKS'], [widget.create_layout()])
         self.widgets.append(widget)
@@ -531,19 +531,19 @@ class TrackWidgets:
         widget.update(window) # TDO do not update archived
 
     def get_widgets_with_state(self, state):
-        return [widget for widget in self.widgets if widget.track.state == state]
+        return [widget for widget in self.widgets if widget.tracker.state == state]
 
     def show_archives(self, window):
         no_idship = 'Pas de N°'
         def get_label(widget, w_idship):
-            t = widget.track
+            t = widget.tracker
             color = 'green' if t.get_delivered() else 'red'
             return (f'{t.get_pretty_last_event()} - {(t.idship.strip() or no_idship).ljust(w_idship)} - {t.description}', color)
 
         archived = self.get_widgets_with_state('archived')
-        archived.sort(key = lambda w : w.track.get_last_event(), reverse = True)
+        archived.sort(key = lambda w : w.tracker.get_last_event(), reverse = True)
 
-        w_idship = max(len(widget.track.idship.strip() or no_idship) for widget in archived)
+        w_idship = max(len(widget.tracker.idship.strip() or no_idship) for widget in archived)
         choices = [get_label(widget, w_idship) for widget in archived]
         chosen = popup.choices(choices, 'Désarchiver')
 
@@ -570,8 +570,8 @@ class TrackWidgets:
         # window.refresh()
         if ok:
             widths, heights = zip(*[widget.get_pixel_size() for widget in ok])
-            w = max(widths) + TrackWidget.layout_pad * 2
-            h = sum(heights) + window['MENU'].get_size()[1] + (len(heights) + 1) * TrackWidget.layout_pad
+            w = max(widths) + TrackerWidget.layout_pad * 2
+            h = sum(heights) + window['MENU'].get_size()[1] + (len(heights) + 1) * TrackerWidget.layout_pad
             h += len(self.widgets) - len(ok) # sg.pin = 1 pixel
         else:
             w, h = 400, 200
@@ -626,7 +626,7 @@ if __name__ == "__main__":
     popup.set_font(VarFont, FixFont)
     mylog.set_window(log_font = (FixFont, 7), button_font = (VarFont, 12), no_border = not is_debugger)
 
-    tracks = Tracks(TrackingFile) 
+    trackers = Trackers(TrackersFile) 
 
     menu_color = MyButton.default_colors['enter']
 
@@ -651,7 +651,7 @@ if __name__ == "__main__":
     MyButton.finalize_all(window)
     recenter_widget.bind('<Double-Button-1>', '')
 
-    widgets = TrackWidgets(window, tracks) 
+    widgets = TrackerWidgets(window, trackers) 
     splash.close()
 
     window_pos = window.current_location()
@@ -677,11 +677,11 @@ if __name__ == "__main__":
         elif MyButton.catch_mouseover_event(event_window, event):
             pass
 
-        # clic event for multiline to expand collapse & content update (see update in TrackWidgets)
+        # clic event for multiline to expand collapse & content update (see update in TrackerWidgets)
         elif isinstance(event, tuple) and callable(event[0]):
             event[0](event_window)      
 
-        # update, edit, delete, archive a track       
+        # update, edit, delete, archive a tracker       
         elif callable(event):
             event(event_window) 
 
@@ -691,17 +691,17 @@ if __name__ == "__main__":
             mylog.move_left_to(window)
 
         elif event == '-ARCHIVE UPDATED-':
-            event_window['Archives'].update(disabled = tracks.count_archived() == 0)
+            event_window['Archives'].update(disabled = trackers.count_archived() == 0)
 
         elif event == '-UPDATE WIDGETS SIZE-':
             widgets.update_size(event_window)
             mylog.move_left_to(window)
 
         elif event == 'Nouveau':
-            track_params = popup.edit('Nouveau', '', 'Nouveau', [], tracks.couriers)
-            track = tracks.new(*track_params)
-            if track:
-                widgets.create_widget(event_window, track)
+            tracker_params = popup.edit('Nouveau', '', 'Nouveau', [], trackers.couriers)
+            tracker = trackers.new(*tracker_params)
+            if tracker:
+                widgets.create_widget(event_window, tracker)
 
         elif event == 'Rafraichir':
             widgets.update(event_window)
@@ -713,8 +713,8 @@ if __name__ == "__main__":
         window.close()
         del window
 
-        tracks.save()
-        tracks.clean_couriers()
+        trackers.save()
+        trackers.clean_couriers()
     except:
         _log (traceback.format_exc(), error = True)
 
