@@ -8,7 +8,7 @@ class MyLog:
     def vertical(txt): return '\n'.join(c for c in txt)
     link_txt = vertical('❱❱❱❱❱')
     unlink_txt = vertical('❰❰❰❰❰')
-    close_txt = vertical('CLOSE')
+    close_txt = 'CLOSE'
    
     def __init__(self):
         self.window = None
