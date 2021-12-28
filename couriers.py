@@ -9,7 +9,6 @@ from datetime import datetime, timedelta
 from dateutil.parser import parse
 from tzlocal import get_localzone
 import pytz
-import webbrowser
 
 from mylog import _log
 from apiKeys import PKGE_key, LaPoste_key, Ship24_key
@@ -48,47 +47,75 @@ class Courier:
     r_arrow = '→'
     product = 'Envoi'
     fromto = ''
-    request_timeout = 5
+    
+    request_timeout = 5 # sec
+    nb_retry = 0 
+    time_between_retry = 5 # sec
+
+    idship_check = r'^\w{8,20}$'
+    idship_format_msg = 'entre 8 et 20 lettres ou chiffres'
 
     def clean(self, valid_idships, archived_idships):
         pass
 
-    def get_url(self, idship):
-        if idship:
-            return self.get_link(idship)
+    def get_url_for_browser(self, idship):
+        if idship and self.check_idship(idship):
+            return self._get_url_for_browser(idship)
+
+    def _prepare_response(self, idship): 
+        pass
     
-    def open_in_browser(self, idship):
-        url = self.get_url(idship)
-        if url :
-            webbrowser.open(url)
+    def check_idship(self, idship):
+        return re.match(self.idship_check, idship)
 
     def update(self, idship):
-        ok, r = self._get_response(idship)
-        events, infos = self._update(r) if ok else ([], {})
+        if not self.check_idship(idship):
+            _log (f"'{idship}' mal formé : il faut {self.idship_format_msg}", error = True)
+        
+        else:
+            try:
+                self._prepare_response(idship)
 
-        status_date = infos.get('status_date', events[0]['date'] if events else get_local_now())
+            except requests.exceptions.Timeout:
+                _log (f' Timeout for request preparation to {self.long_name} about {idship}', error = True)
+            
+            nb_retry = self.nb_retry
+            while True:
+                try:
+                    ok, r = self._get_response(idship)
 
-        status = dict(  date = status_date, 
-                        ok_date = status_date if ok else None, 
-                        label = infos.get('status_label', events[0]['label'] if events else 'Erreur'), 
-                        warn = infos.get('status_warn', False if events else True), 
-                        delivered = infos.get('delivered', False))
+                except requests.exceptions.Timeout:
+                    _log (f' Timeout for request to {self.long_name} about {idship}', error = True)
 
-        return dict(ok = ok, 
-                    product = infos.get('product', self.product), 
-                    idship = idship, 
-                    fromto = infos.get('fromto', self.fromto), 
-                    status = status, 
-                    events = events)
+                if ok or nb_retry <= 0:
+                    break
+
+                nb_retry -= 1
+                time.sleep(self.time_between_retry) 
+
+            events, infos = self._update(r) if ok else ([], {})
+
+            status_date = infos.get('status_date', events[0]['date'] if events else get_local_now())
+
+            status = dict(  date = status_date, 
+                            ok_date = status_date if ok else None, 
+                            label = infos.get('status_label', events[0]['label'] if events else 'Erreur'), 
+                            warn = infos.get('status_warn', False if events else True), 
+                            delivered = infos.get('delivered', False))
+
+            return dict(ok = ok, 
+                        product = infos.get('product', self.product), 
+                        idship = idship, 
+                        fromto = infos.get('fromto', self.fromto), 
+                        status = status, 
+                        events = events)
 
 #-------------------
 class PKGE(Courier):
     
     too_old_archived = 30 # days
     time_between_update = 5 #hours
-    request_timeout = 3 # sec
-    nb_retry = 2 # sec
-    time_between_retry = 5 # sec
+    nb_retry = 2
 
     url = 'https://api.pkge.net/v1'
     api_key = PKGE_key
@@ -120,7 +147,7 @@ class PKGE(Courier):
         r = requests.request(method, self.url + url, headers = self.headers, timeout = self.request_timeout)
         code = r.json()['code']
         if code != 200:
-            _log (f"PKGE error {code} request({url}): {r.json()['payload']}")
+            _log (f"PKGE error {code} request({url}): {r.json()['payload']}", error = True)
             return None
 
         return r.json()['payload']
@@ -134,7 +161,7 @@ class PKGE(Courier):
                     couriers_ids = dict((c['name'], c['id']) for c in couriers)
                     self.courier_ids = [couriers_ids.get(courier) for courier in self.couriers]
                     if not self.courier_ids:
-                        _log (f'PKGE !!!!!!! add courier {self.courier} on https://business.pkge.net/docs/packages/add')
+                        _log (f'PKGE !!!!!!! add courier {self.courier} on https://business.pkge.net/docs/packages/add', error = True)
             except:
                 _log (traceback.format_exc(), error = True)
             finally:
@@ -192,7 +219,7 @@ class PKGE(Courier):
         return self.existing.get(idship, {}).get(attr)
 
 
-    def _get_response(self, idship): 
+    def _prepare_response(self, idship): 
         self.check_existing()
 
         if self.existing:
@@ -206,17 +233,10 @@ class PKGE(Courier):
             if not last_update or get_local_now() - get_local_time(last_update) > timedelta(hours = self.time_between_update):
                 self.ask_update(idship)
 
-
-        nb_retry = self.nb_retry
-        while True:
+    def _get_response(self, idship): 
             r = self.request('GET', f'/packages?trackNumber={idship}')
-
             ok = not (r is None or r=='Package not found' or r['updating'] or r['status'] in (0, 1, 2))
-            if ok or nb_retry <= 0:
-                return ok, r
-            nb_retry -= 1
-            time.sleep(self.time_between_retry) 
-
+            return ok, r
 
     def _update(self, r): 
         events = []
@@ -265,7 +285,7 @@ class Cainiao(PKGE):
 
     fromto = f'CN{Courier.r_arrow}FR'
 
-    def get_link(self, idship):
+    def _get_url_for_browser(self, idship):
         return f'https://global.cainiao.com/detail.htm?mailNoList={idship}'
 
 
@@ -280,7 +300,7 @@ class Asendia(Courier):
 
     url = 'https://tracking.asendia.com/alliot/items/references'
 
-    def get_link(self, idship):
+    def _get_url_for_browser(self, idship):
         return f'https://tracking.asendia.com/tracking/{idship}'
 
     def _get_response(self, idship): 
@@ -328,20 +348,17 @@ class MondialRelay(Courier):
     product = 'Colis'
     fromto = f'FR{Courier.r_arrow}FR'
 
-    def get_link(self, idship):
-        split = idship.split('-')
-        if len(split) == 2:
-            number, zip_code = idship.split('-')
-            return f'https://www.mondialrelay.fr/suivi-de-colis?numeroExpedition={number}&codePostal={zip_code}'
+    idship_check = r'^\d{8}(\d{2})?(\d{2})?\-\d{5}$'
+    idship_format_msg = '[8, 10, 12 chiffres]-[code postal]'
+
+    def _get_url_for_browser(self, idship):
+        number, zip_code = idship.split('-')
+        return f'https://www.mondialrelay.fr/suivi-de-colis?numeroExpedition={number}&codePostal={zip_code}'
 
     def _get_response(self, idship): 
-        url = self.get_link(idship)
-        if url :
-            r = requests.get(url, timeout = self.request_timeout)
-            return r.status_code == 200, r
-        else:
-            _log (f'!!! {self.long_name} needs tracking number-zipcode')
-            return False, None
+        url = self._get_url_for_browser(idship)
+        r = requests.get(url, timeout = self.request_timeout)
+        return r.status_code == 200, r
 
     def _update(self, r): 
         events = []
@@ -380,6 +397,9 @@ class LaPoste(Courier):
     long_name = 'La Poste'
     api_key = LaPoste_key
 
+    idship_check = r'^\w{11,15}$'
+    idship_format_msg = '11 à 15 lettres ou chiffres'
+
     codes = dict(
         DR1 = ('Déclaratif réceptionné', False),
         PC1 = ('Pris en charge', False),
@@ -407,9 +427,8 @@ class LaPoste(Courier):
     def __init__(self):
         self.headers = {'X-Okapi-Key': self.api_key, 'Accept': 'application/json'}
 
-    def get_link(self, idship):
+    def _get_url_for_browser(self, idship):
         return f'https://www.laposte.fr/outils/suivre-vos-envois?code={idship}'
-    
 
     def _get_response(self, idship): 
         url = f'https://api.laposte.fr/suivi/v2/idships/{idship}?lang=fr_FR'
@@ -471,7 +490,7 @@ class LaPoste(Courier):
 #         r = requests.request(method, self.url + url, headers = self.headers, json = json, timeout = self.request_timeout)
 #         errors = r.json().get('errors')
 #         if errors:
-#             _log (f'Ship24 error request({url}): {errors}')
+#             _log (f'Ship24 error request({url}): {errors}', error = True)
 #         return errors is None, r.json()['data']
 
 #     # use to know available couriers code
@@ -515,5 +534,5 @@ class LaPoste(Courier):
 #     long_name = 'Asendia'
 #     courier = 'asendia'
 
-#     def get_link(self, idship):
+#     def _get_url_for_browser(self, idship):
 #         return f'https://tracking.asendia.com/tracking/{idship}'

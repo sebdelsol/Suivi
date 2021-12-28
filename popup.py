@@ -1,6 +1,7 @@
 import PySimpleGUI as sg
 from mybutton import MyButton
 from couriers import Courier
+import webbrowser
 
 #-------------
 VarFont = None
@@ -58,7 +59,7 @@ def edit(title, idship, description, used_couriers, couriers):
         cb = sg.CB(f' {name}', default=name in used_couriers, font = (FixFont, 12), k = name, expand_x = True)
         # https://stackoverflow.com/questions/10452770/python-lambdas-binding-to-local-values
         courier = couriers.get(name)
-        disabled = not courier.get_url(idship)
+        disabled = not courier.get_url_for_browser(idship)
         b = MyButton('check', button_color = 'grey90', disabled = disabled, k = courier)
         buttons.append(b)
         layout.append([cb, b])
@@ -71,11 +72,13 @@ def edit(title, idship, description, used_couriers, couriers):
         if event == 'idship':
             for button in buttons:
                 courier, idship = button.Key, values['idship']
-                button.update(disabled = not courier.get_url(idship))
+                button.update(disabled = not courier.get_url_for_browser(idship))
         
         elif isinstance(event, Courier):
             courier, idship = event, values['idship']
-            courier.open_in_browser(idship)
+            url = courier.get_url_for_browser(idship)
+            webbrowser.open(url)
+
 
     values = edit_window.loop(catch_event)
     if values:
