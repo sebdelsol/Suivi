@@ -66,9 +66,9 @@ class MyLog:
                     self.move_left_to(main_window)
                 
                 else:
-                    # prevent selection 
+                    # remove & prevent selection 
                     self.output.Widget.bindtags((str(self.output.Widget), str(self.window.TKroot), 'all'))
-                    self.output.Widget.tag_remove("sel", "sel.first", "sel.last")
+                    self.output.Widget.tag_remove('sel', '1.0', 'end')
 
                     self.window.grab_any_where_on()
                     self.output.grab_anywhere_include()
