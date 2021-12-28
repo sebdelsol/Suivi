@@ -50,7 +50,6 @@ class Courier:
     def clean(self, valid_idships, archived_idships):
         pass
 
-
     def get_url(self, idship):
         if idship:
             return self.get_link(idship)
