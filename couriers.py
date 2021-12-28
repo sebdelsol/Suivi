@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from dateutil.parser import parse
 from tzlocal import get_localzone
 import pytz
+import webbrowser
 
 from mylog import _log
 from apiKeys import PKGE_key, LaPoste_key, Ship24_key
@@ -48,6 +49,16 @@ class Courier:
 
     def clean(self, valid_idships, archived_idships):
         pass
+
+
+    def get_url(self, idship):
+        if idship:
+            return self.get_link(idship)
+    
+    def open_in_browser(self, idship):
+        url = self.get_url(idship)
+        if url :
+            webbrowser.open(url)
 
 #-------------------
 class PKGE(Courier):
@@ -89,6 +100,8 @@ class PKGE(Courier):
         code = r.json()['code']
         if code != 200:
             _log (f"PKGE error {code} request({url}): {r.json()['payload']}")
+            return None
+
         return r.json()['payload']
 
     def init_courier_ids(self):
@@ -148,7 +161,7 @@ class PKGE(Courier):
         self.reinit_existing()
 
     def add(self, idship):
-        self.check_courier_id()
+        self.check_courier_ids()
 
         if self.courier_ids:
             _log (f'PKGE add {idship}')
@@ -249,6 +262,9 @@ class Cainiao(PKGE):
     product = 'Envoi'
     fromto = f'CN{Courier.r_arrow}FR'
 
+    def get_link(self, idship):
+        return f'https://global.cainiao.com/detail.htm?mailNoList={idship}'
+
 #---------------------------
 class ScreenScrape(Courier):
 
@@ -283,6 +299,9 @@ class Asendia(ScreenScrape):
                 'Accept-Language': 'fr'}
 
     url = 'https://tracking.asendia.com/alliot/items/references'
+
+    def get_link(self, idship):
+        return f'https://tracking.asendia.com/tracking/{idship}'
 
     def _request(self, idship): 
         r = requests.post(self.url, json = {'criteria':[idship], 'shipped':False}, headers = self.headers)
@@ -331,19 +350,20 @@ class MondialRelay(ScreenScrape):
     product = 'Colis'
     fromto = f'FR{Courier.r_arrow}FR'
 
-    def _request(self, idship): 
+    def get_link(self, idship):
         split = idship.split('-')
-        if len(split) != 2:
-            _log (f'!!! {self.long_name} needs tracking number-zipcode')
-            r = None
-            ok = False
-        else:
-            number, zip_code = split
-            url = f'https://www.mondialrelay.fr/suivi-de-colis?numeroExpedition={number}&codePostal={zip_code}'
-            r = requests.get(url)
-            ok = r.status_code == 200
+        if len(split) == 2:
+            number, zip_code = idship.split('-')
+            return f'https://www.mondialrelay.fr/suivi-de-colis?numeroExpedition={number}&codePostal={zip_code}'
 
-        return ok, r
+    def _request(self, idship): 
+        url = self.get_link(idship)
+        if url :
+            r = requests.get(url)
+            return r.status_code == 200, r
+        else:
+            _log (f'!!! {self.long_name} needs tracking number-zipcode')
+            return False, None
 
     def _update(self, ok, r): 
         events = []
@@ -410,6 +430,9 @@ class LaPoste(Courier):
     def __init__(self):
         self.headers = {'X-Okapi-Key': self.api_key, 'Accept': 'application/json'}
 
+    def get_link(self, idship):
+        return f'https://www.laposte.fr/outils/suivre-vos-envois?code={idship}'
+    
     def update(self, idship): 
         url = f'https://api.laposte.fr/suivi/v2/idships/{idship}?lang=fr_FR'
         resp = requests.get(url, headers = self.headers, timeout = 10)

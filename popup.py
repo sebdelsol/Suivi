@@ -1,5 +1,6 @@
 import PySimpleGUI as sg
 from mybutton import MyButton
+from couriers import Courier
 
 #-------------
 VarFont = None
@@ -26,7 +27,7 @@ class MyPopup:
         
         MyButton.finalize_all(self.window)
 
-    def loop(self):
+    def loop(self, catch_event = None):
         while True:             
             event, values = self.window.read()
             # _log (event)
@@ -38,22 +39,45 @@ class MyPopup:
 
             elif event == 'OK':
                 return values
+            
+            elif catch_event is not None:
+                catch_event(event, values) 
 
     def close(self):
         self.window.close()
         del self.window
 
 #------------------------------------------------------------------------------
-def edit(title, idship, description, used_couriers, couriers_names):
+def edit(title, idship, description, used_couriers, couriers):
+    couriers_names = couriers.get_names()
     layout = [      [ sg.T('Description', font = (FixFont, 10)), sg.Input(description, font = (FixFont, 10), border_width = 0, key='description') ],
-                    [ sg.T('Tracking n°', font = (FixFont, 10)), sg.Input(idship, font = (FixFont, 10), border_width = 0, key='idship') ] ]
-    layout.extend(  [ sg.CB(f' {name}', default=name in used_couriers, font = (FixFont, 12), k = name) ] for i, name in enumerate(couriers_names) )
+                    [ sg.T('Tracking n°', font = (FixFont, 10)), sg.Input(idship, font = (FixFont, 10), border_width = 0, enable_events = True, key='idship') ] ]
+
+    buttons = []
+    for name in couriers_names:
+        cb = sg.CB(f' {name}', default=name in used_couriers, font = (FixFont, 12), k = name, expand_x = True)
+        # https://stackoverflow.com/questions/10452770/python-lambdas-binding-to-local-values
+        courier = couriers.get(name)
+        disabled = not courier.get_url(idship)
+        b = MyButton('check', button_color = 'grey90', disabled = disabled, k = courier)
+        buttons.append(b)
+        layout.append([cb, b])
 
     edit_window = MyPopup(title, layout)
 
     idship, description = None, None
 
-    values = edit_window.loop()
+    def catch_event(event, values):
+        if event == 'idship':
+            for button in buttons:
+                courier, idship = button.Key, values['idship']
+                button.update(disabled = not courier.get_url(idship))
+        
+        elif isinstance(event, Courier):
+            courier, idship = event, values['idship']
+            courier.open_in_browser(idship)
+
+    values = edit_window.loop(catch_event)
     if values:
         idship, description, used_couriers = values['idship'], values['description'], [name for name in couriers_names if values[name]]
 

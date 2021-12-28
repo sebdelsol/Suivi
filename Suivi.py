@@ -11,7 +11,6 @@ import pickle as pickle
 import timeago
 from datetime import datetime
 from bisect import bisect
-
 import locale
 locale.setlocale(locale.LC_ALL, 'fr_FR.utf8') # date in French
 
@@ -186,16 +185,13 @@ class Tracks:
         not_deleted = self.get_not_deleted()
         archived = self.get_archived()
         
-        for courier_name in self.get_available_couriers():
+        for courier_name in self.couriers.get_names():
             valid_idships = [track.idship for track in not_deleted if courier_name in track.used_couriers]
             if valid_idships:
                 archived_idships = [track.idship for track in archived if courier_name in track.used_couriers]
                 courier = self.couriers.get(courier_name)
                 if courier:
                     courier.clean(valid_idships, archived_idships)
-
-    def get_available_couriers(self):
-        return self.couriers.get_names()
 
     def get_not_deleted(self):
         return [track for track in self.tracks if track.state != 'deleted']
@@ -479,7 +475,7 @@ class TrackWidget:
             self.couriers_widget.update('Pas de trackers', text_color = 'red')
 
     def edit(self, window):
-        idship, description, used_couriers = popup.edit('Édition', self.track.idship, self.track.description, self.track.used_couriers, self.track.available_couriers.get_names())
+        idship, description, used_couriers = popup.edit('Édition', self.track.idship, self.track.description, self.track.used_couriers, self.track.available_couriers)
 
         if idship is not None:
             self.track.set_id(idship, description, used_couriers)
@@ -702,7 +698,7 @@ if __name__ == "__main__":
             mylog.move_left_to(window)
 
         elif event == 'Nouveau':
-            track_params = popup.edit('Nouveau', '', 'Nouveau', [], tracks.get_available_couriers())
+            track_params = popup.edit('Nouveau', '', 'Nouveau', [], tracks.couriers)
             track = tracks.new(*track_params)
             if track:
                 widgets.create_widget(event_window, track)
