@@ -15,6 +15,8 @@ import selenium
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from subprocess import CREATE_NO_WINDOW
 
 from mylog import _log
 from apiKeys import PKGE_key, LaPoste_key, Ship24_key
@@ -307,13 +309,18 @@ class Cainiao(Courier):
     fromto = f'CN{Courier.r_arrow}FR'
 
     def __init__(self):
-        dir = os.path.dirname(os.path.realpath(__file__))
-        driver_fname = os.path.join(dir, 'chromedriver.exe')
+        path = os.path.dirname(os.path.realpath(__file__))
+        driver_path = os.path.join(path, 'chromedriver.exe')
+
         options = Options()
         options.headless = True
         options.add_experimental_option('excludeSwitches', ['enable-automation', 'enable-logging'])
         options.add_experimental_option('useAutomationExtension', False)
-        self.driver = webdriver.Chrome(executable_path = driver_fname, options = options)
+
+        service = Service(driver_path)
+        service.creationflags = CREATE_NO_WINDOW
+
+        self.driver = webdriver.Chrome(service = service, options = options)
 
     def close(self):
         self.driver.quit()
