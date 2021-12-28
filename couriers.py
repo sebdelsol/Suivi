@@ -349,7 +349,7 @@ class MondialRelay(Courier):
     fromto = f'FR{Courier.r_arrow}FR'
 
     idship_check = r'^\d{8}(\d{2})?(\d{2})?\-\d{5}$'
-    idship_format_msg = '[8, 10, 12 chiffres]-[code postal]'
+    idship_format_msg = '8, 10 ou 12 chiffres-code postal'
 
     def _get_url_for_browser(self, idship):
         number, zip_code = idship.split('-')

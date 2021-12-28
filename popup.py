@@ -50,29 +50,37 @@ class MyPopup:
 
 #------------------------------------------------------------------------------
 def edit(title, idship, description, used_couriers, couriers):
+
+    def update_idship_widgets(idship):
+        for msg, button in idship_widgets:
+            courier = button.Key
+            disabled = not courier.get_url_for_browser(idship)
+            button.update(disabled = disabled)
+            msg.update(text_color = 'red' if disabled else 'grey50')
+
     couriers_names = couriers.get_names()
     layout = [      [ sg.T('Description', font = (FixFont, 10)), sg.Input(description, font = (FixFont, 10), border_width = 0, key='description') ],
                     [ sg.T('Tracking n°', font = (FixFont, 10)), sg.Input(idship, font = (FixFont, 10), border_width = 0, enable_events = True, key='idship') ] ]
 
-    buttons = []
+    idship_widgets = []
     for name in couriers_names:
-        cb = sg.CB(f' {name}', default=name in used_couriers, font = (FixFont, 12), k = name, expand_x = True)
-        # https://stackoverflow.com/questions/10452770/python-lambdas-binding-to-local-values
         courier = couriers.get(name)
-        disabled = not courier.get_url_for_browser(idship)
-        b = MyButton('check', button_color = 'grey90', disabled = disabled, k = courier)
-        buttons.append(b)
-        layout.append([cb, b])
+
+        cb = sg.CB(f' {name}', default = name in used_couriers, font = (FixFont, 12), k = name)
+        msg = sg.T(f'({courier.idship_format_msg})', font = (FixFont, 7), expand_x = True)
+        button = MyButton('voir', font = (FixFont, 8), button_color ='grey90', k = courier)
+
+        idship_widgets.append((msg, button))
+        layout.append([cb, msg, button])
 
     edit_window = MyPopup(title, layout)
+    update_idship_widgets(idship)
 
     idship, description = None, None
 
     def catch_event(event, values):
         if event == 'idship':
-            for button in buttons:
-                courier, idship = button.Key, values['idship']
-                button.update(disabled = not courier.get_url_for_browser(idship))
+            update_idship_widgets(values['idship'])
         
         elif isinstance(event, Courier):
             courier, idship = event, values['idship']
