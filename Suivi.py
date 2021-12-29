@@ -82,7 +82,7 @@ class Tracker:
     def update(self):
         content_queue = queue.Queue()
         for courier_name in self.used_couriers:
-            _log (f'START update {self.description} {self.idship} {courier_name}')
+            _log (f'update START {self.description} {self.idship} {courier_name}')
             threading.Thread(target = self.update_thread, args = (courier_name, content_queue)).start()
             # self.update_thread(courier_name, content_queue))
 
