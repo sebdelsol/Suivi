@@ -11,15 +11,17 @@ from tzlocal import get_localzone
 import pytz
 
 import os
-# import selenium
+import random
+from selenium.common.exceptions import WebDriverException, TimeoutException, NoSuchElementException
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from subprocess import CREATE_NO_WINDOW
+from fake_useragent import UserAgent
 
 from mylog import _log
-from apiKeys import PKGE_key, LaPoste_key, Ship24_key
+from config import PKGE_key, LaPoste_key, Ship24_key, chrome_location
 
 #------------------------------------------------------------------------------
 def get_sentence(txt, nb = -1):
@@ -71,17 +73,11 @@ class Courier:
     def clean(self, valid_idships, archived_idships):
         pass
 
-    def close(self):
-        pass
-
     def get_url_for_browser(self, idship):
         if idship and self.check_idship(idship):
             return self._get_url_for_browser(idship)
 
     def _prepare_response(self, idship): 
-        pass
-
-    def finalize_update(self, r):
         pass
 
     def update(self, idship):
@@ -110,7 +106,6 @@ class Courier:
                 time.sleep(self.time_between_retry) 
 
             events, infos = self._update(r) if ok else ([], {})
-            self.finalize_update(r)
 
             status_date = infos.get('status_date', events[0]['date'] if events else get_local_now())
 
@@ -307,49 +302,157 @@ class Courier:
 
 
 #-----------------------
-class Cainiao(Courier):
+# import undetected_chromedriver as uc
+
+class SeleniumScrapper(Courier):
+
+    driver_timeout = 20 # s
+    proxy_timeout = 3000 # ms
+    proxys = []
+    lock = threading.Lock()
+
+    def __init__(self):
+        if not self.proxys:
+            self.init_proxys()
+
+    def init_proxys(self):
+        self.proxys = []
+        url = 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout={self.proxy_timeout}&country=fr&ssl=yes&anonymity=all'
+        r = requests.get(url)
+        if r.status_code == 200:
+            for proxy in r.text.split('\r\n'):
+                if proxy:
+                    self.proxys.append( dict(ip=proxy, ua=UserAgent().random) )
+
+        _log (f'FOUND {len(self.proxys)} proxys')
+        random.shuffle(self.proxys)
+        self.index = 0
+
+    def get_working_proxy(self):
+        with self.lock:
+            while len(self.proxys) > 0:
+                index = self.index % len(self.proxys)
+                proxy = self.proxys[index]
+                
+                if proxy.get('tested'):
+                    self.index += 1
+                    return proxy
+                
+                else:
+                    ip = proxy['ip']
+                    _log (f'{ip} CHECK...')
+
+                    try:
+                        test = requests.get('https://example.com', timeout = self.proxy_timeout/1000, proxies = dict(http = f'http://{ip}'))
+                        # test = requests.get('https://example.com', timeout = self.proxy_timeout/1000, proxies = dict(https = f'https://{ip}', http = f'http://{ip}'))
+                        if test.status_code == 200:
+                            proxy['tested'] = True
+                            _log (f'{ip} OK')
+                            self.index += 1
+                            return proxy
+
+                    except:
+                        pass
+                    
+                    del self.proxys[index]
+                    _log (f'{ip} Removed, {len(self.proxys)} left', error = True)
+
+                    if len(self.proxys) == 0:
+                        self.init_proxys()
+
+            _log ('No Proxy left', error = True)
+
+    def remove_proxy(self, proxy):
+        with self.lock:
+            if proxy in self.proxys:
+                self.proxys.remove(proxy)
+                _log (f"{proxy['ip']} Removed, {len(self.proxys)} left", error = True)
+
+
+    def get_page(self, idship):
+        options = Options()
+        options.headless = True
+        options.add_argument("--incognito")
+        options.add_argument('--disable-blink-features')
+        options.add_argument('--disable-blink-features=AutomationControlled')
+        options.add_experimental_option('useAutomationExtension', False)
+        options.add_experimental_option('excludeSwitches', ['enable-automation', 'enable-logging'])
+        
+        proxy = self.get_working_proxy()
+        if proxy:
+            ip, ua = proxy['ip'], proxy['ua']
+            options.add_argument(f'user-agent={ua}')
+            options.add_argument(f'--proxy-server={ip}')
+            # options.add_argument('--ignore-certificate-errors')
+            _log (f'driver for {idship}, use IP: {ip}')
+        
+        else:
+            _log (f'driver for {idship}, no Proxy')
+
+        path = os.path.dirname(os.path.realpath(__file__))
+        driver_path = os.path.join(path, 'chromedriver2.exe')
+        service = Service(driver_path)
+        service.creationflags = CREATE_NO_WINDOW
+
+        driver = webdriver.Chrome(service = service, options=options)
+        driver.set_page_load_timeout(self.driver_timeout)
+        driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
+            "source":
+                "const newProto = navigator.__proto__;"
+                "delete newProto.webdriver;"
+                "navigator.__proto__ = newProto;"
+        })
+
+        # options = uc.ChromeOptions()
+        # options.headless = True
+        # options.binary_location = chrome_location
+        # driver = uc.Chrome(options = options)
+        # driver.set_page_load_timeout(self.driver_timeout)
+
+        url = self._get_url_for_browser(idship)
+        try:
+            driver.get(url)
+            title, source = driver.title, driver.page_source
+        
+        except (WebDriverException, TimeoutException) as e:
+            _log (f'proxy failure {type(e).__name__} for {idship}', error = True)
+            title, source = None, None
+            self.remove_proxy(proxy)
+
+        driver.close()
+        # driver.quit()
+
+        return title, source
+
+#-------------------------------
+class Cainiao(SeleniumScrapper):
     short_name = 'cn'
     long_name = 'Cainiao'
     fromto = f'CN{Courier.r_arrow}FR'
 
     nb_retry = 0 
 
-    def __init__(self):
-        self.options = Options()
-        self.options.headless = True
-        self.options.add_experimental_option('excludeSwitches', ['enable-automation', 'enable-logging'])
-        self.options.add_experimental_option('useAutomationExtension', False)
-
-        path = os.path.dirname(os.path.realpath(__file__))
-        driver_path = os.path.join(path, 'chromedriver.exe')
-        self.service = Service(driver_path)
-        self.service.creationflags = CREATE_NO_WINDOW
-
     def _get_url_for_browser(self, idship):
         return f'https://global.cainiao.com/detail.htm?mailNoList={idship}&lang=fr&'
 
     def _get_response(self, idship): 
-        driver = webdriver.Chrome(service = self.service, options = self.options)
+        title, page = self.get_page(idship)
 
-        url = self._get_url_for_browser(idship)
-        driver.get(url)
+        ok = title and page and 'Global Parcel Tracking' in title
+        if title and not ok:
+            _log (f'selenium opened wrong page "{title}" for {idship}', error = True) 
+        return ok, page
 
-        ok = 'Global Parcel Tracking' in driver.title
-        _log (f'selenium opened "{driver.title}"', error = not ok) #  @ {driver.current_url}
-        return ok, driver
-
-        # except selenium.common.exceptions.NoSuchElementException:
-        #     return False, None
-
-    def _update(self, driver): 
+    def _update(self, page): 
         events = []
         delivered = False
        
         try:
-            timeline = driver.find_elements(By.XPATH, '//ol[@class="waybill-path"]/li')
+            tree = lxml.html.fromstring(page)
+            timeline = tree.xpath('//ol[@class="waybill-path"]/li')
 
             for event in timeline:
-                label, date = (p.text for p in event.find_elements(By.XPATH, './p'))
+                label, date = event.xpath('./p/text()')
                 events.append(dict( courier = self.short_name, 
                                     date = get_local_time(date), 
                                     status = '', 
@@ -359,15 +462,10 @@ class Cainiao(Courier):
                 if 'delivered' in label.lower():
                     delivered = True
 
-            return events, dict(delivered = delivered)
-
-        except:
+        except NoSuchElementException:
             _log (traceback.format_exc(), error = True)
 
-    def finalize_update(self, driver):
-        for handle in driver.window_handles:
-            driver.switch_to.window(handle)
-            driver.close()
+        return events, dict(delivered = delivered)
 
 #---------------------------
 class Asendia(Courier):
