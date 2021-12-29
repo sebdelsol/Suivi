@@ -56,7 +56,7 @@ def edit(title, idship, description, used_couriers, couriers):
             courier = button.Key
             disabled = not courier.get_url_for_browser(idship)
             button.update(disabled = disabled)
-            msg.update(text_color = 'red' if disabled else 'grey50')
+            msg.update(text_color = 'red' if disabled else 'green')
 
     couriers_names = couriers.get_names()
     layout = [      [ sg.T('Description', font = (FixFont, 10)), sg.Input(description, font = (FixFont, 10), border_width = 0, key='description') ],
