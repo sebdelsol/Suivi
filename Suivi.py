@@ -571,7 +571,7 @@ class TrackerWidgets:
         if ok:
             widths, heights = zip(*[widget.get_pixel_size() for widget in ok])
             w = max(widths) + TrackerWidget.layout_pad * 2
-            h = sum(heights) + window['MENU'].get_size()[1] + (len(heights) + 1) * TrackerWidget.layout_pad
+            h = sum(heights) + window['MENU'].get_size()[1] - 2 + (len(heights) + 1) * TrackerWidget.layout_pad
             h += len(self.widgets) - len(ok) # sg.pin = 1 pixel
         else:
             w, h = 400, 200
@@ -644,8 +644,10 @@ if __name__ == "__main__":
 
     layout = [ [ sg.Col([menu], p = 0, background_color = menu_color, expand_x = True, k = 'MENU') ],
                [ sg.Col([[]], p = 0, scrollable = True, vertical_scroll_only = True, expand_x = True, expand_y = True, k = 'TRACKS') ] ]
-    
-    window = sg.Window('Suivi', layout, size = (600, 600), grab_anywhere = True, resizable = True, keep_on_top = not is_debugger, no_titlebar = not is_debugger, return_keyboard_events = True, margins = (0, 0), finalize = True)
+
+    frame =  [ [ sg.Frame('', layout, p = 0, border_width = 1, relief = sg.RELIEF_SOLID, expand_x = True, expand_y = True) ] ]
+
+    window = sg.Window('Suivi', frame, size = (600, 600), grab_anywhere = True, resizable = True, keep_on_top = not is_debugger, no_titlebar = not is_debugger, return_keyboard_events = True, margins = (0, 0), finalize = True)
     window.disappear()
 
     MyButton.finalize_all(window)

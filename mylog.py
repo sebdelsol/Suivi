@@ -85,7 +85,7 @@ class MyLog:
             w, h = self.window.size
             W, H = main_window.size
             x, y = main_window.current_location()
-            self.window.move(int(x - w - gap), int(y + (H - h) *.5))
+            self.window.move(int(x - w - gap) + 1, int(y + (H - h) *.5))
             self.window.refresh()
     
     def toggle(self, main_window):
