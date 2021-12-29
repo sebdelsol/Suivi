@@ -316,7 +316,7 @@ class Cainiao(Courier):
 
     def __init__(self):
         self.options = Options()
-        # self.options.headless = True
+        self.options.headless = True
         self.options.add_experimental_option('excludeSwitches', ['enable-automation', 'enable-logging'])
         self.options.add_experimental_option('useAutomationExtension', False)
 
