@@ -1,17 +1,17 @@
 import re
-import traceback
-import threading
+import traceback # !!!!!!
+import threading# !!!!!!
 import time
 import requests
 import lxml.html
 from html import unescape
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta # !!!!!!
 from dateutil.parser import parse
 from tzlocal import get_localzone
 import pytz
 
 import os
-import selenium
+# import selenium
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -81,6 +81,9 @@ class Courier:
     def _prepare_response(self, idship): 
         pass
 
+    def finalize_update(self, r):
+        pass
+
     def update(self, idship):
         if not self.check_idship(idship):
             _log (f"'{idship}' mal formé : il faut {self.idship_check_msg}", error = True)
@@ -107,6 +110,7 @@ class Courier:
                 time.sleep(self.time_between_retry) 
 
             events, infos = self._update(r) if ok else ([], {})
+            self.finalize_update(r)
 
             status_date = infos.get('status_date', events[0]['date'] if events else get_local_now())
 
@@ -308,54 +312,62 @@ class Cainiao(Courier):
     long_name = 'Cainiao'
     fromto = f'CN{Courier.r_arrow}FR'
 
+    nb_retry = 0 
+
     def __init__(self):
+        self.options = Options()
+        # self.options.headless = True
+        self.options.add_experimental_option('excludeSwitches', ['enable-automation', 'enable-logging'])
+        self.options.add_experimental_option('useAutomationExtension', False)
+
         path = os.path.dirname(os.path.realpath(__file__))
         driver_path = os.path.join(path, 'chromedriver.exe')
-
-        options = Options()
-        options.headless = True
-        options.add_experimental_option('excludeSwitches', ['enable-automation', 'enable-logging'])
-        options.add_experimental_option('useAutomationExtension', False)
-
-        service = Service(driver_path)
-        service.creationflags = CREATE_NO_WINDOW
-
-        self.driver = webdriver.Chrome(service = service, options = options)
-
-    def close(self):
-        self.driver.quit()
+        self.service = Service(driver_path)
+        self.service.creationflags = CREATE_NO_WINDOW
 
     def _get_url_for_browser(self, idship):
         return f'https://global.cainiao.com/detail.htm?mailNoList={idship}&lang=fr&'
 
     def _get_response(self, idship): 
+        driver = webdriver.Chrome(service = self.service, options = self.options)
+
         url = self._get_url_for_browser(idship)
-        self.driver.get(url)
+        driver.get(url)
 
-        try:
-            ok = 'Global Parcel Tracking' in self.driver.title
-            _log (f'selenium opened "{self.driver.title}"', error = not ok)
-            return ok, self.driver.find_elements(By.XPATH, '//ol[@class="waybill-path"]/li')
+        ok = 'Global Parcel Tracking' in driver.title
+        _log (f'selenium opened "{driver.title}"', error = not ok) #  @ {driver.current_url}
+        return ok, driver
 
-        except selenium.common.exceptions.NoSuchElementException:
-            return False, None
+        # except selenium.common.exceptions.NoSuchElementException:
+        #     return False, None
 
-    def _update(self, r): 
+    def _update(self, driver): 
         events = []
         delivered = False
        
-        for event in r: 
-            label, date = (p.text for p in event.find_elements(By.XPATH, './p'))
-            events.append(dict( courier = self.short_name, 
-                                date = get_local_time(date), 
-                                status = '', 
-                                warn = 'error' in label.lower(), 
-                                label = label))
+        try:
+            timeline = driver.find_elements(By.XPATH, '//ol[@class="waybill-path"]/li')
 
-            if 'delivered' in label.lower():
-                delivered = True
+            for event in timeline:
+                label, date = (p.text for p in event.find_elements(By.XPATH, './p'))
+                events.append(dict( courier = self.short_name, 
+                                    date = get_local_time(date), 
+                                    status = '', 
+                                    warn = 'error' in label.lower(), 
+                                    label = label))
 
-        return events, dict(delivered = delivered)
+                if 'delivered' in label.lower():
+                    delivered = True
+
+            return events, dict(delivered = delivered)
+
+        except:
+            _log (traceback.format_exc(), error = True)
+
+    def finalize_update(self, driver):
+        for handle in driver.window_handles:
+            driver.switch_to.window(handle)
+            driver.close()
 
 #---------------------------
 class Asendia(Courier):
