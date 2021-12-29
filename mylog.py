@@ -20,9 +20,9 @@ class MyLog:
         self.output = sg.MLine('', p = 0, font = log_font, s = (80, 50), auto_refresh = True, autoscroll  = True, disabled = True, border_width = 0, expand_x = True, expand_y = True, background_color = None)
         self.link_button = MyButton(self.link_txt, p = 0, font = button_font, button_color = ('grey60', 'grey75'), mouseover_color = 'grey80', expand_y = True, k = 'Link')
         sizegrip = sg.Sizegrip()
-        layout = [ [ self.output, sg.Col( [ [self.link_button], [ sizegrip ] ], p = 0, expand_y = True) ] ]
-
-        self.window = sg.Window('', layout, margins = (0, 0), modal = False, resizable = True, keep_on_top = no_border, no_titlebar = no_border, return_keyboard_events = True, finalize = True)
+        layout = [ [ self.output, sg.Col( [ [self.link_button], [ sizegrip ] ], p = 0, expand_x = True, expand_y = True) ] ]
+        frame =  [ [ sg.Frame('', layout, p = 0, border_width = 1, relief = sg.RELIEF_SOLID, expand_x = True, expand_y = True) ] ]
+        self.window = sg.Window('', frame, margins = (0, 0), modal = False, resizable = True, keep_on_top = no_border, no_titlebar = no_border, return_keyboard_events = True, finalize = True)
         self.window.disappear()
 
         self.default_bindtags = self.output.Widget.bindtags()
