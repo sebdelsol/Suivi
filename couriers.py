@@ -9,7 +9,7 @@ from tzlocal import get_localzone
 import pytz
 
 from mylog import _log
-from config import LaPoste_key, chrome_exe, chromedriver_exe # , Ship24_key, PKGE_key
+from config import LaPoste_key, chrome_exe # , Ship24_key, PKGE_key
 
 #------------------------------------------------------------------------------
 def get_sentence(txt, nb = -1):
