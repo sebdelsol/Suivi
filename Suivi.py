@@ -721,3 +721,4 @@ if __name__ == "__main__":
         _log (traceback.format_exc(), error = True)
 
     mylog.close()
+    os.system("taskkill /F /im chromedriver.exe")

@@ -154,8 +154,6 @@ class SeleniumScrapper(Courier):
         finally:
             driver.quit()
 
-# TODO how to kill driver when quitting app ???
-
 #-------------------------------
 class Cainiao(SeleniumScrapper):
     short_name = 'cn'
