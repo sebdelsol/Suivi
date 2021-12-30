@@ -42,7 +42,7 @@ class MyPopup:
                 return values
             
             elif catch_event is not None:
-                catch_event(event, values) 
+                catch_event(self.window, event, values) 
 
     def close(self):
         self.window.close()
@@ -67,7 +67,8 @@ def edit(title, idship, description, used_couriers, couriers):
     for name in couriers_names:
         courier = couriers.get(name)
 
-        cb = sg.CB(f' {name}', default = name in used_couriers, font = (FixFont, 12), k = name)
+        is_checked = name in used_couriers
+        cb = sg.CB(f' {name}', default = is_checked, text_color = 'black' if is_checked else 'grey60', font = (FixFont, 12), enable_events = True, k = name)
         msg = sg.T(f'({courier.idship_check_msg})', font = (FixFont, 7), expand_x = True, justification = 'r')
         button = MyButton('voir', font = (FixFont, 8), button_color ='grey90', k = courier)
 
@@ -79,7 +80,7 @@ def edit(title, idship, description, used_couriers, couriers):
 
     idship, description = None, None
 
-    def catch_event(event, values):
+    def catch_event(window, event, values):
         if event == 'idship':
             update_idship_widgets(values['idship'])
         
@@ -87,6 +88,9 @@ def edit(title, idship, description, used_couriers, couriers):
             courier, idship = event, values['idship']
             url = courier.get_url_for_browser(idship)
             webbrowser.open(url)
+        
+        elif event in couriers_names:
+            window[event].update(text_color = 'black' if values[event] else 'grey60')
 
 
     values = edit_window.loop(catch_event)
