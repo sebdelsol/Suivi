@@ -108,6 +108,10 @@ class Courier:
 
             # sort by date
             events.sort(key = lambda evt : evt['date'], reverse = True)
+            
+            # add couriers
+            for event in events:
+                event['courier'] = self.short_name
 
             status_date = infos.get('status_date', events[0]['date'] if events else get_local_now())
 
@@ -219,8 +223,7 @@ class Cainiao(SeleniumScrapper):
         pairwise = zip(timeline[::2], timeline[1::2])
         for label, date in pairwise:
             label = re.sub(r'^\W', '', label) # remove non words character at the beginning
-            events.append(dict( courier = self.short_name, 
-                                date = parse(date).replace(tzinfo = pytz.utc), 
+            events.append(dict( date = parse(date).replace(tzinfo = pytz.utc), 
                                 status = '', 
                                 warn = 'error' in label.lower(), 
                                 label = label))
@@ -269,8 +272,7 @@ class Asendia(Courier):
 
                 date = datetime.utcfromtimestamp(event['date']/1000).replace(tzinfo = pytz.utc)
 
-                events.append(dict( courier = self.short_name, 
-                                    date = date, 
+                events.append(dict( date = date, 
                                     status = location, 
                                     warn = False, 
                                     label = label))
@@ -318,8 +320,7 @@ class MondialRelay(Courier):
                 if 'livré' in label:
                     delivered = True
 
-                events.append(dict( courier = self.short_name, 
-                                    date = date, 
+                events.append(dict( date = date, 
                                     status = '', 
                                     warn = False, 
                                     label = label))
@@ -366,8 +367,7 @@ class GLS(Courier):
                         address = event['address']
                         
                         countries.append(address['countryCode'])
-                        events.append(dict( courier = self.short_name, 
-                                            date = datetime.strptime(f"{event['date']} {event['time']}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=get_localzone()), 
+                        events.append(dict( date = datetime.strptime(f"{event['date']} {event['time']}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=get_localzone()), 
                                             status = f"{address['city']}, {address['countryName']}", 
                                             warn = False, 
                                             label = label))
@@ -415,8 +415,7 @@ class DPD(Courier):
             label = label.replace('Predict vous informe : \n', '').strip()
             location = txts[3] if len(txts)==4 else None
 
-            events.append(dict( courier = self.short_name, 
-                                date = datetime.strptime(f'{date} {hour}', '%d/%m/%Y %H:%M').replace(tzinfo=get_localzone()), 
+            events.append(dict( date = datetime.strptime(f'{date} {hour}', '%d/%m/%Y %H:%M').replace(tzinfo=get_localzone()), 
                                 status = location, 
                                 warn = False, 
                                 label = label))
@@ -449,8 +448,7 @@ class NLPost(Courier):
         for event in timeline:
             date, label = event.xpath('./td/text()')[:2]
 
-            events.append(dict( courier = self.short_name, 
-                                date = datetime.strptime(date.strip(), '%d-%m-%Y %H:%M').replace(tzinfo=get_localzone()), 
+            events.append(dict( date = datetime.strptime(date.strip(), '%d-%m-%Y %H:%M').replace(tzinfo=get_localzone()), 
                                 status = '', 
                                 warn = False, 
                                 label = label))
@@ -485,8 +483,7 @@ class FourPX(Courier):
             date, hour, label = [stxt for txt in event.xpath('.//text()') if (stxt := re.sub(r'[\n\t]', '', txt).strip().replace('\xa0', '')) !='']
             status, label = label.split('/', 1) if '/' in label else ('', label)
 
-            events.append(dict( courier = self.short_name, 
-                                date = datetime.strptime(f'{date} {hour}', '%Y-%m-%d %H:%M').replace(tzinfo = pytz.utc),
+            events.append(dict( date = datetime.strptime(f'{date} {hour}', '%Y-%m-%d %H:%M').replace(tzinfo = pytz.utc),
                                 status = status.strip(), 
                                 warn = False, 
                                 label = re.sub('\.$', '', label.strip()) ))
@@ -559,15 +556,14 @@ class LaPoste(Courier):
                 if code in ('DI1', 'DI2'):
                     delivered = True
 
-                event_date = get_local_time(event['date'])
-                event_status, event_warn = self.codes.get(code, '?')
-                event_label = f"{get_sentence(event['label'], 1)}"
+                date = get_local_time(event['date'])
+                status, warn = self.codes.get(code, '?')
+                label = f"{get_sentence(event['label'], 1)}"
 
-                events.append(dict( courier = self.short_name, 
-                                    date = event_date, 
-                                    status = event_status, 
-                                    warn = event_warn or 'erreur' in event_label.lower(), 
-                                    label = event_label))
+                events.append(dict( date = get_local_time(event['date']), 
+                                    status = status, 
+                                    warn = warn or 'erreur' in label.lower(), 
+                                    label = label))
 
             status_warn = events[-1]['warn'] if events else False
             return events, dict(product = product, fromto = fromto, delivered = delivered, status_warn = status_warn, status_label = status_label.replace('.', ''))
@@ -616,8 +612,7 @@ class LaPoste(Courier):
 #             event_date = get_local_time(event['datetime'])  # event['utcOffset'] ???
 #             event_status = re.sub(' +', ' ', event['location'].replace(self.long_name, '').strip())
 #             event_label = re.sub(' +', ' ', event['status'])
-#             events.append(dict( courier = self.short_name, 
-#                                 date = event_date, 
+#             events.append(dict( date = event_date, 
 #                                 status = event_status, 
 #                                 warn = False, 
 #                                 label = event_label))
@@ -782,8 +777,7 @@ class LaPoste(Courier):
 #                 event_date = get_local_time(event['date'])
 #                 event_label = f"{get_sentence(unescape(event['title']), 1)}"
 #                 event_label = re.sub(r'^\W', '', event_label) # remove non words character at the beginning
-#                 events.append(dict( courier = self.short_name, 
-#                                     date = event_date, 
+#                 events.append(dict( date = event_date, 
 #                                     status = '', 
 #                                     warn = 'error' in event_label.lower() or 'erreur' in event_label.lower(), 
 #                                     label = event_label))
