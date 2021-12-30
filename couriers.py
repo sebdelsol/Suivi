@@ -102,6 +102,13 @@ class Courier:
 
             events, infos = self._update(r) if ok else ([], {})
 
+            # remove duplicates
+            events = set( tuple(evt.items()) for evt in events )
+            events = [ dict(evt) for evt in events ]
+
+            # sort by date
+            events.sort(key = lambda evt : evt['date'], reverse = True)
+
             status_date = infos.get('status_date', events[0]['date'] if events else get_local_now())
 
             if not (events or infos.get('status_label')):
@@ -213,7 +220,7 @@ class Cainiao(SeleniumScrapper):
         for label, date in pairwise:
             label = re.sub(r'^\W', '', label) # remove non words character at the beginning
             events.append(dict( courier = self.short_name, 
-                                date = get_local_time(date), 
+                                date = parse(date).replace(tzinfo = pytz.utc), 
                                 status = '', 
                                 warn = 'error' in label.lower(), 
                                 label = label))
@@ -260,18 +267,13 @@ class Asendia(Courier):
                 if 'Livré' in label:
                     delivered = True
 
-                date = datetime.utcfromtimestamp(event['date']/1000).replace(tzinfo=pytz.utc)
-                # date = datetime.utcfromtimestamp(event['date']/1000).astimezone(get_localzone()) # crash !!!
+                date = datetime.utcfromtimestamp(event['date']/1000).replace(tzinfo = pytz.utc)
 
                 events.append(dict( courier = self.short_name, 
                                     date = date, 
                                     status = location, 
                                     warn = False, 
                                     label = label))
-
-        events = set( tuple(evt.items()) for evt in events )
-        events = [ dict(evt) for evt in events ]
-        events.sort(key = lambda evt : evt['date'], reverse = True)
 
         return events, dict(delivered = delivered)
 
@@ -311,7 +313,7 @@ class MondialRelay(Courier):
                 hour_text = elts[0]
                 label = elts[1].replace('.', '')
                 
-                date = datetime.strptime(f'{date_text} {hour_text}', '%d/%m/%Y %H:%M').astimezone(get_localzone())
+                date = datetime.strptime(f'{date_text} {hour_text}', '%d/%m/%Y %H:%M').replace(tzinfo=get_localzone())
                 
                 if 'livré' in label:
                     delivered = True
@@ -365,7 +367,7 @@ class GLS(Courier):
                         
                         countries.append(address['countryCode'])
                         events.append(dict( courier = self.short_name, 
-                                            date = datetime.strptime(f"{event['date']} {event['time']}", '%Y-%m-%d %H:%M:%S').astimezone(get_localzone()), 
+                                            date = datetime.strptime(f"{event['date']} {event['time']}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=get_localzone()), 
                                             status = f"{address['city']}, {address['countryName']}", 
                                             warn = False, 
                                             label = label))
@@ -484,7 +486,7 @@ class FourPX(Courier):
             status, label = label.split('/', 1) if '/' in label else ('', label)
 
             events.append(dict( courier = self.short_name, 
-                                date = datetime.strptime(f'{date} {hour}', '%Y-%m-%d %H:%M').replace(tzinfo=pytz.utc),
+                                date = datetime.strptime(f'{date} {hour}', '%Y-%m-%d %H:%M').replace(tzinfo = pytz.utc),
                                 status = status.strip(), 
                                 warn = False, 
                                 label = re.sub('\.$', '', label.strip()) ))
