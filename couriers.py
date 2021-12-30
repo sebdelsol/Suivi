@@ -116,8 +116,6 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
-from subprocess import CREATE_NO_WINDOW
 import undetected_chromedriver as uc
 
 class SeleniumScrapper(Courier):
@@ -132,11 +130,8 @@ class SeleniumScrapper(Courier):
         options.add_argument('--no-first-run --no-service-autorun --password-store=basic')
         options.add_argument('--excludeSwitches --enable-logging')        
 
-        # service = Service(chromedriver_exe) # doesn't work with UC ?
-        # service.creationflags = CREATE_NO_WINDOW
-
         with self.lock: # can't patch chromedriver @ the same time
-            driver = uc.Chrome(options = options) #, service = service) 
+            driver = uc.Chrome(options = options) 
         
         driver.set_page_load_timeout(self.driver_timeout)
 
@@ -171,19 +166,22 @@ class Cainiao(SeleniumScrapper):
 
         try:
             timeline = get_timeline()
+        
         except NoSuchElementException:
             timeline = None
 
         if not timeline:
             _log(f'scrapper wait slider {idship}')
-            slider = WebDriverWait(driver, self.wait_elt).until(EC.element_to_be_clickable((By.XPATH, '//span[@class="nc_iconfont btn_slide"]')))
+            slider_locator = (By.XPATH, '//span[@class="nc_iconfont btn_slide"]')
+            slider = WebDriverWait(driver, self.wait_elt).until(EC.element_to_be_clickable(slider_locator))
 
             slide = driver.find_element(By.XPATH, '//div[@class="scale_text slidetounlock"]/span')
             action = ActionChains(driver)
             action.drag_and_drop_by_offset(slider, slide.size['width'], 0).perform()
 
             _log(f'scrapper wait datas {idship}')
-            WebDriverWait(driver, self.wait_elt).until(EC.visibility_of_element_located((By.XPATH, f'//p[@class="waybill-num"][contains(text(),"{idship}")]')))
+            data_locator = (By.XPATH, f'//p[@class="waybill-num"][contains(text(),"{idship}")]')
+            WebDriverWait(driver, self.wait_elt).until(EC.visibility_of_element_located(data_locator))
             timeline = get_timeline()
 
         return [ p.text for p in timeline ]

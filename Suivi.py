@@ -36,13 +36,10 @@ def draw_rounded_box(widget, x, y, w, h, r, color):
 #-------------------------------------------------------------------------------------------
 class SavedTracker:
     def __init__(self, tracker):
-        tracker.enter_critical()
-
-        # tracker attribute to save
-        for attr in ('idship', 'description', 'used_couriers', 'state', 'contents'):
-            self.__dict__[attr] = tracker.__dict__[attr]
-
-        tracker.exit_critical()
+        with tracker.critical:
+            # tracker attribute to save
+            for attr in ('idship', 'description', 'used_couriers', 'state', 'contents'):
+                self.__dict__[attr] = tracker.__dict__[attr]
 
 #-----------
 class Tracker:
@@ -61,12 +58,6 @@ class Tracker:
         self.used_couriers = used_couriers
         self.description = description.title()
         self.idship = idship.strip()
-    
-    def enter_critical(self):
-        self.critical.acquire()
-        
-    def exit_critical(self):
-        self.critical.release()
     
     def set_current_events(self):
         self.current_events = set()
@@ -93,9 +84,8 @@ class Tracker:
             if new_content is not None:
                 if new_content['ok'] or courier_name not in self.contents:
                     new_content['courier_name'] = courier_name
-                    self.enter_critical()
-                    self.contents[courier_name] = new_content
-                    self.exit_critical()
+                    with self.critical:
+                        self.contents[courier_name] = new_content
                 
             self.couriers_update_error[courier_name] = not (new_content and new_content['ok'])
 
