@@ -464,11 +464,16 @@ class TrackerWidget:
 
     def show_couriers(self, content, spaces):
         couriers_update = (content or {}).get('courier_update')
+
         if couriers_update:
+            couriers_update_names = list(couriers_update.keys())
+            couriers_update_names.sort()
+
             self.couriers_widget.update('') 
             
-            w_name = max(len(name) for name in couriers_update.keys())
-            for i, (name, (date, error)) in enumerate(couriers_update.items()):
+            w_name = max(len(name) for name in couriers_update_names)
+            for i, name in enumerate(couriers_update_names):
+                date, error = couriers_update[name]
                 end = i+1 == len(couriers_update)
                 ago = f" {timeago.format(date, get_local_now(), 'fr').replace('il y a', '').strip()}" if date else ' jamais'
                 error_chr, error_color = (' ❗', 'red') if error else ('✔', 'green')
