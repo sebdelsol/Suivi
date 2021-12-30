@@ -434,7 +434,7 @@ class NLPost(Courier):
         return f'https://postnl.post/tracktrace'
 
     def _get_response(self, idship): 
-        r = requests.post(self.url, data = dict(barcodes = idship))
+        r = requests.post(self.url, data = dict(barcodes = idship), timeout = self.request_timeout)
         return r.status_code == 200, r
 
     def _update(self, r): 
@@ -451,6 +451,42 @@ class NLPost(Courier):
                                 status = '', 
                                 warn = False, 
                                 label = label))
+
+            if 'delivered' in label.lower():
+                delivered = True
+
+        return events, dict(delivered = delivered)
+
+#----------------------
+class FourPX(Courier):
+    short_name = '4p'
+    long_name = '4PX'
+
+    url = 'https://postnl.post/details/'
+
+    def _get_url_for_browser(self, idship):
+        return f'http://track.4px.com/query/{idship}?'
+
+    def _get_response(self, idship): 
+        url = self.get_url_for_browser(idship)
+        r = requests.get(url, timeout = self.request_timeout)
+        return r.status_code == 200, r
+
+    def _update(self, r): 
+        events = []
+        delivered = False
+
+        tree = lxml.html.fromstring(r.content)
+        timeline = tree.xpath('//div[@class="track-container"]//li')
+        for event in timeline:
+            date, hour, label = [stxt for txt in event.xpath('.//text()') if (stxt := re.sub(r'[\n\t]', '', txt).strip().replace('\xa0', '')) !='']
+            status, label = label.split('/') if '/' in label else ('', label)
+
+            events.append(dict( courier = self.short_name, 
+                                date = datetime.strptime(f'{date} {hour}', '%Y-%m-%d %H:%M').replace(tzinfo=pytz.utc),
+                                status = status.strip(), 
+                                warn = False, 
+                                label = label.strip()))
 
             if 'delivered' in label.lower():
                 delivered = True
