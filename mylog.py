@@ -3,6 +3,10 @@ import re
 import PySimpleGUI as sg
 from mybutton import MyButton
 
+def trigger_event(window, *events):
+    if window and window.TKroot:
+        window.write_event_value(*events)
+
 class MyLog:
     
     link_txt = '\n'.join('❱❱❱❱❱')
@@ -102,8 +106,7 @@ class MyLog:
 
     def log(self, *args, error = False, **kwargs):
         print(*args, **kwargs)
-        if self.window:
-            self.window.write_event_value('-UPDATE LOG-', (args, error, kwargs))
+        trigger_event(self.window, '-UPDATE LOG-', (args, error, kwargs))
     
     def update_log(self, event, values):
         args, error, kwargs = values[event]

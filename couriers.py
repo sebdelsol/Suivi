@@ -1,5 +1,4 @@
 import re
-import threading
 import time
 import requests
 import lxml.html
@@ -40,6 +39,10 @@ class Couriers:
     def get_names(self):
         return list( self.couriers.keys() )
 
+    def close(self):
+        for courier in self.couriers.values():
+            courier.close()
+
 #-------------
 def get_simple_check(_min, _max):
     return f'^\w{{{_min},{_max}}}$', f'{_min} à {_max} lettres ou chiffres'
@@ -58,7 +61,10 @@ class Courier:
     def check_idship(self, idship):
         return re.match(self.idship_check_pattern, idship)
 
-    def clean(self, valid_idships, archived_idships):
+    def clean(self, valid_idships, archived_idships): 
+        pass
+
+    def close(self): 
         pass
 
     def get_url_for_browser(self, idship):
@@ -117,11 +123,12 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 import undetected_chromedriver as uc
+import psutil
+import threading
 
 class SeleniumScrapper(Courier):
-
-    driver_timeout = 100 # s
     lock = threading.Lock()
+    driver_timeout = 100 # s
 
     def _get_response(self, idship):
         options = uc.ChromeOptions()
@@ -130,12 +137,11 @@ class SeleniumScrapper(Courier):
         options.add_argument('--no-first-run --no-service-autorun --password-store=basic')
         options.add_argument('--excludeSwitches --enable-logging')        
 
-        with self.lock: # can't patch chromedriver @ the same time
+        with self.lock: # can't patch chromedriver @ the same time        
             driver = uc.Chrome(options = options) 
-        
         driver.set_page_load_timeout(self.driver_timeout)
-
         url = self._get_url_for_browser(idship)
+
         try:
             _log(f'scrapper load {idship}')
             driver.get(url)
@@ -149,13 +155,19 @@ class SeleniumScrapper(Courier):
         finally:
             driver.quit()
 
+    def close(self):
+        for proc in psutil.process_iter():
+            if 'chromedriver.exe' in proc.name().lower():
+                _log (f'kill {proc.name()} {proc.pid}')
+                proc.kill()
+
 #-------------------------------
 class Cainiao(SeleniumScrapper):
     short_name = 'cn'
     long_name = 'Cainiao'
     fromto = f'CN{Courier.r_arrow}FR'
 
-    timeout_elt = 20 # s
+    timeout_elt = 30 # s
 
     def _get_url_for_browser(self, idship):
         return f'https://global.cainiao.com/detail.htm?mailNoList={idship}&lang=fr&'
@@ -452,6 +464,7 @@ class LaPoste(Courier):
 
 #-------------------
 # import traceback 
+# import threading
 # from html import unescape
 # from datetime import timedelta 
 

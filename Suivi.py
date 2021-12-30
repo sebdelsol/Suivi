@@ -14,7 +14,7 @@ from bisect import bisect
 import locale
 locale.setlocale(locale.LC_ALL, 'fr_FR.utf8') # date in French
 
-from mylog import mylog, _log
+from mylog import mylog, _log, trigger_event
 from mybutton import MyButton
 from couriers import Couriers, get_local_now
 import popup
@@ -192,6 +192,9 @@ class Trackers:
     def count_archived(self):
         return len(self.get_archived())
 
+    def close(self):
+        self.couriers.close()
+
 #------------------------------------------------------------------------------
 class TrackerWidget:
 
@@ -269,7 +272,7 @@ class TrackerWidget:
         self.expand_events = not self.expand_events
         self.update_expand_button()
 
-        window.write_event_value('-UPDATE WIDGETS SIZE-', '')
+        trigger_event(window, '-UPDATE WIDGETS SIZE-', '')
 
     def update_expand_button(self):
         is_visible = self.is_events_visible() and self.height_events >  self.min_events_shown
@@ -312,18 +315,18 @@ class TrackerWidget:
         try:
             content = None
             for content in self.tracker.update(): # generator multithreaded
-                window.write_event_value(lambda window: self.show(content, window), '')
+                trigger_event(window, lambda window: self.show(content, window), '')
 
             # nothing updated
             if content is None:
-                window.write_event_value(lambda window: self.show(None, window), '')
+                trigger_event(window, lambda window: self.show(None, window), '')
 
         except:
             _log (traceback.format_exc(), error = True)
 
         finally:
             self.lock.release()
-            window.write_event_value(lambda window: self.update_done(), '')
+            trigger_event(window, lambda window: self.update_done(), '')
 
     def update_done(self):
         self.updating_widget.update('')
@@ -429,7 +432,7 @@ class TrackerWidget:
             self.couriers_widget.Widget.tag_remove("sel", "1.0", "end")
             self.id_widget.Widget.tag_remove("sel", "1.0", "end")
 
-            window.write_event_value('-UPDATE WIDGETS SIZE-', '')
+            trigger_event(window, '-UPDATE WIDGETS SIZE-', '')
 
     def show_id(self, content, spaces):
         self.id_widget.update('') 
@@ -480,7 +483,7 @@ class TrackerWidget:
                 self.layout.update(visible = visible)
                 self.reset_size()
 
-                window.write_event_value('-UPDATE WIDGETS SIZE-', '')
+                trigger_event(window, '-UPDATE WIDGETS SIZE-', '')
                 self.lock.release()
 
     def archive_or_delete(self, window):
@@ -494,11 +497,11 @@ class TrackerWidget:
 
     def archive(self, window):
         self.set_state('archived', 'Archiver', window, ask = False, visible = False)
-        window.write_event_value('-ARCHIVE UPDATED-', '')
+        trigger_event(window, '-ARCHIVE UPDATED-', '')
 
     def unarchive(self, window):
         self.set_state('ok', 'Désarchiver', window, ask = False, visible = True)
-        window.write_event_value('-ARCHIVE UPDATED-', '')
+        trigger_event(window, '-ARCHIVE UPDATED-', '')
         self.update(window)
 
 # -----------------------------------
@@ -509,7 +512,7 @@ class TrackerWidgets:
         for tracker in trackers.trackers:
             self.create_widget(window, tracker)
 
-        window.write_event_value('-ARCHIVE UPDATED-', '')
+        trigger_event(window, '-ARCHIVE UPDATED-', '')
 
     def create_widget(self, window, tracker):
         widget = TrackerWidget(tracker)
@@ -703,12 +706,10 @@ if __name__ == "__main__":
 
     try:
         window.close()
-        del window
-
         trackers.save()
         trackers.clean_couriers()
     except:
         _log (traceback.format_exc(), error = True)
 
     mylog.close()
-    os.system("taskkill /F /im chromedriver.exe")
+    trackers.close()
