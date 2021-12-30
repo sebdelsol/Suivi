@@ -56,7 +56,6 @@ class Tracker:
 
         self.available_couriers = available_couriers
         self.critical = threading.Lock()
-        self.couriers_update_error = {}
 
         self.set_current_events()
 
@@ -92,8 +91,6 @@ class Tracker:
                     new_content['courier_name'] = courier_name
                     with self.critical:
                         self.contents[courier_name] = new_content
-                
-            self.couriers_update_error[courier_name] = not (new_content and new_content['ok'])
 
             yield self.get_consolidated_content()
 
@@ -126,9 +123,15 @@ class Tracker:
             
             delivered = consolidated['status'].get('delivered')
             consolidated['elapsed'] = events and (events[0]['date'] if delivered else get_local_now()) - events[-1]['date']
+        
+        couriers_update = {}
+        for courier_name in self.used_couriers:
+            content = self.contents.get(courier_name)
+            ok_date = content.get('status',{}).get('ok_date') if content else None
+            error = not(content and content['ok'])
+            couriers_update[courier_name] = (ok_date, error)
 
-        consolidated['couriers_update'] = dict( (content['courier_name'], (content.get('status',{}).get('ok_date'), content.get('ok'))) for content in contents_used )
-        consolidated['courier_update_error'] = self.couriers_update_error
+        consolidated['courier_update'] = couriers_update
         
         return consolidated
     
@@ -460,15 +463,14 @@ class TrackerWidget:
         self.id_widget.print(f' {idship}', autoscroll = False, t = 'blue', end = '')
 
     def show_couriers(self, content, spaces):
-        couriers_update = (content or {}).get('couriers_update')
+        couriers_update = (content or {}).get('courier_update')
         if couriers_update:
             self.couriers_widget.update('') 
             
             w_name = max(len(name) for name in couriers_update.keys())
-            for i, (name, (date, ok)) in enumerate(couriers_update.items()):
+            for i, (name, (date, error)) in enumerate(couriers_update.items()):
                 end = i+1 == len(couriers_update)
                 ago = f" {timeago.format(date, get_local_now(), 'fr').replace('il y a', '').strip()}" if date else ' jamais'
-                error = content['courier_update_error'].get(name)
                 error_chr, error_color = (' ❗', 'red') if error else ('✔', 'green')
                 
                 self.couriers_widget.print(f'{spaces}{ago}', autoscroll = False, t = 'grey60', end = '')
