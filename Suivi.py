@@ -33,6 +33,12 @@ def draw_rounded_box(widget, x, y, w, h, r, color):
     # bounding box
     # widget.draw_rectangle((x-w2, y+h2), (x+w2, y-h2), fill_color = None, line_color = 'black')
 
+def three_char_month(date_txt, i):
+    txts = date_txt.split()
+    month = txts[i]
+    txts[i] =  month[:3] if 'ju' not in month else month[:2] + month[3:]
+    return ' '.join(txts)
+
 #-------------------------------------------------------------------------------------------
 class SavedTracker:
     def __init__(self, tracker):
@@ -132,7 +138,11 @@ class Tracker:
 
     def get_pretty_last_event(self):
         last_event = self.get_last_event()
-        return datetime.strftime(last_event, '%a %d %b %y').replace('.', '') if last_event else ''
+        if last_event:
+            date = datetime.strftime(last_event, '%a %d %b %y').replace('.', '')
+            return three_char_month(date, 2)
+        else:
+            return ''
 
     def get_delivered(self):
         content = self.get_consolidated_content() 
@@ -355,9 +365,7 @@ class TrackerWidget:
                         event_courier = f"{event['courier']}".ljust(courier_w) + ', '
                         
                         day, hour = datetime.strftime(event['date'], '%a %d %b %y, %Hh%M').replace('.', '').split(',')
-                        daytxts = day.split()
-                        daytxts[2] =  daytxts[2][:3] if 'ju' not in daytxts[2] else daytxts[2][:2] + daytxts[2][3:]
-                        day = ' '.join(daytxts)
+                        day = three_char_month(day, 2)
 
                         hour = hour.strip()
                         same_day, previous_day = day == previous_day, day
@@ -410,7 +418,7 @@ class TrackerWidget:
             if elapsed:
                 round_elapsed_days = elapsed.days + (1 if elapsed.seconds >= 43200 else 0)
                 elapsed_color = self.days_colors[bisect(self.days_intervals, round_elapsed_days)]
-                elapsed_txt = f'{round_elapsed_days}' + 'j' if round_elapsed_days <= 100 else ''
+                elapsed_txt = f'{round_elapsed_days}' + ('j' if round_elapsed_days <= 100 else '')
             else:
                 elapsed_color = 'grey70'
                 elapsed_txt = '?'
@@ -532,6 +540,7 @@ class TrackerWidgets:
 
     def show_archives(self, window):
         no_idship = 'Pas de N°'
+
         def get_label(widget, w_idship):
             t = widget.tracker
             color = 'green' if t.get_delivered() else 'red'
