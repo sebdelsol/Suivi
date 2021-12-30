@@ -87,11 +87,12 @@ class Courier:
             
             nb_retry = self.nb_retry
             while True:
+                ok = False
                 try:
                     ok, r = self._get_response(idship)
 
                 except requests.exceptions.Timeout:
-                    _log (f' Timeout for request to {self.long_name} about {idship}', error = True)
+                    _log (f'Timeout request to {self.long_name} for {idship}', error = True)
 
                 if ok or nb_retry <= 0:
                     break
@@ -359,7 +360,7 @@ class GLS(Courier):
                     countries = []
 
                     for  event in history:
-                        label = re.sub(r'.$', '', event['evtDscr'])
+                        label = re.sub(r'\.$', '', event['evtDscr'])
                         address = event['address']
                         
                         countries.append(address['countryCode'])
@@ -486,7 +487,7 @@ class FourPX(Courier):
                                 date = datetime.strptime(f'{date} {hour}', '%Y-%m-%d %H:%M').replace(tzinfo=pytz.utc),
                                 status = status.strip(), 
                                 warn = False, 
-                                label = label.strip()))
+                                label = re.sub('\.$', '', label.strip()) ))
 
             if 'delivered' in label.lower():
                 delivered = True
