@@ -125,6 +125,7 @@ from selenium.webdriver.common.by import By
 import undetected_chromedriver as uc
 import psutil
 import threading
+import random
 
 class SeleniumScrapper(Courier):
     lock = threading.Lock()
@@ -137,8 +138,9 @@ class SeleniumScrapper(Courier):
         options.add_argument('--no-first-run --no-service-autorun --password-store=basic')
         options.add_argument('--excludeSwitches --enable-logging')        
 
-        with self.lock: # can't patch chromedriver @ the same time        
+        with self.lock: # can't patch all chromedrivers @ the same time        
             driver = uc.Chrome(options = options) 
+            
         driver.set_page_load_timeout(self.driver_timeout)
         url = self._get_url_for_browser(idship)
 
@@ -189,6 +191,7 @@ class Cainiao(SeleniumScrapper):
 
             slide = driver.find_element(By.XPATH, '//div[@class="scale_text slidetounlock"]/span')
             action = ActionChains(driver)
+            time.sleep(random.uniform(.1, .4)) # human wait
             action.drag_and_drop_by_offset(slider, slide.size['width'], 0).perform()
 
             _log(f'scrapper wait datas {idship}')
@@ -204,6 +207,7 @@ class Cainiao(SeleniumScrapper):
        
         pairwise = zip(timeline[::2], timeline[1::2])
         for label, date in pairwise:
+            label = re.sub(r'^\W', '', label) # remove non words character at the beginning
             events.append(dict( courier = self.short_name, 
                                 date = get_local_time(date), 
                                 status = '', 
@@ -316,6 +320,62 @@ class MondialRelay(Courier):
 
         return events, dict(delivered = delivered)
 
+#------------------
+class GLS(Courier):
+    short_name = 'gl'
+    long_name = 'GLS'
+
+    def _get_url_for_browser(self, idship):
+        return 'https://gls-group.eu/FR/fr/suivi-colis?'
+
+    def _get_response(self, idship): 
+        url = f'https://gls-group.eu/app/service/open/rest/FR/fr/rstt001?match={idship}'
+        r = requests.get(url, timeout = self.request_timeout)
+        return r.status_code == 200, r
+
+    def _update(self, r): 
+        events = []
+        product = None
+        fromto = None
+        delivered = False
+
+        json = r.json()
+
+        if shipments := json.get('tuStatus'):
+            if len(shipments) > 0:
+                shipment = shipments[0]
+                if infos := shipment.get('infos'):
+                    infos = dict( (info['type'], info) for info in infos)
+                    if product := infos.get('PRODUCT'):
+                        product = product.get('value')
+
+                        if weight := infos.get('WEIGHT'):
+                            product += f" {weight.get('value')}"
+
+                if history := shipment.get('history'):
+                    countries = []
+
+                    for  event in history:
+                        label = re.sub(r'.$', '', event['evtDscr'])
+                        address = event['address']
+                        
+                        countries.append(address['countryCode'])
+                        events.append(dict( courier = self.short_name, 
+                                            date = datetime.strptime(f"{event['date']} {event['time']}", '%Y-%m-%d %H:%M:%S').astimezone(get_localzone()), 
+                                            status = f"{address['city']}, {address['countryName']}", 
+                                            warn = False, 
+                                            label = label))
+
+                        if 'livré' in label.lower():
+                            delivered = True
+
+                    if len(countries) > 0:
+                        fromto = f'{countries[-1]} {Courier.r_arrow}'
+                        if len(countries) > 1:
+                            fromto += countries[0]
+
+        return events, dict(product = product, fromto = fromto, delivered = delivered)
+
 #----------------------
 class LaPoste(Courier):
 
@@ -346,8 +406,6 @@ class LaPoste(Courier):
         DI1 = ('Distribué', False),
         DI2 = ("Distribué à l'expéditeur", True)
     )
-    
-    products = {'Courrier international' : 'Courrier Int.'}
 
     def __init__(self):
         self.headers = {'X-Okapi-Key': self.api_key, 'Accept': 'application/json'}
@@ -367,8 +425,7 @@ class LaPoste(Courier):
         shipment = json.get('shipment')
 
         if shipment:
-            product = shipment.get('product')
-            product = self.products.get(product, product).capitalize()
+            product = shipment.get('product').capitalize()
 
             ctx = shipment.get('contextData')
             fromto = f"{ctx['originCountry']}{Courier.r_arrow}{ctx['arrivalCountry']}"
