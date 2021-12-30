@@ -59,6 +59,7 @@ def edit(title, idship, description, used_couriers, couriers):
             msg.update(text_color = 'red' if disabled else 'green')
 
     couriers_names = couriers.get_names()
+    couriers_names.sort()
     layout = [      [ sg.T('Description', font = (FixFont, 10)), sg.Input(description, font = (FixFont, 10), border_width = 0, key='description') ],
                     [ sg.T('Tracking n°', font = (FixFont, 10)), sg.Input(idship, font = (FixFont, 10), border_width = 0, enable_events = True, key='idship') ] ]
 
