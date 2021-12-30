@@ -481,7 +481,7 @@ class FourPX(Courier):
         timeline = tree.xpath('//div[@class="track-container"]//li')
         for event in timeline:
             date, hour, label = [stxt for txt in event.xpath('.//text()') if (stxt := re.sub(r'[\n\t]', '', txt).strip().replace('\xa0', '')) !='']
-            status, label = label.split('/') if '/' in label else ('', label)
+            status, label = label.split('/', 1) if '/' in label else ('', label)
 
             events.append(dict( courier = self.short_name, 
                                 date = datetime.strptime(f'{date} {hour}', '%Y-%m-%d %H:%M').replace(tzinfo=pytz.utc),
@@ -489,7 +489,7 @@ class FourPX(Courier):
                                 warn = False, 
                                 label = re.sub('\.$', '', label.strip()) ))
 
-            if 'delivered' in label.lower():
+            if 'deliver' in label.lower():
                 delivered = True
 
         return events, dict(delivered = delivered)

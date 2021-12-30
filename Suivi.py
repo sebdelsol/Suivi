@@ -355,6 +355,10 @@ class TrackerWidget:
                         event_courier = f"{event['courier']}".ljust(courier_w) + ', '
                         
                         day, hour = datetime.strftime(event['date'], '%a %d %b %y, %Hh%M').replace('.', '').split(',')
+                        daytxts = day.split()
+                        daytxts[2] =  daytxts[2][:3] if 'ju' not in daytxts[2] else daytxts[2][:2] + daytxts[2][3:]
+                        day = ' '.join(daytxts)
+
                         hour = hour.strip()
                         same_day, previous_day = day == previous_day, day
                         same_hour, previous_hour = hour == previous_hour, hour
@@ -488,7 +492,7 @@ class TrackerWidget:
 
     def archive_or_delete(self, window):
         choices = { 'Archiver': self.archive, 'Supprimer': self.delete }
-        choice = popup.one_choice(choices.keys(), f'{self.tracker.description} {self.tracker.idship}', 'Archiver ou Supprimer ?')
+        choice = popup.one_choice(choices.keys(), f'{self.tracker.description} {self.tracker.idship}')
         if choice:
             choices[choice](window)
 

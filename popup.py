@@ -122,7 +122,7 @@ def choices(choices, title):
     return chosen
 
 #-----------------------------------------
-def one_choice(choices, txt, title):
+def one_choice(choices, title):
     layout = [ [ sg.Radio(choice, group_id = 'choices', font = (VarFont, 15), default= i==0, k = choice)] for i, choice in enumerate(choices) ]
 
     choices_window = MyPopup(title, layout)
