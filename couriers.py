@@ -155,7 +155,7 @@ class Cainiao(SeleniumScrapper):
     long_name = 'Cainiao'
     fromto = f'CN{Courier.r_arrow}FR'
 
-    wait_elt = 20 # s
+    timeout_elt = 20 # s
 
     def _get_url_for_browser(self, idship):
         return f'https://global.cainiao.com/detail.htm?mailNoList={idship}&lang=fr&'
@@ -173,7 +173,7 @@ class Cainiao(SeleniumScrapper):
         if not timeline:
             _log(f'scrapper wait slider {idship}')
             slider_locator = (By.XPATH, '//span[@class="nc_iconfont btn_slide"]')
-            slider = WebDriverWait(driver, self.wait_elt).until(EC.element_to_be_clickable(slider_locator))
+            slider = WebDriverWait(driver, self.timeout_elt).until(EC.element_to_be_clickable(slider_locator))
 
             slide = driver.find_element(By.XPATH, '//div[@class="scale_text slidetounlock"]/span')
             action = ActionChains(driver)
@@ -181,7 +181,7 @@ class Cainiao(SeleniumScrapper):
 
             _log(f'scrapper wait datas {idship}')
             data_locator = (By.XPATH, f'//p[@class="waybill-num"][contains(text(),"{idship}")]')
-            WebDriverWait(driver, self.wait_elt).until(EC.visibility_of_element_located(data_locator))
+            WebDriverWait(driver, self.timeout_elt).until(EC.visibility_of_element_located(data_locator))
             timeline = get_timeline()
 
         return [ p.text for p in timeline ]
