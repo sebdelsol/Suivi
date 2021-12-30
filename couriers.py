@@ -326,7 +326,7 @@ class GLS(Courier):
     long_name = 'GLS'
 
     def _get_url_for_browser(self, idship):
-        return 'https://gls-group.eu/FR/fr/suivi-colis?'
+        return 'https://gls-group.eu/FR/fr/suivi-colis?' # how to add tracking number ??
 
     def _get_response(self, idship): 
         url = f'https://gls-group.eu/app/service/open/rest/FR/fr/rstt001?match={idship}'
@@ -375,6 +375,50 @@ class GLS(Courier):
                             fromto += countries[0]
 
         return events, dict(product = product, fromto = fromto, delivered = delivered)
+
+#----------------------
+class DPD(Courier):
+    short_name = 'dp'
+    long_name = 'DPD'
+
+    def _get_url_for_browser(self, idship):
+        return f'https://trace.dpd.fr/fr/trace/{idship}'
+
+    def _get_response(self, idship): 
+        url = self._get_url_for_browser(idship)
+        r = requests.get(url, timeout = self.request_timeout)
+        return r.status_code == 200, r
+
+    def _update(self, r): 
+        events = []
+        delivered = False
+
+        tree = lxml.html.fromstring(r.content)
+
+        infos = tree.xpath('//ul[@class="tableInfosAR"]//text()')
+        infos = [info for info in infos if (sinfo := info.replace('\n', '').strip()) != '']
+        infos = dict((k, v) for k, v in zip(infos[::2], infos[1::2]))
+        product = 'Colis' 
+        if weight := infos.get('Poids du colis'):
+            product += f' {weight}'
+
+        timeline = tree.xpath('//tr[contains(@id, "ligneTableTrace")]')
+        for evt in timeline:
+            txts = [stxt for txt in evt.xpath('./td//text()') if (stxt := txt.strip()) != '']
+            date, hour, label = txts[:3]
+            label = label.replace('Predict vous informe : \n', '').strip()
+            location = txts[3] if len(txts)==4 else None
+
+            events.append(dict( courier = self.short_name, 
+                                date = datetime.strptime(f'{date} {hour}', '%d/%m/%Y %H:%M').replace(tzinfo=get_localzone()), 
+                                status = location, 
+                                warn = False, 
+                                label = label))
+
+            if 'livré' in label.lower():
+                delivered = True
+
+        return events, dict(product = product, delivered = delivered)
 
 #----------------------
 class LaPoste(Courier):
