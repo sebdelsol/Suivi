@@ -704,8 +704,9 @@ if __name__ == "__main__":
         elif event == 'Archives':
             widgets.show_archives(event_window)
 
+    window.close()
+
     try:
-        window.close()
         trackers.save()
         trackers.clean_couriers()
     except:
