@@ -624,19 +624,14 @@ class TrackerWidgets:
 if __name__ == "__main__":
 
     import sys
+    from fonts import FixFont, FixFontBold, VarFont, VarFontBold
+
     is_debugger = sys.gettrace()
-
-    FixFont = 'Roboto Mono Light'
-    FixFontBold = 'Roboto Mono Bold'
-
-    VarFont = 'Roboto Light'
-    VarFontBold = 'Roboto Bold'
 
     sg.theme('GrayGrayGray')
 
     splash = sg.Window('Suivi...', [[sg.T('Suivi...')]], font=(VarFont, 75), keep_on_top = not is_debugger, no_titlebar = not is_debugger, finalize=True)
 
-    popup.set_font(VarFont, FixFont)
     mylog.set_window(log_font = (FixFont, 7), button_font = (VarFont, 12), no_border = not is_debugger)
 
     trackers = Trackers(TrackersFile) 

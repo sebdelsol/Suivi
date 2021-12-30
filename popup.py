@@ -3,13 +3,7 @@ from mybutton import MyButton
 from couriers import Courier
 import webbrowser
 
-#-------------
-VarFont = None
-FixFont = None 
-
-def set_font(var_font, fix_font):
-    global VarFont, FixFont
-    VarFont, FixFont = var_font, fix_font
+from fonts import FixFont, FixFontBold, VarFont
 
 #-------------
 class MyPopup:
@@ -104,11 +98,21 @@ def edit(title, idship, description, used_couriers, couriers):
 def choices(choices, title):
     max_lines = 15
     
-    chcks =  [ [ sg.CB(f' {choice}', p = 0, font = (FixFont, 9), text_color = color, default = False, k = f'{i}') ] for i, (choice, color) in enumerate(choices) ]
+    selected_font, unselected_font =  (FixFontBold, 9),  (FixFont, 9)
+    text_key = 'choice_desc'
+    chcks = []
+    for i, (choice, color) in enumerate(choices):
+        cb = sg.CB(' ', p = 0, default = False, enable_events = True, k = f'{i}')
+        t = sg.T(f'{choice}', p = 0, font = unselected_font, text_color = color, enable_events = True, k = f'{text_key}{i}') 
+        chcks.append( [cb, t] )
+
     rows = sg.Col(chcks, scrollable = len(chcks) > max_lines, vertical_scroll_only = True)
     layout = [ [ rows ] ]
 
     choices_window = MyPopup(title, layout)
+    
+    for chck in chcks:
+        chck[1].bind('<Button-1>', '')
 
     if rows.Scrollable:
         chck_height = chcks[0][0].get_size()[1]
@@ -118,7 +122,19 @@ def choices(choices, title):
 
     chosen = []
 
-    values = choices_window.loop()
+    def catch_event(window, event, values):
+        if event.isdigit() and int(event) in range(len(choices)):
+            chck_widget = window[f'{text_key}{event}']
+            is_checked = values[event]
+            chck_widget.update(font = selected_font if is_checked else unselected_font)
+
+        elif text_key in event:
+            chck_widget = window[event.replace(text_key, '')]
+            is_checked = not chck_widget.get()
+            chck_widget.update(value = is_checked)
+            window[event].update(font = selected_font if is_checked else unselected_font)
+
+    values = choices_window.loop(catch_event)
     if values:
         chosen = [ int(choice) for choice in values.keys() if values[choice] ]
 
