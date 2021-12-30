@@ -103,6 +103,9 @@ class Courier:
 
             status_date = infos.get('status_date', events[0]['date'] if events else get_local_now())
 
+            if not (events or infos.get('status_label')):
+                ok = False
+
             status = dict(  date = status_date, 
                             ok_date = status_date if ok else None, 
                             label = infos.get('status_label', events[0]['label'] if events else 'Erreur'), 
@@ -419,6 +422,40 @@ class DPD(Courier):
                 delivered = True
 
         return events, dict(product = product, delivered = delivered)
+
+#----------------------
+class NLPost(Courier):
+    short_name = 'nl'
+    long_name = 'NL Post'
+
+    url = 'https://postnl.post/details/'
+
+    def _get_url_for_browser(self, idship):
+        return f'https://postnl.post/tracktrace'
+
+    def _get_response(self, idship): 
+        r = requests.post(self.url, data = dict(barcodes = idship))
+        return r.status_code == 200, r
+
+    def _update(self, r): 
+        events = []
+        delivered = False
+
+        tree = lxml.html.fromstring(r.content)
+        timeline = tree.xpath('//tr[@class="first detail"]') + tree.xpath('//tr[@class="detail"]')
+        for event in timeline:
+            date, label = event.xpath('./td/text()')[:2]
+
+            events.append(dict( courier = self.short_name, 
+                                date = datetime.strptime(date.strip(), '%d-%m-%Y %H:%M').replace(tzinfo=get_localzone()), 
+                                status = '', 
+                                warn = False, 
+                                label = label))
+
+            if 'delivered' in label.lower():
+                delivered = True
+
+        return events, dict(delivered = delivered)
 
 #----------------------
 class LaPoste(Courier):
