@@ -58,6 +58,11 @@ class Courier:
 
     idship_check_pattern, idship_check_msg = get_simple_check(8,20)
 
+    subs = ((r'\.$', ''),               # remove ending .
+            (r' +', ' '),               # remove extra spaces
+            (r'^\W', ''),               # remove leading non alphanumeric char
+            (r'(\w):(\w)', r'\1: \2'))  # add space after : 
+
     def check_idship(self, idship):
         return re.match(self.idship_check_pattern, idship)
 
@@ -112,6 +117,9 @@ class Courier:
             # add couriers
             for event in events:
                 event['courier'] = self.short_name
+                # clean label
+                for sub in self.subs:
+                    event['label'] = re.sub(sub[0], sub[1], event['label'].strip())
 
             status_date = infos.get('status_date', events[0]['date'] if events else get_local_now())
 
@@ -222,13 +230,12 @@ class Cainiao(SeleniumScrapper):
        
         pairwise = zip(timeline[::2], timeline[1::2])
         for label, date in pairwise:
-            label = re.sub(r'^\W', '', label) # remove non words character at the beginning
             events.append(dict( date = parse(date).replace(tzinfo = pytz.utc), 
                                 status = '', 
                                 warn = 'error' in label.lower(), 
                                 label = label))
 
-            if 'delivered' in label.lower():
+            if 'delivered' in label.lower() or 'distribué' in label.lower():
                 delivered = True
 
         return events, dict(delivered = delivered)
@@ -312,9 +319,7 @@ class MondialRelay(Courier):
 
             for event_this_hour in event_by_hours:
                 elts = event_this_hour.xpath('./div/p//text()')
-                hour_text = elts[0]
-                label = elts[1].replace('.', '')
-                
+                hour_text, label = elts[:2]
                 date = datetime.strptime(f'{date_text} {hour_text}', '%d/%m/%Y %H:%M').replace(tzinfo=get_localzone())
                 
                 if 'livré' in label:
@@ -363,7 +368,7 @@ class GLS(Courier):
                     countries = []
 
                     for  event in history:
-                        label = re.sub(r'\.$', '', event['evtDscr'])
+                        label = event['evtDscr']
                         address = event['address']
                         
                         countries.append(address['countryCode'])
@@ -486,7 +491,7 @@ class FourPX(Courier):
             events.append(dict( date = datetime.strptime(f'{date} {hour}', '%Y-%m-%d %H:%M').replace(tzinfo = pytz.utc),
                                 status = status.strip(), 
                                 warn = False, 
-                                label = re.sub('\.$', '', label.strip()) ))
+                                label = label.strip() ))
 
             if 'deliver' in label.lower():
                 delivered = True
@@ -610,8 +615,8 @@ class LaPoste(Courier):
 
 #         for event in timeline:
 #             event_date = get_local_time(event['datetime'])  # event['utcOffset'] ???
-#             event_status = re.sub(' +', ' ', event['location'].replace(self.long_name, '').strip())
-#             event_label = re.sub(' +', ' ', event['status'])
+#             event_status = event['location'].replace(self.long_name, '')
+#             event_label = event['status']
 #             events.append(dict( date = event_date, 
 #                                 status = event_status, 
 #                                 warn = False, 
@@ -776,7 +781,6 @@ class LaPoste(Courier):
 #             if event['courier_id'] in self.courier_ids:
 #                 event_date = get_local_time(event['date'])
 #                 event_label = f"{get_sentence(unescape(event['title']), 1)}"
-#                 event_label = re.sub(r'^\W', '', event_label) # remove non words character at the beginning
 #                 events.append(dict( date = event_date, 
 #                                     status = '', 
 #                                     warn = 'error' in event_label.lower() or 'erreur' in event_label.lower(), 
