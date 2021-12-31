@@ -248,7 +248,7 @@ class TrackerWidget:
 
         self.id_widget = sg.MLine('', p = 0, font = (FixFont, 9), disabled = True, border_width = 0, no_scrollbar = True, background_color = bg_color_h, expand_x = True, justification = 'r', visible = False)
         self.couriers_widget = sg.MLine('', p = 0, font = (FixFont, self.courier_fsize), disabled = True, border_width = 0, no_scrollbar = True, background_color = bg_color_h, expand_x = True, justification = 'r', visible = False)
-        self.updating_widget = sg.T('', p = 0, font = (VarFont, 15), visible = True, text_color = 'red', background_color = bg_color, k = lambda w : self.toggle_expand(w))
+        self.updating_widget = sg.T('', p = 0, font = (VarFontBold, 15), visible = True, text_color = 'red', background_color = bg_color, k = lambda w : self.toggle_expand(w))
         self.status_widget = sg.T('', p = 0, font = (VarFont, 15), expand_x = True, background_color = bg_color, k = lambda w : self.toggle_expand(w))
         self.ago_widget = sg.T('', p = 0, font = (VarFont, 15), expand_x = False, background_color = bg_color, text_color = 'grey50', k = lambda w : self.toggle_expand(w))
         self.events_widget = sg.MLine('', p = ((5, 5), (0, 5)), font = self.events_f, visible = False, disabled = True, border_width = 0, background_color = bg_color, no_scrollbar = True, s = (None, 1), expand_x = True, k = self.toggle_expand)
@@ -319,7 +319,7 @@ class TrackerWidget:
             for button in  self.buttons:
                 button.update(disabled = True)
 
-            self.updating_widget.update('Mise à jour...')
+            self.updating_widget.update(' En cours de mise à jour...')
 
             threading.Thread(target = self.update_thread, args = (window,), daemon = True).start()
             # self.update_thread(window) 
