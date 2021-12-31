@@ -52,6 +52,11 @@ class MyButton(sg.Button):
         for event, bind in MyButton.binds.items():
             self.bind(bind, f'{event}')            
     
+    def update(self, *args, **kwargs):
+        if kwargs.get('disabled') is False:
+            kwargs['button_color'] = self.colors.get('leave')
+        super().update(*args, **kwargs)
+
     def mouseover(self, event):
         if self.Disabled:
             event = 'leave'
