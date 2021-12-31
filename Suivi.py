@@ -5,12 +5,14 @@ import traceback
 import threading
 import queue
 import os
+import re
 import copy
 import PySimpleGUI as sg
 import pickle as pickle
 import timeago
 from datetime import datetime
 from bisect import bisect
+import textwrap
 import locale
 locale.setlocale(locale.LC_ALL, 'fr_FR.utf8') # date in French
 
@@ -215,7 +217,8 @@ class TrackerWidget:
     days_intervals = [10, 20, 30]
     days_colors = ['green', 'dark orange', 'red', 'black']
 
-    layout_pad = 10
+    layout_pad = 10 # pixels
+    max_event_width = 110 # chars
 
     def __init__(self, tracker):
         self.tracker = tracker
@@ -365,7 +368,7 @@ class TrackerWidget:
                     previous_hour = None
 
                     for i, event in enumerate(events):
-                        event_courier = f"{event['courier']}".ljust(courier_w) + ', '
+                        event_courier = f"{event['courier'].ljust(courier_w)}. "
                         
                         day, hour = datetime.strftime(event['date'], '%a %d %b %y, %Hh%M').replace('.', '').split(',')
                         day = three_char_month(day, 2)
@@ -381,12 +384,15 @@ class TrackerWidget:
                         event_date = f"{day}{' ' if same_day else ','} {hour}{' ' if same_hour and same_day else ','} "
 
                         event_status = f"{event['status']}, " if event['status'] else ''
-                        event_label = f"{event['label']}."
-                        event_warn = event.get('warn')
+                        event_label = f"{event['label']}.".capitalize()
 
-                        # if not event_status:
-                        #     words = re.split(r'(\s)', event_label) # re.split(r'((?!^)\W)', event_label)
-                        #     event_status, event_label = (words[0], ''.join(words[1:])) if len(words) > 1 else (event_label, '')
+                        if event_label and not event_status:
+                            words = re.split(r'(\s)', event_label) # re.split(r'((?!^)\W)', event_label)
+                            event_status, event_label = (words[0], ''.join(words[1:])) if len(words) > 1 else (event_label, '')
+
+                        event_labels = textwrap.wrap(event_label, self.max_event_width - len(event_status))
+
+                        event_warn = event.get('warn')
                         
                         event_new, f = ('(new) ', self.events_fb) if event.get('new') else ('', self.events_f)
 
@@ -394,9 +400,14 @@ class TrackerWidget:
                         self.events_widget.print(event_courier, font = f, autoscroll = False, t = 'grey75', end = '')
                         self.events_widget.print(event_new, font = f, autoscroll = False, t = 'black', end = '')
                         self.events_widget.print(event_status, font = self.events_fb if event_warn else f, autoscroll = False, t = 'red' if event_warn else 'black', end = '')
-                        self.events_widget.print(event_label, font = f, autoscroll = False, t = 'red' if event_warn else 'grey50', end = '\n' if i+1 < len(events) else '')
+
+                        width = sum( len(txt) for txt in (event_courier, event_date, event_new) )
+
+                        for j, event_label in enumerate(event_labels):
+                            spaces = ' '* width if j > 0 else ''
+                            self.events_widget.print(f'{spaces}{event_label}', font = f, autoscroll = False, t = 'red' if event_warn else 'grey50')
                         
-                        width = sum(len(txt) for txt in (event_courier, event_date, event_new, event_status, event_label))
+                        width += sum( len(txt) for txt in (event_status, event_labels[0]) )
                         width_events = max(width, width_events)
 
                 self.width_events = width_events
