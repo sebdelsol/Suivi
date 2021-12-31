@@ -319,9 +319,7 @@ class TrackerWidget:
     def update(self, window):
         if self.tracker.state == 'ok' and self.lock.acquire(blocking = False):
 
-            for button in  self.buttons:
-                button.update(disabled = True)
-
+            self.disable_buttons(True)
             self.updating_widget.update(' En cours de mise à jour...')
 
             threading.Thread(target = self.update_thread, args = (window,), daemon = True).start()
@@ -346,9 +344,7 @@ class TrackerWidget:
 
     def update_done(self):
         self.updating_widget.update('')
-
-        for button in  self.buttons:
-            button.update(disabled = False)
+        self.disable_buttons(False)
 
     def show(self, content, window):
         if self.tracker.state == 'ok':
@@ -497,13 +493,20 @@ class TrackerWidget:
         else:
             self.couriers_widget.update('Pas de trackers', text_color = 'red')
 
-    def edit(self, window):
-        idship, description, used_couriers = popup.edit('Édition', self.tracker.idship, self.tracker.description, self.tracker.used_couriers, self.tracker.available_couriers)
+    def disable_buttons(self, disabled):
+        for button in  self.buttons:
+            button.update(disabled = disabled)
 
+    def edit(self, window):
+        self.disable_buttons(True)
+
+        idship, description, used_couriers = popup.edit('Édition', self.tracker.idship, self.tracker.description, self.tracker.used_couriers, self.tracker.available_couriers)
         if idship is not None:
             self.tracker.set_id(idship, description, used_couriers)
             self.reset_size()
             self.update(window)
+
+        self.disable_buttons(False)
 
     def set_state(self, state, action_name, window, ask, visible):
         if not ask or popup.warning(action_name.capitalize(), self.tracker.description):
@@ -517,10 +520,14 @@ class TrackerWidget:
                 self.lock.release()
 
     def archive_or_delete(self, window):
+        self.disable_buttons(True)
+
         choices = { 'Archiver': self.archive, 'Supprimer': self.delete }
         choice = popup.one_choice(choices.keys(), f'{self.tracker.description} {self.tracker.idship}')
         if choice:
             choices[choice](window)
+
+        self.disable_buttons(False)
 
     def delete(self, window):
         self.set_state('deleted', 'Supprimer', window, ask = True, visible = False)
