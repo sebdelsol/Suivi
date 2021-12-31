@@ -378,7 +378,6 @@ class TrackerWidget:
                                 hour = ' ' * len(previous_hour)
 
                         event_date = f"{day}{' ' if same_day else ','} {hour}{' ' if same_hour and same_day else ','} "
-
                         event_status = f"{event['status']}, " if event['status'] else ''
                         event_label = f"{event['label']}.".capitalize()
 
@@ -387,13 +386,11 @@ class TrackerWidget:
                             event_status, event_label = (words[0], ''.join(words[1:])) if len(words) > 1 else (event_label, '')
 
                         event_labels = textwrap.wrap(event_label, self.max_event_width - len(event_status))
-
                         event_warn = event.get('warn')
-                        
                         event_new, f = ('(new) ', self.events_fb) if event.get('new') else ('', self.events_f)
 
                         self.events_widget.print(event_date, font = f, autoscroll = False, t = 'grey', end = '')
-                        self.events_widget.print(event_courier, font = f, autoscroll = False, t = 'grey75', end = '')
+                        self.events_widget.print(event_courier, font = f, autoscroll = False, t = 'light slate blue', end = '')
                         self.events_widget.print(event_new, font = f, autoscroll = False, t = 'black', end = '')
                         self.events_widget.print(event_status, font = self.events_fb if event_warn else f, autoscroll = False, t = 'red' if event_warn else 'black', end = '')
 
