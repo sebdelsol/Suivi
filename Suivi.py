@@ -480,7 +480,7 @@ class TrackerWidget:
                 
                 self.couriers_widget.print(f'{spaces}{ago}', autoscroll = False, t = 'grey60', end = '')
                 self.couriers_widget.print(' ⟳ ', autoscroll = False, t = 'grey55', font = (FixFont, self.courier_fsize), end = '')
-                self.couriers_widget.print(f'{name.rjust(w_name)}', autoscroll = False, t = error_color, end = '')
+                self.couriers_widget.print(f'{name.center(w_name)} ', autoscroll = False, t = error_color, end = '')
                 self.couriers_widget.print(f'{error_chr}', autoscroll = False, t = error_color, font = (VarFont, self.courier_fsize), end = ''  if end else '\n')
         
         else:
