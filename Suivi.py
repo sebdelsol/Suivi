@@ -378,8 +378,10 @@ class TrackerWidget:
                                 hour = ' ' * len(previous_hour)
 
                         event_date = f"{day}{' ' if same_day else ','} {hour}{' ' if same_hour and same_day else ','} "
-                        event_status = f"{event['status']}, " if event['status'] else ''
-                        event_label = f"{event['label']}.".capitalize()
+                        event_status = f"{event['status'].capitalize()}, " if event['status'] else ''
+                        event_label = f"{event['label']}."
+                        if event_label:
+                            event_label = event_label.capitalize() if not event_status else (event_label[0].lower() + event_label[1:])
 
                         if event_label and not event_status:
                             words = re.split(r'(\s)', event_label) # re.split(r'((?!^)\W)', event_label)
