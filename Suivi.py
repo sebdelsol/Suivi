@@ -307,7 +307,7 @@ class TrackerWidget:
         txt = self.id_widget.get()
         w = max(len(txt), max(len(t) for t in txts))
 
-        self.couriers_widget.set_size((w, len(txts)))
+        self.couriers_widget.set_size((w+1, len(txts)))
         self.id_widget.set_size((w, 1))
 
     def show_current_content(self, window):
@@ -476,11 +476,11 @@ class TrackerWidget:
                 date, error = couriers_update[name]
                 end = i+1 == len(couriers_update)
                 ago = f" {timeago.format(date, get_local_now(), 'fr').replace('il y a', '').strip()}" if date else ' jamais'
-                error_chr, error_color = (' ❗', 'red') if error else ('✔', 'green')
+                error_chr, error_color, name_font = (' ❗', 'red', (FixFontBold, self.courier_fsize)) if error else ('✔', 'green', None)
                 
                 self.couriers_widget.print(f'{spaces}{ago}', autoscroll = False, t = 'grey60', end = '')
                 self.couriers_widget.print(' ⟳ ', autoscroll = False, t = 'grey55', font = (FixFont, self.courier_fsize), end = '')
-                self.couriers_widget.print(f'{name.center(w_name)} ', autoscroll = False, t = error_color, end = '')
+                self.couriers_widget.print(f'{name.center(w_name)} ', autoscroll = False, t = error_color, font = name_font, end = '')
                 self.couriers_widget.print(f'{error_chr}', autoscroll = False, t = error_color, font = (VarFont, self.courier_fsize), end = ''  if end else '\n')
         
         else:
