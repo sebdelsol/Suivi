@@ -527,11 +527,10 @@ class LaPoste(Courier):
                 if code in ('DI1', 'DI2'):
                     delivered = True
 
-                date = get_local_time(event['date'])
                 status, warn = self.codes.get(code, '?')
                 label = f"{get_sentence(event['label'], 1)}"
 
-                events.append(dict( date = get_local_time(event['date']), status = status, warn = False, label = label))
+                events.append(dict(date = get_local_time(event['date']), status = status, warn = warn, label = label))
 
             status_warn = events[-1]['warn'] if events else False
             return events, dict(product = product, fromto = fromto, delivered = delivered, status_warn = status_warn, status_label = status_label.replace('.', ''))
