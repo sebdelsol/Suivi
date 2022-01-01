@@ -391,6 +391,8 @@ class TrackerWidget:
                             # event_status, event_label = (words[0], ''.join(words[1:])) if len(words) > 1 else (event_label, '')
 
                         event_warn = event.get('warn')
+                        event_delivered = event.get('delivered')
+                        event_color ='red' if event_warn else ('green' if event_delivered else None)
                         event_new, f = ('(new) ', self.events_fb) if event.get('new') else ('', self.events_f)
 
                         width = sum( len(txt) for txt in (event_courier, event_date, event_new) )
@@ -399,9 +401,9 @@ class TrackerWidget:
                         self.events_widget.print(event_date, font = f, autoscroll = False, t = 'grey', end = '')
                         self.events_widget.print(event_courier, font = f, autoscroll = False, t = 'light slate blue', end = '')
                         self.events_widget.print(event_new, font = f, autoscroll = False, t = 'black', end = '')
-                        self.events_widget.print(event_status, font = self.events_fb if event_warn else f, autoscroll = False, t = 'red' if event_warn else 'black', end = '')
+                        self.events_widget.print(event_status, font = self.events_fb if event_warn or event_delivered else f, autoscroll = False, t = event_color or 'black', end = '')
                         for event_label in event_labels:
-                            self.events_widget.print(event_label, font = f, autoscroll = False, t = 'red' if event_warn else 'grey50')
+                            self.events_widget.print(event_label, font = f, autoscroll = False, t = event_color or 'grey50')
                         
                         width += sum( len(txt) for txt in (event_status, event_labels[0]) )
                         width_events = max(width, width_events)

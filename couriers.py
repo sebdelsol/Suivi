@@ -58,6 +58,9 @@ class Courier:
 
     idship_check_pattern, idship_check_msg = get_simple_check(8,20)
 
+    delivered_words = ('delivered', 'final delivery', 'livré', 'distribué')
+    error_words = ('error', 'erreur')
+
     subs = ((r'\.$', ''),               # remove ending .
             (r' +', ' '),               # remove extra spaces
             (r'^\W', ''),               # remove leading non alphanumeric char
@@ -114,12 +117,20 @@ class Courier:
             # sort by date
             events.sort(key = lambda evt : evt['date'], reverse = True)
             
-            # add couriers
+            # add couriers and check for delivery & errors events
+            delivered = infos.get('delivered', False)
             for event in events:
                 event['courier'] = self.short_name
                 # clean label
                 for sub in self.subs:
                     event['label'] = re.sub(sub[0], sub[1], event['label'].strip())
+                
+                event['delivered'] = event.get('delivered', False) or any(delivered_word in event['label'].lower() for delivered_word in self.delivered_words)
+                if event['delivered']:
+                    delivered = True
+
+                event['warn'] = event.get('warn', False) or any(error_word in event['label'].lower() for error_word in self.error_words)
+                event['status'] = event.get('status', '')
 
             status_date = infos.get('status_date', events[0]['date'] if events else get_local_now())
 
@@ -130,7 +141,7 @@ class Courier:
                             ok_date = status_date if ok else None, 
                             label = infos.get('status_label', events[0]['label'] if events else 'Erreur'), 
                             warn = infos.get('status_warn', False if events else True), 
-                            delivered = infos.get('delivered', False))
+                            delivered = delivered)
 
             return dict(ok = ok, 
                         product = infos.get('product', self.product), 
@@ -226,19 +237,12 @@ class Cainiao(SeleniumScrapper):
   
     def _update(self, timeline): 
         events = []
-        delivered = False
        
         pairwise = zip(timeline[::2], timeline[1::2])
         for label, date in pairwise:
-            events.append(dict( date = parse(date).replace(tzinfo = pytz.utc), 
-                                status = '', 
-                                warn = 'error' in label.lower(), 
-                                label = label))
+            events.append(dict(date = parse(date).replace(tzinfo = pytz.utc), label = label))
 
-            if 'delivered' in label.lower() or 'distribué' in label.lower():
-                delivered = True
-
-        return events, dict(delivered = delivered)
+        return events, {}
 
 #---------------------------
 class Asendia(Courier):
@@ -260,7 +264,6 @@ class Asendia(Courier):
 
     def _update(self, r): 
         events = []
-        delivered = False
        
         timeline = r.json()[0]['events']
         for event in timeline:
@@ -274,17 +277,11 @@ class Asendia(Courier):
                 if country not in location:
                     location = ', '.join((location, country))
 
-                if 'Livré' in label:
-                    delivered = True
-
                 date = datetime.utcfromtimestamp(event['date']/1000).replace(tzinfo = pytz.utc)
 
-                events.append(dict( date = date, 
-                                    status = location, 
-                                    warn = False, 
-                                    label = label))
+                events.append(dict(date = date, status = location, label = label))
 
-        return events, dict(delivered = delivered)
+        return events, {}
 
 #----------------------
 class MondialRelay(Courier):
@@ -307,7 +304,6 @@ class MondialRelay(Courier):
 
     def _update(self, r): 
         events = []
-        delivered = False
         
         tree = lxml.html.fromstring(r.content)
         event_by_days = tree.xpath('//div[@class="infos-account"]')
@@ -322,15 +318,9 @@ class MondialRelay(Courier):
                 hour_text, label = elts[:2]
                 date = datetime.strptime(f'{date_text} {hour_text}', '%d/%m/%Y %H:%M').replace(tzinfo=get_localzone())
                 
-                if 'livré' in label:
-                    delivered = True
+                events.append(dict(date = date, label = label))
 
-                events.append(dict( date = date, 
-                                    status = '', 
-                                    warn = False, 
-                                    label = label))
-
-        return events, dict(delivered = delivered)
+        return events, {}
 
 #------------------
 class GLS(Courier):
@@ -349,7 +339,6 @@ class GLS(Courier):
         events = []
         product = None
         fromto = None
-        delivered = False
 
         json = r.json()
 
@@ -372,20 +361,16 @@ class GLS(Courier):
                         address = event['address']
                         
                         countries.append(address['countryCode'])
-                        events.append(dict( date = datetime.strptime(f"{event['date']} {event['time']}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=get_localzone()), 
-                                            status = f"{address['city']}, {address['countryName']}", 
-                                            warn = False, 
-                                            label = label))
-
-                        if 'livré' in label.lower():
-                            delivered = True
+                        events.append(dict(date = datetime.strptime(f"{event['date']} {event['time']}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=get_localzone()), 
+                                           status = f"{address['city']}, {address['countryName']}", 
+                                           label = label))
 
                     if len(countries) > 0:
                         fromto = f'{countries[-1]} {Courier.r_arrow}'
                         if len(countries) > 1:
                             fromto += countries[0]
 
-        return events, dict(product = product, fromto = fromto, delivered = delivered)
+        return events, dict(product = product, fromto = fromto)
 
 #----------------------
 class DPD(Courier):
@@ -402,7 +387,6 @@ class DPD(Courier):
 
     def _update(self, r): 
         events = []
-        delivered = False
 
         tree = lxml.html.fromstring(r.content)
 
@@ -420,15 +404,10 @@ class DPD(Courier):
             label = label.replace('Predict vous informe : \n', '').strip()
             location = txts[3] if len(txts)==4 else None
 
-            events.append(dict( date = datetime.strptime(f'{date} {hour}', '%d/%m/%Y %H:%M').replace(tzinfo=get_localzone()), 
-                                status = location, 
-                                warn = False, 
-                                label = label))
+            events.append(dict(date = datetime.strptime(f'{date} {hour}', '%d/%m/%Y %H:%M').replace(tzinfo=get_localzone()), 
+                               status = location, label = label))
 
-            if 'livré' in label.lower():
-                delivered = True
-
-        return events, dict(product = product, delivered = delivered)
+        return events, dict(product = product)
 
 #----------------------
 class NLPost(Courier):
@@ -446,22 +425,15 @@ class NLPost(Courier):
 
     def _update(self, r): 
         events = []
-        delivered = False
 
         tree = lxml.html.fromstring(r.content)
         timeline = tree.xpath('//tr[@class="first detail"]') + tree.xpath('//tr[@class="detail"]')
         for event in timeline:
             date, label = event.xpath('./td/text()')[:2]
 
-            events.append(dict( date = datetime.strptime(date.strip(), '%d-%m-%Y %H:%M').replace(tzinfo=get_localzone()), 
-                                status = '', 
-                                warn = False, 
-                                label = label))
+            events.append(dict(date = datetime.strptime(date.strip(), '%d-%m-%Y %H:%M').replace(tzinfo=get_localzone()), label = label))
 
-            if 'delivered' in label.lower():
-                delivered = True
-
-        return events, dict(delivered = delivered)
+        return events, {}
 
 #----------------------
 class FourPX(Courier):
@@ -480,7 +452,6 @@ class FourPX(Courier):
 
     def _update(self, r): 
         events = []
-        delivered = False
 
         tree = lxml.html.fromstring(r.content)
         timeline = tree.xpath('//div[@class="track-container"]//li')
@@ -488,15 +459,10 @@ class FourPX(Courier):
             date, hour, label = [stxt for txt in event.xpath('.//text()') if (stxt := re.sub(r'[\n\t]', '', txt).strip().replace('\xa0', '')) !='']
             status, label = label.split('/', 1) if '/' in label else ('', label)
 
-            events.append(dict( date = datetime.strptime(f'{date} {hour}', '%Y-%m-%d %H:%M').replace(tzinfo = pytz.utc),
-                                status = status.strip(), 
-                                warn = False, 
-                                label = label.strip() ))
-
-            if 'deliver' in label.lower():
-                delivered = True
-
-        return events, dict(delivered = delivered)
+            events.append(dict(date = datetime.strptime(f'{date} {hour}', '%Y-%m-%d %H:%M').replace(tzinfo = pytz.utc),
+                               status = status.strip(), label = label.strip() ))
+            
+        return events, {} 
 
 #----------------------
 class LaPoste(Courier):
@@ -565,10 +531,7 @@ class LaPoste(Courier):
                 status, warn = self.codes.get(code, '?')
                 label = f"{get_sentence(event['label'], 1)}"
 
-                events.append(dict( date = get_local_time(event['date']), 
-                                    status = status, 
-                                    warn = warn or 'erreur' in label.lower(), 
-                                    label = label))
+                events.append(dict( date = get_local_time(event['date']), status = status, warn = False, label = label))
 
             status_warn = events[-1]['warn'] if events else False
             return events, dict(product = product, fromto = fromto, delivered = delivered, status_warn = status_warn, status_label = status_label.replace('.', ''))
