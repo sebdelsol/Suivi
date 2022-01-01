@@ -506,7 +506,7 @@ class TrackerWidget:
     def edit(self, window):
         self.disable_buttons(True)
 
-        idship, description, used_couriers = popup.edit('Édition', self.tracker.idship, self.tracker.description, self.tracker.used_couriers, self.tracker.available_couriers)
+        idship, description, used_couriers = popup.edit('Édition', self.tracker.idship, self.tracker.description, self.tracker.used_couriers, self.tracker.available_couriers, not is_debugger)
         if idship is not None:
             self.tracker.set_id(idship, description, used_couriers)
             self.reset_size()
@@ -515,7 +515,7 @@ class TrackerWidget:
         self.disable_buttons(False)
 
     def set_state(self, state, action_name, window, ask, visible):
-        if not ask or popup.warning(action_name.capitalize(), self.tracker.description):
+        if not ask or popup.warning(action_name.capitalize(), self.tracker.description, not is_debugger):
             if self.lock.acquire(blocking=False): # needed ?
                 self.tracker.state = state
 
@@ -529,7 +529,7 @@ class TrackerWidget:
         self.disable_buttons(True)
 
         choices = { 'Archiver': self.archive, 'Supprimer': self.delete }
-        choice = popup.one_choice(choices.keys(), f'{self.tracker.description} {self.tracker.idship}')
+        choice = popup.one_choice(choices.keys(), f'{self.tracker.description} {self.tracker.idship}', not is_debugger)
         if choice:
             choices[choice](window)
 
@@ -582,7 +582,7 @@ class TrackerWidgets:
 
         w_idship = max(len(widget.tracker.idship.strip() or no_idship) for widget in archived)
         choices = [get_label(widget, w_idship) for widget in archived]
-        chosen = popup.choices(choices, 'Désarchiver')
+        chosen = popup.choices(choices, 'Désarchiver', not is_debugger)
 
         for i in chosen:
             widget = archived[i]
@@ -732,7 +732,7 @@ if __name__ == "__main__":
             mylog.move_left_to(window)
 
         elif event == 'Nouveau':
-            tracker_params = popup.edit('Nouveau', '', 'Nouveau', [], trackers.couriers)
+            tracker_params = popup.edit('Nouveau', '', 'Nouveau', [], trackers.couriers, not is_debugger)
             tracker = trackers.new(*tracker_params)
             if tracker:
                 widgets.create_widget(event_window, tracker)

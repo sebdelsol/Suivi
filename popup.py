@@ -7,7 +7,7 @@ from fonts import FixFont, FixFontBold, VarFont
 
 #-------------
 class MyPopup:
-    def __init__(self, title, body_layout):
+    def __init__(self, title, body_layout, no_border = True):
         layout =      [ [ sg.T(title, font = (FixFont, 20)) ],
                         [ sg.HorizontalSeparator() ] ]
         
@@ -18,7 +18,7 @@ class MyPopup:
                           MyButton('Cancel', font = (VarFont, 12), button_color = 'grey80', mouseover_color = 'grey95')] )
 
         layout = [ [ sg.Frame('', [[sg.Col(layout, p = 10)]], p = 0, border_width = 3, relief = sg.RELIEF_SOLID) ] ]
-        self.window = sg.Window('', layout, margins = (0, 0), modal = True, grab_anywhere = True, keep_on_top = True, no_titlebar = True, return_keyboard_events = True, finalize = True)
+        self.window = sg.Window('', layout, margins = (0, 0), modal = True, grab_anywhere = True, keep_on_top = no_border, no_titlebar = no_border, return_keyboard_events = True, finalize = True)
         
         MyButton.finalize_all(self.window)
 
@@ -43,7 +43,7 @@ class MyPopup:
         del self.window
 
 #------------------------------------------------------------------------------
-def edit(title, idship, description, used_couriers, couriers):
+def edit(title, idship, description, used_couriers, couriers, no_border):
 
     def update_idship_widgets(idship):
         for msg, button in idship_widgets:
@@ -69,7 +69,7 @@ def edit(title, idship, description, used_couriers, couriers):
         idship_widgets.append((msg, button))
         layout.append([cb, msg, button])
 
-    edit_window = MyPopup(title, layout)
+    edit_window = MyPopup(title, layout, no_border)
     update_idship_widgets(idship)
 
     idship, description = None, None
@@ -95,7 +95,7 @@ def edit(title, idship, description, used_couriers, couriers):
     return idship, description, used_couriers
 
 #--------------------------------------
-def choices(choices, title):
+def choices(choices, title, no_border):
     max_lines = 15
     
     selected_font, unselected_font =  (FixFontBold, 9),  (FixFont, 9)
@@ -109,7 +109,7 @@ def choices(choices, title):
     rows = sg.Col(chcks, scrollable = len(chcks) > max_lines, vertical_scroll_only = True)
     layout = [ [ rows ] ]
 
-    choices_window = MyPopup(title, layout)
+    choices_window = MyPopup(title, layout, no_border)
     
     for chck in chcks:
         chck[1].bind('<Button-1>', '')
@@ -142,10 +142,10 @@ def choices(choices, title):
     return chosen
 
 #-----------------------------------------
-def one_choice(choices, title):
+def one_choice(choices, title, no_border):
     layout = [ [ sg.Radio(choice, group_id = 'choices', font = (VarFont, 15), default= i==0, k = choice)] for i, choice in enumerate(choices) ]
 
-    choices_window = MyPopup(title, layout)
+    choices_window = MyPopup(title, layout, no_border)
 
     choice = None
 
@@ -158,9 +158,9 @@ def one_choice(choices, title):
     return choice
 
 #------------------------
-def warning(title, text):
+def warning(title, text, no_border):
     layout = [ [ sg.Image(filename = 'icon/warn.png'), sg.T(text, font = (VarFont, 15)) ] ]
-    warning_window = MyPopup(title, layout)
+    warning_window = MyPopup(title, layout, no_border)
 
     ok = False
 
