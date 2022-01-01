@@ -383,24 +383,25 @@ class TrackerWidget:
                         if event_label:
                             event_label = event_label.capitalize() if not event_status else (event_label[0].lower() + event_label[1:])
 
+                        # create a fake status if missing with firstwords of label
                         if event_label and not event_status:
-                            words = re.split(r'(\s)', event_label) # re.split(r'((?!^)\W)', event_label)
-                            event_status, event_label = (words[0], ''.join(words[1:])) if len(words) > 1 else (event_label, '')
+                            wrap = textwrap.wrap(event_label, 25)
+                            event_status, event_label = (wrap[0]+ ' ', ' '.join(wrap[1:]))  if len(wrap) > 1 else (event_label, '')
+                            # words = re.split(r'(\s)', event_label) # re.split(r'((?!^)\W)', event_label)
+                            # event_status, event_label = (words[0], ''.join(words[1:])) if len(words) > 1 else (event_label, '')
 
-                        event_labels = textwrap.wrap(event_label, self.max_event_width - len(event_status))
                         event_warn = event.get('warn')
                         event_new, f = ('(new) ', self.events_fb) if event.get('new') else ('', self.events_f)
+
+                        width = sum( len(txt) for txt in (event_courier, event_date, event_new) )
+                        event_labels = textwrap.wrap(event_label, self.max_event_width - len(event_status), subsequent_indent = ' '* width) or ['']
 
                         self.events_widget.print(event_date, font = f, autoscroll = False, t = 'grey', end = '')
                         self.events_widget.print(event_courier, font = f, autoscroll = False, t = 'light slate blue', end = '')
                         self.events_widget.print(event_new, font = f, autoscroll = False, t = 'black', end = '')
                         self.events_widget.print(event_status, font = self.events_fb if event_warn else f, autoscroll = False, t = 'red' if event_warn else 'black', end = '')
-
-                        width = sum( len(txt) for txt in (event_courier, event_date, event_new) )
-
-                        for j, event_label in enumerate(event_labels):
-                            spaces = ' '* width if j > 0 else ''
-                            self.events_widget.print(f'{spaces}{event_label}', font = f, autoscroll = False, t = 'red' if event_warn else 'grey50')
+                        for event_label in event_labels:
+                            self.events_widget.print(event_label, font = f, autoscroll = False, t = 'red' if event_warn else 'grey50')
                         
                         width += sum( len(txt) for txt in (event_status, event_labels[0]) )
                         width_events = max(width, width_events)
