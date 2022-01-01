@@ -5,7 +5,6 @@ import traceback
 import threading
 import queue
 import os
-import re
 import copy
 import PySimpleGUI as sg
 import pickle as pickle
@@ -59,6 +58,7 @@ class Tracker:
         self.available_couriers = available_couriers
         self.critical = threading.Lock()
         self.couriers_error = {}
+        self.couriers_updating = {}
 
         self.set_current_events()
 
@@ -78,6 +78,12 @@ class Tracker:
             event['new'] = frozenset(event.items()) not in self.current_events
         return copy_events
 
+    def prepare_update(self):
+        for courier_name in self.used_couriers:
+            with self.critical:
+                self.couriers_error[courier_name] = True
+                self.couriers_updating[courier_name] = True
+
     def update(self):
         content_queue = queue.Queue()
         for courier_name in self.used_couriers:
@@ -96,6 +102,7 @@ class Tracker:
                         self.contents[courier_name] = new_content
 
                 self.couriers_error[courier_name] = not(new_content and new_content['ok'])
+                self.couriers_updating[courier_name] = False
 
             yield self.get_consolidated_content()
 
@@ -130,17 +137,22 @@ class Tracker:
                 delivered = consolidated['status'].get('delivered')
                 consolidated['elapsed'] = events and (events[0]['date'] if delivered else get_local_now()) - events[-1]['date']
             
+        consolidated['courier_update'] = self.get_courrier_update()
+        
+        return consolidated
+    
+    def get_courrier_update(self):
+        with self.critical:
             couriers_update = {}
             for courier_name in self.used_couriers:
                 content = self.contents.get(courier_name)
                 ok_date = content.get('status',{}).get('ok_date') if content else None
                 error = self.couriers_error.get(courier_name, True)
-                couriers_update[courier_name] = (ok_date, error)
+                updating = self.couriers_updating.get(courier_name, False)
+                couriers_update[courier_name] = (ok_date, error, updating)
 
-            consolidated['courier_update'] = couriers_update
-            
-            return consolidated
-    
+            return couriers_update
+
     def get_last_event(self):
         content = self.get_consolidated_content() or {}
         return content.get('status', {}).get('date', get_local_now())
@@ -310,21 +322,32 @@ class TrackerWidget:
         h = min(nb_events_shown, self.height_events)
         self.events_widget.set_size((w, h))
 
+        self.update_couriers_id_size()
+
+    def update_couriers_id_size(self):
         txts = [t for t in self.couriers_widget.get().split('\n')]
         txt = self.id_widget.get()
-        w = max(len(txt), max(len(t) for t in txts))
+        w = max(len(txt), max(len(t) + 1 for t in txts))
 
-        self.couriers_widget.set_size((w+1, len(txts)))
+        self.couriers_widget.set_size((w, len(txts)))
         self.id_widget.set_size((w, 1))
 
     def show_current_content(self, window):
         self.show(self.tracker.get_consolidated_content(), window)
+
+    def show_current_courier_widget(self):
+        couriers_update = self.tracker.get_courrier_update()
+        self.show_couriers(couriers_update)
+        self.update_couriers_id_size()
 
     def update(self, window):
         if self.tracker.state == 'ok' and self.lock.acquire(blocking = False):
 
             self.disable_buttons(True)
             self.updating_widget.update(' En cours de mise à jour...')
+            
+            self.tracker.prepare_update()
+            self.show_current_courier_widget()
 
             threading.Thread(target = self.update_thread, args = (window,), daemon = True).start()
             # self.update_thread(window) 
@@ -426,9 +449,10 @@ class TrackerWidget:
                 self.height_events = 0
                 self.status_widget.update('Status inconnu', text_color = 'red')
 
-            spaces = ' ' * 2
-            self.show_id(content, spaces)
-            self.show_couriers(content, spaces)
+            self.show_id(content)
+
+            couriers_update = (content or {}).get('courier_update')
+            self.show_couriers(couriers_update)
 
             elapsed = content.get('elapsed') if content else None
             if elapsed:
@@ -462,35 +486,39 @@ class TrackerWidget:
 
             trigger_event(window, '-UPDATE WIDGETS SIZE-', '')
 
-    def show_id(self, content, spaces):
+    def show_id(self, content):
         self.id_widget.update('') 
 
         # fromto = content and content.get('fromto')
         # fromto = f'{fromto}  ' if fromto else ''
         # self.id_widget.print(fromto, autoscroll = False, t = 'grey71', end = '')
 
+        spaces = ' ' * 2
         product = (content and content.get('product')) or 'Envoi'
         self.id_widget.print(f'{spaces}{product}', autoscroll = False, t = 'grey50', end = '')
 
         idship = self.tracker.idship if self.tracker.idship else 'Pas de N°'
         self.id_widget.print(f' {idship}', autoscroll = False, t = 'blue', end = '')
 
-    def show_couriers(self, content, spaces):
-        couriers_update = (content or {}).get('courier_update')
-
+    def show_couriers(self, couriers_update):
         if couriers_update:
             couriers_update_names = list(couriers_update.keys())
             couriers_update_names.sort()
 
             self.couriers_widget.update('') 
+            spaces = ' ' * 2
             
             w_name = max(len(name) for name in couriers_update_names)
             for i, name in enumerate(couriers_update_names):
-                date, error = couriers_update[name]
+                date, error, updating = couriers_update[name]
                 end = i+1 == len(couriers_update)
                 ago = f" {timeago.format(date, get_local_now(), 'fr').replace('il y a', '').strip()}" if date else ' jamais'
                 error_chr, error_color, name_font = (' ❗', 'red', (FixFontBold, self.courier_fsize)) if error else ('✔', 'green', None)
                 
+                if updating:
+                    self.couriers_widget.print(f'{spaces}Mise à jour...', autoscroll = False, font = (FixFontBold, self.courier_fsize), t = 'red', end = '')
+                    spaces = ''
+
                 self.couriers_widget.print(f'{spaces}{ago}', autoscroll = False, t = 'grey60', end = '')
                 self.couriers_widget.print(' ⟳ ', autoscroll = False, t = 'grey55', font = (FixFont, self.courier_fsize), end = '')
                 self.couriers_widget.print(f'{name.center(w_name)} ', autoscroll = False, t = error_color, font = name_font, end = '')
