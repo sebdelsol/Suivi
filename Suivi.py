@@ -58,6 +58,7 @@ class Tracker:
 
         self.available_couriers = available_couriers
         self.critical = threading.Lock()
+        self.couriers_error = {}
 
         self.set_current_events()
 
@@ -88,11 +89,13 @@ class Tracker:
             courier_name, new_content = content_queue.get()
             _log (f'update DONE {self.description} {self.idship} {courier_name}')
 
-            if new_content is not None:
-                if new_content['ok'] or courier_name not in self.contents:
-                    new_content['courier_name'] = courier_name
-                    with self.critical:
+            with self.critical:
+                if new_content is not None:
+                    if new_content['ok'] or courier_name not in self.contents:
+                        new_content['courier_name'] = courier_name
                         self.contents[courier_name] = new_content
+
+                self.couriers_error[courier_name] = not(new_content and new_content['ok'])
 
             yield self.get_consolidated_content()
 
@@ -112,30 +115,31 @@ class Tracker:
     def get_consolidated_content(self):
         consolidated = {}
 
-        contents_used = [ content for courier_name, content in self.contents.items() if courier_name in self.used_couriers ]
-        contents_ok = [ content for content in contents_used if content['ok'] ]
+        with self.critical:
+            contents_used = [ content for courier_name, content in self.contents.items() if courier_name in self.used_couriers ]
+            contents_ok = [ content for content in contents_used if content['ok'] and content.get('idship') == self.idship]
 
-        if len(contents_ok) > 0:
-            contents_ok.sort(key = lambda c : c['status']['date'], reverse = True)
-            consolidated = contents_ok[0].copy()
+            if len(contents_ok) > 0:
+                contents_ok.sort(key = lambda c : c['status']['date'], reverse = True)
+                consolidated = contents_ok[0].copy()
+                
+                events = sum((content['events'] for content in contents_ok), [])
+                events.sort(key = lambda evt : evt['date'], reverse = True)
+                consolidated['events'] = self.update_events_new(events) 
+                
+                delivered = consolidated['status'].get('delivered')
+                consolidated['elapsed'] = events and (events[0]['date'] if delivered else get_local_now()) - events[-1]['date']
             
-            events = sum((content['events'] for content in contents_ok), [])
-            events.sort(key = lambda evt : evt['date'], reverse = True)
-            consolidated['events'] = self.update_events_new(events) 
-            
-            delivered = consolidated['status'].get('delivered')
-            consolidated['elapsed'] = events and (events[0]['date'] if delivered else get_local_now()) - events[-1]['date']
-        
-        couriers_update = {}
-        for courier_name in self.used_couriers:
-            content = self.contents.get(courier_name)
-            ok_date = content.get('status',{}).get('ok_date') if content else None
-            error = not(content and content['ok'])
-            couriers_update[courier_name] = (ok_date, error)
+            couriers_update = {}
+            for courier_name in self.used_couriers:
+                content = self.contents.get(courier_name)
+                ok_date = content.get('status',{}).get('ok_date') if content else None
+                error = self.couriers_error.get(courier_name, True)
+                couriers_update[courier_name] = (ok_date, error)
 
-        consolidated['courier_update'] = couriers_update
-        
-        return consolidated
+            consolidated['courier_update'] = couriers_update
+            
+            return consolidated
     
     def get_last_event(self):
         content = self.get_consolidated_content() or {}
