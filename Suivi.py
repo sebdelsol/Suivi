@@ -79,8 +79,8 @@ class Tracker:
         return copy_events
 
     def prepare_update(self):
-        for courier_name in self.used_couriers:
-            with self.critical:
+        with self.critical:
+            for courier_name in self.used_couriers:
                 self.couriers_error[courier_name] = True
                 self.couriers_updating[courier_name] = True
 
@@ -160,7 +160,7 @@ class Tracker:
     def get_pretty_last_event(self):
         last_event = self.get_last_event()
         if last_event:
-            date = datetime.strftime(last_event, '%a %d %b %y').replace('.', '')
+            date = f'{last_event:%a %d %b %y}'.replace('.', '')
             return three_char_month(date, 2)
         else:
             return ''
@@ -267,7 +267,6 @@ class TrackerWidget:
 
         self.id_widget = sg.MLine('', p = 0, font = (FixFont, 9), disabled = True, border_width = 0, no_scrollbar = True, background_color = bg_color_h, expand_x = True, justification = 'r', visible = False)
         self.couriers_widget = sg.MLine('', p = 0, font = (FixFont, self.courier_fsize), disabled = True, border_width = 0, no_scrollbar = True, background_color = bg_color_h, expand_x = True, justification = 'r', visible = False)
-        self.updating_widget = sg.T('', p = 0, font = (VarFontBold, 15), visible = True, text_color = 'red', background_color = bg_color, k = lambda w : self.toggle_expand(w))
         self.status_widget = sg.T('', p = 0, font = (VarFont, 15), expand_x = True, background_color = bg_color, k = lambda w : self.toggle_expand(w))
         self.ago_widget = sg.T('', p = 0, font = (VarFont, 15), expand_x = False, background_color = bg_color, text_color = 'grey50', k = lambda w : self.toggle_expand(w))
         self.events_widget = sg.MLine('', p = ((5, 5), (0, 5)), font = self.events_f, visible = False, disabled = True, border_width = 0, background_color = bg_color, no_scrollbar = True, s = (None, 1), expand_x = True, k = self.toggle_expand)
@@ -275,7 +274,7 @@ class TrackerWidget:
 
         id_couriers_widget = sg.Col([[self.id_widget], [self.couriers_widget]], p = 0, background_color = bg_color_h, expand_x = False)
         layout = [[ sg.Col([ [sg.Col([ [ self.days_widget, self.desc_widget, id_couriers_widget ] + self.buttons ], p = 5, background_color = bg_color_h, expand_x = True) ]], p = 0, expand_x = True, background_color = bg_color_h) ],
-                 [  sg.Col([ [self.updating_widget, self.ago_widget, self.status_widget, self.expand_button] ], p = ((0, 0), (5, 0)), background_color = bg_color, expand_x = True) ],
+                 [  sg.Col([ [self.ago_widget, self.status_widget, self.expand_button] ], p = ((3, 0), (5, 0)), background_color = bg_color, expand_x = True) ],
                  [  sg.pin(sg.Col([ [self.events_widget] ], p = 0, background_color = bg_color, expand_x = True), expand_x = False) ]]
 
         self.layout = sg.Col(layout, expand_x = True, p = ((self.layout_pad, self.layout_pad), (self.layout_pad, 0)), visible = self.tracker.state == 'ok', background_color = bg_color)
@@ -295,7 +294,7 @@ class TrackerWidget:
             widget.Widget.bindtags((str(widget.Widget), str(window.TKroot), 'all'))
         
         # toggle expand
-        for widget in (self.events_widget, self.status_widget, self.updating_widget, self.ago_widget):
+        for widget in (self.events_widget, self.status_widget, self.ago_widget):
             widget.bind('<Button-1>', '')
         
         self.show_current_content(window)
@@ -344,7 +343,6 @@ class TrackerWidget:
         if self.tracker.state == 'ok' and self.lock.acquire(blocking = False):
 
             self.disable_buttons(True)
-            self.updating_widget.update(' En cours de mise à jour...')
             
             self.tracker.prepare_update()
             self.show_current_courier_widget()
@@ -370,7 +368,6 @@ class TrackerWidget:
             trigger_event(window, lambda window: self.update_done(), '')
 
     def update_done(self):
-        self.updating_widget.update('')
         self.disable_buttons(False)
 
     def show(self, content, window):
@@ -393,7 +390,7 @@ class TrackerWidget:
                     for i, event in enumerate(events):
                         event_courier = f"{event['courier'].ljust(courier_w)}. "
                         
-                        day, hour = datetime.strftime(event['date'], '%a %d %b %y, %Hh%M').replace('.', '').split(',')
+                        day, hour = f"{event['date']:%a %d %b %y, %Hh%M}".replace('.', '').split(',')
                         day = three_char_month(day, 2)
 
                         hour = hour.strip()
@@ -414,8 +411,6 @@ class TrackerWidget:
                         if event_label and not event_status:
                             wrap = textwrap.wrap(event_label, 25)
                             event_status, event_label = (wrap[0]+ ' ', ' '.join(wrap[1:]))  if len(wrap) > 1 else (event_label, '')
-                            # words = re.split(r'(\s)', event_label) # re.split(r'((?!^)\W)', event_label)
-                            # event_status, event_label = (words[0], ''.join(words[1:])) if len(words) > 1 else (event_label, '')
 
                         event_warn = event.get('warn')
                         event_delivered = event.get('delivered')
@@ -632,7 +627,6 @@ class TrackerWidgets:
         window['TRACKS'].contents_changed()
 
         # wanted size
-        # window.refresh()
         if ok:
             widths, heights = zip(*[widget.get_pixel_size() for widget in ok])
             w = max(widths) + TrackerWidget.layout_pad * 2
