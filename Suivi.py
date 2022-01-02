@@ -11,6 +11,9 @@ import pickle as pickle
 import timeago
 from datetime import datetime
 from bisect import bisect
+import io
+from PIL import Image # ,ImageOps
+import base64
 import textwrap
 import locale
 locale.setlocale(locale.LC_ALL, 'fr_FR.utf8') # date in French
@@ -21,6 +24,27 @@ from couriers import Couriers, get_local_now
 import popup
 
 #------------------------------------------------------------------------------
+def resize_gif(image64, resize_div = 2.5):
+    buffer = io.BytesIO(base64.b64decode(image64))
+    im = Image.open(buffer)
+    resize_to = (im.size[0] / resize_div, im.size[1] / resize_div)
+    all_frames = []
+
+    try:
+        while True:
+            new_frame = im.copy()
+            # new_frame = ImageOps.grayscale(new_frame) # PIL bug fixed in 9.0.0, wait for this version
+            # new_frame = ImageOps.colorize(new_frame, black ="blue", white ="white").convert('P')
+            new_frame.thumbnail(resize_to, Image.LANCZOS)
+            all_frames.append(new_frame)
+            im.seek(im.tell() + 1)
+    except EOFError:
+        pass
+
+    buffer = io.BytesIO()
+    all_frames[0].save(buffer, optimize = False, save_all = True, append_images = all_frames[1:], loop = 0, format = 'GIF')
+    return base64.b64encode(buffer.getvalue())
+
 class MyGraph(sg.Graph):
     def draw_rounded_box(self, x, y, w, h, r, color):
         w2, h2, r2 = w * .5, h * .5, r * 2
@@ -235,6 +259,8 @@ class TrackerWidget:
     layout_pad = 10 # pixels
     max_event_width = 110 # chars
 
+    loading_gif = resize_gif(sg.DEFAULT_BASE64_LOADING_GIF)
+
     def __init__(self, tracker):
         self.tracker = tracker
         self.lock = threading.Lock()
@@ -264,6 +290,9 @@ class TrackerWidget:
         self.days_font = (FixFont, 20) 
         self.days_widget = MyGraph(canvas_size=(self.days_size, self.days_size), graph_bottom_left=(0, 0), graph_top_right=(self.days_size, self.days_size), p = 0, background_color=bg_color_h)
 
+        self.loading_widget = sg.Image(data = self.loading_gif, p = 3, background_color = bg_color)
+        self.loading_widget_col = sg.Col([[self.loading_widget]], p = 0, visible = False, background_color = bg_color)
+
         self.id_widget = sg.MLine('', p = 0, font = (FixFont, 9), disabled = True, border_width = 0, no_scrollbar = True, background_color = bg_color_h, expand_x = True, justification = 'r', visible = False)
         self.couriers_widget = sg.MLine('', p = 0, font = (FixFont, self.courier_fsize), disabled = True, border_width = 0, no_scrollbar = True, background_color = bg_color_h, expand_x = True, justification = 'r', visible = False)
         self.status_widget = sg.T('', p = 0, font = (VarFont, 15), expand_x = True, background_color = bg_color, k = lambda w : self.toggle_expand(w))
@@ -273,7 +302,7 @@ class TrackerWidget:
 
         id_couriers_widget = sg.Col([[self.id_widget], [self.couriers_widget]], p = 0, background_color = bg_color_h, expand_x = False)
         layout = [[ sg.Col([ [sg.Col([ [ self.days_widget, self.desc_widget, id_couriers_widget ] + self.buttons ], p = 5, background_color = bg_color_h, expand_x = True) ]], p = 0, expand_x = True, background_color = bg_color_h) ],
-                 [  sg.Col([ [self.ago_widget, self.status_widget, self.expand_button] ], p = ((3, 0), (5, 0)), background_color = bg_color, expand_x = True) ],
+                 [  sg.pin(self.loading_widget_col), sg.Col([ [self.ago_widget, self.status_widget, self.expand_button] ], p = ((3, 0), (5, 0)), background_color = bg_color, expand_x = True) ],
                  [  sg.pin(sg.Col([ [self.events_widget] ], p = 0, background_color = bg_color, expand_x = True), expand_x = False) ]]
 
         self.layout = sg.Col(layout, expand_x = True, p = ((self.layout_pad, self.layout_pad), (self.layout_pad, 0)), visible = self.tracker.state == 'ok', background_color = bg_color)
@@ -345,6 +374,7 @@ class TrackerWidget:
             
             self.tracker.prepare_update()
             self.show_current_courier_widget()
+            self.loading_widget_col.update(visible = True)
 
             threading.Thread(target = self.update_thread, args = (window,), daemon = True).start()
             # self.update_thread(window) 
@@ -368,6 +398,11 @@ class TrackerWidget:
 
     def update_done(self):
         self.disable_buttons(False)
+        self.loading_widget_col.update(visible = False)
+
+    def animate(self):
+        if self.loading_widget_col.visible:
+            self.loading_widget.update_animation(self.loading_gif, time_between_frames = 60)
 
     def show(self, content, window):
         if self.tracker.state == 'ok':
@@ -614,6 +649,10 @@ class TrackerWidgets:
         for widget in self.get_widgets_with_state('ok'):
             widget.update(window)
 
+    def update_animation(self):
+        for widget in self.get_widgets_with_state('ok'):
+            widget.animate()
+    
     def update_size(self, window):
         ok = self.get_widgets_with_state('ok')
 
@@ -716,6 +755,8 @@ if __name__ == "__main__":
     while True:
         event_window, event, values = sg.read_all_windows(timeout=20)
         # if event_window == window: _log (f'{event = }, value = {values and values.get(event)}')
+
+        widgets.update_animation()
 
         if event == '__TIMEOUT__':
             pos = window.current_location()
