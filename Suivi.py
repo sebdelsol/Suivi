@@ -21,18 +21,19 @@ from couriers import Couriers, get_local_now
 import popup
 
 #------------------------------------------------------------------------------
-def draw_rounded_box(widget, x, y, w, h, r, color):
-    w2, h2, r2 = w * .5, h * .5, r * 2
-    # cross
-    widget.draw_rectangle((x-w2, y+h2-r), (x+w2, y-h2+r), fill_color = color, line_color = color)
-    widget.draw_rectangle((x-w2+r, y+h2), (x+w2-r, y-h2), fill_color = color, line_color = color)
-    # corners
-    widget.draw_arc((x-w2, y+h2-r2),    (x-w2+r2, y+h2),    90, 90,  fill_color = color, arc_color = color) 
-    widget.draw_arc((x+w2-r2, y+h2-r2), (x+w2, y+h2),       90, 0,   fill_color = color, arc_color = color)
-    widget.draw_arc((x-w2, y-h2),       (x-w2+r2, y-h2+r2), 90, 180, fill_color = color, arc_color = color) 
-    widget.draw_arc((x+w2-r2, y-h2),    (x+w2, y-h2+r2),    90, 270, fill_color = color, arc_color = color)
-    # bounding box
-    # widget.draw_rectangle((x-w2, y+h2), (x+w2, y-h2), fill_color = None, line_color = 'black')
+class MyGraph(sg.Graph):
+    def draw_rounded_box(self, x, y, w, h, r, color):
+        w2, h2, r2 = w * .5, h * .5, r * 2
+        # cross
+        self.draw_rectangle((x-w2, y+h2-r), (x+w2, y-h2+r), fill_color = color, line_color = color)
+        self.draw_rectangle((x-w2+r, y+h2), (x+w2-r, y-h2), fill_color = color, line_color = color)
+        # corners
+        self.draw_arc((x-w2, y+h2-r2),    (x-w2+r2, y+h2),    90, 90,  fill_color = color, arc_color = color) 
+        self.draw_arc((x+w2-r2, y+h2-r2), (x+w2, y+h2),       90, 0,   fill_color = color, arc_color = color)
+        self.draw_arc((x-w2, y-h2),       (x-w2+r2, y-h2+r2), 90, 180, fill_color = color, arc_color = color) 
+        self.draw_arc((x+w2-r2, y-h2),    (x+w2, y-h2+r2),    90, 270, fill_color = color, arc_color = color)
+        # bounding box
+        # self.draw_rectangle((x-w2, y+h2), (x+w2, y-h2), fill_color = None, line_color = 'black')
 
 def three_char_month(date_txt, i):
     txts = date_txt.split()
@@ -263,7 +264,7 @@ class TrackerWidget:
         self.desc_widget = sg.T('', p = 0, font = (VarFont, 40), text_color = 'grey40', background_color = bg_color_h, expand_x = True, justification = 'l') 
         self.days_size = 60
         self.days_font = (FixFont, 20) 
-        self.days_widget = sg.Graph(canvas_size=(self.days_size, self.days_size), graph_bottom_left=(0, 0), graph_top_right=(self.days_size, self.days_size), p = 0, background_color=bg_color_h)
+        self.days_widget = MyGraph(canvas_size=(self.days_size, self.days_size), graph_bottom_left=(0, 0), graph_top_right=(self.days_size, self.days_size), p = 0, background_color=bg_color_h)
 
         self.id_widget = sg.MLine('', p = 0, font = (FixFont, 9), disabled = True, border_width = 0, no_scrollbar = True, background_color = bg_color_h, expand_x = True, justification = 'r', visible = False)
         self.couriers_widget = sg.MLine('', p = 0, font = (FixFont, self.courier_fsize), disabled = True, border_width = 0, no_scrollbar = True, background_color = bg_color_h, expand_x = True, justification = 'r', visible = False)
@@ -459,7 +460,7 @@ class TrackerWidget:
                 elapsed_txt = '?'
 
             self.days_widget.erase()
-            draw_rounded_box(self.days_widget, self.days_size*.47, self.days_size*.47, self.days_size*.9, self.days_size*.7, self.days_size*.15, 'grey92')
+            self.days_widget.draw_rounded_box(self.days_size*.47, self.days_size*.47, self.days_size*.9, self.days_size*.7, self.days_size*.15, 'grey92')
             self.days_widget.draw_text(elapsed_txt, (self.days_size*.5, self.days_size*.5), color = elapsed_color, font = self.days_font, text_location = 'center')
 
             status_date = content and content.get('status', {}).get('date')
