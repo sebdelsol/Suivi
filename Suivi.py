@@ -744,14 +744,14 @@ if __name__ == "__main__":
         elif event == '-RECENTER-':
             widgets.recenter(event_window, force = True)
             event_window.refresh()
-            mylog.move_left_to(window)
+            mylog.move_left_to(event_window)
 
         elif event == '-ARCHIVE UPDATED-':
             event_window['Archives'].update(disabled = trackers.count_archived() == 0)
 
         elif event == '-UPDATE WIDGETS SIZE-':
             widgets.update_size(event_window)
-            mylog.move_left_to(window)
+            mylog.move_left_to(event_window)
 
         elif event == 'Nouveau':
             tracker_params = popup.edit('Nouveau', '', 'Nouveau', [], trackers.couriers, not is_debugger)
