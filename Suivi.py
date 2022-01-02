@@ -74,10 +74,9 @@ class Tracker:
             self.current_events |= set( frozenset(evt.items()) for evt in content.get('events', []) ) # can't hash dict
 
     def update_events_new(self, events):
-        copy_events = copy.deepcopy(events) # we add the 'new' key that would break future lookup of new events
-        for event in copy_events:
+        for event in events:
             event['new'] = frozenset(event.items()) not in self.current_events
-        return copy_events
+        return events
 
     def prepare_update(self):
         with self.critical:
@@ -124,12 +123,11 @@ class Tracker:
         consolidated = {}
 
         with self.critical:
-            contents_used = [ content for courier_name, content in self.contents.items() if courier_name in self.used_couriers ]
-            contents_ok = [ content for content in contents_used if content['ok'] and content.get('idship') == self.idship]
+            contents_ok = [copy.deepcopy(content) for courier_name, content in self.contents.items() if courier_name in self.used_couriers and content['ok'] and content.get('idship') == self.idship]
 
             if len(contents_ok) > 0:
                 contents_ok.sort(key = lambda c : c['status']['date'], reverse = True)
-                consolidated = contents_ok[0].copy()
+                consolidated = contents_ok[0]
                 
                 events = sum((content['events'] for content in contents_ok), [])
                 events.sort(key = lambda evt : evt['date'], reverse = True)
