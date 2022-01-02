@@ -8,7 +8,7 @@ from tzlocal import get_localzone
 import pytz
 
 from mylog import _log
-from config import LaPoste_key, chrome_exe # , Ship24_key, PKGE_key
+from config import LaPoste_key, dhl_key, chrome_exe # , Ship24_key, PKGE_key
 
 #------------------------------------------------------------------------------
 def get_sentence(txt, nb = -1):
@@ -56,7 +56,7 @@ class Courier:
     nb_retry = 0 
     time_between_retry = 5 # sec
 
-    idship_check_pattern, idship_check_msg = get_simple_check(8,20)
+    idship_check_pattern, idship_check_msg = get_simple_check(8, 20)
 
     delivered_words = ('delivered', 'final delivery', 'livré', 'distribué')
     error_words = ('error', 'erreur')
@@ -246,7 +246,7 @@ class Cainiao(SeleniumScrapper):
 
 #---------------------------
 class Asendia(Courier):
-    short_name = 'as'
+    short_name = 'ase'
     long_name = 'Asendia'
     fromto = f'CN{Courier.r_arrow}FR'
 
@@ -324,7 +324,7 @@ class MondialRelay(Courier):
 
 #------------------
 class GLS(Courier):
-    short_name = 'gl'
+    short_name = 'gls'
     long_name = 'GLS'
 
     def _get_url_for_browser(self, idship):
@@ -374,7 +374,7 @@ class GLS(Courier):
 
 #----------------------
 class DPD(Courier):
-    short_name = 'dp'
+    short_name = 'dpd'
     long_name = 'DPD'
 
     def _get_url_for_browser(self, idship):
@@ -437,7 +437,7 @@ class NLPost(Courier):
 
 #----------------------
 class FourPX(Courier):
-    short_name = '4p'
+    short_name = '4px'
     long_name = '4PX'
 
     url = 'https://postnl.post/details/'
@@ -466,12 +466,10 @@ class FourPX(Courier):
 
 #----------------------
 class LaPoste(Courier):
-
     short_name = 'lp'
     long_name = 'La Poste'
-    api_key = LaPoste_key
 
-    idship_check_pattern, idship_check_msg = get_simple_check(11,15)
+    idship_check_pattern, idship_check_msg = get_simple_check(11, 15)
 
     codes = dict(
         DR1 = ('Déclaratif réceptionné', False),
@@ -496,7 +494,7 @@ class LaPoste(Courier):
     )
 
     def __init__(self):
-        self.headers = {'X-Okapi-Key': self.api_key, 'Accept': 'application/json'}
+        self.headers = {'X-Okapi-Key': LaPoste_key, 'Accept': 'application/json'}
 
     def _get_url_for_browser(self, idship):
         return f'https://www.laposte.fr/outils/suivre-vos-envois?code={idship}'
@@ -539,6 +537,39 @@ class LaPoste(Courier):
             return_msg = json.get('returnMessage', 'Erreur')
             status_label = get_sentence(return_msg, 1)
             return events, dict(status_warn = True, status_label = status_label.replace('.', ''))
+
+#----------------------
+class DHL(Courier):
+    short_name = 'dhl'
+    long_name = 'DHL'
+
+    idship_check_pattern, idship_check_msg = get_simple_check(10, 11)
+
+    def __init__(self):
+        self.headers = {'Accept': 'application/json', 'DHL-API-Key': dhl_key }
+
+    def _get_url_for_browser(self, idship):
+        return f'https://www.dhl.com/fr-en/home/our-divisions/parcel/private-customers/tracking-parcel.html?tracking-id={idship}'
+
+    def _get_response(self, idship): 
+        url = f'https://api-eu.dhl.com/track/shipments?trackingNumber={idship}&requesterCountryCode=FR'
+        r = requests.get(url, headers = self.headers, timeout = self.request_timeout)
+        return r.status_code == 200, r
+
+    def _update(self, r): 
+        events = []
+
+        json = r.json()
+        shipments = json.get('shipments')
+
+        if shipments:
+            shipment = shipments[0]
+            product = f"DHL {shipment['service']}"
+            
+            for event in shipment['events']:
+                events.append(dict(date = get_local_time(event['date']), label = event['description']))
+
+            return events, dict(product = product)
 
 #----------------------
 # class Ship24(Courier):
