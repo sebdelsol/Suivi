@@ -543,7 +543,7 @@ class DHL(Courier):
     short_name = 'dhl'
     long_name = 'DHL'
 
-    idship_check_pattern, idship_check_msg = get_simple_check(10, 11)
+    idship_check_pattern, idship_check_msg = r'^\d{10}$', f'10 chiffres'
 
     def __init__(self):
         self.headers = {'Accept': 'application/json', 'DHL-API-Key': dhl_key }
