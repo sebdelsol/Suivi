@@ -33,8 +33,8 @@ def resize_gif(image64, resize_div = 2.5):
     try:
         while True:
             new_frame = im.copy()
-            # new_frame = ImageOps.grayscale(new_frame) # PIL bug fixed in 9.0.0, wait for this version
-            # new_frame = ImageOps.colorize(new_frame, black ="blue", white ="white").convert('P')
+            # PIL bug fixed in 9.0.0, wait for this version
+            # new_frame = ImageOps.colorize(new_frame.convert('L'), black ="grey", white ="white")  # .convert('P')
             new_frame.thumbnail(resize_to, Image.LANCZOS)
             all_frames.append(new_frame)
             im.seek(im.tell() + 1)
@@ -422,7 +422,7 @@ class TrackerWidget:
                     previous_hour = None
 
                     for i, event in enumerate(events):
-                        event_courier = f"{event['courier'].ljust(courier_w)}. "
+                        event_courier = f"{event['courier'].rjust(courier_w)}. "
                         
                         day, hour = f"{event['date']:%a %d %b %y, %Hh%M}".replace('.', '').split(',')
                         day = three_char_month(day, 2)
