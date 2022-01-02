@@ -453,7 +453,7 @@ class TrackerWidget:
             if elapsed:
                 round_elapsed_days = elapsed.days + (1 if elapsed.seconds >= 43200 else 0)
                 elapsed_color = self.days_colors[bisect(self.days_intervals, round_elapsed_days)]
-                elapsed_txt = f'{round_elapsed_days}' + ('j' if round_elapsed_days <= 100 else '')
+                elapsed_txt = f"{round_elapsed_days}{'j' if round_elapsed_days <= 100 else ''}"
             else:
                 elapsed_color = 'grey70'
                 elapsed_txt = '?'
@@ -716,7 +716,7 @@ if __name__ == "__main__":
 
     while True:
         event_window, event, values = sg.read_all_windows(timeout=20)
-        # if event_window == window: _log (f'event: {event}, value: {values and values.get(event)}')
+        # if event_window == window: _log (f'{event = }, value = {values and values.get(event)}')
 
         if event == '__TIMEOUT__':
             pos = window.current_location()
