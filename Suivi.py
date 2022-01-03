@@ -714,14 +714,12 @@ class TrackerWidgets:
 class Main_window_loop:
     def __init__(self, main_window, trackers, widgets, mylog):
         self.main_window = main_window
-        main_window.TKroot.bind('<Configure>', self.dragging)
     
         self.trackers = trackers
         self.widgets = widgets
         self.mylog = mylog
 
-    def dragging(self, event):
-        self.mylog.stick_to_main()
+        main_window.TKroot.bind('<Configure>', lambda evt: self.mylog.stick_to_main())
 
     def get_event(self):
         animation_step = 100
@@ -763,7 +761,6 @@ class Main_window_loop:
                 elif event == '-RECENTER-':
                     self.widgets.recenter(window, force = True)
                     window.refresh()
-                    # self.mylog.stick_to_main()
 
                 elif event == '-UPDATING CHANGED-':
                     n_updating = self.widgets.count_not_updating()
@@ -776,7 +773,6 @@ class Main_window_loop:
 
                 elif event == '-UPDATE WIDGETS SIZE-':
                     self.widgets.update_size(window)
-                    # self.mylog.stick_to_main()
 
                 elif event == '-New-':
                     self.widgets.new(window, self)
