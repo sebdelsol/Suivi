@@ -470,6 +470,7 @@ class LaPoste(Courier):
     long_name = 'La Poste'
 
     idship_check_pattern, idship_check_msg = get_simple_check(11, 15)
+    headers = {'X-Okapi-Key': LaPoste_key, 'Accept': 'application/json'}
 
     codes = dict(
         DR1 = ('Déclaratif réceptionné', False),
@@ -492,9 +493,6 @@ class LaPoste(Courier):
         DI1 = ('Distribué', False),
         DI2 = ("Distribué à l'expéditeur", True)
     )
-
-    def __init__(self):
-        self.headers = {'X-Okapi-Key': LaPoste_key, 'Accept': 'application/json'}
 
     def _get_url_for_browser(self, idship):
         return f'https://www.laposte.fr/outils/suivre-vos-envois?code={idship}'
@@ -544,9 +542,7 @@ class DHL(Courier):
     long_name = 'DHL'
 
     idship_check_pattern, idship_check_msg = r'^\d{10}$', f'10 chiffres'
-
-    def __init__(self):
-        self.headers = {'Accept': 'application/json', 'DHL-API-Key': dhl_key }
+    headers = {'Accept': 'application/json', 'DHL-API-Key': dhl_key }
 
     def _get_url_for_browser(self, idship):
         return f'https://www.dhl.com/fr-en/home/our-divisions/parcel/private-customers/tracking-parcel.html?tracking-id={idship}'
