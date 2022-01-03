@@ -14,7 +14,7 @@ class MyButton(sg.Button):
                 return True
         
         elif isinstance(event, str):
-            widget = window.find_element(event, silent_on_error = True)
+            widget = window and window.find_element(event, silent_on_error = True)
             if widget and isinstance(widget, MyButton): # it's a clic
                 widget.mouseover('leave')
                 return False
