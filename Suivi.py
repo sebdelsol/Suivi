@@ -113,7 +113,6 @@ class Tracker:
         for courier_name in self.used_couriers:
             _log (f'update START {self.description} {self.idship} {courier_name}')
             threading.Thread(target = self.update_thread, args = (courier_name, content_queue)).start()
-            # self.update_thread(courier_name, content_queue))
 
         for _ in range(len(self.used_couriers)):
             courier_name, new_content = content_queue.get()
@@ -380,7 +379,6 @@ class TrackerWidget:
             self.loading_widget_col.update(visible = True)
 
             threading.Thread(target = self.update_thread, args = (window,), daemon = True).start()
-            # self.update_thread(window) 
 
     def update_thread(self, window): 
         try:
@@ -614,7 +612,7 @@ class TrackerWidgets:
         self.widgets.append(widget)
 
         widget.finalize(window)
-        widget.update(window) # TDO do not update archived
+        widget.update(window)
 
     def get_widgets_with_state(self, state):
         return [widget for widget in self.widgets if widget.tracker.state == state]
@@ -715,17 +713,17 @@ if __name__ == "__main__":
 
     menu_color = MyButton.default_colors['enter']
 
-    button_log = 'Log'
+    button_log = '-Log-'
     button_pad = 10
     button_f_size = 12
     recenter_widget = sg.T('', background_color = menu_color, p = 0, expand_x = True, expand_y = True, k = '-RECENTER-')
 
-    menu =  [   MyButton('Rafraichir', p = button_pad, font = (VarFont, button_f_size)), 
-                MyButton('Nouveau', p = ((0, 0), (button_pad, button_pad)), font = (VarFont, button_f_size)), 
-                MyButton('Archives', p = ((button_pad, 0), (button_pad, button_pad)), disabled = True, font = (VarFont, button_f_size)), 
-                MyButton(button_log, p = button_pad, font = (VarFont, button_f_size)), 
+    menu =  [   MyButton('Rafraichir', p = button_pad, font = (VarFont, button_f_size), k = '-Refresh-'), 
+                MyButton('Nouveau', p = ((0, 0), (button_pad, button_pad)), font = (VarFont, button_f_size), k = '-New-'), 
+                MyButton('Archives', p = ((button_pad, 0), (button_pad, button_pad)), disabled = True, font = (VarFont, button_f_size), k = '-Archives-'), 
+                MyButton('Log', p = button_pad, font = (VarFont, button_f_size), k = button_log), 
                 recenter_widget,
-                MyButton(' X ', p = button_pad, font = (VarFontBold, button_f_size), button_color = ('red', None), focus = True,) ]
+                MyButton(' X ', p = button_pad, font = (VarFontBold, button_f_size), button_color = ('red', None), focus = True, k = '-Exit-') ]
 
     layout = [ [ sg.Col([menu], p = 0, background_color = menu_color, expand_x = True, k = 'MENU') ],
                [ sg.Col([[]], p = 0, scrollable = True, vertical_scroll_only = True, expand_x = True, expand_y = True, k = 'TRACKS') ] ]
@@ -760,7 +758,7 @@ if __name__ == "__main__":
         elif mylog.catch_event(event_window, event, values, button_log, window):
             pass
         
-        elif event in (None, ' X ', 'Escape:27'):
+        elif event in (None, '-Exit-', 'Escape:27'):
             break
 
         elif MyButton.catch_mouseover_event(event_window, event):
@@ -780,22 +778,26 @@ if __name__ == "__main__":
             mylog.move_left_to(event_window)
 
         elif event == '-ARCHIVE UPDATED-':
-            event_window['Archives'].update(disabled = trackers.count_archived() == 0)
+            n_archives = trackers.count_archived()
+            if n_archives > 0:
+                event_window['-Archives-'].update(f'Archives ({n_archives})', disabled = False)
+            else:
+                event_window['-Archives-'].update(f'Archives', disabled = True)
 
         elif event == '-UPDATE WIDGETS SIZE-':
             widgets.update_size(event_window)
             mylog.move_left_to(event_window)
 
-        elif event == 'Nouveau':
+        elif event == '-New-':
             tracker_params = popup.edit('Nouveau', '', 'Nouveau', [], trackers.couriers, not is_debugger)
             tracker = trackers.new(*tracker_params)
             if tracker:
                 widgets.create_widget(event_window, tracker)
 
-        elif event == 'Rafraichir':
+        elif event == '-Refresh-':
             widgets.update(event_window)
 
-        elif event == 'Archives':
+        elif event == '-Archives-':
             widgets.show_archives(event_window)
 
     window.close()
