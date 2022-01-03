@@ -747,34 +747,36 @@ if __name__ == "__main__":
     recenter_widget.bind('<Double-Button-1>', '')
 
     mylog.create_window((FixFont, 7), (VarFont, 12), not is_debugger, main_window)
-
     trackers = Trackers(TrackersFile) 
     widgets = TrackerWidgets(main_window, trackers) 
+    
     splash.close()
-
     main_window.reappear()
 
     class Main_window_loop:
         def __init__(self, main_window, trackers, widgets, mylog):
             self.main_window = main_window
             self.main_window_pos = main_window.current_location()
+            main_window.TKroot.bind('<Configure>', self.dragging)
+        
             self.trackers = trackers
             self.widgets = widgets
             self.mylog = mylog
     
+        def dragging(self, event):
+            main_window_pos = self.main_window.current_location()
+            if main_window_pos != self.main_window_pos:
+                self.mylog.stick_to_main()
+                self.main_window_pos = main_window_pos
+
         def get_event(self):
-            window, event, values = sg.read_all_windows(timeout = 20)
+            window, event, values = sg.read_all_windows(timeout = 60)
             # if event not in ('-UPDATE LOG-', '__TIMEOUT__'): _log (f'{event = }' + (f', {value = }' if (value := values and values.get(event)) else ''))
 
             exit = False
             forward = None
 
             self.widgets.update_animation()
-
-            main_window_pos = self.main_window.current_location()
-            if main_window_pos != self.main_window_pos:
-                self.mylog.stick_to_main()
-                self.main_window_pos = main_window_pos
 
             if event != '__TIMEOUT__':
                 if mylog.catch_event(window, event, values):
