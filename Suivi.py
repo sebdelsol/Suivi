@@ -186,7 +186,10 @@ class Tracker:
             date = f'{last_event:%a %d %b %y}'.replace('.', '')
             return three_char_month(date, 2)
         else:
-            return ''
+            return 'Pas de date'
+
+    def get_pretty_idship(self):
+        return self.idship.strip() or 'Pas de N°'
 
     def get_delivered(self):
         content = self.get_consolidated_content() 
@@ -293,8 +296,8 @@ class TrackerWidget:
         self.loading_widget = sg.Image(data = self.loading_gif, p = 3, background_color = bg_color)
         self.loading_widget_col = sg.Col([[self.loading_widget]], p = 0, visible = False, background_color = bg_color)
 
-        self.id_widget = sg.MLine('', p = 0, font = (FixFont, 10), disabled = True, border_width = 0, no_scrollbar = True, background_color = bg_color_h, expand_x = True, justification = 'r', visible = False)
-        self.couriers_widget = sg.MLine('', p = 0, font = (FixFont, self.courier_fsize), disabled = True, border_width = 0, no_scrollbar = True, background_color = bg_color_h, expand_x = True, justification = 'r', visible = False)
+        self.id_widget = sg.MLine('', p = 0, font = (FixFont, 10), disabled = True, border_width = 0, no_scrollbar = True, background_color = bg_color_h, expand_x = True, justification = 'r')
+        self.couriers_widget = sg.MLine('', p = 0, font = (FixFont, self.courier_fsize), disabled = True, border_width = 0, no_scrollbar = True, background_color = bg_color_h, expand_x = True, justification = 'r')
         self.status_widget = sg.T('', p = 0, font = (VarFont, 15), expand_x = True, background_color = bg_color, k = lambda w : self.toggle_expand(w))
         self.ago_widget = sg.T('', p = 0, font = (VarFont, 15), expand_x = False, background_color = bg_color, text_color = 'grey50', k = lambda w : self.toggle_expand(w))
         self.events_widget = sg.MLine('', p = ((5, 5), (0, 5)), font = self.events_f, visible = False, disabled = True, border_width = 0, background_color = bg_color, no_scrollbar = True, s = (None, 1), expand_x = True, k = self.toggle_expand)
@@ -502,16 +505,6 @@ class TrackerWidget:
 
             self.events_widget.update(visible = self.is_events_visible())
             self.update_expand_button()
-            
-            # invsible @ beginning to prevent mousewheel event that prevents whole window scroll
-            self.id_widget.update(visible = True)
-            self.couriers_widget.update(visible = True)
-            self.id_widget.expand(True)
-            self.couriers_widget.expand(True)
-            
-            # remove selection
-            self.couriers_widget.Widget.tag_remove("sel", "1.0", "end")
-            self.id_widget.Widget.tag_remove("sel", "1.0", "end")
 
             trigger_event(window, '-UPDATE WIDGETS SIZE-', '')
 
@@ -627,18 +620,18 @@ class TrackerWidgets:
         return [widget for widget in self.widgets if widget.tracker.state == state]
 
     def show_archives(self, window):
-        no_idship = 'Pas de N°'
-
-        def get_label(widget, w_idship):
-            t = widget.tracker
-            color = 'green' if t.get_delivered() else 'red'
-            return (f'{t.get_pretty_last_event()} - {(t.idship.strip() or no_idship).ljust(w_idship)} - {t.description}', color)
-
         archived = self.get_widgets_with_state('archived')
         archived.sort(key = lambda w : w.tracker.get_last_event(), reverse = True)
 
-        w_idship = max(len(widget.tracker.idship.strip() or no_idship) for widget in archived)
-        choices = [get_label(widget, w_idship) for widget in archived]
+        w_idship = max(len(widget.tracker.get_pretty_idship()) for widget in archived)
+
+        choices = []
+        for widget in archived:
+            tracker = widget.tracker
+            color = 'green' if tracker.get_delivered() else 'red'
+            txt = f'{tracker.get_pretty_last_event()} - {tracker.get_pretty_idship().ljust(w_idship)} - {tracker.description}'
+            choices.append((txt, color))
+
         chosen = popup.choices(choices, 'Désarchiver', not is_debugger)
 
         for i in chosen:
