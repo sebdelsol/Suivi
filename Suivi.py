@@ -712,7 +712,7 @@ class TrackerWidgets:
 
 # ------------------------------------------
 class Main_window_loop:
-    def __init__(self, main_window, trackers, widgets, mylog):
+    def __init__(self, main_window, trackers, widgets, mylog, animation_step = 80):
         self.main_window = main_window
     
         self.trackers = trackers
@@ -721,73 +721,76 @@ class Main_window_loop:
 
         main_window.TKroot.bind('<Configure>', lambda evt: self.mylog.stick_to_main())
 
+        self.animation_step = animation_step
+        main_window.TKroot.after(animation_step, self.animate)
+
+    def animate(self):
+        self.widgets.animate(self.animation_step)
+        main_window.TKroot.after(self.animation_step, self.animate)
+
     def get_event(self):
-        animation_step = 100
-        window, event, values = sg.read_all_windows(timeout = animation_step)
-        # if event not in ('-UPDATE LOG-', '__TIMEOUT__'): _log (f'{event = }' + (f', {value = }' if (value := values and values.get(event)) else ''))
+        window, event, values = sg.read_all_windows()
+        # if window != self.mylog.window: _log (f'{event = }' + (f', {value = }' if (value := values and values.get(event)) else ''))
 
         exit = False
         forward = None
 
-        self.widgets.animate(animation_step)
+        if mylog.catch_event(window, event, values):
+            pass
+        
+        elif MyButton.catch_mouseover_event(window, event):
+            pass
 
-        if event != '__TIMEOUT__':
-            if mylog.catch_event(window, event, values):
-                pass
+        # clic event for multiline to expand collapse, see widget.bind in TrackerWidgets
+        elif isinstance(event, tuple) and callable(event[0]):
+            event[0](window)      
+
+        # update, edit, delete, archive a tracker       
+        elif callable(event):
+            try:
+                event(window, self) 
             
-            elif MyButton.catch_mouseover_event(window, event):
-                pass
+            except TypeError:
+                event(window) 
 
-            # clic event for multiline to expand collapse, see widget.bind in TrackerWidgets
-            elif isinstance(event, tuple) and callable(event[0]):
-                event[0](window)      
+        elif window == self.main_window:
 
-            # update, edit, delete, archive a tracker       
-            elif callable(event):
-                try:
-                    event(window, self) 
-                
-                except TypeError:
-                    event(window) 
+            if event in (None, '-Exit-', 'Escape:27'):
+                exit = True
+            
+            elif event in ('-Log-', 'l'):
+                self.mylog.toggle()
 
-            elif window == self.main_window:
+            elif event == '-RECENTER-':
+                self.widgets.recenter(window, force = True)
+                window.refresh()
 
-                if event in (None, '-Exit-', 'Escape:27'):
-                    exit = True
-                
-                elif event in ('-Log-', 'l'):
-                    self.mylog.toggle()
+            elif event == '-UPDATING CHANGED-':
+                n_updating = self.widgets.count_not_updating()
+                window['-Refresh-'].update(disabled = n_updating == 0)
 
-                elif event == '-RECENTER-':
-                    self.widgets.recenter(window, force = True)
-                    window.refresh()
+            elif event == '-ARCHIVE UPDATED-':
+                n_archives = self.trackers.count_archived()
+                txt, disabled = (f'Archives ({n_archives})', False) if n_archives > 0 else ('Archives', True)
+                window['-Archives-'].update(txt, disabled = disabled)
 
-                elif event == '-UPDATING CHANGED-':
-                    n_updating = self.widgets.count_not_updating()
-                    window['-Refresh-'].update(disabled = n_updating == 0)
+            elif event == '-UPDATE WIDGETS SIZE-':
+                self.widgets.update_size(window)
 
-                elif event == '-ARCHIVE UPDATED-':
-                    n_archives = self.trackers.count_archived()
-                    txt, disabled = (f'Archives ({n_archives})', False) if n_archives > 0 else ('Archives', True)
-                    window['-Archives-'].update(txt, disabled = disabled)
+            elif event == '-New-':
+                self.widgets.new(window, self)
 
-                elif event == '-UPDATE WIDGETS SIZE-':
-                    self.widgets.update_size(window)
+            elif event == '-Refresh-':
+                self.widgets.update(window)
 
-                elif event == '-New-':
-                    self.widgets.new(window, self)
-
-                elif event == '-Refresh-':
-                    self.widgets.update(window)
-
-                elif event == '-Archives-':
-                    self.widgets.show_archives(window, self)
-                
-                else:
-                    forward = window, event, values
+            elif event == '-Archives-':
+                self.widgets.show_archives(window, self)
             
             else:
                 forward = window, event, values
+        
+        else:
+            forward = window, event, values
         
         return exit, forward
 
