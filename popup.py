@@ -7,7 +7,9 @@ from fonts import FixFont, FixFontBold, VarFont
 
 #-------------
 class MyPopup:
-    def __init__(self, title, body_layout, no_border = True):
+    def __init__(self, title, body_layout, no_border, main_loop):
+        self.main_loop = main_loop
+
         layout =      [ [ sg.T(title, font = (FixFont, 20)) ],
                         [ sg.HorizontalSeparator() ] ]
         
@@ -23,27 +25,30 @@ class MyPopup:
         MyButton.finalize_all(self.window)
 
     def loop(self, catch_event = None):
-        while True:             
-            event, values = self.window.read()
-            # _log (event)
-            if event in (None, 'Cancel', 'Escape:27'):
-                return None
+        while True: 
+            exit, forward = self.main_loop.get_event()            
             
-            elif MyButton.catch_mouseover_event(self.window, event):
-                pass
+            if exit:
+                break
 
-            elif event == 'OK':
-                return values
-            
-            elif catch_event is not None:
-                catch_event(self.window, event, values) 
+            elif forward:
+                window, event, values = forward
+                if window == self.window:
+                    if event in (None, 'Cancel', 'Escape:27'):
+                        return None
+
+                    elif event == 'OK':
+                        return values
+                    
+                    elif catch_event is not None:
+                        catch_event(self.window, event, values) 
 
     def close(self):
         self.window.close()
         del self.window
 
 #------------------------------------------------------------------------------
-def edit(title, idship, description, used_couriers, couriers, no_border):
+def edit(title, idship, description, used_couriers, couriers, no_border, main_loop):
 
     def update_idship_widgets(idship):
         for msg, button in idship_widgets:
@@ -69,7 +74,7 @@ def edit(title, idship, description, used_couriers, couriers, no_border):
         idship_widgets.append((msg, button))
         layout.append([cb, msg, button])
 
-    edit_window = MyPopup(title, layout, no_border)
+    edit_window = MyPopup(title, layout, no_border, main_loop)
     update_idship_widgets(idship)
 
     idship, description = None, None
@@ -95,7 +100,7 @@ def edit(title, idship, description, used_couriers, couriers, no_border):
     return idship, description, used_couriers
 
 #--------------------------------------
-def choices(choices, title, no_border):
+def choices(choices, title, no_border, main_loop):
     max_lines = 15
     
     selected_font, unselected_font =  (FixFontBold, 9),  (FixFont, 9)
@@ -109,7 +114,7 @@ def choices(choices, title, no_border):
     rows = sg.Col(chcks, scrollable = len(chcks) > max_lines, vertical_scroll_only = True)
     layout = [ [ rows ] ]
 
-    choices_window = MyPopup(title, layout, no_border)
+    choices_window = MyPopup(title, layout, no_border, main_loop)
     
     for chck in chcks:
         chck[1].bind('<Button-1>', '')
@@ -142,10 +147,10 @@ def choices(choices, title, no_border):
     return chosen
 
 #-----------------------------------------
-def one_choice(choices, title, no_border):
+def one_choice(choices, title, no_border, main_loop):
     layout = [ [ sg.Radio(choice, group_id = 'choices', font = (VarFont, 15), default= i==0, k = choice)] for i, choice in enumerate(choices) ]
 
-    choices_window = MyPopup(title, layout, no_border)
+    choices_window = MyPopup(title, layout, no_border, main_loop)
 
     choice = None
 
@@ -158,9 +163,9 @@ def one_choice(choices, title, no_border):
     return choice
 
 #------------------------
-def warning(title, text, no_border):
+def warning(title, text, no_border, main_loop):
     layout = [ [ sg.Image(filename = 'icon/warn.png'), sg.T(text, font = (VarFont, 15)) ] ]
-    warning_window = MyPopup(title, layout, no_border)
+    warning_window = MyPopup(title, layout, no_border, main_loop)
 
     ok = False
 

@@ -293,7 +293,7 @@ class TrackerWidget:
         self.days_font = (FixFont, 20) 
         self.days_widget = MyGraph(canvas_size=(self.days_size, self.days_size), graph_bottom_left=(0, 0), graph_top_right=(self.days_size, self.days_size), p = 0, background_color=bg_color_h)
 
-        self.loading_widget = sg.Image(data = self.loading_gif, p = 3, background_color = bg_color)
+        self.loading_widget = sg.Image(data = self.loading_gif, p = 3, background_color = bg_color, k = lambda w : self.toggle_expand(w))
         self.loading_widget_col = sg.Col([[self.loading_widget]], p = 0, visible = False, background_color = bg_color)
 
         self.id_widget = sg.MLine('', p = 0, font = (FixFont, 10), disabled = True, border_width = 0, no_scrollbar = True, background_color = bg_color_h, expand_x = True, justification = 'r')
@@ -325,7 +325,7 @@ class TrackerWidget:
             widget.Widget.bindtags((str(widget.Widget), str(window.TKroot), 'all'))
         
         # toggle expand
-        for widget in (self.events_widget, self.status_widget, self.ago_widget):
+        for widget in (self.events_widget, self.status_widget, self.ago_widget, self.loading_widget):
             widget.bind('<Button-1>', '')
         
         self.show_current_content(window)
@@ -556,10 +556,10 @@ class TrackerWidget:
         for button in  self.buttons:
             button.update(disabled = disabled)
 
-    def edit(self, window):
+    def edit(self, window, main_loop):
         self.disable_buttons(True)
 
-        idship, description, used_couriers = popup.edit('Édition', self.tracker.idship, self.tracker.description, self.tracker.used_couriers, self.tracker.available_couriers, not is_debugger)
+        idship, description, used_couriers = popup.edit('Édition', self.tracker.idship, self.tracker.description, self.tracker.used_couriers, self.tracker.available_couriers, not is_debugger, main_loop)
         if idship is not None:
             self.tracker.set_id(idship, description, used_couriers)
             self.reset_size()
@@ -567,8 +567,8 @@ class TrackerWidget:
 
         self.disable_buttons(False)
 
-    def set_state(self, state, action_name, window, ask, visible):
-        if not ask or popup.warning(action_name.capitalize(), self.tracker.description, not is_debugger):
+    def set_state(self, state, window, main_loop, ask, visible):
+        if not ask or popup.warning(ask.capitalize(), self.tracker.description, not is_debugger, main_loop):
             if self.lock.acquire(blocking=False): # needed ?
                 self.tracker.state = state
 
@@ -578,25 +578,25 @@ class TrackerWidget:
                 trigger_event(window, '-UPDATE WIDGETS SIZE-', '')
                 self.lock.release()
 
-    def archive_or_delete(self, window):
+    def archive_or_delete(self, window, main_loop):
         self.disable_buttons(True)
 
         choices = { 'Archiver': self.archive, 'Supprimer': self.delete }
-        choice = popup.one_choice(choices.keys(), f'{self.tracker.description} {self.tracker.idship}', not is_debugger)
+        choice = popup.one_choice(choices.keys(), f'{self.tracker.description} {self.tracker.idship}', not is_debugger, main_loop)
         if choice:
-            choices[choice](window)
+            choices[choice](window, main_loop)
 
         self.disable_buttons(False)
 
-    def delete(self, window):
-        self.set_state('deleted', 'Supprimer', window, ask = True, visible = False)
+    def delete(self, window, main_loop):
+        self.set_state('deleted', window, main_loop, ask = 'Supprimer', visible = False)
 
-    def archive(self, window):
-        self.set_state('archived', 'Archiver', window, ask = False, visible = False)
+    def archive(self, window, main_loop):
+        self.set_state('archived', window, main_loop, ask = False, visible = False)
         trigger_event(window, '-ARCHIVE UPDATED-', '')
 
-    def unarchive(self, window):
-        self.set_state('ok', 'Désarchiver', window, ask = False, visible = True)
+    def unarchive(self, window, main_loop):
+        self.set_state('ok', window, main_loop, ask = False, visible = True)
         trigger_event(window, '-ARCHIVE UPDATED-', '')
         self.update(window)
 
@@ -604,6 +604,7 @@ class TrackerWidget:
 class TrackerWidgets:
     def __init__(self, window, trackers):
         self.widgets = []
+        self.trackers = trackers
 
         for tracker in trackers.trackers:
             self.create_widget(window, tracker)
@@ -619,10 +620,16 @@ class TrackerWidgets:
         widget.finalize(window)
         widget.update(window)
 
+    def new(self, window, main_loop):
+        tracker_params = popup.edit('Nouveau', '', 'Nouveau', [], self.trackers.couriers, not is_debugger, main_loop)
+        tracker = self.trackers.new(*tracker_params)
+        if tracker:
+            self.create_widget(window, tracker)
+
     def get_widgets_with_state(self, state):
         return [widget for widget in self.widgets if widget.tracker.state == state]
 
-    def show_archives(self, window):
+    def show_archives(self, window, main_loop):
         archived = self.get_widgets_with_state('archived')
         archived.sort(key = lambda w : w.tracker.get_last_event(), reverse = True)
 
@@ -635,14 +642,14 @@ class TrackerWidgets:
             txt = f'{tracker.get_pretty_last_event()} - {tracker.get_pretty_idship().ljust(w_idship)} - {tracker.description}'
             choices.append((txt, color))
 
-        chosen = popup.choices(choices, 'Désarchiver', not is_debugger)
+        chosen = popup.choices(choices, 'Désarchiver', not is_debugger, main_loop)
 
         for i in chosen:
             widget = archived[i]
-            widget.unarchive(window)
+            widget.unarchive(window, main_loop)
 
-    def count_updating(self):
-        return [widget.updating for widget in self.get_widgets_with_state('ok')].count(True)
+    def count_not_updating(self):
+        return [widget.updating for widget in self.get_widgets_with_state('ok')].count(False)
 
     def update(self, window):
         for widget in self.get_widgets_with_state('ok'):
@@ -715,21 +722,16 @@ if __name__ == "__main__":
 
     splash = sg.Window('Suivi...', [[sg.T('Suivi...')]], font=(VarFont, 75), keep_on_top = not is_debugger, no_titlebar = not is_debugger, finalize=True)
 
-    mylog.set_window(log_font = (FixFont, 7), button_font = (VarFont, 12), no_border = not is_debugger)
-
-    trackers = Trackers(TrackersFile) 
-
     menu_color = MyButton.default_colors['enter']
-
-    button_log = '-Log-'
     button_pad = 10
     button_f_size = 12
+
     recenter_widget = sg.T('', background_color = menu_color, p = 0, expand_x = True, expand_y = True, k = '-RECENTER-')
 
     menu =  [   MyButton('Rafraichir', p = button_pad, font = (VarFont, button_f_size), k = '-Refresh-'), 
                 MyButton('Nouveau', p = ((0, 0), (button_pad, button_pad)), font = (VarFont, button_f_size), k = '-New-'), 
                 MyButton('Archives', p = ((button_pad, 0), (button_pad, button_pad)), disabled = True, font = (VarFont, button_f_size), k = '-Archives-'), 
-                MyButton('Log', p = button_pad, font = (VarFont, button_f_size), k = button_log), 
+                MyButton('Log', p = button_pad, font = (VarFont, button_f_size), k = '-Log-'), 
                 recenter_widget,
                 MyButton(' X ', p = button_pad, font = (VarFontBold, button_f_size), button_color = ('red', None), focus = True, k = '-Exit-') ]
 
@@ -738,81 +740,113 @@ if __name__ == "__main__":
 
     frame =  [ [ sg.Frame('', layout, p = 0, border_width = 1, relief = sg.RELIEF_SOLID, expand_x = True, expand_y = True) ] ]
 
-    window = sg.Window('Suivi', frame, size = (600, 600), grab_anywhere = True, resizable = True, keep_on_top = not is_debugger, no_titlebar = not is_debugger, return_keyboard_events = True, margins = (0, 0), finalize = True)
-    window.disappear()
+    main_window = sg.Window('Suivi', frame, size = (600, 600), grab_anywhere = True, resizable = True, keep_on_top = not is_debugger, no_titlebar = not is_debugger, return_keyboard_events = True, margins = (0, 0), finalize = True)
+    main_window.disappear()
 
-    MyButton.finalize_all(window)
+    MyButton.finalize_all(main_window)
     recenter_widget.bind('<Double-Button-1>', '')
 
-    widgets = TrackerWidgets(window, trackers) 
+    mylog.create_window((FixFont, 7), (VarFont, 12), not is_debugger, main_window)
+
+    trackers = Trackers(TrackersFile) 
+    widgets = TrackerWidgets(main_window, trackers) 
     splash.close()
 
-    window_pos = window.current_location()
+    main_window.reappear()
 
-    window.reappear()
+    class Main_window_loop:
+        def __init__(self, main_window, trackers, widgets, mylog):
+            self.main_window = main_window
+            self.main_window_pos = main_window.current_location()
+            self.trackers = trackers
+            self.widgets = widgets
+            self.mylog = mylog
+    
+        def get_event(self):
+            window, event, values = sg.read_all_windows(timeout = 20)
+            # if event not in ('-UPDATE LOG-', '__TIMEOUT__'): _log (f'{event = }' + (f', {value = }' if (value := values and values.get(event)) else ''))
+
+            exit = False
+            forward = None
+
+            self.widgets.update_animation()
+
+            main_window_pos = self.main_window.current_location()
+            if main_window_pos != self.main_window_pos:
+                self.mylog.stick_to_main()
+                self.main_window_pos = main_window_pos
+
+            if event != '__TIMEOUT__':
+                if mylog.catch_event(window, event, values):
+                    pass
+                
+                elif MyButton.catch_mouseover_event(window, event):
+                    pass
+
+                # clic event for multiline to expand collapse, see widget.bind in TrackerWidgets
+                elif isinstance(event, tuple) and callable(event[0]):
+                    event[0](window)      
+
+                # update, edit, delete, archive a tracker       
+                elif callable(event):
+                    try:
+                        event(window, self) 
+                    
+                    except TypeError:
+                        event(window) 
+
+                elif window == self.main_window:
+
+                    if event in (None, '-Exit-', 'Escape:27'):
+                        exit = True
+                    
+                    elif event in ('-Log-', 'l'):
+                        self.mylog.toggle()
+
+                    elif event == '-RECENTER-':
+                        self.widgets.recenter(window, force = True)
+                        window.refresh()
+                        self.mylog.stick_to_main()
+
+                    elif event == '-UPDATING CHANGED-':
+                        n_updating = self.widgets.count_not_updating()
+                        window['-Refresh-'].update(disabled = n_updating == 0)
+
+                    elif event == '-ARCHIVE UPDATED-':
+                        n_archives = self.trackers.count_archived()
+                        txt, disabled = (f'Archives ({n_archives})', False) if n_archives > 0 else ('Archives', True)
+                        window['-Archives-'].update(txt, disabled = disabled)
+
+                    elif event == '-UPDATE WIDGETS SIZE-':
+                        self.widgets.update_size(window)
+                        self.mylog.stick_to_main()
+
+                    elif event == '-New-':
+                        self.widgets.new(window, self)
+
+                    elif event == '-Refresh-':
+                        self.widgets.update(window)
+
+                    elif event == '-Archives-':
+                        self.widgets.show_archives(window, self)
+                    
+                    else:
+                        forward = window, event, values
+                
+                else:
+                    forward = window, event, values
+            
+            return exit, forward
+
+
+    main_window_loop = Main_window_loop(main_window, trackers, widgets, mylog)
 
     while True:
-        event_window, event, values = sg.read_all_windows(timeout=20)
-        # if event_window == window: _log (f'{event = }, value = {values and values.get(event)}')
-
-        widgets.update_animation()
-
-        if event == '__TIMEOUT__':
-            pos = window.current_location()
-            if pos != window_pos:
-                mylog.move_left_to(window)
-                window_pos = pos
-                
-        elif mylog.catch_event(event_window, event, values, button_log, window):
-            pass
-        
-        elif event in (None, '-Exit-', 'Escape:27'):
+        exit = main_window_loop.get_event()[0]
+        if exit:
             break
 
-        elif MyButton.catch_mouseover_event(event_window, event):
-            pass
-
-        # clic event for multiline to expand collapse & content update (see update in TrackerWidgets)
-        elif isinstance(event, tuple) and callable(event[0]):
-            event[0](event_window)      
-
-        # update, edit, delete, archive a tracker       
-        elif callable(event):
-            event(event_window) 
-
-        elif event == '-RECENTER-':
-            widgets.recenter(event_window, force = True)
-            event_window.refresh()
-            mylog.move_left_to(event_window)
-
-        elif event == '-UPDATING CHANGED-':
-            n_updating = widgets.count_updating()
-            event_window['-Refresh-'].update(disabled = n_updating > 0)
-
-        elif event == '-ARCHIVE UPDATED-':
-            n_archives = trackers.count_archived()
-            if n_archives > 0:
-                event_window['-Archives-'].update(f'Archives ({n_archives})', disabled = False)
-            else:
-                event_window['-Archives-'].update(f'Archives', disabled = True)
-
-        elif event == '-UPDATE WIDGETS SIZE-':
-            widgets.update_size(event_window)
-            mylog.move_left_to(event_window)
-
-        elif event == '-New-':
-            tracker_params = popup.edit('Nouveau', '', 'Nouveau', [], trackers.couriers, not is_debugger)
-            tracker = trackers.new(*tracker_params)
-            if tracker:
-                widgets.create_widget(event_window, tracker)
-
-        elif event == '-Refresh-':
-            widgets.update(event_window)
-
-        elif event == '-Archives-':
-            widgets.show_archives(event_window)
-
-    window.close()
+    main_window.close()
 
     try:
         trackers.save()

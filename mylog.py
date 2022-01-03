@@ -16,7 +16,8 @@ class MyLog:
     def __init__(self):
         self.window = None
 
-    def set_window(self, log_font, button_font, no_border = True):
+    def create_window(self, log_font, button_font, no_border, main_window):
+        self.main_window = main_window
         self.linked = True
         self.resizing = False
         self.visible = False
@@ -38,10 +39,10 @@ class MyLog:
 
         self.link_button.finalize()
 
-    def catch_event(self, window, event, values, button_log, main_window):
+    def catch_event(self, window, event, values):
         if window == self.window:
             if event in (None, 'l'): 
-                self.toggle(main_window)
+                self.toggle()
                 return True
 
             elif event == '-UPDATE LOG-':
@@ -54,7 +55,7 @@ class MyLog:
             elif event == '<ButtonRelease-1>':
                 self.resizing = False
                 if self.linked:
-                    self.move_left_to(main_window)
+                    self.stick_to_main()
                     return True
         
             elif event == 'Link':
@@ -66,7 +67,7 @@ class MyLog:
                     self.window.grab_any_where_off()
                     self.output.grab_anywhere_exclude()
                     self.link_button.update(self.link_txt)
-                    self.move_left_to(main_window)
+                    self.stick_to_main()
                 
                 else:
                     # remove & prevent selection 
@@ -76,29 +77,25 @@ class MyLog:
                     self.window.grab_any_where_on()
                     self.output.grab_anywhere_include()
                     self.link_button.update(self.unlink_txt)
-                    self.move_left_to(main_window, gap = 10, force = True)
+                    self.stick_to_main(gap = 10, force = True)
 
                 return True
-            
-        elif event in (button_log, 'l'):
-            self.toggle(main_window)
-            return True
 
-    def move_left_to(self, main_window, gap = 0, force = False):
+    def stick_to_main(self, gap = 0, force = False):
         if not self.resizing and (self.visible and self.linked) or force:
             w, h = self.window.size
-            W, H = main_window.size
-            x, y = main_window.current_location()
+            W, H = self.main_window.size
+            x, y = self.main_window.current_location()
             self.window.move(int(x - w - gap) + 1, int(y + (H - h) *.5))
             self.window.refresh()
     
-    def toggle(self, main_window):
+    def toggle(self):
         self.visible = not self.visible
         if self.visible: 
             self.window.reappear()
             self.window.BringToFront()
             self.window.enable()
-            self.move_left_to(main_window)
+            self.stick_to_main()
 
         else:
             self.window.disappear()
