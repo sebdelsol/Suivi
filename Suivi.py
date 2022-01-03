@@ -34,7 +34,7 @@ def resize_and_colorize_gif(image64, resize_div, color):
         while True:
             frame = ImageOps.colorize(im.convert('L'), white = 'white', black = color)
             frame = frame.convert('RGBA')
-            frame.thumbnail(resize_to, Image.LANCZOS)
+            frame.thumbnail(resize_to)
             frames.append(frame)
             im.seek(im.tell() + 1)
     
@@ -261,7 +261,7 @@ class TrackerWidget:
     layout_pad = 10 # pixels
     max_event_width = 110 # chars
 
-    loading_gif = resize_and_colorize_gif(sg.DEFAULT_BASE64_LOADING_GIF, 2.5, 'red')
+    loading_gif = resize_and_colorize_gif(sg.DEFAULT_BASE64_LOADING_GIF, 2.5, '#909090')
 
     def __init__(self, tracker):
         self.tracker = tracker

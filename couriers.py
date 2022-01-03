@@ -250,8 +250,7 @@ class Asendia(Courier):
     long_name = 'Asendia'
     fromto = f'CN{Courier.r_arrow}FR'
 
-    headers = { 'Content-Type': 'application/json',
-                'Accept-Language': 'fr'}
+    headers = { 'Content-Type': 'application/json', 'Accept-Language': 'fr'}
 
     url = 'https://tracking.asendia.com/alliot/items/references'
 
