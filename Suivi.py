@@ -268,6 +268,7 @@ class TrackerWidget:
         self.lock = threading.Lock()
         self.min_events_shown = self.min_events_shown
         self.reset_size()
+        self.updating = False
 
     def reset_size(self):
         self.width_events = 0
@@ -373,6 +374,8 @@ class TrackerWidget:
         if self.tracker.state == 'ok' and self.lock.acquire(blocking = False):
 
             self.disable_buttons(True)
+            self.updating = True
+            trigger_event(window, '-UPDATING CHANGED-', '')
             
             self.tracker.prepare_update()
             self.show_current_courier_widget()
@@ -395,11 +398,13 @@ class TrackerWidget:
 
         finally:
             self.lock.release()
-            trigger_event(window, lambda window: self.update_done(), '')
+            trigger_event(window, lambda window: self.update_done(window), '')
 
-    def update_done(self):
+    def update_done(self, window):
         self.disable_buttons(False)
         self.loading_widget_col.update(visible = False)
+        self.updating = False
+        trigger_event(window, '-UPDATING CHANGED-', '')
 
     def animate(self):
         if self.loading_widget_col.visible:
@@ -636,6 +641,9 @@ class TrackerWidgets:
             widget = archived[i]
             widget.unarchive(window)
 
+    def count_updating(self):
+        return [widget.updating for widget in self.get_widgets_with_state('ok')].count(True)
+
     def update(self, window):
         for widget in self.get_widgets_with_state('ok'):
             widget.update(window)
@@ -776,6 +784,10 @@ if __name__ == "__main__":
             widgets.recenter(event_window, force = True)
             event_window.refresh()
             mylog.move_left_to(event_window)
+
+        elif event == '-UPDATING CHANGED-':
+            n_updating = widgets.count_updating()
+            event_window['-Refresh-'].update(disabled = n_updating > 0)
 
         elif event == '-ARCHIVE UPDATED-':
             n_archives = trackers.count_archived()
