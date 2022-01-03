@@ -12,7 +12,7 @@ import timeago
 from datetime import datetime
 from bisect import bisect
 import io
-from PIL import Image # ,ImageOps
+from PIL import Image  ,ImageOps
 import base64
 import textwrap
 import locale
@@ -24,25 +24,25 @@ from couriers import Couriers, get_local_now
 import popup
 
 #------------------------------------------------------------------------------
-def resize_gif(image64, resize_div = 2.5):
+def resize_and_colorize_gif(image64, resize_div, color):
     buffer = io.BytesIO(base64.b64decode(image64))
     im = Image.open(buffer)
     resize_to = (im.size[0] / resize_div, im.size[1] / resize_div)
-    all_frames = []
+    frames = []
 
     try:
         while True:
-            new_frame = im.copy()
-            # PIL bug fixed in 9.0.0, wait for this version
-            # new_frame = ImageOps.colorize(new_frame.convert('L'), black ="grey", white ="white")  # .convert('P')
-            new_frame.thumbnail(resize_to, Image.LANCZOS)
-            all_frames.append(new_frame)
+            frame = ImageOps.colorize(im.convert('L'), white = 'white', black = color)
+            frame = frame.convert('RGBA')
+            frame.thumbnail(resize_to, Image.LANCZOS)
+            frames.append(frame)
             im.seek(im.tell() + 1)
+    
     except EOFError:
         pass
 
     buffer = io.BytesIO()
-    all_frames[0].save(buffer, optimize = False, save_all = True, append_images = all_frames[1:], loop = 0, format = 'GIF')
+    frames[0].save(buffer, optimize = False, save_all = True, append_images = frames[1:], loop = 0, format = 'GIF', transparency = 0)
     return base64.b64encode(buffer.getvalue())
 
 class MyGraph(sg.Graph):
@@ -259,7 +259,7 @@ class TrackerWidget:
     layout_pad = 10 # pixels
     max_event_width = 110 # chars
 
-    loading_gif = resize_gif(sg.DEFAULT_BASE64_LOADING_GIF)
+    loading_gif = resize_and_colorize_gif(sg.DEFAULT_BASE64_LOADING_GIF, 2.5, 'red')
 
     def __init__(self, tracker):
         self.tracker = tracker
@@ -293,7 +293,7 @@ class TrackerWidget:
         self.loading_widget = sg.Image(data = self.loading_gif, p = 3, background_color = bg_color)
         self.loading_widget_col = sg.Col([[self.loading_widget]], p = 0, visible = False, background_color = bg_color)
 
-        self.id_widget = sg.MLine('', p = 0, font = (FixFont, 9), disabled = True, border_width = 0, no_scrollbar = True, background_color = bg_color_h, expand_x = True, justification = 'r', visible = False)
+        self.id_widget = sg.MLine('', p = 0, font = (FixFont, 10), disabled = True, border_width = 0, no_scrollbar = True, background_color = bg_color_h, expand_x = True, justification = 'r', visible = False)
         self.couriers_widget = sg.MLine('', p = 0, font = (FixFont, self.courier_fsize), disabled = True, border_width = 0, no_scrollbar = True, background_color = bg_color_h, expand_x = True, justification = 'r', visible = False)
         self.status_widget = sg.T('', p = 0, font = (VarFont, 15), expand_x = True, background_color = bg_color, k = lambda w : self.toggle_expand(w))
         self.ago_widget = sg.T('', p = 0, font = (VarFont, 15), expand_x = False, background_color = bg_color, text_color = 'grey50', k = lambda w : self.toggle_expand(w))
@@ -545,7 +545,7 @@ class TrackerWidget:
                 error_chr, error_color, name_font = (' ❗', 'red', (FixFontBold, self.courier_fsize)) if error else ('✔', 'green', None)
                 
                 if updating:
-                    self.couriers_widget.print(f'{spaces}Mise à jour...', autoscroll = False, font = (FixFontBold, self.courier_fsize), t = 'red', end = '')
+                    self.couriers_widget.print(f'{spaces}MàJ en cours...', autoscroll = False, font = (FixFontBold, self.courier_fsize), t = 'red', end = '')
                     spaces = ''
 
                 self.couriers_widget.print(f'{spaces}{ago}', autoscroll = False, t = 'grey60', end = '')
