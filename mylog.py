@@ -26,7 +26,7 @@ class MyLog:
         sizegrip = sg.Sizegrip()
         layout = [ [ self.output, sg.Col( [ [self.link_button], [ sizegrip ] ], p = 0, expand_x = True, expand_y = True) ] ]
         frame =  [ [ sg.Frame('', layout, p = 0, border_width = 1, relief = sg.RELIEF_SOLID, expand_x = True, expand_y = True) ] ]
-        self.window = sg.Window('', frame, margins = (0, 0), modal = False, resizable = True, keep_on_top = no_border, no_titlebar = no_border, return_keyboard_events = True, finalize = True)
+        self.window = sg.Window('', frame, margins = (0, 0), resizable = True, keep_on_top = no_border, no_titlebar = no_border, return_keyboard_events = True, finalize = True)
         self.window.disappear()
 
         self.default_bindtags = self.output.Widget.bindtags()
