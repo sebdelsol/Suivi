@@ -406,9 +406,9 @@ class TrackerWidget:
         self.updating = False
         trigger_event(window, '-UPDATING CHANGED-', '')
 
-    def animate(self):
+    def animate(self, animation_step):
         if self.loading_widget_col.visible:
-            self.loading_widget.update_animation(self.loading_gif, time_between_frames = 60)
+            self.loading_widget.update_animation(self.loading_gif, time_between_frames = animation_step)
 
     def show(self, content, window):
         if self.tracker.state == 'ok':
@@ -655,9 +655,9 @@ class TrackerWidgets:
         for widget in self.get_widgets_with_state('ok'):
             widget.update(window)
 
-    def update_animation(self):
+    def animate(self, animation_step):
         for widget in self.get_widgets_with_state('ok'):
-            widget.animate()
+            widget.animate(animation_step)
     
     def update_size(self, window):
         ok = self.get_widgets_with_state('ok')
@@ -711,6 +711,91 @@ class TrackerWidgets:
         window.move(x, y)
 
 # ------------------------------------------
+class Main_window_loop:
+    def __init__(self, main_window, trackers, widgets, mylog):
+        self.main_window = main_window
+        main_window.TKroot.bind('<Configure>', self.dragging)
+    
+        self.trackers = trackers
+        self.widgets = widgets
+        self.mylog = mylog
+
+    def dragging(self, event):
+        self.mylog.stick_to_main()
+
+    def get_event(self):
+        animation_step = 100
+        window, event, values = sg.read_all_windows(timeout = animation_step)
+        # if event not in ('-UPDATE LOG-', '__TIMEOUT__'): _log (f'{event = }' + (f', {value = }' if (value := values and values.get(event)) else ''))
+
+        exit = False
+        forward = None
+
+        self.widgets.animate(animation_step)
+
+        if event != '__TIMEOUT__':
+            if mylog.catch_event(window, event, values):
+                pass
+            
+            elif MyButton.catch_mouseover_event(window, event):
+                pass
+
+            # clic event for multiline to expand collapse, see widget.bind in TrackerWidgets
+            elif isinstance(event, tuple) and callable(event[0]):
+                event[0](window)      
+
+            # update, edit, delete, archive a tracker       
+            elif callable(event):
+                try:
+                    event(window, self) 
+                
+                except TypeError:
+                    event(window) 
+
+            elif window == self.main_window:
+
+                if event in (None, '-Exit-', 'Escape:27'):
+                    exit = True
+                
+                elif event in ('-Log-', 'l'):
+                    self.mylog.toggle()
+
+                elif event == '-RECENTER-':
+                    self.widgets.recenter(window, force = True)
+                    window.refresh()
+                    # self.mylog.stick_to_main()
+
+                elif event == '-UPDATING CHANGED-':
+                    n_updating = self.widgets.count_not_updating()
+                    window['-Refresh-'].update(disabled = n_updating == 0)
+
+                elif event == '-ARCHIVE UPDATED-':
+                    n_archives = self.trackers.count_archived()
+                    txt, disabled = (f'Archives ({n_archives})', False) if n_archives > 0 else ('Archives', True)
+                    window['-Archives-'].update(txt, disabled = disabled)
+
+                elif event == '-UPDATE WIDGETS SIZE-':
+                    self.widgets.update_size(window)
+                    # self.mylog.stick_to_main()
+
+                elif event == '-New-':
+                    self.widgets.new(window, self)
+
+                elif event == '-Refresh-':
+                    self.widgets.update(window)
+
+                elif event == '-Archives-':
+                    self.widgets.show_archives(window, self)
+                
+                else:
+                    forward = window, event, values
+            
+            else:
+                forward = window, event, values
+        
+        return exit, forward
+
+# ------------------------------------------
 if __name__ == "__main__":
 
     import sys
@@ -723,8 +808,7 @@ if __name__ == "__main__":
     splash = sg.Window('Suivi...', [[sg.T('Suivi...')]], font=(VarFont, 75), keep_on_top = not is_debugger, no_titlebar = not is_debugger, finalize=True)
 
     menu_color = MyButton.default_colors['enter']
-    button_pad = 10
-    button_f_size = 12
+    button_pad, button_f_size = 10, 12
 
     recenter_widget = sg.T('', background_color = menu_color, p = 0, expand_x = True, expand_y = True, k = '-RECENTER-')
 
@@ -752,100 +836,10 @@ if __name__ == "__main__":
     
     splash.close()
     main_window.reappear()
-
-    class Main_window_loop:
-        def __init__(self, main_window, trackers, widgets, mylog):
-            self.main_window = main_window
-            self.main_window_pos = main_window.current_location()
-            main_window.TKroot.bind('<Configure>', self.dragging)
-        
-            self.trackers = trackers
-            self.widgets = widgets
-            self.mylog = mylog
-    
-        def dragging(self, event):
-            main_window_pos = self.main_window.current_location()
-            if main_window_pos != self.main_window_pos:
-                self.mylog.stick_to_main()
-                self.main_window_pos = main_window_pos
-
-        def get_event(self):
-            window, event, values = sg.read_all_windows(timeout = 60)
-            # if event not in ('-UPDATE LOG-', '__TIMEOUT__'): _log (f'{event = }' + (f', {value = }' if (value := values and values.get(event)) else ''))
-
-            exit = False
-            forward = None
-
-            self.widgets.update_animation()
-
-            if event != '__TIMEOUT__':
-                if mylog.catch_event(window, event, values):
-                    pass
-                
-                elif MyButton.catch_mouseover_event(window, event):
-                    pass
-
-                # clic event for multiline to expand collapse, see widget.bind in TrackerWidgets
-                elif isinstance(event, tuple) and callable(event[0]):
-                    event[0](window)      
-
-                # update, edit, delete, archive a tracker       
-                elif callable(event):
-                    try:
-                        event(window, self) 
-                    
-                    except TypeError:
-                        event(window) 
-
-                elif window == self.main_window:
-
-                    if event in (None, '-Exit-', 'Escape:27'):
-                        exit = True
-                    
-                    elif event in ('-Log-', 'l'):
-                        self.mylog.toggle()
-
-                    elif event == '-RECENTER-':
-                        self.widgets.recenter(window, force = True)
-                        window.refresh()
-                        self.mylog.stick_to_main()
-
-                    elif event == '-UPDATING CHANGED-':
-                        n_updating = self.widgets.count_not_updating()
-                        window['-Refresh-'].update(disabled = n_updating == 0)
-
-                    elif event == '-ARCHIVE UPDATED-':
-                        n_archives = self.trackers.count_archived()
-                        txt, disabled = (f'Archives ({n_archives})', False) if n_archives > 0 else ('Archives', True)
-                        window['-Archives-'].update(txt, disabled = disabled)
-
-                    elif event == '-UPDATE WIDGETS SIZE-':
-                        self.widgets.update_size(window)
-                        self.mylog.stick_to_main()
-
-                    elif event == '-New-':
-                        self.widgets.new(window, self)
-
-                    elif event == '-Refresh-':
-                        self.widgets.update(window)
-
-                    elif event == '-Archives-':
-                        self.widgets.show_archives(window, self)
-                    
-                    else:
-                        forward = window, event, values
-                
-                else:
-                    forward = window, event, values
-            
-            return exit, forward
-
-
     main_window_loop = Main_window_loop(main_window, trackers, widgets, mylog)
 
     while True:
-        exit = main_window_loop.get_event()[0]
-        if exit:
+        if main_window_loop.get_event()[0]:
             break
 
     main_window.close()
