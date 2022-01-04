@@ -18,7 +18,7 @@ import textwrap
 import locale
 locale.setlocale(locale.LC_ALL, 'fr_FR.utf8') # date in French
 
-from mylog import mylog, _log, trigger_event
+from mylog import mylog, _log
 from mybutton import MyButton
 from couriers import Couriers, get_local_now
 import popup
@@ -45,6 +45,7 @@ def resize_and_colorize_gif(image64, resize_div, color):
     frames[0].save(buffer, optimize = False, save_all = True, append_images = frames[1:], loop = 0, format = 'GIF', transparency = 0)
     return base64.b64encode(buffer.getvalue())
 
+#-----------------------
 class MyGraph(sg.Graph):
     def draw_rounded_box(self, x, y, w, h, r, color):
         w2, h2, r2 = w * .5, h * .5, r * 2
@@ -59,11 +60,17 @@ class MyGraph(sg.Graph):
         # bounding box
         # self.draw_rectangle((x-w2, y+h2), (x+w2, y-h2), fill_color = None, line_color = 'black')
 
+#---------------------------------
 def three_char_month(date_txt, i):
     txts = date_txt.split()
     month = txts[i]
     txts[i] =  month[:3] if 'ju' not in month else month[:2] + month[3:]
     return ' '.join(txts)
+
+#----------------------------------
+def trigger_event(window, *events):
+    if window and window.TKroot:
+        window.write_event_value(*events)
 
 #-------------------------------------------------------------------------------------------
 class SavedTracker:
@@ -732,7 +739,7 @@ class Main_window_loop:
 
     def get_event(self):
         window, event, values = sg.read_all_windows()
-        # _log (f'{event = }' + (f', {value = }' if (value := values and values.get(event)) else ''))
+        # print (f'{event = }' + (f', {value = }' if (value := values and values.get(event)) else ''))
 
         exit = False
         forward = None

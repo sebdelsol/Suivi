@@ -4,12 +4,8 @@ import queue
 import PySimpleGUI as sg
 from mybutton import MyButton
 
-def trigger_event(window, *events):
-    if window and window.TKroot:
-        window.write_event_value(*events)
 
 class MyLog:
-    
     link_txt = '\n'.join('❱❱❱❱❱')
     unlink_txt = '\n'.join('❰❰❰❰❰')
     close_txt = '\n'.join('CLOSE')
@@ -99,7 +95,6 @@ class MyLog:
         self.visible = not self.visible
         if self.visible: 
             self.window.reappear()
-            self.window.BringToFront()
             self.window.enable()
             self.stick_to_main()
 
