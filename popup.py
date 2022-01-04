@@ -20,7 +20,7 @@ class MyPopup:
                           MyButton('Cancel', font = (VarFont, 12), button_color = 'grey80', mouseover_color = 'grey95')] )
 
         layout = [ [ sg.Frame('', [[sg.Col(layout, p = 10)]], p = 0, border_width = 3, relief = sg.RELIEF_SOLID) ] ]
-        self.window = sg.Window('', layout, margins = (0, 0), modal = True, grab_anywhere = True, keep_on_top = no_border, no_titlebar = no_border, return_keyboard_events = True, finalize = True)
+        self.window = sg.Window('', layout, margins = (0, 0), modal = True, grab_anywhere = True, keep_on_top = no_border, no_titlebar = no_border, return_keyboard_events = True, finalize = True, debugger_enabled = False)
         
         MyButton.finalize_all(self.window)
 
