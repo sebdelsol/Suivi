@@ -30,8 +30,8 @@ def get_leaf_cls(cls):
 
 #------------------------------------------------------------------------------
 class Couriers:
-    def __init__(self):
-        self.couriers = dict( (cls.long_name, cls()) for cls in get_leaf_cls(Courier) )
+    def __init__(self, splash_update):
+        self.couriers = dict( (cls.long_name, cls(splash_update)) for cls in get_leaf_cls(Courier) )
 
     def get(self, name):
         return self.couriers.get(name)
@@ -65,6 +65,9 @@ class Courier:
             (r' +', ' '),               # remove extra spaces
             (r'^\W', ''),               # remove leading non alphanumeric char
             (r'(\w):(\w)', r'\1: \2'))  # add space after : 
+
+    def __init__(self, splash_update):
+        pass
 
     def check_idship(self, idship):
         return re.match(self.idship_check_pattern, idship)
@@ -158,29 +161,40 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 import undetected_chromedriver as uc
 import psutil
-import threading
 import random
+import threading
+import queue
 
 class SeleniumScrapper(Courier):
-    lock = threading.Lock()
     driver_timeout = 100 # s
+    lock = threading.Lock()
+    n_drivers = 2
 
-    def _get_response(self, idship):
+    def __init__(self, splash_update):
+        self.drivers = queue.Queue() if self.n_drivers > 0 else None
+
+        for i in range(self.n_drivers):
+            splash_update(f'création driver {i + 1}/{self.n_drivers}')
+            self.drivers.put(self.create_driver())
+
+    def create_driver(self):
         options = uc.ChromeOptions()
         options.headless = True
         options.binary_location = chrome_exe
         options.add_argument('--no-first-run --no-service-autorun --password-store=basic')
         options.add_argument('--excludeSwitches --enable-logging')        
-
-        with self.lock: # can't patch all chromedrivers @ the same time        
-            driver = uc.Chrome(options = options) 
-            
+        driver = uc.Chrome(options = options) 
         driver.set_page_load_timeout(self.driver_timeout)
-        url = self._get_url_for_browser(idship)
+        return driver
+
+    def _get_response(self, idship):
 
         try:
             _log(f'scrapper load {idship}')
-            driver.get(url)
+            with self.lock: # do not get all drivers & url @ the same time
+                driver = self.drivers.get() if self.drivers else self.create_driver()
+                url = self._get_url_for_browser(idship)
+                driver.get(url)
             events = self._scrape(driver, idship)
             return True, events
         
@@ -189,7 +203,10 @@ class SeleniumScrapper(Courier):
             return False, None
 
         finally:
-            driver.quit()
+            if self.drivers: 
+                self.drivers.put(driver)
+            else:
+                driver.quit()
 
     def close(self):
         for proc in psutil.process_iter():

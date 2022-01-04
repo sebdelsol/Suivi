@@ -196,15 +196,15 @@ class Tracker:
 
 #------------
 class Trackers:
-    def __init__(self, filename, trackers = None):
+    def __init__(self, filename, splash_update):
         self.filename = filename
-        self.couriers = Couriers()
+        self.couriers = Couriers(splash_update)
 
-        if trackers is None:
-            if os.path.exists(filename):
-                with open(filename, 'rb') as f:
-                    trackers = pickle.load(f)
-                    _log(f'trackers loaded from {filename}')
+        trackers = None
+        if os.path.exists(filename):
+            with open(filename, 'rb') as f:
+                trackers = pickle.load(f)
+                _log(f'trackers loaded from {filename}')
 
         if trackers:
             trackers = [Tracker(tracker.idship, tracker.description, tracker.used_couriers, self.couriers, tracker.state, tracker.contents) for tracker in trackers]
@@ -602,11 +602,13 @@ class TrackerWidget:
 
 # -----------------------------------
 class TrackerWidgets:
-    def __init__(self, window, trackers):
+    def __init__(self, window, trackers, splash_update):
         self.widgets = []
         self.trackers = trackers
 
-        for tracker in trackers.trackers:
+        n_trackers = len(trackers.trackers)
+        for i, tracker in enumerate(trackers.trackers):
+            splash_update(f'création widget {i + 1}/{n_trackers}')
             self.create_widget(window, tracker)
 
         trigger_event(window, '-ARCHIVE UPDATED-', '')
@@ -712,7 +714,7 @@ class TrackerWidgets:
 
 # ------------------------------------------
 class Main_window_loop:
-    def __init__(self, main_window, trackers, widgets, mylog, animation_step = 80):
+    def __init__(self, main_window, trackers, widgets, mylog, animation_step = 100):
         self.main_window = main_window
     
         self.trackers = trackers
@@ -730,17 +732,14 @@ class Main_window_loop:
 
     def get_event(self):
         window, event, values = sg.read_all_windows()
-        # if window != self.mylog.window: _log (f'{event = }' + (f', {value = }' if (value := values and values.get(event)) else ''))
+        # _log (f'{event = }' + (f', {value = }' if (value := values and values.get(event)) else ''))
 
         exit = False
         forward = None
 
-        if mylog.catch_event(window, event, values):
+        if mylog.catch_event(window, event):
             pass
         
-        elif MyButton.catch_mouseover_event(window, event):
-            pass
-
         # clic event for multiline to expand collapse, see widget.bind in TrackerWidgets
         elif isinstance(event, tuple) and callable(event[0]):
             event[0](window)      
@@ -804,16 +803,22 @@ if __name__ == "__main__":
 
     sg.theme('GrayGrayGray')
 
-    splash = sg.Window('Suivi...', [[sg.T('Suivi...')]], font=(VarFont, 75), keep_on_top = not is_debugger, no_titlebar = not is_debugger, finalize=True)
+    splash_log = sg.T('', font=(VarFont, 10))
+    splash = sg.Window('Suivi...', [[sg.T('Suivi...')], [splash_log]], font=(VarFont, 75), keep_on_top = not is_debugger, no_titlebar = not is_debugger, finalize = True)
+    def splash_update(txt):
+        splash_log.update(f'{txt} ...')
+        splash.refresh()
 
-    menu_color = MyButton.default_colors['enter']
+    splash_update('inititialisation')
+
+    menu_color = MyButton.default_colors['Enter']
     button_pad, button_f_size = 10, 12
 
     recenter_widget = sg.T('', background_color = menu_color, p = 0, expand_x = True, expand_y = True, k = '-RECENTER-')
 
     menu =  [   MyButton('Rafraichir', p = button_pad, font = (VarFont, button_f_size), k = '-Refresh-'), 
                 MyButton('Nouveau', p = ((0, 0), (button_pad, button_pad)), font = (VarFont, button_f_size), k = '-New-'), 
-                MyButton('Archives', p = ((button_pad, 0), (button_pad, button_pad)), disabled = True, font = (VarFont, button_f_size), k = '-Archives-'), 
+                MyButton('   Archives   ', p = ((button_pad, 0), (button_pad, button_pad)), disabled = True, font = (VarFont, button_f_size), k = '-Archives-'), 
                 MyButton('Log', p = button_pad, font = (VarFont, button_f_size), k = '-Log-'), 
                 recenter_widget,
                 MyButton(' X ', p = button_pad, font = (VarFontBold, button_f_size), button_color = ('red', None), focus = True, k = '-Exit-') ]
@@ -823,16 +828,17 @@ if __name__ == "__main__":
 
     frame =  [ [ sg.Frame('', layout, p = 0, border_width = 1, relief = sg.RELIEF_SOLID, expand_x = True, expand_y = True) ] ]
 
-    main_window = sg.Window('Suivi', frame, size = (600, 600), grab_anywhere = True, resizable = True, keep_on_top = not is_debugger, no_titlebar = not is_debugger, return_keyboard_events = True, margins = (0, 0), finalize = True)
-    main_window.disappear()
+    main_window = sg.Window('Suivi', frame, size = (600, 600), grab_anywhere = True, resizable = True, 
+                            keep_on_top = not is_debugger, no_titlebar = not is_debugger, return_keyboard_events = True, margins = (0, 0), debugger_enabled = False)
+    main_window.finalize().disappear()
 
     MyButton.finalize_all(main_window)
     recenter_widget.bind('<Double-Button-1>', '')
 
+    trackers = Trackers(TrackersFile, splash_update) 
+    widgets = TrackerWidgets(main_window, trackers, splash_update) 
+
     mylog.create_window((FixFont, 7), (VarFont, 12), not is_debugger, main_window)
-    trackers = Trackers(TrackersFile) 
-    widgets = TrackerWidgets(main_window, trackers) 
-    
     splash.close()
     main_window.reappear()
     main_window_loop = Main_window_loop(main_window, trackers, widgets, mylog)
