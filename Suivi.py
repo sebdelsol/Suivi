@@ -363,11 +363,10 @@ class TrackerWidget:
 
     def update_couriers_id_size(self):
         txts = [t for t in self.couriers_widget.get().split('\n')]
-        txt = self.id_widget.get()
-        w = max(len(txt), max(len(t) + 1 for t in txts))
+        self.couriers_widget.set_size((max(len(t) for t in txts), len(txts)))
 
-        self.couriers_widget.set_size((w, len(txts)))
-        self.id_widget.set_size((w, 1))
+        txt = self.id_widget.get()
+        self.id_widget.set_size((len(txt), 1))
 
     def show_current_content(self, window):
         self.show(self.tracker.get_consolidated_content(), window)
