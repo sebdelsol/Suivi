@@ -22,7 +22,7 @@ class MyLog:
     def create_window(self, log_font, button_font, no_border, main_window):
         self.main_window = main_window
 
-        self.output = sg.MLine('', p = 0, font = log_font, s = (80, 50), auto_refresh = True, autoscroll  = True, disabled = True, border_width = 0, expand_x = True, expand_y = True, background_color = None)
+        self.output = sg.MLine('', p = 0, font = log_font, s = (80, 40), auto_refresh = True, autoscroll  = True, disabled = True, border_width = 0, expand_x = True, expand_y = True, background_color = None)
                                
         self.link_button = MyButton(self.link_txt, p = 0, font = button_font, button_color = ('grey60', 'grey75'), mouseover_color = 'grey80', expand_x = True, expand_y = True, k = 'Link')
         layout = [ [ self.output, sg.Col( [ [self.link_button], [ sg.Sizegrip() ] ], p = 0, expand_x = True, expand_y = True) ] ]
@@ -31,9 +31,10 @@ class MyLog:
         self.window.finalize().disappear()
 
         self.default_bindtags = self.output.Widget.bindtags()
+        self.no_selection_tags = list(self.default_bindtags).remove('Text')
 
-        self.window.TKroot.resizable(width=False, height=True)
-        self.window.set_min_size((self.window.size[0], 300))
+        self.window.TKroot.resizable(width = False, height = True)
+        self.window.set_min_size(self.window.size)
         self.height = self.window.size[0]
         
         self.window.TKroot.bind('<Configure>', self.resize)
@@ -52,7 +53,7 @@ class MyLog:
             self.window.TKroot.after(self.listen_step, self.listen)
 
     def resize(self, event):
-        if self.linked and event.height != self.height:
+        if self.linked and event.x == 0 and event.y == 0:
             self.height = event.height
             self.stick_to_main()
 
@@ -73,8 +74,7 @@ class MyLog:
                     self.stick_to_main()
                 
                 else:
-                    # remove & prevent selection 
-                    self.output.Widget.bindtags((str(self.output.Widget), str(self.window.TKroot), 'all'))
+                    self.output.Widget.bindtags((str(self.output.Widget), str(self.window.TKroot), self.no_selection_tags))
                     self.output.Widget.tag_remove('sel', '1.0', 'end')
 
                     self.window.grab_any_where_on()
