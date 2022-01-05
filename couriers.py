@@ -282,7 +282,7 @@ class Cainiao(SeleniumScrapper):
 
             slide = driver.find_element(By.XPATH, '//div[@class="scale_text slidetounlock"]/span')
             action = ActionChains(driver)
-            time.sleep(random.uniform(.1, .4)) # human wait
+            # time.sleep(random.uniform(.1, .4)) # human wait
             action.drag_and_drop_by_offset(slider, slide.size['width'], 0).perform()
 
             _log(f'scrapper wait datas {idship}')
