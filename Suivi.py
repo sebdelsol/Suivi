@@ -824,8 +824,8 @@ if __name__ == "__main__":
     menu =  [   MyButton('Rafraichir', p = button_pad, font = (VarFont, button_f_size), k = '-Refresh-'), 
                 MyButton('Nouveau', p = ((0, 0), (button_pad, button_pad)), font = (VarFont, button_f_size), k = '-New-'), 
                 MyButton('   Archives   ', p = ((button_pad, 0), (button_pad, button_pad)), disabled = True, font = (VarFont, button_f_size), k = '-Archives-'), 
-                MyButton('Log', p = button_pad, font = (VarFont, button_f_size), k = '-Log-'), 
                 recenter_widget,
+                MyButton('Log', p = 0, font = (VarFont, button_f_size), k = '-Log-'), 
                 MyButton(' X ', p = button_pad, font = (VarFontBold, button_f_size), button_color = ('red', None), focus = True, k = '-Exit-') ]
 
     layout = [ [ sg.Col([menu], p = 0, background_color = menu_color, expand_x = True, k = 'MENU') ],
