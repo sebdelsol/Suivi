@@ -284,7 +284,7 @@ class TrackerWidget:
         bg_color_h = 'grey85'
 
         b_p = 5
-        self.buttons = [ MyButton('', image_filename = 'icon/refresh.png', p = ((b_p*3, b_p), (b_p, b_p)), button_color = bg_color, mouseover_color = bg_color_h, k = self.update),
+        self.buttons = [ MyButton('', image_filename = 'icon/refresh.png', p = ((b_p * 2, b_p), (b_p, b_p)), button_color = bg_color, mouseover_color = bg_color_h, k = self.update),
                          MyButton('', image_filename = 'icon/edit.png', p = b_p, button_color = bg_color, mouseover_color = bg_color_h, k = self.edit),
                          MyButton('', image_filename = 'icon/archive.png', p = b_p, button_color = bg_color, mouseover_color = bg_color_h, k = self.archive_or_delete) ]
 
