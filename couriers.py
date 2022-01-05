@@ -197,10 +197,13 @@ class SeleniumScrapper(Courier):
 
     def __init__(self, splash_update):
         self.drivers = queue.Queue() if self.n_drivers > 0 else None
+        self.drivers_list = []
 
         for i in range(self.n_drivers):
             splash_update(f'création driver {i + 1}/{self.n_drivers}')
-            self.drivers.put(self.create_driver())
+            driver = self.create_driver()
+            self.drivers.put(driver)
+            self.drivers_list.append(driver)
 
     def create_driver(self):
         options = uc.ChromeOptions()
@@ -240,10 +243,14 @@ class SeleniumScrapper(Courier):
                 driver.quit()
 
     def close(self):
-        for proc in psutil.process_iter():
-            if 'chromedriver.exe' in proc.name().lower():
-                _log (f'kill {proc.name()} {proc.pid}')
-                proc.kill()
+        if self.drivers:
+            for driver in self.drivers_list:
+                driver.quit()
+        else:
+            for proc in psutil.process_iter():
+                if 'chromedriver.exe' in proc.name().lower():
+                    _log (f'kill {proc.name()} {proc.pid}')
+                    proc.kill()
 
 #-------------------------------
 class Cainiao(SeleniumScrapper):
