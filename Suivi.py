@@ -258,7 +258,6 @@ class Trackers:
 
 #------------------------------------------------------------------------------
 class TrackerWidget:
-
     min_events_shown = 1
     days_intervals = [10, 20, 30]
     days_colors = ['green', 'dark orange', 'red', 'black']
