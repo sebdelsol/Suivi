@@ -91,7 +91,6 @@ def edit(title, idship, description, used_couriers, couriers, no_border, main_lo
         elif event in couriers_names:
             window[event].update(text_color = 'black' if values[event] else 'grey60')
 
-
     values = edit_window.loop(catch_event)
     if values:
         idship, description, used_couriers = values['idship'], values['description'], [name for name in couriers_names if values[name]]
