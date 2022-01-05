@@ -57,8 +57,6 @@ class MyGraph(sg.Graph):
         self.draw_arc((x+w2-r2, y+h2-r2), (x+w2, y+h2),       90, 0,   fill_color = color, arc_color = color)
         self.draw_arc((x-w2, y-h2),       (x-w2+r2, y-h2+r2), 90, 180, fill_color = color, arc_color = color) 
         self.draw_arc((x+w2-r2, y-h2),    (x+w2, y-h2+r2),    90, 270, fill_color = color, arc_color = color)
-        # bounding box
-        # self.draw_rectangle((x-w2, y+h2), (x+w2, y-h2), fill_color = None, line_color = 'black')
 
 #---------------------------------
 def three_char_month(date_txt, i):
