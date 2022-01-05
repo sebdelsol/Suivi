@@ -1,6 +1,3 @@
-TrackersFile = 'Trackers.trck'
-
-# --------------------------------------------------------------------------
 import traceback
 import threading
 import queue
@@ -15,15 +12,18 @@ import io
 from PIL import Image  ,ImageOps
 import base64
 import textwrap
-import locale
-locale.setlocale(locale.LC_ALL, 'fr_FR.utf8') # date in French
 
 from mylog import mylog, _log
 from mybutton import MyButton
 from couriers import Couriers, get_local_now
 import popup
 
-#------------------------------------------------------------------------------
+import locale
+locale.setlocale(locale.LC_ALL, 'fr_FR.utf8') # date in French
+
+TrackersFile = 'Trackers.trck'
+
+#-------------------------------------------------------
 def resize_and_colorize_gif(image64, resize_div, color):
     buffer = io.BytesIO(base64.b64decode(image64))
     im = Image.open(buffer)
@@ -70,7 +70,7 @@ def trigger_event(window, *events):
     if window and window.TKroot:
         window.write_event_value(*events)
 
-#-------------------------------------------------------------------------------------------
+#------------------
 class SavedTracker:
     def __init__(self, tracker):
         with tracker.critical:
@@ -78,7 +78,7 @@ class SavedTracker:
             for attr in ('idship', 'description', 'used_couriers', 'state', 'contents'):
                 self.__dict__[attr] = tracker.__dict__[attr]
 
-#-----------
+#-------------
 class Tracker:
     def __init__(self, idship, description, used_couriers, available_couriers, state = 'ok', contents = None):
         self.set_id(idship, description, used_couriers)
@@ -199,7 +199,7 @@ class Tracker:
         content = self.get_consolidated_content() 
         return content and content.get('status', {}).get('delivered')
 
-#------------
+#--------------
 class Trackers:
     def __init__(self, filename, splash_update):
         self.filename = filename
@@ -256,7 +256,7 @@ class Trackers:
     def close(self):
         self.couriers.close()
 
-#------------------------------------------------------------------------------
+#-------------------
 class TrackerWidget:
     min_events_shown = 1
     days_intervals = [10, 20, 30]
@@ -603,7 +603,7 @@ class TrackerWidget:
         trigger_event(window, '-ARCHIVE UPDATED-', '')
         self.update(window)
 
-# -----------------------------------
+# -------------------
 class TrackerWidgets:
     def __init__(self, window, trackers, splash_update):
         self.widgets = []
@@ -716,7 +716,7 @@ class TrackerWidgets:
         window.move(x, y)
         window.refresh()
 
-# ------------------------------------------
+# ---------------------
 class Main_window_loop:
     def __init__(self, main_window, trackers, widgets, mylog, animation_step = 100):
         self.main_window = main_window
@@ -798,7 +798,7 @@ class Main_window_loop:
         
         return exit, forward
 
-# ------------------------------------------
+# ------------------------
 if __name__ == "__main__":
 
     import sys
