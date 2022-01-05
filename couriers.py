@@ -193,7 +193,7 @@ class SeleniumScrapper(Courier):
                 '--lang=fr', 
     )
 
-    options_V1 = ('--window-size=1024,768', )
+    options_V1 = ('--window-size=1024,768', ) # reach sliders
     options_V2 = ('--excludeSwitches --enable-logging', 
                   '--blink-settings=imagesEnabled=false')
 
