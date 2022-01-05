@@ -167,7 +167,7 @@ else:
     import undetected_chromedriver._compat as uc
 
 import psutil
-import random
+# import random
 import threading
 import queue
 
