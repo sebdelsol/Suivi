@@ -225,10 +225,12 @@ class SeleniumScrapper(Courier):
     def _get_response(self, idship):
         try:
             _log(f'scrapper load {idship}')
-            with self.lock: # do not get all drivers & url @ the same time
+            with self.lock: # do not get all drivers @ the same time
                 driver = self.drivers.get() if self.drivers else self.create_driver()
-                url = self._get_url_for_browser(idship)
-                driver.get(url)
+
+            with self.lock: # do not get all url @ the same time
+                driver.get(self._get_url_for_browser(idship))
+                
             events = self._scrape(driver, idship)
             return True, events
         

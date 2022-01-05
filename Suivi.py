@@ -265,7 +265,7 @@ class TrackerWidget:
     layout_pad = 10 # pixels
     max_event_width = 110 # chars
 
-    loading_gif = resize_and_colorize_gif(sg.DEFAULT_BASE64_LOADING_GIF, 2.5, '#909090')
+    loading_gif = resize_and_colorize_gif(sg.DEFAULT_BASE64_LOADING_GIF, 2.5, 'red')
 
     def __init__(self, tracker):
         self.tracker = tracker
@@ -811,7 +811,7 @@ if __name__ == "__main__":
     splash_log = sg.T('', font=(VarFont, 10))
     splash = sg.Window('Suivi...', [[sg.T('Suivi...')], [splash_log]], font=(VarFont, 75), keep_on_top = not is_debugger, no_titlebar = not is_debugger, finalize = True)
     def splash_update(txt):
-        splash_log.update(f'{txt} ...')
+        splash_log.update(f'{txt} ...'.capitalize())
         splash.refresh()
 
     splash_update('inititialisation')
