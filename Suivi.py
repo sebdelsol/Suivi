@@ -611,7 +611,7 @@ class TrackerWidgets:
 
         n_trackers = len(trackers.trackers)
         for i, tracker in enumerate(trackers.trackers):
-            splash_update(f'création widget {i + 1}/{n_trackers}')
+            splash_update(f'création suivi {i + 1}/{n_trackers}')
             self.create_widget(window, tracker)
 
         trigger_event(window, '-ARCHIVE UPDATED-', '')

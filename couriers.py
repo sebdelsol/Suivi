@@ -201,7 +201,7 @@ class SeleniumScrapper(Courier):
         self.drivers_list = []
 
         for i in range(self.n_drivers):
-            splash_update(f'création driver {i + 1}/{self.n_drivers}')
+            splash_update(f'création pilote {i + 1}/{self.n_drivers}')
             driver = self.create_driver()
             self.drivers.put(driver)
             self.drivers_list.append(driver)
