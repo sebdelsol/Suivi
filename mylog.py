@@ -12,6 +12,7 @@ class MyLog:
 
     log_event = '-UPDATE LOG-'
     listen_step = 20
+    select_bg_color = '#C0C0C0'
    
     def __init__(self):
         self.prints = queue.Queue()
@@ -30,15 +31,14 @@ class MyLog:
         self.window = sg.Window('', frame, margins = (0, 0), resizable = True, keep_on_top = no_border, no_titlebar = no_border, return_keyboard_events = True, debugger_enabled = False)
         self.window.finalize().disappear()
 
-        self.default_bindtags = self.output.Widget.bindtags()
-        self.no_selection_tags = list(self.default_bindtags).remove('Text')
-
         self.window.TKroot.resizable(width = False, height = True)
         self.window.set_min_size(self.window.size)
         self.height = self.window.size[0]
         
         self.window.TKroot.bind('<Configure>', self.resize)
         self.window.TKroot.after(self.listen_step, self.listen)
+
+        self.output.Widget.configure(selectbackground = self.select_bg_color)
 
         self.link_button.finalize()
 
@@ -65,23 +65,23 @@ class MyLog:
             elif event == 'Link':
                 self.linked =  not self.linked
                 if self.linked :
-                    # enable selection 
-                    self.output.Widget.bindtags(self.default_bindtags)
-                    
+                    self.output.Widget.tag_remove('sel', '1.0', 'end')
+                    self.output.Widget.configure(selectbackground = self.select_bg_color)
+
                     self.window.grab_any_where_off()
                     self.output.grab_anywhere_exclude()
                     self.link_button.update(self.link_txt)
                     self.stick_to_main()
                 
                 else:
-                    self.output.Widget.bindtags((str(self.output.Widget), str(self.window.TKroot), self.no_selection_tags))
-                    self.output.Widget.tag_remove('sel', '1.0', 'end')
+                    # invisible selection
+                    self.output.Widget.configure(selectbackground = self.output.Widget.cget('bg'))
 
                     self.window.grab_any_where_on()
                     self.output.grab_anywhere_include()
                     self.link_button.update(self.unlink_txt)
                     self.stick_to_main(gap = 10, force = True)
-            
+
             return True
 
     def stick_to_main(self, gap = 0, force = False):
