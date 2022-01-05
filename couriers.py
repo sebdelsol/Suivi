@@ -154,12 +154,17 @@ class Courier:
                         events = events)
 
 #-----------------------
+USE_UC_V2 = False
 from selenium.common.exceptions import WebDriverException, TimeoutException, NoSuchElementException
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-import undetected_chromedriver as uc
+if USE_UC_V2:
+    import undetected_chromedriver as uc
+else:
+    import undetected_chromedriver._compat as uc
+
 import psutil
 import random
 import threading
@@ -169,6 +174,26 @@ class SeleniumScrapper(Courier):
     driver_timeout = 100 # s
     lock = threading.Lock()
     n_drivers = 2
+
+    experimental_options = dict(
+        prefs = {'translate_whitelists': {'en':'fr', 'und':'fr', 'zh-CN':'fr', 'zh-TW':'fr'},
+                'translate_allowlists': {'en':'fr', 'und':'fr', 'zh-CN':'fr', 'zh-TW':'fr'},
+                'translate': {'enabled':'true'},
+                'profile.managed_default_content_settings.images': 2,      # remove image
+                'profile.managed_default_content_settings.stylesheet': 2,  # remove css
+                'profile.managed_default_content_settings.css': 2 
+        },
+        excludeSwitches = ['enable-logging']
+    )
+
+    options = ( '--no-first-run', 
+                '--no-service-autorun', 
+                '--password-store=basic', 
+                '--lang=fr', 
+    )
+
+    options_V1 = ('--window-size=1024,768', )
+    options_V2 = ('--excludeSwitches --enable-logging', '--blink-settings=imagesEnabled=false')
 
     def __init__(self, splash_update):
         self.drivers = queue.Queue() if self.n_drivers > 0 else None
@@ -181,8 +206,14 @@ class SeleniumScrapper(Courier):
         options = uc.ChromeOptions()
         options.headless = True
         options.binary_location = chrome_exe
-        options.add_argument('--no-first-run --no-service-autorun --password-store=basic')
-        options.add_argument('--excludeSwitches --enable-logging')        
+        
+        for option in self.options + (self.option_V2 if USE_UC_V2 else self.options_V1):
+            options.add_argument(option)
+        
+        if not USE_UC_V2: # prefs do not work on UC v2
+            for k, v in self.experimental_options.items():
+                options.add_experimental_option(k, v)
+
         driver = uc.Chrome(options = options) 
         driver.set_page_load_timeout(self.driver_timeout)
         return driver
@@ -223,7 +254,7 @@ class Cainiao(SeleniumScrapper):
     timeout_elt = 30 # s
 
     def _get_url_for_browser(self, idship):
-        return f'https://global.cainiao.com/detail.htm?mailNoList={idship}&lang=fr&'
+        return f'https://global.cainiao.com/detail.htm?mailNoList={idship}&lang=zh'
 
     def _scrape(self, driver, idship):
         def get_timeline():
