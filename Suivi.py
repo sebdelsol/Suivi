@@ -295,7 +295,7 @@ class TrackerWidget:
         self.desc_widget = sg.T('', p = 0, font = (VarFont, 40), text_color = 'grey40', background_color = bg_color_h, expand_x = True, justification = 'l') 
         self.days_size = 60
         self.days_font = (FixFont, 20) 
-        self.days_widget = MyGraph(canvas_size=(self.days_size, self.days_size), graph_bottom_left=(0, 0), graph_top_right=(self.days_size, self.days_size), p = 0, background_color=bg_color_h)
+        self.days_widget = MyGraph(canvas_size=(self.days_size, self.days_size), graph_bottom_left=(0, 0), graph_top_right=(self.days_size, self.days_size), p = (5,0), background_color=bg_color_h)
 
         self.loading_widget = sg.Image(data = self.loading_gif, p = 3, background_color = bg_color, k = lambda w : self.toggle_expand(w))
         self.loading_widget_col = sg.Col([[self.loading_widget]], p = 0, visible = False, background_color = bg_color)
