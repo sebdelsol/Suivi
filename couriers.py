@@ -160,6 +160,7 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
+
 if USE_UC_V2:
     import undetected_chromedriver as uc
 else:
@@ -173,7 +174,7 @@ import queue
 class SeleniumScrapper(Courier):
     driver_timeout = 100 # s
     lock = threading.Lock()
-    n_drivers = 2
+    n_drivers = 1
 
     experimental_options = dict(
         prefs = {'translate_whitelists': {'en':'fr', 'und':'fr', 'zh-CN':'fr', 'zh-TW':'fr'},
