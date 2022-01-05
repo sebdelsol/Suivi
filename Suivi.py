@@ -316,7 +316,8 @@ class TrackerWidget:
                  [  sg.pin(sg.Col([ [self.events_widget] ], p = 0, background_color = bg_color, expand_x = True), expand_x = False) ]]
 
         self.layout = sg.Col(layout, expand_x = True, p = ((self.layout_pad, self.layout_pad), (self.layout_pad, 0)), visible = self.tracker.state == 'ok', background_color = bg_color)
-        return [ sg.pin(self.layout, expand_x = True) ] # collapse when hidden
+        self.pin = sg.pin(self.layout, expand_x = True) # collapse when hidden
+        return [ self.pin ] 
     
     def finalize(self, window):
         button_size = (25, 40)
@@ -351,8 +352,7 @@ class TrackerWidget:
         return self.height_events > 0
 
     def get_pixel_size(self):
-        w, h = self.layout.get_size()
-        return w, h
+        return self.pin.get_size()
 
     def update_size(self, w):
         nb_events_shown =  float('inf') if self.expand_events else self.min_events_shown
@@ -678,13 +678,12 @@ class TrackerWidgets:
 
         window.refresh()
         window['TRACKS'].contents_changed()
+        window.refresh()
 
         # wanted size
         if ok:
-            widths, heights = zip(*[widget.get_pixel_size() for widget in ok])
-            w = max(widths) + TrackerWidget.layout_pad * 2
-            h = sum(heights) + window['MENU'].get_size()[1] - 2 + (len(heights) + 1) * TrackerWidget.layout_pad
-            h += len(self.widgets) - len(ok) # sg.pin = 1 pixel
+            w = max(widget.get_pixel_size()[0] for widget in ok) 
+            h = sum(widget.get_pixel_size()[1] for widget in self.widgets) + window['MENU'].get_size()[1] + 3
         else:
             w, h = 400, 200
 
@@ -694,7 +693,7 @@ class TrackerWidgets:
 
         if h > screen_h - h_screen_margin:
             window['TRACKS'].Widget.vscrollbar.pack(side=sg.tk.RIGHT, fill='y')
-            w += 15
+            w += 15 # size of scrollbar
 
         else:
             window['TRACKS'].Widget.vscrollbar.pack_forget()
@@ -739,7 +738,9 @@ class Main_window_loop:
 
     def get_event(self):
         window, event, values = sg.read_all_windows()
-        # print (f'{event = }' + (f', {value = }' if (value := values and values.get(event)) else ''))
+        
+        # if isinstance(event, str) and 'MouseWheel' not in event: 
+        #     _log (f'{event = }' + (f', {value = }' if (value := values and values.get(event)) else ''))
 
         exit = False
         forward = None
