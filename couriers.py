@@ -193,7 +193,8 @@ class SeleniumScrapper(Courier):
     )
 
     options_V1 = ('--window-size=1024,768', )
-    options_V2 = ('--excludeSwitches --enable-logging', '--blink-settings=imagesEnabled=false')
+    options_V2 = ('--excludeSwitches --enable-logging', 
+                  '--blink-settings=imagesEnabled=false')
 
     def __init__(self, splash_update):
         self.drivers = queue.Queue() if self.n_drivers > 0 else None
@@ -222,7 +223,6 @@ class SeleniumScrapper(Courier):
         return driver
 
     def _get_response(self, idship):
-
         try:
             _log(f'scrapper load {idship}')
             with self.lock: # do not get all drivers & url @ the same time
