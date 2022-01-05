@@ -246,14 +246,13 @@ class SeleniumScrapper(Courier):
                 driver.quit()
 
     def close(self):
-        if self.drivers:
-            for driver in self.drivers_list:
-                driver.quit()
-        else:
-            for proc in psutil.process_iter():
-                if 'chromedriver.exe' in proc.name().lower():
-                    _log (f'kill {proc.name()} {proc.pid}')
-                    proc.kill()
+        for driver in self.drivers_list:
+            driver.quit()
+
+        for proc in psutil.process_iter():
+            if 'chromedriver.exe' in proc.name().lower():
+                _log (f'kill {proc.name()} {proc.pid}')
+                proc.kill()
 
 #-------------------------------
 class Cainiao(SeleniumScrapper):
