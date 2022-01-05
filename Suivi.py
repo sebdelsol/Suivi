@@ -536,8 +536,8 @@ class TrackerWidget:
             
             w_name = max(len(name) for name in couriers_update_names)
             for i, name in enumerate(couriers_update_names):
+                last = i+1 == len(couriers_update)
                 date, error, updating = couriers_update[name]
-                end = i+1 == len(couriers_update)
                 ago = f" {timeago.format(date, get_local_now(), 'fr').replace('il y a', '').strip()}" if date else ' jamais'
                 error_color, name_font = ('red', FixFontBold) if error else ('green', FixFont)
                 
@@ -550,7 +550,7 @@ class TrackerWidget:
 
                 self.couriers_widget.print(f'{spaces}{ago}', autoscroll = False, t = 'grey60', end = '')
                 self.couriers_widget.print(' ⟳ ', autoscroll = False, t = 'grey55', end = '')
-                self.couriers_widget.print(f'{name.rjust(w_name)}', autoscroll = False, t = error_color, font = (name_font, self.courier_fsize), end = ''  if end else '\n')
+                self.couriers_widget.print(f'{name.rjust(w_name)}', autoscroll = False, t = error_color, font = (name_font, self.courier_fsize), end = ''  if last else '\n')
         
         else:
             self.couriers_widget.update('Pas de trackers', text_color = 'red')
