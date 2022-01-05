@@ -313,7 +313,7 @@ class TrackerWidget:
         id_couriers_widget = sg.Col([[self.id_widget], [self.couriers_widget]], p = 0, background_color = bg_color_h, expand_x = False)
         layout = [[ sg.Col([ [sg.Col([ [ self.days_widget, self.desc_widget, id_couriers_widget ] + self.buttons ], p = 5, background_color = bg_color_h, expand_x = True) ]], p = 0, expand_x = True, background_color = bg_color_h) ],
                  [  sg.pin(self.loading_widget_col), sg.Col([ [self.ago_widget, self.status_widget, self.expand_button] ], p = ((3, 0), (5, 0)), background_color = bg_color, expand_x = True) ],
-                 [  sg.pin(sg.Col([ [self.events_widget] ], p = 0, background_color = bg_color, expand_x = True), expand_x = False) ]]
+                 [  sg.pin(sg.Col([ [self.events_widget] ], p = 0, background_color = bg_color, expand_x = True), expand_x = True) ]]
 
         self.layout = sg.Col(layout, expand_x = True, p = ((self.layout_pad, self.layout_pad), (self.layout_pad, 0)), visible = self.tracker.state == 'ok', background_color = bg_color)
         self.pin = sg.pin(self.layout, expand_x = True) # collapse when hidden
@@ -619,6 +619,8 @@ class TrackerWidgets:
             self.create_widget(window, tracker)
 
         trigger_event(window, '-ARCHIVE UPDATED-', '')
+        self.update_size(window)
+        self.recenter(window, True)
 
     def create_widget(self, window, tracker):
         widget = TrackerWidget(tracker)
@@ -678,7 +680,6 @@ class TrackerWidgets:
 
         window.refresh()
         window['TRACKS'].contents_changed()
-        window.refresh()
 
         # wanted size
         if ok:
@@ -717,6 +718,7 @@ class TrackerWidgets:
         else:
             y = max(0, int((H-h)*.5)) if y+h > H else y
         window.move(x, y)
+        window.refresh()
 
 # ------------------------------------------
 class Main_window_loop:
@@ -770,7 +772,6 @@ class Main_window_loop:
 
             elif event == '-RECENTER-':
                 self.widgets.recenter(window, force = True)
-                window.refresh()
 
             elif event == '-UPDATING CHANGED-':
                 n_updating = self.widgets.count_not_updating()
@@ -836,8 +837,7 @@ if __name__ == "__main__":
 
     frame =  [ [ sg.Frame('', layout, p = 0, border_width = 1, relief = sg.RELIEF_SOLID, expand_x = True, expand_y = True) ] ]
 
-    main_window = sg.Window('Suivi', frame, size = (600, 600), grab_anywhere = True, resizable = True, 
-                            keep_on_top = not is_debugger, no_titlebar = not is_debugger, return_keyboard_events = True, margins = (0, 0), debugger_enabled = False)
+    main_window = sg.Window('Suivi', frame, grab_anywhere = True, resizable = True, keep_on_top = not is_debugger, no_titlebar = not is_debugger, return_keyboard_events = True, margins = (0, 0), debugger_enabled = False)
     main_window.finalize().disappear()
 
     MyButton.finalize_all(main_window)
