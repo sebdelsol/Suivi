@@ -23,7 +23,7 @@ locale.setlocale(locale.LC_ALL, 'fr_FR.utf8') # date in French
 
 TrackersFile = 'Trackers.trck'
 
-#-------------------------------------------------------
+#---------------------------------------------------
 def resize_and_colorize_gif(image64, height, color):
     buffer = io.BytesIO(base64.b64decode(image64))
     im = Image.open(buffer)
@@ -46,6 +46,7 @@ def resize_and_colorize_gif(image64, height, color):
     frames[0].save(buffer, optimize = False, save_all = True, append_images = frames[1:], loop = 0, format = 'GIF', transparency = 0)
     return base64.b64encode(buffer.getvalue())
 
+#-------------------------------------------------
 def resize_and_colorize_img(image, height, color):
     im = Image.open(image)
 
@@ -273,7 +274,7 @@ class Trackers:
 class TrackerWidget:
     min_events_shown = 1
     days_intervals = [10, 20, 30]
-    days_colors = ['green', 'dark orange', 'red', 'black']
+    days_colors = ['lime green', 'dark orange', 'red', 'black']
 
     layout_pad = 10 # pixels
     max_event_width = 110 # chars
@@ -313,8 +314,8 @@ class TrackerWidget:
         self.events_fb = (FixFontBold, 8)
         # multiline needs to be visible = False @ the beginning to prevents mousewheel to be catched and hinder whole window scrolling
         self.desc_widget = sg.T('', p = 0, font = (VarFont, 40), text_color = 'grey40', background_color = bg_color_h, expand_x = True, justification = 'l') 
-        self.days_size = 60
-        self.days_font = (FixFont, 20) 
+        self.days_size = 50
+        self.days_font = (FixFontBold, 15) 
         self.days_widget = MyGraph(canvas_size=(self.days_size, self.days_size), graph_bottom_left=(0, 0), graph_top_right=(self.days_size, self.days_size), p = (5,0), background_color=bg_color_h)
 
         self.loading_widget = sg.Image(data = self.loading_gif, p = 3, background_color = bg_color, k = lambda w : self.toggle_expand(w))
@@ -522,7 +523,7 @@ class TrackerWidget:
                 elapsed_txt = '?'
 
             self.days_widget.erase()
-            self.days_widget.draw_rounded_box(self.days_size*.47, self.days_size*.47, self.days_size*.9, self.days_size*.7, self.days_size*.15, 'grey92')
+            self.days_widget.draw_rounded_box(self.days_size*.5, self.days_size*.5, self.days_size*.9, self.days_size*.7, self.days_size*.15, 'grey92')
             self.days_widget.draw_text(elapsed_txt, (self.days_size*.5, self.days_size*.5), color = elapsed_color, font = self.days_font, text_location = 'center')
 
             status_date = content and content.get('status', {}).get('date')
