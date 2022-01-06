@@ -604,7 +604,8 @@ class TrackerWidget:
         self.disable_buttons(True)
 
         choices = { 'Archiver': self.archive, 'Supprimer': self.delete }
-        choice = popup.one_choice(choices.keys(), f'{self.tracker.description} - {self.tracker.idship}', not is_debugger, main_loop)
+        colors = ('green', 'red')
+        choice = popup.one_choice(choices.keys(), colors, f'{self.tracker.description} - {self.tracker.idship}', not is_debugger, main_loop)
         if choice:
             choices[choice](window, main_loop)
 

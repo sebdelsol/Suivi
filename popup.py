@@ -146,8 +146,8 @@ def choices(choices, title, no_border, main_loop):
     return chosen
 
 #-----------------------------------------
-def one_choice(choices, title, no_border, main_loop):
-    layout = [ [ sg.Radio(choice, group_id = 'choices', font = (VarFont, 15), default= i==0, k = choice)] for i, choice in enumerate(choices) ]
+def one_choice(choices, colors, title, no_border, main_loop):
+    layout = [ [ sg.Radio(choice, group_id = 'choices', text_color = color, font = (VarFont, 15), default= i==0, k = choice)] for i, (choice, color) in enumerate(zip(choices, colors)) ]
 
     choices_window = MyPopup(title, layout, no_border, main_loop)
 
