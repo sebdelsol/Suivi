@@ -240,13 +240,13 @@ class TrackerWidget:
     layout_pad = 10 # pixels
     max_event_width = 110 # chars
 
-    loading_gif = resize_and_colorize_gif(sg.DEFAULT_BASE64_LOADING_GIF, 25, '#208020')
+    loading_gif = resize_and_colorize_gif(sg.DEFAULT_BASE64_LOADING_GIF, 25, '#808080')
     
     button_size = (25, 25)
     img_per =.6
-    refresh_img = resize_and_colorize_img('icon/refresh.png', button_size[1] * img_per, '#208020')
+    refresh_img = resize_and_colorize_img('icon/refresh.png', button_size[1] * img_per, '#808080')
     edit_img = resize_and_colorize_img('icon/edit.png', button_size[1] * img_per, '#6060FF')
-    archive_img = resize_and_colorize_img('icon/archive.png', button_size[1] * img_per, '#FF6060')
+    archive_img = resize_and_colorize_img('icon/archive.png', button_size[1] * img_per, '#FF7440')
 
     def __init__(self, tracker):
         self.tracker = tracker
@@ -529,7 +529,7 @@ class TrackerWidget:
 
             for updating, ago, name, name_color, name_font in txts:
                 maj_txt = maj if updating else ' ' * len(maj)
-                self.couriers_widget.print(maj_txt , autoscroll = False, font = (FixFontBold, self.courier_fsize), t = 'green', end = '')
+                self.couriers_widget.print(maj_txt , autoscroll = False, font = (FixFontBold, self.courier_fsize), t = 'grey', end = '')
                 self.couriers_widget.print(name.rjust(width_name), autoscroll = False, t = name_color, font = (name_font, self.courier_fsize), end = '')
                 self.couriers_widget.print(', MàJ ', autoscroll = False, t = 'grey60', end = '')
                 self.couriers_widget.print(ago.ljust(width_ago), autoscroll = False, t = 'grey45')
@@ -804,9 +804,9 @@ if __name__ == "__main__":
 
     button_pad, button_f_size = 10, 12
     im_height, im_margin = 20, 5
-    menu =  [   MyButtonImg('Rafraichir', p = button_pad, im_height = im_height, im_margin = im_margin, image_filename = 'icon/refresh.png', button_color = ('green', None), font = (VarFontBold, button_f_size), k = '-Refresh-'), 
+    menu =  [   MyButtonImg('Rafraichir', p = button_pad, im_height = im_height, im_margin = im_margin, image_filename = 'icon/refresh.png', button_color = ('grey', None), font = (VarFontBold, button_f_size), k = '-Refresh-'), 
                 MyButtonImg('Nouveau', p = ((0, 0), (button_pad, button_pad)), im_height = im_height, im_margin = im_margin, image_filename = 'icon/edit.png', button_color = ('blue', None), font = (VarFontBold, button_f_size), k = '-New-'), 
-                MyButtonImg('Archives', p = ((button_pad, 0), (button_pad, button_pad)), im_height = im_height, im_margin = im_margin, image_filename = 'icon/archive.png', button_color = ('red', None), disabled = True, font = (VarFontBold, button_f_size), k = '-Archives-'), 
+                MyButtonImg('Archives', p = ((button_pad, 0), (button_pad, button_pad)), im_height = im_height, im_margin = im_margin, image_filename = 'icon/archive.png', button_color = ('#FF7440', None), disabled = True, font = (VarFontBold, button_f_size), k = '-Archives-'), 
                 recenter_widget,
                 MyButton('Log', p = 0, font = (VarFont, button_f_size), k = '-Log-'), 
                 MyButton(' X ', p = button_pad, font = (VarFontBold, button_f_size), button_color = ('red', None), focus = True, k = '-Exit-') ]
