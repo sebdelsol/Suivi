@@ -588,9 +588,10 @@ class TrackerWidget:
 
 # -------------------
 class TrackerWidgets:
-    def __init__(self, window, trackers, splash_update):
+    def __init__(self, window, trackers, widgets_col, splash_update):
         self.widgets = []
         self.trackers = trackers
+        self.widgets_col = widgets_col
 
         n_trackers = len(trackers.trackers)
         for i, tracker in enumerate(trackers.trackers):
@@ -604,7 +605,7 @@ class TrackerWidgets:
     def create_widget(self, window, tracker):
         widget = TrackerWidget(tracker)
 
-        window.extend_layout(window['TRACKS'], [widget.create_layout()])
+        window.extend_layout(self.widgets_col, [widget.create_layout()])
         self.widgets.append(widget)
 
         widget.finalize(window)
@@ -638,12 +639,21 @@ class TrackerWidgets:
             widget = archived[i]
             widget.unarchive(window, main_loop)
 
+    def archives_updated(self, archives_button):
+        n_archives = self.trackers.count_archived()
+        txt, disabled = (f'Archives ({n_archives})', False) if n_archives > 0 else ('Archives', True)
+        archives_button.update(txt, disabled = disabled)
+
     def count_not_updating(self):
         return [widget.updating for widget in self.get_widgets_with_state('ok')].count(False)
 
     def update(self, window):
         for widget in self.get_widgets_with_state('ok'):
             widget.update(window)
+
+    def updating_changed(self, refresh_button):
+        n_updating = self.count_not_updating()
+        refresh_button.update(disabled = n_updating == 0)
 
     def animate(self, animation_step):
         for widget in self.get_widgets_with_state('ok'):
@@ -658,7 +668,7 @@ class TrackerWidgets:
             widget.update_size(max_width)
 
         window.refresh()
-        window['TRACKS'].contents_changed()
+        self.widgets_col.contents_changed()
 
         # wanted size
         if ok:
@@ -672,11 +682,11 @@ class TrackerWidgets:
         h_screen_margin = 0 #400
 
         if h > screen_h - h_screen_margin:
-            window['TRACKS'].Widget.vscrollbar.pack(side=sg.tk.RIGHT, fill='y')
+            self.widgets_col.Widget.vscrollbar.pack(side=sg.tk.RIGHT, fill='y')
             w += 15 # size of scrollbar
 
         else:
-            window['TRACKS'].Widget.vscrollbar.pack_forget()
+            self.widgets_col.Widget.vscrollbar.pack_forget()
 
         # min size
         window.set_min_size((min(w, screen_w), min(h, screen_h - h_screen_margin)))
@@ -701,10 +711,8 @@ class TrackerWidgets:
 
 # ---------------------
 class Main_window_loop:
-    def __init__(self, main_window, trackers, widgets, mylog, animation_step = 100):
+    def __init__(self, main_window, widgets, mylog, animation_step = 100):
         self.main_window = main_window
-    
-        self.trackers = trackers
         self.widgets = widgets
         self.mylog = mylog
 
@@ -726,11 +734,8 @@ class Main_window_loop:
         exit = False
         forward = None
 
-        if mylog.catch_event(window, event):
-            pass
-        
         # clic event for multiline to expand collapse, see widget.bind in TrackerWidgets
-        elif isinstance(event, tuple) and callable(event[0]):
+        if isinstance(event, tuple) and callable(event[0]):
             event[0](window)      
 
         # update, edit, delete, archive a tracker       
@@ -740,6 +745,9 @@ class Main_window_loop:
             
             except TypeError:
                 event(window) 
+        
+        elif mylog.catch_event(window, event):
+            pass
 
         elif window == self.main_window:
 
@@ -753,13 +761,10 @@ class Main_window_loop:
                 self.widgets.recenter(window, force = True)
 
             elif event == '-UPDATING CHANGED-':
-                n_updating = self.widgets.count_not_updating()
-                window['-Refresh-'].update(disabled = n_updating == 0)
+                self.widgets.updating_changed(window['-Refresh-'])
 
             elif event == '-ARCHIVE UPDATED-':
-                n_archives = self.trackers.count_archived()
-                txt, disabled = (f'Archives ({n_archives})', False) if n_archives > 0 else ('Archives', True)
-                window['-Archives-'].update(txt, disabled = disabled)
+                self.widgets.archives_updated(window['-Archives-'])
 
             elif event == '-UPDATE WIDGETS SIZE-':
                 self.widgets.update_size(window)
@@ -823,12 +828,12 @@ if __name__ == "__main__":
     recenter_widget.bind('<Double-Button-1>', '')
 
     trackers = Trackers(TrackersFile, splash_update) 
-    widgets = TrackerWidgets(main_window, trackers, splash_update) 
+    widgets = TrackerWidgets(main_window, trackers, main_window['TRACKS'], splash_update) 
 
     mylog.create_window((FixFont, 7), (VarFont, 12), not is_debugger, main_window)
     splash.close()
     main_window.reappear()
-    main_window_loop = Main_window_loop(main_window, trackers, widgets, mylog)
+    main_window_loop = Main_window_loop(main_window, widgets, mylog)
 
     while True:
         if main_window_loop.get_event()[0]:
