@@ -1,5 +1,9 @@
 import PySimpleGUI as sg
+from tkinter import font
 
+from imgtool import expand_right_img64, get_img64_size, resize_and_colorize_img
+
+#-------------------------
 class MyButton(sg.Button):
     default_colors = dict( Enter = 'grey75', Leave = 'grey95')
     binds = ('<Enter>', '<Leave>')
@@ -19,7 +23,7 @@ class MyButton(sg.Button):
         self.colors = { 'Leave' : button_color or MyButton.default_colors['Leave'],
                         'Enter' : mouseover_color or MyButton.default_colors['Enter'] }
 
-        kwargs['button_color' ] = (text_color, self.colors['Leave'])
+        kwargs['button_color'] = (text_color, self.colors['Leave'])
         kwargs['border_width'] = 0
 
         super().__init__(*args, **kwargs)
@@ -37,3 +41,37 @@ class MyButton(sg.Button):
         color = self.colors.get('Leave' if self.Disabled else event.type.name)
         if color:
             self.update(button_color = color)
+
+#-------------------------------------------------
+class MyButtonImg(MyButton):
+    def __init__(self, *args, im_margin = 0, im_height = None, **kwargs):
+
+        kwargs['image_data'] = resize_and_colorize_img(kwargs['image_filename'], im_height, kwargs['button_color'][0])
+        kwargs['image_filename'] = None
+        kwargs['auto_size_button'] = False
+        self.im_margin = im_margin
+        self.im_data = kwargs['image_data']
+        self.im_size = get_img64_size(kwargs['image_data'])
+
+        super().__init__(*args, **kwargs)
+
+    def update_layout(self, txt):
+        wfont = font.Font(self.ParentForm.TKroot, self.Font)
+        new_txt = ' ' *  (int((self.im_size[0] + self.im_margin * 2) / wfont.measure(' '))) + txt
+        new_size = (wfont.measure(new_txt) + self.im_margin, self.im_size[1] + self.im_margin * 2)
+
+        self.set_size(new_size)
+        self.Widget.configure(wraplength = new_size[0])
+        new_image_data = expand_right_img64(self.im_data, new_size)
+        self.update(new_txt, image_data = new_image_data, update_layout = False)
+
+    def finalize(self):
+        self.update_layout(self.get_text())        
+        super().finalize()
+
+    def update(self, *args, update_layout = True, **kwargs):
+        super().update(*args, **kwargs)
+        if update_layout:
+            txt = kwargs.get('text') or (len(args) > 0 and args[0])
+            if txt:
+                self.update_layout(txt)        

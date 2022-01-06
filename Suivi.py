@@ -7,56 +7,18 @@ import PySimpleGUI as sg
 import pickle as pickle
 import timeago
 from bisect import bisect
-import io
-from PIL import Image, ImageOps
-import base64
 import textwrap
 
 from mylog import mylog, _log
-from mybutton import MyButton
+from mybutton import MyButton, MyButtonImg
 from couriers import Couriers, get_local_now
+from imgtool import resize_and_colorize_gif, resize_and_colorize_img
 import popup
 
 import locale
 locale.setlocale(locale.LC_ALL, 'fr_FR.utf8') # date in French
 
 TrackersFile = 'Trackers.trck'
-
-#---------------------------------------------------
-def resize_and_colorize_gif(image64, height, color):
-    buffer = io.BytesIO(base64.b64decode(image64))
-    im = Image.open(buffer)
-
-    resize_to = (im.size[0] * height / im.size[1], height)
-    frames = []
-
-    try:
-        while True:
-            frame = ImageOps.colorize(ImageOps.grayscale(im), white = 'white', black = color)
-            frame = frame.convert('RGBA')
-            frame.thumbnail(resize_to)
-            frames.append(frame)
-            im.seek(im.tell() + 1)
-    
-    except EOFError:
-        pass
-
-    buffer = io.BytesIO()
-    frames[0].save(buffer, optimize = False, save_all = True, append_images = frames[1:], loop = 0, format = 'GIF', transparency = 0)
-    return base64.b64encode(buffer.getvalue())
-
-#-------------------------------------------------
-def resize_and_colorize_img(image, height, color):
-    im = Image.open(image)
-
-    alpha = im.split()[3]
-    im = ImageOps.colorize(ImageOps.grayscale(im), white = 'white', black = color) 
-    im.putalpha(alpha)
-    im.thumbnail((im.size[0] * height / im.size[1], height))
-
-    buffer = io.BytesIO()
-    im.save(buffer, format = 'PNG')
-    return base64.b64encode(buffer.getvalue())
 
 #-----------------------
 class MyGraph(sg.Graph):
@@ -278,7 +240,7 @@ class TrackerWidget:
     layout_pad = 10 # pixels
     max_event_width = 110 # chars
 
-    loading_gif = resize_and_colorize_gif(sg.DEFAULT_BASE64_LOADING_GIF, 25, 'red')
+    loading_gif = resize_and_colorize_gif(sg.DEFAULT_BASE64_LOADING_GIF, 25, '#208020')
     
     button_size = (25, 25)
     img_per =.6
@@ -567,7 +529,7 @@ class TrackerWidget:
 
             for updating, ago, name, name_color, name_font in txts:
                 maj_txt = maj if updating else ' ' * len(maj)
-                self.couriers_widget.print(maj_txt , autoscroll = False, font = (FixFontBold, self.courier_fsize), t = 'red', end = '')
+                self.couriers_widget.print(maj_txt , autoscroll = False, font = (FixFontBold, self.courier_fsize), t = 'green', end = '')
                 self.couriers_widget.print(name.rjust(width_name), autoscroll = False, t = name_color, font = (name_font, self.courier_fsize), end = '')
                 self.couriers_widget.print(', MàJ ', autoscroll = False, t = 'grey60', end = '')
                 self.couriers_widget.print(ago.ljust(width_ago), autoscroll = False, t = 'grey45')
@@ -838,13 +800,13 @@ if __name__ == "__main__":
     splash_update('inititialisation')
 
     menu_color = MyButton.default_colors['Enter']
-    button_pad, button_f_size = 10, 12
-
     recenter_widget = sg.T('', background_color = menu_color, p = 0, expand_x = True, expand_y = True, k = '-RECENTER-')
-    button_size = (len('Archives(99)'), None)
-    menu =  [   MyButton('Rafraichir', p = button_pad, font = (VarFont, button_f_size), k = '-Refresh-', s = button_size), 
-                MyButton('Nouveau', p = ((0, 0), (button_pad, button_pad)), font = (VarFont, button_f_size), k = '-New-', s = button_size), 
-                MyButton('Archives', p = ((button_pad, 0), (button_pad, button_pad)), disabled = True, font = (VarFont, button_f_size), k = '-Archives-', s = button_size), 
+
+    button_pad, button_f_size = 10, 12
+    im_height, im_margin = 20, 5
+    menu =  [   MyButtonImg('Rafraichir', p = button_pad, im_height = im_height, im_margin = im_margin, image_filename = 'icon/refresh.png', button_color = ('green', None), font = (VarFontBold, button_f_size), k = '-Refresh-'), 
+                MyButtonImg('Nouveau', p = ((0, 0), (button_pad, button_pad)), im_height = im_height, im_margin = im_margin, image_filename = 'icon/edit.png', button_color = ('blue', None), font = (VarFontBold, button_f_size), k = '-New-'), 
+                MyButtonImg('Archives', p = ((button_pad, 0), (button_pad, button_pad)), im_height = im_height, im_margin = im_margin, image_filename = 'icon/archive.png', button_color = ('red', None), disabled = True, font = (VarFontBold, button_f_size), k = '-Archives-'), 
                 recenter_widget,
                 MyButton('Log', p = 0, font = (VarFont, button_f_size), k = '-Log-'), 
                 MyButton(' X ', p = button_pad, font = (VarFontBold, button_f_size), button_color = ('red', None), focus = True, k = '-Exit-') ]
