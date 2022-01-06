@@ -154,7 +154,8 @@ class Courier:
                         events = events)
 
 #-----------------------
-USE_UC_V2 = False
+USE_UC_V2 = True
+CREATE_DRIVER_AT_INIT = False
 from selenium.common.exceptions import WebDriverException, TimeoutException, NoSuchElementException
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
@@ -196,36 +197,42 @@ class SeleniumScrapper(Courier):
 
     def __init__(self, splash_update):
         self.drivers = queue.Queue() if self.n_drivers > 0 else None
-        self.drivers_list = []
+        self.n_created_drivers = 0
 
-        for i in range(self.n_drivers):
-            splash_update(f'création pilote {i + 1}/{self.n_drivers}')
-            driver = self.create_driver()
-            self.drivers.put(driver)
-            self.drivers_list.append(driver)
+        if CREATE_DRIVER_AT_INIT:
+            for i in range(self.n_drivers):
+                splash_update(f'création pilote {i + 1}/{self.n_drivers}')
+                self.create_driver_if_needed()
 
-    def create_driver(self):
-        options = webdriver.ChromeOptions()
-        options.headless = True
-        options.binary_location = chrome_exe
-        
-        for option in self.options + (self.option_V2 if USE_UC_V2 else self.options_V1):
-            options.add_argument(option)
-        
-        if not USE_UC_V2: # prefs do not work on UC v2
-            for k, v in self.experimental_options.items():
-                options.add_experimental_option(k, v)
+    def create_driver_if_needed(self):
+        with self.lock: # prevents driver creation when it's already being created in another thread
+            if self.n_created_drivers < self.n_drivers:
 
-        driver = webdriver.Chrome(options = options) 
-        driver.set_page_load_timeout(self.driver_timeout)
-        return driver
+                _log ('!! create a driver !!')
+                options = webdriver.ChromeOptions()
+                options.headless = True
+                options.binary_location = chrome_exe
+                
+                for option in self.options + (self.options_V2 if USE_UC_V2 else self.options_V1):
+                    options.add_argument(option)
+                
+                if not USE_UC_V2: # prefs do not work on UC v2
+                    for k, v in self.experimental_options.items():
+                        options.add_experimental_option(k, v)
+
+                driver = webdriver.Chrome(options = options) 
+                driver.set_page_load_timeout(self.driver_timeout)
+
+                self.drivers.put(driver)
+                self.n_created_drivers += 1
+                _log (f'!! driver #{self.n_created_drivers} created !!')
 
     def _get_response(self, idship):
         try:
-            _log(f'scrapper load {idship}')
-            with self.lock: # do not get all drivers @ the same time
-                driver = self.drivers.get() if self.drivers else self.create_driver()
+            self.create_driver_if_needed()
+            driver = self.drivers.get()
 
+            _log(f'scrapper load {idship}')
             with self.lock: # do not get all url @ the same time
                 driver.get(self._get_url_for_browser(idship))
                 
@@ -237,15 +244,9 @@ class SeleniumScrapper(Courier):
             return False, None
 
         finally:
-            if self.drivers: 
-                self.drivers.put(driver)
-            else:
-                driver.quit()
+            self.drivers.put(driver)
 
     def close(self):
-        for driver in self.drivers_list:
-            driver.quit()
-
         for proc in psutil.process_iter():
             if 'chromedriver.exe' in proc.name().lower():
                 _log (f'kill {proc.name()} {proc.pid}')
