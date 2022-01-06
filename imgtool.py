@@ -2,7 +2,6 @@ import io
 from PIL import Image, ImageOps
 import base64
 
-
 #-----------------------
 def load_img64(image64):
     buffer = io.BytesIO(base64.b64decode(image64))
