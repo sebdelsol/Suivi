@@ -146,14 +146,24 @@ def choices(choices, title, no_border, main_loop):
     return chosen
 
 #-----------------------------------------
-def one_choice(choices, colors, title, no_border, main_loop):
-    layout = [ [ sg.Radio(choice, group_id = 'choices', text_color = color, font = (VarFont, 15), default= i==0, k = choice)] for i, (choice, color) in enumerate(zip(choices, colors)) ]
+def one_choice(choices, choice_colors, title, no_border, main_loop, default = 0):
+    layout = []
+    for i, choice in enumerate(choices):
+        color = choice_colors[choice if i==default else False]
+        radio = sg.Radio(choice, group_id = 'choices', text_color = color, font = (VarFont, 20), enable_events = True, default= i==0, k = choice)
+        layout.append([radio])
 
     choices_window = MyPopup(title, layout, no_border, main_loop)
 
     choice = None
 
-    values = choices_window.loop()
+    def catch_event(window, event, values):
+        if event in choices:
+            for choice in choices:
+                color = choice_colors[choice if values[choice] else False]
+                window[choice].update(text_color = color)
+
+    values = choices_window.loop(catch_event)
     if values:
         # https://stackoverflow.com/questions/2361426/get-the-first-item-from-an-iterable-that-matches-a-condition
         choice = next(choice for choice in choices if values[choice]) 

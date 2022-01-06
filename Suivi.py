@@ -591,7 +591,7 @@ class TrackerWidget:
         self.disable_buttons(False)
 
     def set_state(self, state, window, main_loop, ask, visible):
-        if not ask or popup.warning(ask.capitalize(), self.tracker.description, not is_debugger, main_loop):
+        if not ask or popup.warning(ask.capitalize(), f'{self.tracker.description} - {self.tracker.get_pretty_idship()}', not is_debugger, main_loop):
             if self.lock.acquire(blocking=False): # needed ?
                 self.tracker.state = state
 
@@ -604,9 +604,9 @@ class TrackerWidget:
     def archive_or_delete(self, window, main_loop):
         self.disable_buttons(True)
 
-        choices = { 'Archiver': self.archive, 'Supprimer': self.delete }
-        colors = ('green', 'red')
-        choice = popup.one_choice(choices.keys(), colors, f'{self.tracker.description} - {self.tracker.idship}', not is_debugger, main_loop)
+        choices = {'Archiver': self.archive, 'Supprimer': self.delete}
+        choices_colors = {'Archiver':'green', 'Supprimer':'red', False:'grey70'}
+        choice = popup.one_choice(choices.keys(), choices_colors, f'{self.tracker.description} - {self.tracker.get_pretty_idship()}', not is_debugger, main_loop)
         if choice:
             choices[choice](window, main_loop)
 
