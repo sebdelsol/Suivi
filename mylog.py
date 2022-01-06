@@ -4,7 +4,6 @@ import queue
 import PySimpleGUI as sg
 from mybutton import MyButton
 
-
 class MyLog:
     link_txt = '\n'.join('❱❱❱❱❱')
     unlink_txt = '\n'.join('❰❰❰❰❰')
@@ -33,7 +32,7 @@ class MyLog:
 
         self.window.TKroot.resizable(width = False, height = True)
         self.window.set_min_size(self.window.size)
-        self.height = self.window.size[0]
+        self.wanted_pos = None
         
         self.window.TKroot.bind('<Configure>', self.resize)
         self.window.TKroot.after(self.listen_step, self.listen)
@@ -53,8 +52,7 @@ class MyLog:
             self.window.TKroot.after(self.listen_step, self.listen)
 
     def resize(self, event):
-        if self.linked and event.x == 0 and event.y == 0:
-            self.height = event.height
+        if self.linked and ((event.x == 0 and event.y == 0) or self.window.current_location()!=self.wanted_pos):
             self.stick_to_main()
 
     def catch_event(self, window, event):
@@ -89,7 +87,8 @@ class MyLog:
             w, h = self.window.size
             W, H = self.main_window.size
             x, y = self.main_window.current_location()
-            self.window.move(int(x - w - gap) + 1, int(y + (H - h) *.5))
+            self.wanted_pos = int(x - w - gap) + 1, int(y + (H - h) *.5) 
+            self.window.move(*self.wanted_pos)
     
     def toggle(self):
         self.visible = not self.visible
