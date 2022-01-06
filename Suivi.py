@@ -6,10 +6,9 @@ import copy
 import PySimpleGUI as sg
 import pickle as pickle
 import timeago
-from datetime import datetime
 from bisect import bisect
 import io
-from PIL import Image  ,ImageOps
+from PIL import Image, ImageOps
 import base64
 import textwrap
 
@@ -281,11 +280,11 @@ class TrackerWidget:
 
     loading_gif = resize_and_colorize_gif(sg.DEFAULT_BASE64_LOADING_GIF, 25, 'red')
     
-    button_size = (20, 20)
+    button_size = (25, 25)
     img_per =.6
-    refresh_img = resize_and_colorize_img('icon/refresh.png', button_size[1] * img_per, 'green')
-    edit_img = resize_and_colorize_img('icon/edit.png', button_size[1] * img_per, 'blue')
-    archive_img = resize_and_colorize_img('icon/archive.png', button_size[1] * img_per, 'red')
+    refresh_img = resize_and_colorize_img('icon/refresh.png', button_size[1] * img_per, '#208020')
+    edit_img = resize_and_colorize_img('icon/edit.png', button_size[1] * img_per, '#6060FF')
+    archive_img = resize_and_colorize_img('icon/archive.png', button_size[1] * img_per, '#FF6060')
 
     def __init__(self, tracker):
         self.tracker = tracker
@@ -302,21 +301,21 @@ class TrackerWidget:
     def create_layout(self):
         bg_color = 'grey90'
         bg_color_h = 'grey85'
-        bg_color_b = 'grey95'
+        bg_color_b = 'grey90'
 
         b_p = 4
         self.buttons = [ MyButton('', image_data = self.refresh_img, p = ((0, b_p), (b_p, b_p)), button_color = bg_color_b, mouseover_color = bg_color_h, k = self.update),
                          MyButton('', image_data = self.edit_img, p = ((0, b_p), (0, 0)), button_color = bg_color_b, mouseover_color = bg_color_h, k = self.edit),
                          MyButton('', image_data = self.archive_img, p = ((0, b_p), (b_p, b_p)), button_color = bg_color_b, mouseover_color = bg_color_h, k = self.archive_or_delete) ]
 
-        self.courier_fsize = 7
+        self.courier_fsize = 8
         self.events_f = (FixFont, 8)
         self.events_fb = (FixFontBold, 8)
         # multiline needs to be visible = False @ the beginning to prevents mousewheel to be catched and hinder whole window scrolling
-        self.desc_widget = sg.T('', p = 0, font = (VarFont, 40), text_color = 'grey40', background_color = bg_color_h, expand_x = True, justification = 'l') 
+        self.desc_widget = sg.T('', p = ((5, 0), (0, 0)), font = (VarFont, 40), text_color = 'grey40', background_color = bg_color_h, expand_x = True, justification = 'l') 
         self.days_size = 50
         self.days_font = (FixFontBold, 15) 
-        self.days_widget = MyGraph(canvas_size=(self.days_size, self.days_size), graph_bottom_left=(0, 0), graph_top_right=(self.days_size, self.days_size), p = (5,0), background_color=bg_color_h)
+        self.days_widget = MyGraph(canvas_size=(self.days_size, self.days_size), graph_bottom_left=(0, 0), graph_top_right=(self.days_size, self.days_size), p = (5, 0), background_color=bg_color_h)
 
         self.loading_widget = sg.Image(data = self.loading_gif, p = 3, background_color = bg_color, k = lambda w : self.toggle_expand(w))
         self.loading_widget_col = sg.Col([[self.loading_widget]], p = 0, visible = False, background_color = bg_color)
@@ -555,22 +554,23 @@ class TrackerWidget:
 
             self.couriers_widget.update('') 
             
-            w_name = max(len(name) for name in couriers_update_names)
+            maj = 'Mise à jour...'
+            txts = []
             for name in couriers_update_names:
                 date, error, updating = couriers_update[name]
-                ago = f" {timeago.format(date, get_local_now(), 'fr').replace('il y a', '').strip()}" if date else ' jamais'
-                error_color, name_font = ('red', FixFontBold) if error else ('green', FixFont)
-                
-                maj = ' MàJ en cours...'
-                if updating:
-                    self.couriers_widget.print(maj, autoscroll = False, font = (FixFontBold, self.courier_fsize), t = 'red', end = '')
-                    spaces = ''
-                else:
-                    spaces = ' ' * len(maj)
+                ago = f"{timeago.format(date, get_local_now(), 'fr').replace('il y a', '').strip()}" if date else 'jamais'
+                name_color, name_font = ('red', FixFontBold) if error else ('green', FixFont)
+                txts.append((updating, ago, name, name_color, name_font))
 
-                self.couriers_widget.print(f'{spaces}{ago}', autoscroll = False, t = 'grey60', end = '')
-                self.couriers_widget.print(' ⟳ ', autoscroll = False, t = 'grey55', end = '')
-                self.couriers_widget.print(f'{name.rjust(w_name)}', autoscroll = False, t = error_color, font = (name_font, self.courier_fsize))
+            width_name = max(len(txt[2]) for txt in txts)
+            width_ago = max(len(txt[1]) for txt in txts)
+
+            for updating, ago, name, name_color, name_font in txts:
+                maj_txt = maj if updating else ' ' * len(maj)
+                self.couriers_widget.print(maj_txt , autoscroll = False, font = (FixFontBold, self.courier_fsize), t = 'red', end = '')
+                self.couriers_widget.print(name.rjust(width_name), autoscroll = False, t = name_color, font = (name_font, self.courier_fsize), end = '')
+                self.couriers_widget.print(', MàJ ', autoscroll = False, t = 'grey60', end = '')
+                self.couriers_widget.print(ago.ljust(width_ago), autoscroll = False, t = 'grey45')
         
         else:
             self.couriers_widget.update('Pas de trackers', text_color = 'red')
