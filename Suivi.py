@@ -317,7 +317,7 @@ class TrackerWidget:
         return [ self.pin ] 
     
     def finalize(self, window):
-        button_size = (25, 40)
+        button_size = (25, 30)
         for button in  self.buttons:
             button.set_size(button_size) 
             button.finalize()
@@ -430,7 +430,7 @@ class TrackerWidget:
                     previous_day = None
                     previous_hour = None
 
-                    for i, event in enumerate(events):
+                    for event in events:
                         event_courier = f"{event['courier'].rjust(courier_w)}. "
                         
                         day, hour = f"{event['date']:%a %d %b %y, %Hh%M}".replace('.', '').split(',')
@@ -535,8 +535,7 @@ class TrackerWidget:
             self.couriers_widget.update('') 
             
             w_name = max(len(name) for name in couriers_update_names)
-            for i, name in enumerate(couriers_update_names):
-                last = i+1 == len(couriers_update)
+            for name in couriers_update_names:
                 date, error, updating = couriers_update[name]
                 ago = f" {timeago.format(date, get_local_now(), 'fr').replace('il y a', '').strip()}" if date else ' jamais'
                 error_color, name_font = ('red', FixFontBold) if error else ('green', FixFont)
@@ -550,7 +549,7 @@ class TrackerWidget:
 
                 self.couriers_widget.print(f'{spaces}{ago}', autoscroll = False, t = 'grey60', end = '')
                 self.couriers_widget.print(' ⟳ ', autoscroll = False, t = 'grey55', end = '')
-                self.couriers_widget.print(f'{name.rjust(w_name)}', autoscroll = False, t = error_color, font = (name_font, self.courier_fsize), end = ''  if last else '\n')
+                self.couriers_widget.print(f'{name.rjust(w_name)}', autoscroll = False, t = error_color, font = (name_font, self.courier_fsize))
         
         else:
             self.couriers_widget.update('Pas de trackers', text_color = 'red')

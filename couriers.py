@@ -162,9 +162,9 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 
 if USE_UC_V2:
-    import undetected_chromedriver as uc
+    import undetected_chromedriver as webdriver
 else:
-    import undetected_chromedriver._compat as uc
+    import undetected_chromedriver._compat as webdriver
 
 import psutil
 import threading
@@ -176,12 +176,10 @@ class SeleniumScrapper(Courier):
     n_drivers = 1
 
     experimental_options = dict(
-        prefs = {'translate_whitelists': {'en':'fr', 'und':'fr', 'zh-CN':'fr', 'zh-TW':'fr'},
-                'translate_allowlists': {'en':'fr', 'und':'fr', 'zh-CN':'fr', 'zh-TW':'fr'},
-                'translate': {'enabled':'true'},
-                'profile.managed_default_content_settings.images': 2,      # remove image
-                'profile.managed_default_content_settings.stylesheet': 2,  # remove css
-                'profile.managed_default_content_settings.css': 2 
+        prefs = {'translate_whitelists': {'de':'fr', 'es':'fr', 'en':'fr', 'und':'fr', 'zh-CN':'fr', 'zh-TW':'fr'},
+                 'translate': {'enabled':'true'},
+                 'profile.managed_default_content_settings.images': 2,  # remove image
+                 'profile.managed_default_content_settings.cookies': 2, # remove cookies
         },
         excludeSwitches = ['enable-logging']
     )
@@ -207,7 +205,7 @@ class SeleniumScrapper(Courier):
             self.drivers_list.append(driver)
 
     def create_driver(self):
-        options = uc.ChromeOptions()
+        options = webdriver.ChromeOptions()
         options.headless = True
         options.binary_location = chrome_exe
         
@@ -218,7 +216,7 @@ class SeleniumScrapper(Courier):
             for k, v in self.experimental_options.items():
                 options.add_experimental_option(k, v)
 
-        driver = uc.Chrome(options = options) 
+        driver = webdriver.Chrome(options = options) 
         driver.set_page_load_timeout(self.driver_timeout)
         return driver
 
