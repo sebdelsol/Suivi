@@ -840,10 +840,10 @@ if __name__ == "__main__":
     button_pad, button_f_size = 10, 12
 
     recenter_widget = sg.T('', background_color = menu_color, p = 0, expand_x = True, expand_y = True, k = '-RECENTER-')
-
-    menu =  [   MyButton('Rafraichir', p = button_pad, font = (VarFont, button_f_size), k = '-Refresh-'), 
-                MyButton('Nouveau', p = ((0, 0), (button_pad, button_pad)), font = (VarFont, button_f_size), k = '-New-'), 
-                MyButton('   Archives   ', p = ((button_pad, 0), (button_pad, button_pad)), disabled = True, font = (VarFont, button_f_size), k = '-Archives-'), 
+    button_size = (len('Archives(99)'), None)
+    menu =  [   MyButton('Rafraichir', p = button_pad, font = (VarFont, button_f_size), k = '-Refresh-', s = button_size), 
+                MyButton('Nouveau', p = ((0, 0), (button_pad, button_pad)), font = (VarFont, button_f_size), k = '-New-', s = button_size), 
+                MyButton('Archives', p = ((button_pad, 0), (button_pad, button_pad)), disabled = True, font = (VarFont, button_f_size), k = '-Archives-', s = button_size), 
                 recenter_widget,
                 MyButton('Log', p = 0, font = (VarFont, button_f_size), k = '-Log-'), 
                 MyButton(' X ', p = button_pad, font = (VarFontBold, button_f_size), button_color = ('red', None), focus = True, k = '-Exit-') ]
