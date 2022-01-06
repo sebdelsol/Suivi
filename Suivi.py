@@ -24,15 +24,16 @@ locale.setlocale(locale.LC_ALL, 'fr_FR.utf8') # date in French
 TrackersFile = 'Trackers.trck'
 
 #-------------------------------------------------------
-def resize_and_colorize_gif(image64, resize_div, color):
+def resize_and_colorize_gif(image64, height, color):
     buffer = io.BytesIO(base64.b64decode(image64))
     im = Image.open(buffer)
-    resize_to = (im.size[0] / resize_div, im.size[1] / resize_div)
+
+    resize_to = (im.size[0] * height / im.size[1], height)
     frames = []
 
     try:
         while True:
-            frame = ImageOps.colorize(im.convert('L'), white = 'white', black = color)
+            frame = ImageOps.colorize(ImageOps.grayscale(im), white = 'white', black = color)
             frame = frame.convert('RGBA')
             frame.thumbnail(resize_to)
             frames.append(frame)
@@ -43,6 +44,18 @@ def resize_and_colorize_gif(image64, resize_div, color):
 
     buffer = io.BytesIO()
     frames[0].save(buffer, optimize = False, save_all = True, append_images = frames[1:], loop = 0, format = 'GIF', transparency = 0)
+    return base64.b64encode(buffer.getvalue())
+
+def resize_and_colorize_img(image, height, color):
+    im = Image.open(image)
+
+    alpha = im.split()[3]
+    im = ImageOps.colorize(ImageOps.grayscale(im), white = 'white', black = color) 
+    im.putalpha(alpha)
+    im.thumbnail((im.size[0] * height / im.size[1], height))
+
+    buffer = io.BytesIO()
+    im.save(buffer, format = 'PNG')
     return base64.b64encode(buffer.getvalue())
 
 #-----------------------
@@ -265,7 +278,13 @@ class TrackerWidget:
     layout_pad = 10 # pixels
     max_event_width = 110 # chars
 
-    loading_gif = resize_and_colorize_gif(sg.DEFAULT_BASE64_LOADING_GIF, 2.5, 'red')
+    loading_gif = resize_and_colorize_gif(sg.DEFAULT_BASE64_LOADING_GIF, 25, 'red')
+    
+    button_size = (20, 20)
+    img_per =.6
+    refresh_img = resize_and_colorize_img('icon/refresh.png', button_size[1] * img_per, 'green')
+    edit_img = resize_and_colorize_img('icon/edit.png', button_size[1] * img_per, 'blue')
+    archive_img = resize_and_colorize_img('icon/archive.png', button_size[1] * img_per, 'red')
 
     def __init__(self, tracker):
         self.tracker = tracker
@@ -282,11 +301,12 @@ class TrackerWidget:
     def create_layout(self):
         bg_color = 'grey90'
         bg_color_h = 'grey85'
+        bg_color_b = 'grey95'
 
-        b_p = 5
-        self.buttons = [ MyButton('', image_filename = 'icon/refresh.png', p = ((b_p * 2, b_p), (b_p, b_p)), button_color = bg_color, mouseover_color = bg_color_h, k = self.update),
-                         MyButton('', image_filename = 'icon/edit.png', p = b_p, button_color = bg_color, mouseover_color = bg_color_h, k = self.edit),
-                         MyButton('', image_filename = 'icon/archive.png', p = b_p, button_color = bg_color, mouseover_color = bg_color_h, k = self.archive_or_delete) ]
+        b_p = 4
+        self.buttons = [ MyButton('', image_data = self.refresh_img, p = ((0, b_p), (b_p, b_p)), button_color = bg_color_b, mouseover_color = bg_color_h, k = self.update),
+                         MyButton('', image_data = self.edit_img, p = ((0, b_p), (0, 0)), button_color = bg_color_b, mouseover_color = bg_color_h, k = self.edit),
+                         MyButton('', image_data = self.archive_img, p = ((0, b_p), (b_p, b_p)), button_color = bg_color_b, mouseover_color = bg_color_h, k = self.archive_or_delete) ]
 
         self.courier_fsize = 7
         self.events_f = (FixFont, 8)
@@ -307,8 +327,9 @@ class TrackerWidget:
         self.events_widget = sg.MLine('', p = ((5, 5), (0, 5)), font = self.events_f, visible = False, disabled = True, border_width = 0, background_color = bg_color, no_scrollbar = True, s = (None, 1), expand_x = True, k = self.toggle_expand)
         self.expand_button = MyButton('▼', p = 0, font = (VarFont, 15), button_color = ('grey70', bg_color), mouseover_color = bg_color_h, k = lambda w : self.toggle_expand(w))
 
-        id_couriers_widget = sg.Col([[self.id_widget], [self.couriers_widget]], p = 0, background_color = bg_color_h, expand_x = False)
-        layout = [[ sg.Col([ [sg.Col([ [ self.days_widget, self.desc_widget, id_couriers_widget ] + self.buttons ], p = 5, background_color = bg_color_h, expand_x = True) ]], p = 0, expand_x = True, background_color = bg_color_h) ],
+        buttons = sg.Col([[button] for button in self.buttons], p = 0, background_color = bg_color_h)
+        id_couriers_widget = sg.Col([[self.id_widget], [self.couriers_widget]], p = ((0, 10), (0, 0)), background_color = bg_color_h, expand_x = False)
+        layout = [[ sg.Col([ [sg.Col([ [ self.days_widget, self.desc_widget, id_couriers_widget, buttons ] ], p = ((2, 0), (0, 0)), background_color = bg_color_h, expand_x = True) ]], p = 0, expand_x = True, background_color = bg_color_h) ],
                  [  sg.pin(self.loading_widget_col), sg.Col([ [self.ago_widget, self.status_widget, self.expand_button] ], p = ((3, 0), (5, 0)), background_color = bg_color, expand_x = True) ],
                  [  sg.pin(sg.Col([ [self.events_widget] ], p = 0, background_color = bg_color, expand_x = True), expand_x = True) ]]
 
@@ -317,9 +338,8 @@ class TrackerWidget:
         return [ self.pin ] 
     
     def finalize(self, window):
-        button_size = (25, 30)
         for button in  self.buttons:
-            button.set_size(button_size) 
+            button.set_size(self.button_size) 
             button.finalize()
 
         self.expand_button.finalize()
