@@ -245,8 +245,10 @@ class TrackerWidget:
     days_intervals = [10, 20, 30]
     days_colors = ['lime green', 'dark orange', 'red', 'black']
 
-    layout_pad = 10 # pixels
     max_event_width = 110 # chars
+
+    bg_color = 'grey90'
+    bg_color_h = 'grey85'
 
     loading_gif = resize_and_colorize_gif(sg.DEFAULT_BASE64_LOADING_GIF, 25, Refresh_color)
     
@@ -268,45 +270,59 @@ class TrackerWidget:
         self.height_events = 0
         self.expand_events = False
 
-    def create_layout(self):
-        bg_color = 'grey90'
-        bg_color_h = 'grey85'
-
+    def create_layout(self, first = False):
         b_p = 4
-        b_colors = dict(button_color = bg_color_h, mouseover_color = 'grey95')
-        self.buttons = [ MyButton('', image_data = self.edit_img, p = ((0, b_p), (b_p, b_p)), **b_colors, k = self.edit),
-                         MyButton('', image_data = self.refresh_img, p = ((0, b_p), (0, 0)), **b_colors, k = self.update),
-                         MyButton('', image_data = self.archive_img, p = ((0, b_p), (b_p, b_p)), **b_colors, k = self.archive_or_delete) ]
+        b_colors = dict(button_color = self.bg_color_h, mouseover_color = 'grey95')
+        self.buttons = [ MyButton('', image_data = self.edit_img, p = (0, b_p), **b_colors, k = self.edit),
+                         MyButton('', image_data = self.refresh_img, p = 0, **b_colors, k = self.update),
+                         MyButton('', image_data = self.archive_img, p = (0, b_p), **b_colors, k = self.archive_or_delete) ]
 
         self.courier_fsize = 8
         self.events_f = (FixFont, 8)
         self.events_fb = (FixFontBold, 8)
-        # multiline needs to be visible = False @ the beginning to prevents mousewheel to be catched and hinder whole window scrolling
-        self.desc_widget = sg.T('', p = ((5, 0), (0, 0)), font = (VarFont, 40), text_color = 'grey40', background_color = bg_color_h, expand_x = True, justification = 'l') 
+        
         self.days_size = 50
         self.days_font = (FixFontBold, 15) 
-        self.days_widget = MyGraph(canvas_size=(self.days_size, self.days_size), graph_bottom_left=(0, 0), graph_top_right=(self.days_size, self.days_size), p = (5, 0), background_color=bg_color_h)
+        self.days_widget = MyGraph(canvas_size=(self.days_size, self.days_size), graph_bottom_left=(0, 0), graph_top_right=(self.days_size, self.days_size), p = (10, 0), background_color=self.bg_color_h)
+        self.desc_widget = sg.T('', p = 0, font = (VarFont, 40), text_color = 'grey40', background_color = self.bg_color_h, expand_x = True, justification = 'l') 
 
-        self.loading_widget = sg.Image(data = self.loading_gif, p = 3, background_color = bg_color, k = lambda w : self.toggle_expand(w))
-        self.loading_widget_col = sg.Col([[self.loading_widget]], p = 0, visible = False, background_color = bg_color)
+        self.id_widget = sg.MLine('', p = 0, font = (FixFont, 10), disabled = True, border_width = 0, no_scrollbar = True, background_color = self.bg_color_h, expand_x = True, justification = 'r')
+        self.couriers_widget = sg.MLine('', p = 0, font = (FixFont, self.courier_fsize), disabled = True, border_width = 0, no_scrollbar = True, background_color = self.bg_color_h, expand_x = True, justification = 'r')
+        id_couriers_widget = sg.Col([[ self.id_widget ], [ self.couriers_widget ]], p = ((5, 0), (b_p, b_p)), background_color = self.bg_color_h, expand_x = True, vertical_alignment = 'center')
+        buttons = sg.Col([[button] for button in self.buttons], p = (10, 0), background_color = self.bg_color_h, expand_x = False)
 
-        self.id_widget = sg.MLine('', p = 0, font = (FixFont, 10), disabled = True, border_width = 0, no_scrollbar = True, background_color = bg_color_h, expand_x = True, justification = 'r')
-        self.couriers_widget = sg.MLine('', p = 0, font = (FixFont, self.courier_fsize), disabled = True, border_width = 0, no_scrollbar = True, background_color = bg_color_h, expand_x = True, justification = 'r')
-        self.status_widget = sg.T('', p = 0, font = (VarFont, 15), expand_x = True, background_color = bg_color, k = lambda w : self.toggle_expand(w))
-        self.ago_widget = sg.T('', p = 0, font = (VarFont, 15), expand_x = False, background_color = bg_color, text_color = 'grey50', k = lambda w : self.toggle_expand(w))
-        self.events_widget = sg.MLine('', p = ((5, 5), (0, 5)), font = self.events_f, visible = False, disabled = True, border_width = 0, background_color = bg_color, no_scrollbar = True, s = (None, 1), expand_x = True, k = self.toggle_expand)
-        self.expand_button = MyButton('▼', p = (b_p, 0), font = (VarFont, 15), button_color = ('grey70', bg_color), mouseover_color = 'grey95', k = lambda w : self.toggle_expand(w))
+        self.loading_widget = sg.Image(data = self.loading_gif, p = 3, background_color = self.bg_color, k = lambda w : self.toggle_expand(w))
+        loading_widget_pin = sg.pin(self.loading_widget)
+        loading_widget_pin.BackgroundColor = self.bg_color
 
-        buttons = sg.Col([[button] for button in self.buttons], p = 0, background_color = bg_color_h, expand_x = False)
-        id_couriers_widget = sg.Col([[self.id_widget], [self.couriers_widget]], p = ((0, 7), (b_p, b_p)), background_color = bg_color_h, expand_x = True, vertical_alignment = 'center')
-        layout = [[ sg.Col([ [sg.Col([ [ self.days_widget, self.desc_widget, id_couriers_widget, buttons ] ], p = ((2, 0), (0, 0)), background_color = bg_color_h, expand_x = True) ]], p = 0, expand_x = True, background_color = bg_color_h) ],
-                 [  sg.pin(self.loading_widget_col), sg.Col([ [self.ago_widget, self.status_widget, self.expand_button] ], p = ((3, 0), (5, 0)), background_color = bg_color, expand_x = True) ],
-                 [  sg.pin(sg.Col([ [self.events_widget] ], p = 0, background_color = bg_color, expand_x = True), expand_x = True) ]]
+        self.ago_widget = sg.T('', p = 0, font = (VarFont, 15), expand_x = False, background_color = self.bg_color, text_color = 'grey50', k = lambda w : self.toggle_expand(w))
+        self.status_widget = sg.T('', p = 0, font = (VarFont, 15), expand_x = True, background_color = self.bg_color, k = lambda w : self.toggle_expand(w))
+        self.expand_button = MyButton('▼', p = (b_p, 0), font = (VarFont, 15), button_color = ('grey70', self.bg_color), mouseover_color = 'grey95', k = lambda w : self.toggle_expand(w))
 
-        self.layout = sg.Col(layout, expand_x = True, p = ((self.layout_pad, self.layout_pad), (self.layout_pad, 0)), visible = self.tracker.state == 'ok', background_color = bg_color)
+        self.events_widget = sg.MLine('', p = ((5, 5), (0, 5)), font = self.events_f, visible = False, disabled = True, border_width = 0, background_color = self.bg_color, no_scrollbar = True, s = (None, 1), expand_x = True, k = self.toggle_expand)
+        events_widget_pin = sg.pin(sg.Col([ [self.events_widget] ], p = (10, 0), background_color = self.bg_color, expand_x = True), expand_x = True)
+        events_widget_pin.BackgroundColor = self.bg_color
+
+        layout = [ [ sg.Col([[ self.days_widget, self.desc_widget, id_couriers_widget, buttons ]], p = 0, background_color = self.bg_color_h, expand_x = True) ],
+                   [ sg.Col([[ loading_widget_pin, self.ago_widget, self.status_widget, self.expand_button ]], p = (10, 0), background_color = self.bg_color, expand_x = True) ],
+                   [ events_widget_pin ] ]
+
+        self.layout = sg.Col(layout, expand_x = True, p = 0, visible = self.tracker.state == 'ok', background_color = self.bg_color)
         self.pin = sg.pin(self.layout, expand_x = True) # collapse when hidden
+        self.pin.BackgroundColor = self.bg_color_h if first else self.bg_color
         return [ self.pin ] 
     
+    # def set_background_color(self, first):
+    #     from tkinter import ttk
+    #     ttk.Style
+    #     color = self.bg_color_h if first else self.bg_color
+    #     self.pin.BackgroundColor = self.bg_color_h if first else self.bg_color
+    #     self.pin.ParentContainer.BackgroundColor = color
+    #     self.pin.Widget.config(bg = color)
+    #     # self.pin.Widget.pack()
+    #     # self.pin.ParentContainer.Widget.config(bg = 'red')
+    #     print (f'update color {color}')
+
     def finalize(self, window):
         for button in  self.buttons:
             button.set_size(self.button_size) 
@@ -372,7 +388,7 @@ class TrackerWidget:
             
             self.tracker.prepare_update()
             self.show_current_courier_widget()
-            self.loading_widget_col.update(visible = True)
+            self.loading_widget.update(visible = True)
 
             threading.Thread(target = self.update_thread, args = (window,), daemon = True).start()
 
@@ -395,12 +411,12 @@ class TrackerWidget:
 
     def update_done(self, window):
         self.disable_buttons(False)
-        self.loading_widget_col.update(visible = False)
+        self.loading_widget.update(visible = False)
         self.updating = False
         trigger_event(window, '-UPDATING CHANGED-', '')
 
     def animate(self, animation_step):
-        if self.loading_widget_col.visible:
+        if self.loading_widget.visible:
             self.loading_widget.update_animation(self.loading_gif, time_between_frames = animation_step)
 
     def show(self, content, window):
@@ -492,7 +508,7 @@ class TrackerWidget:
                 elapsed_txt = '?'
 
             self.days_widget.erase()
-            self.days_widget.draw_rounded_box(self.days_size*.5, self.days_size*.5, self.days_size*.9, self.days_size*.9, self.days_size*.15, 'grey90')
+            self.days_widget.draw_rounded_box(self.days_size*.5, self.days_size*.5, self.days_size, self.days_size*.9, self.days_size*.15, 'grey90')
             self.days_widget.draw_text(elapsed_txt, (self.days_size*.5, self.days_size*.5), color = elapsed_color, font = self.days_font, text_location = 'center')
 
             status_date = content and content.get('status', {}).get('date')
@@ -603,16 +619,16 @@ class TrackerWidgets:
         n_trackers = len(trackers.trackers)
         for i, tracker in enumerate(trackers.trackers):
             splash_update(f'création suivi {i + 1}/{n_trackers}')
-            self.create_widget(window, tracker)
+            self.create_widget(window, tracker, i==0)
 
         trigger_event(window, '-ARCHIVE UPDATED-', '')
         self.update_size(window)
         self.recenter(window, True)
 
-    def create_widget(self, window, tracker):
+    def create_widget(self, window, tracker, first = False):
         widget = TrackerWidget(tracker)
 
-        window.extend_layout(self.widgets_col, [widget.create_layout()])
+        window.extend_layout(self.widgets_col, [widget.create_layout(first)])
         self.widgets.append(widget)
 
         widget.finalize(window)
@@ -669,10 +685,17 @@ class TrackerWidgets:
     def update_size(self, window):
         ok = self.get_widgets_with_state('ok')
 
-        # resize all widgets with the max width
+        # resize all widgets with the max width & and change pin color
         max_width = max(widget.width_events for widget in ok) if ok else 0
         for widget in ok:
             widget.update_size(max_width)
+        
+        # # change pin bckg colors
+        # firsts_hidden = True
+        # for widget in self.widgets:
+        #     if widget.tracker.state == 'ok':
+        #         firsts_hidden = False
+        #     widget.set_background_color(firsts_hidden)
 
         window.refresh()
         self.widgets_col.contents_changed()
@@ -825,7 +848,7 @@ if __name__ == "__main__":
                 MyButton(' X ', p = b_pad, font = (VarFontBold, b_f_size), button_color = menu_color, mouseover_color = 'red', focus = True, k = '-Exit-') ]
 
     layout = [ [ sg.Col([menu], p = 0, background_color = menu_color, expand_x = True, k = 'MENU') ],
-               [ sg.Col([[]], p = 0, scrollable = True, vertical_scroll_only = True, expand_x = True, expand_y = True, k = 'TRACKS') ] ]
+               [ sg.Col([[]], p = 0, scrollable = True, vertical_scroll_only = True, expand_x = True, expand_y = True, k = 'TRACKS', background_color = menu_color) ] ]
 
     frame =  [ [ sg.Frame('', layout, p = 0, border_width = 1, relief = sg.RELIEF_SOLID, expand_x = True, expand_y = True) ] ]
 
