@@ -250,7 +250,7 @@ class TrackerWidget:
     bg_color = 'grey90'
     bg_color_h = 'grey85'
 
-    loading_gif = resize_and_colorize_gif(sg.DEFAULT_BASE64_LOADING_GIF, 25, Refresh_color)
+    loading_gif = resize_and_colorize_gif(sg.DEFAULT_BASE64_LOADING_GIF, 20, Refresh_color)
     
     button_size = (22, 22)
     img_per = .6
@@ -277,7 +277,7 @@ class TrackerWidget:
                          MyButton('', image_data = self.refresh_img, p = 0, **b_colors, k = self.update),
                          MyButton('', image_data = self.archive_img, p = (0, b_p), **b_colors, k = self.archive_or_delete) ]
 
-        self.courier_fsize = 8
+        self.courier_fsize = 7
         self.events_f = (FixFont, 8)
         self.events_fb = (FixFontBold, 8)
         
@@ -297,7 +297,7 @@ class TrackerWidget:
 
         self.ago_widget = sg.T('', p = 0, font = (VarFont, 15), expand_x = False, background_color = self.bg_color, text_color = 'grey50', k = lambda w : self.toggle_expand(w))
         self.status_widget = sg.T('', p = 0, font = (VarFont, 15), expand_x = True, background_color = self.bg_color, k = lambda w : self.toggle_expand(w))
-        self.expand_button = MyButton('▼', p = (b_p, 0), font = (VarFont, 15), button_color = ('grey70', self.bg_color), mouseover_color = 'grey95', k = lambda w : self.toggle_expand(w))
+        self.expand_button = MyButton('▼', p = (b_p, 0), font = (VarFont, 10), button_color = ('grey70', self.bg_color), mouseover_color = 'grey95', k = lambda w : self.toggle_expand(w))
 
         self.events_widget = sg.MLine('', p = ((5, 5), (0, 5)), font = self.events_f, visible = False, disabled = True, border_width = 0, background_color = self.bg_color, no_scrollbar = True, s = (None, 1), expand_x = True, k = self.toggle_expand)
         events_widget_pin = sg.pin(sg.Col([ [self.events_widget] ], p = (10, 0), background_color = self.bg_color, expand_x = True), expand_x = True)
