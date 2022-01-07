@@ -817,7 +817,7 @@ if __name__ == "__main__":
     b_pad, b_f_size = 10, 12
     im_height, im_margin = 20, 5
     b_kwargs = dict(im_height = im_height, im_margin = im_margin, font = (VarFontBold, b_f_size), mouseover_color = 'grey90')
-    menu =  [   MyButton('Log', p = b_pad, font = (VarFontBold, b_f_size), button_color = menu_color, mouseover_color = 'grey90', k = '-Log-'), 
+    menu =  [   MyButton('Log', p = b_pad, font = (VarFontBold, b_f_size), button_color = ('grey', menu_color), mouseover_color = 'grey90', k = '-Log-'), 
                 MyButtonImg('Nouveau', p = (0, b_pad), image_filename = 'icon/edit.png', button_color = (Edit_Color, menu_color), k = '-New-', **b_kwargs), 
                 MyButtonImg('Rafraichir', p = b_pad, image_filename = 'icon/refresh.png', button_color = (Refresh_color, menu_color), k = '-Refresh-', **b_kwargs), 
                 MyButtonImg('Archives', p = (0, b_pad), image_filename = 'icon/archive.png', button_color = (Archives_color, menu_color), disabled = True, k = '-Archives-', **b_kwargs), 
