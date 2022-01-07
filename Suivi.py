@@ -19,7 +19,7 @@ import locale
 locale.setlocale(locale.LC_ALL, 'fr_FR.utf8') # date in French
 
 TrackersFile = 'Trackers.trck'
-Refresh_color = '#808080'
+Refresh_color = '#408040'
 Archives_color = '#B2560D'
 Edit_Color = '#6060FF'
 
@@ -250,11 +250,11 @@ class TrackerWidget:
 
     loading_gif = resize_and_colorize_gif(sg.DEFAULT_BASE64_LOADING_GIF, 25, Refresh_color)
     
-    button_size = (25, 25)
-    img_per =.6
-    refresh_img = resize_and_colorize_img('icon/refresh.png', button_size[1] * img_per, Refresh_color)
-    edit_img = resize_and_colorize_img('icon/edit.png', button_size[1] * img_per, Edit_Color)
-    archive_img = resize_and_colorize_img('icon/archive.png', button_size[1] * img_per, Archives_color)
+    button_size = (22, 22)
+    img_per = .6
+    refresh_img = resize_and_colorize_img('icon/refresh.png', button_size[1] * img_per, Refresh_color, button_size)
+    edit_img = resize_and_colorize_img('icon/edit.png', button_size[1] * img_per, Edit_Color, button_size)
+    archive_img = resize_and_colorize_img('icon/archive.png', button_size[1] * img_per, Archives_color, button_size)
 
     def __init__(self, tracker):
         self.tracker = tracker
@@ -271,12 +271,12 @@ class TrackerWidget:
     def create_layout(self):
         bg_color = 'grey90'
         bg_color_h = 'grey85'
-        bg_color_b = 'grey95'
 
         b_p = 4
-        self.buttons = [ MyButton('', image_data = self.edit_img, p = ((0, b_p), (b_p, b_p)), button_color = bg_color_b, mouseover_color = bg_color_h, k = self.edit),
-                         MyButton('', image_data = self.refresh_img, p = ((0, b_p), (0, 0)), button_color = bg_color_b, mouseover_color = bg_color_h, k = self.update),
-                         MyButton('', image_data = self.archive_img, p = ((0, b_p), (b_p, b_p)), button_color = bg_color_b, mouseover_color = bg_color_h, k = self.archive_or_delete) ]
+        b_colors = dict(button_color = bg_color_h, mouseover_color = 'grey95')
+        self.buttons = [ MyButton('', image_data = self.edit_img, p = ((0, b_p), (b_p, b_p)), **b_colors, k = self.edit),
+                         MyButton('', image_data = self.refresh_img, p = ((0, b_p), (0, 0)), **b_colors, k = self.update),
+                         MyButton('', image_data = self.archive_img, p = ((0, b_p), (b_p, b_p)), **b_colors, k = self.archive_or_delete) ]
 
         self.courier_fsize = 8
         self.events_f = (FixFont, 8)
@@ -295,10 +295,10 @@ class TrackerWidget:
         self.status_widget = sg.T('', p = 0, font = (VarFont, 15), expand_x = True, background_color = bg_color, k = lambda w : self.toggle_expand(w))
         self.ago_widget = sg.T('', p = 0, font = (VarFont, 15), expand_x = False, background_color = bg_color, text_color = 'grey50', k = lambda w : self.toggle_expand(w))
         self.events_widget = sg.MLine('', p = ((5, 5), (0, 5)), font = self.events_f, visible = False, disabled = True, border_width = 0, background_color = bg_color, no_scrollbar = True, s = (None, 1), expand_x = True, k = self.toggle_expand)
-        self.expand_button = MyButton('▼', p = 0, font = (VarFont, 15), button_color = ('grey70', bg_color), mouseover_color = bg_color_h, k = lambda w : self.toggle_expand(w))
+        self.expand_button = MyButton('▼', p = (b_p, 0), font = (VarFont, 15), button_color = ('grey70', bg_color), mouseover_color = 'grey95', k = lambda w : self.toggle_expand(w))
 
-        buttons = sg.Col([[button] for button in self.buttons], p = 0, background_color = bg_color_h)
-        id_couriers_widget = sg.Col([[self.id_widget], [self.couriers_widget]], p = ((0, 7), (b_p+2, b_p)), background_color = bg_color_h, expand_x = True, vertical_alignment = 'top')
+        buttons = sg.Col([[button] for button in self.buttons], p = 0, background_color = bg_color_h, expand_x = False)
+        id_couriers_widget = sg.Col([[self.id_widget], [self.couriers_widget]], p = ((0, 7), (b_p, b_p)), background_color = bg_color_h, expand_x = True, vertical_alignment = 'center')
         layout = [[ sg.Col([ [sg.Col([ [ self.days_widget, self.desc_widget, id_couriers_widget, buttons ] ], p = ((2, 0), (0, 0)), background_color = bg_color_h, expand_x = True) ]], p = 0, expand_x = True, background_color = bg_color_h) ],
                  [  sg.pin(self.loading_widget_col), sg.Col([ [self.ago_widget, self.status_widget, self.expand_button] ], p = ((3, 0), (5, 0)), background_color = bg_color, expand_x = True) ],
                  [  sg.pin(sg.Col([ [self.events_widget] ], p = 0, background_color = bg_color, expand_x = True), expand_x = True) ]]
@@ -523,23 +523,23 @@ class TrackerWidget:
 
             self.couriers_widget.update('') 
             
-            maj = 'Mise à jour...'
+            maj = 'Mise à jour... '
             txts = []
             for name in couriers_update_names:
                 date, error, updating = couriers_update[name]
-                ago = f"{timeago.format(date, get_local_now(), 'fr').replace('il y a', '').strip()}" if date else 'jamais'
+                ago_color, ago = ('green', f"{timeago.format(date, get_local_now(), 'fr').replace('il y a', '').strip()}") if date else ('red' , 'jamais')
                 name_color, name_font = ('red', FixFontBold) if error else ('green', FixFont)
-                txts.append((updating, ago, name, name_color, name_font))
+                txts.append((updating, ago, ago_color, name, name_color, name_font))
 
-            width_name = max(len(txt[2]) for txt in txts)
+            width_name = max(len(txt[3]) for txt in txts)
             width_ago = max(len(txt[1]) for txt in txts)
 
-            for updating, ago, name, name_color, name_font in txts:
+            for updating, ago, ago_color, name, name_color, name_font in txts:
                 maj_txt = maj if updating else ' ' * len(maj)
-                self.couriers_widget.print(maj_txt , autoscroll = False, font = (FixFontBold, self.courier_fsize), t = Refresh_color, end = '')
+                self.couriers_widget.print(maj_txt, autoscroll = False, font = (FixFontBold, self.courier_fsize), t = Refresh_color, end = '')
                 self.couriers_widget.print(name.rjust(width_name), autoscroll = False, t = name_color, font = (name_font, self.courier_fsize), end = '')
                 self.couriers_widget.print(', MàJ ', autoscroll = False, t = 'grey60', end = '')
-                self.couriers_widget.print(ago.ljust(width_ago), autoscroll = False, t = 'grey45')
+                self.couriers_widget.print(ago.ljust(width_ago), autoscroll = False, t = ago_color)
         
         else:
             self.couriers_widget.update('Pas de trackers', text_color = 'red')
@@ -574,7 +574,7 @@ class TrackerWidget:
         self.disable_buttons(True)
 
         choices = {'Archiver': self.archive, 'Supprimer': self.delete}
-        choices_colors = {'Archiver':'green', 'Supprimer':'red', False:'grey70'}
+        choices_colors = {'Archiver':'green', 'Supprimer':'red', False:'grey75'}
         choice = popup.one_choice(choices.keys(), choices_colors, f'{self.tracker.description} - {self.tracker.get_pretty_idship()}', not is_debugger, main_loop)
         if choice:
             choices[choice](window, main_loop)
@@ -811,19 +811,18 @@ if __name__ == "__main__":
 
     splash_update('inititialisation')
 
-    menu_color = MyButton.default_colors['Enter']
+    menu_color = 'grey75'
     recenter_widget = sg.T('', background_color = menu_color, p = 0, expand_x = True, expand_y = True, k = '-RECENTER-')
 
     b_pad, b_f_size = 10, 12
     im_height, im_margin = 20, 5
-    b_color = 'grey90'
-    b_kwargs = dict(im_height = im_height, im_margin = im_margin, font = (VarFontBold, b_f_size))
-    menu =  [   MyButtonImg('Nouveau', p = b_pad, image_filename = 'icon/edit.png', button_color = (Edit_Color, b_color), k = '-New-', **b_kwargs), 
-                MyButtonImg('Rafraichir', p = (0, b_pad), image_filename = 'icon/refresh.png', button_color = ('grey', b_color), k = '-Refresh-', **b_kwargs), 
-                MyButtonImg('Archives', p = b_pad, image_filename = 'icon/archive.png', button_color = (Archives_color, b_color), disabled = True, k = '-Archives-', **b_kwargs), 
+    b_kwargs = dict(im_height = im_height, im_margin = im_margin, font = (VarFontBold, b_f_size), mouseover_color = 'grey90')
+    menu =  [   MyButton('Log', p = b_pad, font = (VarFontBold, b_f_size), button_color = menu_color, mouseover_color = 'grey90', k = '-Log-'), 
+                MyButtonImg('Nouveau', p = (0, b_pad), image_filename = 'icon/edit.png', button_color = (Edit_Color, menu_color), k = '-New-', **b_kwargs), 
+                MyButtonImg('Rafraichir', p = b_pad, image_filename = 'icon/refresh.png', button_color = (Refresh_color, menu_color), k = '-Refresh-', **b_kwargs), 
+                MyButtonImg('Archives', p = (0, b_pad), image_filename = 'icon/archive.png', button_color = (Archives_color, menu_color), disabled = True, k = '-Archives-', **b_kwargs), 
                 recenter_widget,
-                MyButton('Log', p = 0, font = (VarFont, b_f_size), button_color = b_color, k = '-Log-'), 
-                MyButton(' X ', p = b_pad, font = (VarFontBold, b_f_size), button_color = 'red', focus = True, k = '-Exit-') ]
+                MyButton(' X ', p = b_pad, font = (VarFontBold, b_f_size), button_color = 'red', mouseover_color = 'grey90', focus = True, k = '-Exit-') ]
 
     layout = [ [ sg.Col([menu], p = 0, background_color = menu_color, expand_x = True, k = 'MENU') ],
                [ sg.Col([[]], p = 0, scrollable = True, vertical_scroll_only = True, expand_x = True, expand_y = True, k = 'TRACKS') ] ]

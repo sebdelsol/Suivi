@@ -3,14 +3,14 @@ from mybutton import MyButton
 from couriers import Courier
 import webbrowser
 
-from fonts import FixFont, FixFontBold, VarFont
+from fonts import FixFont, FixFontBold, VarFont, VarFontBold
 
 #-------------
 class MyPopup:
     def __init__(self, title, body_layout, no_border, main_loop):
         self.main_loop = main_loop
 
-        layout =      [ [ sg.T(title, font = (FixFont, 20)) ],
+        layout =      [ [ sg.T(title, font = (FixFontBold, 20), justification = 'center', expand_x = True) ],
                         [ sg.HorizontalSeparator() ] ]
         
         layout.extend(  body_layout )
@@ -150,7 +150,7 @@ def one_choice(choices, choice_colors, title, no_border, main_loop, default = 0)
     layout = []
     for i, choice in enumerate(choices):
         color = choice_colors[choice if i==default else False]
-        radio = sg.Radio(choice, group_id = 'choices', text_color = color, font = (VarFont, 20), enable_events = True, default= i==0, k = choice)
+        radio = sg.Radio(choice, group_id = 'choices', text_color = color, font = (VarFontBold, 20), enable_events = True, default= i==0, k = choice)
         layout.append([radio])
 
     choices_window = MyPopup(title, layout, no_border, main_loop)

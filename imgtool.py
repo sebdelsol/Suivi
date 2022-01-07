@@ -33,7 +33,7 @@ def resize_and_colorize_gif(image64, height, color):
     return save_img64(frames[0], optimize = False, save_all = True, append_images = frames[1:], loop = 0, format = 'GIF', transparency = 0)
 
 #-------------------------------------------------
-def resize_and_colorize_img(image, height, color):
+def resize_and_colorize_img(image, height, color, canvas_size = None):
     im = Image.open(image)
 
     alpha = im.split()[3]
@@ -41,6 +41,12 @@ def resize_and_colorize_img(image, height, color):
     im.putalpha(alpha)
     width = int(im.size[0] * height / im.size[1])
     im.thumbnail((width, height))
+    
+    if canvas_size:
+        new = Image.new('RGBA', canvas_size, 0)
+        padw, padh = int((canvas_size[0] - im.size[0]) * .5), int((canvas_size[1] - im.size[1]) * .5)
+        new.paste(im, (padw, padh))
+        im = new
 
     return save_img64(im, format = 'PNG')
 
