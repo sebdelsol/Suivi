@@ -9,6 +9,7 @@ from fonts import FixFont, FixFontBold, VarFont, VarFontBold
 class MyPopup:
     def __init__(self, title, body_layout, no_border, main_loop):
         self.main_loop = main_loop
+        self.main_loop.grey_other_windows(True)
 
         layout =      [ [ sg.T(title, font = (FixFontBold, 20), justification = 'center', expand_x = True) ],
                         [ sg.HorizontalSeparator() ] ]
@@ -21,7 +22,6 @@ class MyPopup:
 
         layout = [ [ sg.Frame('', [[sg.Col(layout, p = 10)]], p = 0, border_width = 3, relief = sg.RELIEF_SOLID) ] ]
         self.window = sg.Window('', layout, margins = (0, 0), modal = True, grab_anywhere = True, keep_on_top = no_border, no_titlebar = no_border, return_keyboard_events = True, finalize = True, debugger_enabled = False)
-        
         MyButton.finalize_all(self.window)
 
     def loop(self, catch_event = None):
@@ -44,6 +44,7 @@ class MyPopup:
                         catch_event(self.window, event, values) 
 
     def close(self):
+        self.main_loop.grey_other_windows(False)
         self.window.close()
         del self.window
 

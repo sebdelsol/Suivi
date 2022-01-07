@@ -755,6 +755,19 @@ class Main_window_loop:
         self.widgets.animate(self.animation_step)
         main_window.TKroot.after(self.animation_step, self.animate)
 
+    def grey_other_windows(self, enable):
+        if enable:
+            kwargs = dict(keep_on_top = not is_debugger, no_titlebar = not is_debugger, margins = (0, 0), debugger_enabled = False, background_color = 'black', alpha_channel =.5, finalize = True)
+            self.main_window_fake = sg.Window('', [[]], size = self.main_window.size, location = self.main_window.current_location(), **kwargs)    
+            self.log_window_fake = sg.Window('', [[]], size = self.mylog.window.size, location = self.mylog.window.current_location(), **kwargs) if self.mylog.visible else None
+        
+        else:
+            self.main_window_fake.close()
+            del self.main_window_fake
+            if self.log_window_fake:
+                self.log_window_fake.close()
+                del self.log_window_fake
+
     def get_event(self):
         window, event, values = sg.read_all_windows()
         
