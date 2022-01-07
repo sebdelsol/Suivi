@@ -822,7 +822,7 @@ if __name__ == "__main__":
                 MyButtonImg('Rafraichir', p = b_pad, image_filename = 'icon/refresh.png', button_color = (Refresh_color, menu_color), k = '-Refresh-', **b_kwargs), 
                 MyButtonImg('Archives', p = (0, b_pad), image_filename = 'icon/archive.png', button_color = (Archives_color, menu_color), disabled = True, k = '-Archives-', **b_kwargs), 
                 recenter_widget,
-                MyButton(' X ', p = b_pad, font = (VarFontBold, b_f_size), button_color = 'red', mouseover_color = 'grey90', focus = True, k = '-Exit-') ]
+                MyButton(' X ', p = b_pad, font = (VarFontBold, b_f_size), button_color = menu_color, mouseover_color = 'red', focus = True, k = '-Exit-') ]
 
     layout = [ [ sg.Col([menu], p = 0, background_color = menu_color, expand_x = True, k = 'MENU') ],
                [ sg.Col([[]], p = 0, scrollable = True, vertical_scroll_only = True, expand_x = True, expand_y = True, k = 'TRACKS') ] ]
