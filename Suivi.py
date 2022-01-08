@@ -251,13 +251,9 @@ class TrackerWidget:
     bg_color = 'grey90'
     bg_color_h = 'grey85'
 
-    loading_gif = resize_and_colorize_gif(sg.DEFAULT_BASE64_LOADING_GIF, 20, Refresh_color)
-    
     button_size = (22, 22)
     img_per = .6
-    refresh_img = resize_and_colorize_img('icon/refresh.png', button_size[1] * img_per, Refresh_color, button_size)
-    edit_img = resize_and_colorize_img('icon/edit.png', button_size[1] * img_per, Edit_color, button_size)
-    archive_img = resize_and_colorize_img('icon/archive.png', button_size[1] * img_per, Archives_color, button_size)
+    loading_gif, refresh_img, edit_img, archive_img = None, None, None, None
 
     def __init__(self, tracker):
         self.tracker = tracker
@@ -265,6 +261,13 @@ class TrackerWidget:
         self.min_events_shown = self.min_events_shown
         self.reset_size()
         self.updating = False
+
+        if not TrackerWidget.loading_gif:
+            height = self.button_size[1] * self.img_per
+            TrackerWidget.loading_gif = resize_and_colorize_gif(sg.DEFAULT_BASE64_LOADING_GIF, 20, Refresh_color)
+            TrackerWidget.refresh_img = resize_and_colorize_img('icon/refresh.png', height, Refresh_color, self.button_size)
+            TrackerWidget.edit_img = resize_and_colorize_img('icon/edit.png', height, Edit_color, self.button_size)
+            TrackerWidget.archive_img = resize_and_colorize_img('icon/archive.png', height, Archives_color, self.button_size)
 
     def reset_size(self):
         self.width_events = 0
@@ -426,6 +429,7 @@ class TrackerWidget:
                     previous_day = None
                     previous_hour = None
 
+                    pr = self.events_widget.print
                     for event in events:
                         event_courier = f"{event['courier'].rjust(courier_w)}. "
                         
@@ -459,12 +463,12 @@ class TrackerWidget:
                         width = sum( len(txt) for txt in (event_courier, event_date, event_new) )
                         event_labels = textwrap.wrap(event_label, self.max_event_width - len(event_status), subsequent_indent = ' '* width) or ['']
 
-                        self.events_widget.print(event_date, font = f, autoscroll = False, t = 'grey', end = '')
-                        self.events_widget.print(event_courier, font = f, autoscroll = False, t = 'light slate blue', end = '')
-                        self.events_widget.print(event_new, font = f, autoscroll = False, t = 'black', end = '')
-                        self.events_widget.print(event_status, font = self.events_fb if event_warn or event_delivered else f, autoscroll = False, t = event_color or 'black', end = '')
+                        pr(event_date, font = f, autoscroll = False, t = 'grey', end = '')
+                        pr(event_courier, font = f, autoscroll = False, t = 'light slate blue', end = '')
+                        pr(event_new, font = f, autoscroll = False, t = 'black', end = '')
+                        pr(event_status, font = self.events_fb if event_warn or event_delivered else f, autoscroll = False, t = event_color or 'black', end = '')
                         for event_label in event_labels:
-                            self.events_widget.print(event_label, font = f, autoscroll = False, t = event_color or 'grey50')
+                            pr(event_label, font = f, autoscroll = False, t = event_color or 'grey50')
                         
                         width += sum( len(txt) for txt in (event_status, event_labels[0]) )
                         width_events = max(width, width_events)
@@ -515,13 +519,13 @@ class TrackerWidget:
         self.id_widget.update('') 
 
         product = (content and content.get('product')) or 'Envoi'
-        self.id_widget.print(f'{product}', autoscroll = False, t = 'grey50', end = '')
-
         fromto = content and content.get('fromto')
         fromto = f' {fromto.lower()} ' if fromto else ' '
-        self.id_widget.print(fromto, autoscroll = False, t = 'grey70', end = '')
 
-        self.id_widget.print(self.tracker.get_pretty_idship(), autoscroll = False, t = 'blue', end = '')
+        pr = self.id_widget.print
+        pr(f'{product}', autoscroll = False, t = 'grey50', end = '')
+        pr(fromto, autoscroll = False, t = 'grey70', end = '')
+        pr(self.tracker.get_pretty_idship(), autoscroll = False, t = 'blue', end = '')
 
     def show_couriers(self, couriers_update):
         if couriers_update:
@@ -541,12 +545,13 @@ class TrackerWidget:
             width_name = max(len(txt[3]) for txt in txts)
             width_ago = max(len(txt[1]) for txt in txts)
 
+            pr = self.couriers_widget.print
             for updating, ago, ago_color, name, name_color, name_font in txts:
                 maj_txt = maj if updating else ' ' * len(maj)
-                self.couriers_widget.print(maj_txt, autoscroll = False, font = (FixFontBold, self.courier_fsize), t = Refresh_color, end = '')
-                self.couriers_widget.print(name.rjust(width_name), autoscroll = False, t = name_color, font = (name_font, self.courier_fsize), end = '')
-                self.couriers_widget.print(', MàJ ', autoscroll = False, t = 'grey60', end = '')
-                self.couriers_widget.print(ago.ljust(width_ago), autoscroll = False, t = ago_color)
+                pr(maj_txt, autoscroll = False, font = (FixFontBold, self.courier_fsize), t = Refresh_color, end = '')
+                pr(name.rjust(width_name), autoscroll = False, t = name_color, font = (name_font, self.courier_fsize), end = '')
+                pr(', MàJ ', autoscroll = False, t = 'grey60', end = '')
+                pr(ago.ljust(width_ago), autoscroll = False, t = ago_color)
         
         else:
             self.couriers_widget.update('Pas de trackers', text_color = 'red')
