@@ -542,10 +542,10 @@ class TrackerWidget:
         for button in  self.buttons:
             button.update(disabled = disabled)
 
-    def edit(self, window, main_loop):
+    def edit(self, window):
         self.disable_buttons(True)
 
-        idship, description, used_couriers = popup.edit('Édition', self.tracker.idship, self.tracker.description, self.tracker.used_couriers, self.tracker.available_couriers, not is_debugger, main_loop)
+        idship, description, used_couriers = popup.edit('Édition', self.tracker.idship, self.tracker.description, self.tracker.used_couriers, self.tracker.available_couriers, not is_debugger, window)
         if idship is not None:
             self.tracker.set_id(idship, description, used_couriers)
             self.reset_size()
@@ -553,8 +553,8 @@ class TrackerWidget:
 
         self.disable_buttons(False)
 
-    def set_state(self, state, window, main_loop, ask, visible):
-        if not ask or popup.warning(ask.capitalize(), f'{self.tracker.description} - {self.tracker.get_pretty_idship()}', not is_debugger, main_loop):
+    def set_state(self, state, window, ask, visible):
+        if not ask or popup.warning(ask.capitalize(), f'{self.tracker.description} - {self.tracker.get_pretty_idship()}', not is_debugger, window):
             if self.lock.acquire(blocking=False): # needed ?
                 self.tracker.state = state
 
@@ -564,26 +564,26 @@ class TrackerWidget:
                 trigger_event(window, '-UPDATE WIDGETS SIZE-', '')
                 self.lock.release()
 
-    def archive_or_delete(self, window, main_loop):
+    def archive_or_delete(self, window):
         self.disable_buttons(True)
 
         choices = {'Archiver': self.archive, 'Supprimer': self.delete}
         choices_colors = {'Archiver':'green', 'Supprimer':'red', False:'grey75'}
-        choice = popup.one_choice(choices.keys(), choices_colors, f'{self.tracker.description} - {self.tracker.get_pretty_idship()}', not is_debugger, main_loop)
+        choice = popup.one_choice(choices.keys(), choices_colors, f'{self.tracker.description} - {self.tracker.get_pretty_idship()}', not is_debugger, window)
         if choice:
-            choices[choice](window, main_loop)
+            choices[choice](window)
 
         self.disable_buttons(False)
 
-    def delete(self, window, main_loop):
-        self.set_state('deleted', window, main_loop, ask = 'Supprimer', visible = False)
+    def delete(self, window):
+        self.set_state('deleted', window, ask = 'Supprimer', visible = False)
 
-    def archive(self, window, main_loop):
-        self.set_state('archived', window, main_loop, ask = False, visible = False)
+    def archive(self, window):
+        self.set_state('archived', window, ask = False, visible = False)
         trigger_event(window, '-ARCHIVE UPDATED-', '')
 
-    def unarchive(self, window, main_loop):
-        self.set_state('ok', window, main_loop, ask = False, visible = True)
+    def unarchive(self, window):
+        self.set_state('ok', window, ask = False, visible = True)
         trigger_event(window, '-ARCHIVE UPDATED-', '')
         self.update(window)
 
@@ -612,8 +612,8 @@ class TrackerWidgets:
         widget.finalize(window)
         widget.update(window)
 
-    def new(self, window, main_loop):
-        tracker_params = popup.edit('Nouveau', '', 'Nouveau', [], self.trackers.couriers, not is_debugger, main_loop)
+    def new(self, window):
+        tracker_params = popup.edit('Nouveau', '', 'Nouveau', [], self.trackers.couriers, not is_debugger, window)
         tracker = self.trackers.new(*tracker_params)
         if tracker:
             self.create_widget(window, tracker)
@@ -621,7 +621,7 @@ class TrackerWidgets:
     def get_widgets_with_state(self, state):
         return [widget for widget in self.widgets if widget.tracker.state == state]
 
-    def show_archives(self, window, main_loop):
+    def show_archives(self, window):
         archived = self.get_widgets_with_state('archived')
         archived.sort(key = lambda w : w.tracker.get_last_event(), reverse = True)
 
@@ -633,11 +633,11 @@ class TrackerWidgets:
             txt = f'{tracker.get_pretty_last_event()}, {tracker.description.ljust(w_desc)} - {tracker.get_pretty_idship()}'
             choices.append((txt, color))
 
-        chosen = popup.choices(choices, 'Désarchiver', not is_debugger, main_loop)
+        chosen = popup.choices(choices, 'Désarchiver', not is_debugger, window)
 
         for i in chosen:
             widget = archived[i]
-            widget.unarchive(window, main_loop)
+            widget.unarchive(window)
 
     def archives_updated(self, archives_button):
         n_archives = self.trackers.count_archived()
@@ -751,7 +751,7 @@ class Splash:
         self.window.close()
 
 # --------------------------------------------------
-class Main_window:
+class Main_window(sg.Window):
     
     animation_step = 100
 
@@ -771,27 +771,27 @@ class Main_window:
                 [ sg.Col([[]], p = 0, scrollable = True, vertical_scroll_only = True, expand_x = True, expand_y = True, background_color = menu_color, k = 'TRACKS') ]]
 
         window_kwargs.update(dict(alpha_channel = 0, grab_anywhere = True, resizable = True)) #disappear @beginning
-        self.window = sg.Window('', [ [ sg.Frame('', layout, **frame_kwargs) ] ], **window_kwargs)
+        super().__init__('', [ [ sg.Frame('', layout, **frame_kwargs) ] ], **window_kwargs)
 
-        MyButton.finalize_all(self.window)
+        MyButton.finalize_all(self)
         recenter_widget.bind('<Double-Button-1>', '')
 
         self.mylog = mylog
-        mylog.create_window((FixFont, 7), (VarFont, 12), not is_debugger, self.window)
+        mylog.create_window((FixFont, 7), (VarFont, 12), not is_debugger, self)
         self.trackers = Trackers(TrackersFile, splash) 
-        self.widgets = TrackerWidgets(self.window, self.trackers, self.window['TRACKS'], splash) 
+        self.widgets = TrackerWidgets(self, self.trackers, self['TRACKS'], splash) 
 
-        self.window.TKroot.bind('<Configure>', lambda evt: self.mylog.stick_to_main())
-        self.greys = (Fake_grey_window(self.window), Fake_grey_window(self.mylog.window))
+        self.TKroot.bind('<Configure>', lambda evt: self.mylog.stick_to_main())
+        self.greys = (Fake_grey_window(self), Fake_grey_window(self.mylog.window))
 
         self.animation_step = self.animation_step
-        self.window.TKroot.after(self.animation_step, self.animate)
+        self.TKroot.after(self.animation_step, self.animate)
 
-        self.window.reappear()
+        self.reappear()
 
     def close(self):
         self.grey_other_windows(False)
-        self.window.close()
+        super().close()
 
         try:
             self.trackers.save()
@@ -804,15 +804,15 @@ class Main_window:
 
     def animate(self):
         self.widgets.animate(self.animation_step)
-        self.window.TKroot.after(self.animation_step, self.animate)
+        self.TKroot.after(self.animation_step, self.animate)
 
     def grey_other_windows(self, enable):
         for grey in self.greys:
             grey.enable(enable)
 
     # def trigger_event(self, *events):
-    #     if self.window and self.window.TKroot:
-    #         self.window.write_event_value(*events)
+    #     if self.TKroot:
+    #         self.write_event_value(*events)
 
     def loop(self):
         while True:
@@ -829,22 +829,16 @@ class Main_window:
         exit = False
         forward = None
 
-        # clic event for multiline to expand collapse, see widget.bind in TrackerWidgets
-        if isinstance(event, tuple) and callable(event[0]):
-            event[0](window)      
+        if callable(event):
+            event(window) 
 
-        # update, edit, delete, archive a tracker       
-        elif callable(event):
-            try:
-                event(window, self) 
-            
-            except TypeError:
-                event(window) 
+        elif isinstance(event, tuple) and callable(event[0]):
+            event[0](window)      
         
         elif self.mylog.catch_event(window, event):
             pass
 
-        elif window == self.window:
+        elif window == self:
 
             if event in (None, '-Exit-', 'Escape:27'):
                 exit = True
@@ -865,13 +859,13 @@ class Main_window:
                 self.widgets.update_size(window)
 
             elif event == '-New-':
-                self.widgets.new(window, self)
+                self.widgets.new(window)
 
             elif event == '-Refresh-':
                 self.widgets.update(window)
 
             elif event == '-Archives-':
-                self.widgets.show_archives(window, self)
+                self.widgets.show_archives(window)
             
             else:
                 forward = window, event, values
