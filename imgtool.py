@@ -39,12 +39,12 @@ def resize_and_colorize_img(image, height, color, canvas_size = None):
     alpha = im.split()[3]
     im = ImageOps.colorize(ImageOps.grayscale(im), white = 'white', black = color) 
     im.putalpha(alpha)
-    width = int(im.size[0] * height / im.size[1])
+    width = round(im.size[0] * height / im.size[1])
     im.thumbnail((width, height))
     
     if canvas_size:
         new = Image.new('RGBA', canvas_size, 0)
-        padw, padh = int((canvas_size[0] - im.size[0]) * .5), int((canvas_size[1] - im.size[1]) * .5)
+        padw, padh = (round((cS - imS) * .5) for cS, imS in zip(canvas_size, im.size))
         new.paste(im, (padw, padh))
         im = new
 
@@ -55,7 +55,7 @@ def expand_right_img64(image64, new_size):
     im = load_img64(image64)
 
     new = Image.new('RGBA', new_size, 0)
-    pad = int((new_size[1] - im.size[1]) * .5)
+    pad = round((new_size[1] - im.size[1]) * .5)
     new.paste(im, (pad, pad))
     
     return save_img64(new, format = 'PNG')

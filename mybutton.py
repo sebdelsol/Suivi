@@ -56,10 +56,12 @@ class MyButtonImg(MyButton):
         super().__init__(*args, **kwargs)
 
     def update_layout(self, txt):
+        # add spaces to fit text after the img
         wfont = font.Font(self.ParentForm.TKroot, self.Font)
-        new_txt = ' ' *  (int((self.im_size[0] + self.im_margin * 2) / wfont.measure(' '))) + txt
+        new_txt = ' ' *  round((self.im_size[0] + self.im_margin * 2) / wfont.measure(' ')) + txt
         new_size = (wfont.measure(new_txt) + self.im_margin, self.im_size[1] + self.im_margin * 2)
 
+        # expand the img to the right to fill the whole button
         self.set_size(new_size)
         self.Widget.configure(wraplength = new_size[0])
         new_image_data = expand_right_img64(self.im_data, new_size)
