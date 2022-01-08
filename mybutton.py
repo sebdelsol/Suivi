@@ -45,7 +45,6 @@ class MyButton(sg.Button):
 #-------------------------------------------------
 class MyButtonImg(MyButton):
     def __init__(self, *args, im_margin = 0, im_height = 20, **kwargs):
-
         kwargs['image_data'] = resize_and_colorize_img(kwargs['image_filename'], im_height, kwargs['button_color'][0])
         kwargs['image_filename'] = None
         kwargs['auto_size_button'] = False
