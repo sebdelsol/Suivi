@@ -589,10 +589,10 @@ class TrackerWidget:
 
 # -------------------
 class TrackerWidgets:
-    def __init__(self, window, trackers, widgets_col, splash):
+    def __init__(self, window, trackers, widgets_frame, splash):
         self.widgets = []
         self.trackers = trackers
-        self.widgets_col = widgets_col
+        self.widgets_frame = widgets_frame
 
         n_trackers = len(trackers.trackers)
         for i, tracker in enumerate(trackers.trackers):
@@ -606,7 +606,7 @@ class TrackerWidgets:
     def create_widget(self, window, tracker, first = False):
         widget = TrackerWidget(tracker)
 
-        window.extend_layout(self.widgets_col, [widget.create_layout(first)])
+        window.extend_layout(self.widgets_frame, [widget.create_layout(first)])
         self.widgets.append(widget)
 
         widget.finalize(window)
@@ -668,7 +668,7 @@ class TrackerWidgets:
             widget.update_size(max_width)
 
         window.refresh()
-        self.widgets_col.contents_changed()
+        self.widgets_frame.contents_changed()
 
         # wanted size
         if ok:
@@ -682,11 +682,11 @@ class TrackerWidgets:
         h_screen_margin = 0 #400
 
         if h > screen_h - h_screen_margin:
-            self.widgets_col.Widget.vscrollbar.pack(side=sg.tk.RIGHT, fill='y')
+            self.widgets_frame.Widget.vscrollbar.pack(side=sg.tk.RIGHT, fill='y')
             w += 15 # size of scrollbar
 
         else:
-            self.widgets_col.Widget.vscrollbar.pack_forget()
+            self.widgets_frame.Widget.vscrollbar.pack_forget()
 
         # min size
         window.set_min_size((min(w, screen_w), min(h, screen_h - h_screen_margin)))
@@ -736,26 +736,89 @@ class Fake_grey_window:
         x, y = self.window.current_location()
         self.fake.TKroot.geometry(f'{w}x{h}+{x}+{y}')
 
-# ---------------------
-class Main_window_loop:
-    def __init__(self, main_window, widgets, mylog, animation_step = 100):
-        self.main_window = main_window
-        self.widgets = widgets
+# ---------------------------------------------
+class Splash:
+    def __init__(self, frame_kwargs, window_kwargs):
+        self.log = sg.T('', font = (VarFont, 10))
+        layout = [[sg.Image(filename = 'icon/mail.png')], [self.log]]
+        self.window = sg.Window('', [[sg.Frame('', layout, **frame_kwargs) ]], **window_kwargs)
+
+    def update(self, txt):
+        self.log.update(f'{txt} ...'.capitalize())
+        self.window.refresh()
+
+    def close(self):
+        self.window.close()
+
+# --------------------------------------------------
+class Main_window:
+    
+    animation_step = 100
+
+    def __init__(self, frame_kwargs, window_kwargs):
+        menu_color = 'grey75'
+        b_pad, b_f_size = 10, 12
+        im_height, im_margin = 20, 5
+        b_kwargs = dict(im_height = im_height, im_margin = im_margin, font = (VarFontBold, b_f_size), mouseover_color = 'grey90')
+        log_b = MyButton('Log', p = b_pad, font = (VarFontBold, b_f_size), button_color = ('grey', menu_color), mouseover_color = 'grey90', k = '-Log-')
+        new_b = MyButtonImg('Nouveau', p = (0, b_pad), image_filename = 'icon/edit.png', button_color = (Edit_color, menu_color), k = '-New-', **b_kwargs)
+        refresh_b = MyButtonImg('Rafraichir', p = b_pad, image_filename = 'icon/refresh.png', button_color = (Refresh_color, menu_color), k = '-Refresh-', **b_kwargs)
+        archives_b = MyButtonImg('Archives', p = (0, b_pad), image_filename = 'icon/archive.png', button_color = (Archives_color, menu_color), disabled = True, k = '-Archives-', **b_kwargs)
+        recenter_widget = sg.T('', background_color = menu_color, p = 0, expand_x = True, expand_y = True, k = '-RECENTER-')
+        exit_b = MyButton(' X ', p = b_pad, font = (VarFontBold, b_f_size), button_color = menu_color, mouseover_color = 'red', focus = True, k = '-Exit-')
+
+        layout = [[ sg.Col([[ log_b, new_b, refresh_b, archives_b, recenter_widget, exit_b ]], p = 0, background_color = menu_color, expand_x = True, k = 'MENU') ],
+                [ sg.Col([[]], p = 0, scrollable = True, vertical_scroll_only = True, expand_x = True, expand_y = True, background_color = menu_color, k = 'TRACKS') ]]
+
+        window_kwargs.update(dict(alpha_channel = 0, grab_anywhere = True, resizable = True)) #disappear @beginning
+        self.window = sg.Window('', [ [ sg.Frame('', layout, **frame_kwargs) ] ], **window_kwargs)
+
+        MyButton.finalize_all(self.window)
+        recenter_widget.bind('<Double-Button-1>', '')
+
         self.mylog = mylog
+        mylog.create_window((FixFont, 7), (VarFont, 12), not is_debugger, self.window)
+        self.trackers = Trackers(TrackersFile, splash) 
+        self.widgets = TrackerWidgets(self.window, self.trackers, self.window['TRACKS'], splash) 
 
-        main_window.TKroot.bind('<Configure>', lambda evt: self.mylog.stick_to_main())
-        self.greys = (Fake_grey_window(main_window), Fake_grey_window(mylog.window))
+        self.window.TKroot.bind('<Configure>', lambda evt: self.mylog.stick_to_main())
+        self.greys = (Fake_grey_window(self.window), Fake_grey_window(self.mylog.window))
 
-        self.animation_step = animation_step
-        main_window.TKroot.after(animation_step, self.animate)
+        self.animation_step = self.animation_step
+        self.window.TKroot.after(self.animation_step, self.animate)
+
+        self.window.reappear()
+
+    def close(self):
+        self.grey_other_windows(False)
+        self.window.close()
+
+        try:
+            self.trackers.save()
+            self.trackers.clean_couriers()
+        except:
+            _log (traceback.format_exc(), error = True)
+
+        self.mylog.close()
+        self.trackers.close()
 
     def animate(self):
         self.widgets.animate(self.animation_step)
-        self.main_window.TKroot.after(self.animation_step, self.animate)
+        self.window.TKroot.after(self.animation_step, self.animate)
 
     def grey_other_windows(self, enable):
         for grey in self.greys:
             grey.enable(enable)
+
+    # def trigger_event(self, *events):
+    #     if self.window and self.window.TKroot:
+    #         self.window.write_event_value(*events)
+
+    def loop(self):
+        while True:
+            exit = self.get_event()[0]
+            if exit:
+                break
 
     def get_event(self):
         window, event, values = sg.read_all_windows()
@@ -778,10 +841,10 @@ class Main_window_loop:
             except TypeError:
                 event(window) 
         
-        elif mylog.catch_event(window, event):
+        elif self.mylog.catch_event(window, event):
             pass
 
-        elif window == self.main_window:
+        elif window == self.window:
 
             if event in (None, '-Exit-', 'Escape:27'):
                 exit = True
@@ -817,46 +880,6 @@ class Main_window_loop:
             forward = window, event, values
         
         return exit, forward
-
-# ---------------------------------------------
-class Splash:
-    def __init__(self, frame_kwargs, window_kwargs):
-        self.log = sg.T('', font = (VarFont, 10))
-        layout = [[sg.Image(filename = 'icon/mail.png')], [self.log]]
-        self.window = sg.Window('', [[sg.Frame('', layout, **frame_kwargs) ]], **window_kwargs)
-
-    def update(self, txt):
-        self.log.update(f'{txt} ...'.capitalize())
-        self.window.refresh()
-
-    def close(self):
-        self.window.close()
-
-# --------------------------------------------------
-class Main_window:
-    def __init__(self, frame_kwargs, window_kwargs):
-        menu_color = 'grey75'
-        b_pad, b_f_size = 10, 12
-        im_height, im_margin = 20, 5
-        b_kwargs = dict(im_height = im_height, im_margin = im_margin, font = (VarFontBold, b_f_size), mouseover_color = 'grey90')
-        log_b = MyButton('Log', p = b_pad, font = (VarFontBold, b_f_size), button_color = ('grey', menu_color), mouseover_color = 'grey90', k = '-Log-')
-        new_b = MyButtonImg('Nouveau', p = (0, b_pad), image_filename = 'icon/edit.png', button_color = (Edit_color, menu_color), k = '-New-', **b_kwargs)
-        refresh_b = MyButtonImg('Rafraichir', p = b_pad, image_filename = 'icon/refresh.png', button_color = (Refresh_color, menu_color), k = '-Refresh-', **b_kwargs)
-        archives_b = MyButtonImg('Archives', p = (0, b_pad), image_filename = 'icon/archive.png', button_color = (Archives_color, menu_color), disabled = True, k = '-Archives-', **b_kwargs)
-        recenter_widget = sg.T('', background_color = menu_color, p = 0, expand_x = True, expand_y = True, k = '-RECENTER-')
-        exit_b = MyButton(' X ', p = b_pad, font = (VarFontBold, b_f_size), button_color = menu_color, mouseover_color = 'red', focus = True, k = '-Exit-')
-
-        layout = [[ sg.Col([[ log_b, new_b, refresh_b, archives_b, recenter_widget, exit_b ]], p = 0, background_color = menu_color, expand_x = True, k = 'MENU') ],
-                [ sg.Col([[]], p = 0, scrollable = True, vertical_scroll_only = True, expand_x = True, expand_y = True, background_color = menu_color, k = 'TRACKS') ]]
-
-        window_kwargs.update(dict(alpha_channel = 0, grab_anywhere = True, resizable = True)) #disappear @beginning
-        self.window = sg.Window('', [ [ sg.Frame('', layout, **frame_kwargs) ] ], **window_kwargs)
-
-        MyButton.finalize_all(self.window)
-        recenter_widget.bind('<Double-Button-1>', '')
-
-    def close(self):
-        self.window.close()
 
 # ------------------------
 if __name__ == "__main__":
@@ -895,26 +918,7 @@ if __name__ == "__main__":
 
     # create main_window
     main_window = Main_window(frame_kwargs, window_kwargs)
-
-    mylog.create_window((FixFont, 7), (VarFont, 12), not is_debugger, main_window.window)
-    trackers = Trackers(TrackersFile, splash) 
-    widgets = TrackerWidgets(main_window.window, trackers, main_window.window['TRACKS'], splash) 
-    main_window_loop = Main_window_loop(main_window.window, widgets, mylog)
-    main_window.window.reappear()
     splash.close()
 
-    while True:
-        if main_window_loop.get_event()[0]:
-            break
-
-    main_window_loop.grey_other_windows(False)
+    main_window.loop()
     main_window.close()
-
-    try:
-        trackers.save()
-        trackers.clean_couriers()
-    except:
-        _log (traceback.format_exc(), error = True)
-
-    mylog.close()
-    trackers.close()
