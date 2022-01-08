@@ -239,9 +239,11 @@ class TrackerWidget:
         self.reset_size()
         self.updating = False
 
+        # faster startup
         if not TrackerWidget.loading_gif:
-            height = self.button_size[1] * self.img_per
             TrackerWidget.loading_gif = resize_and_colorize_gif(sg.DEFAULT_BASE64_LOADING_GIF, 20, Refresh_color)
+
+            height = self.button_size[1] * self.img_per
             TrackerWidget.refresh_img = resize_and_colorize_img('icon/refresh.png', height, Refresh_color, self.button_size)
             TrackerWidget.edit_img = resize_and_colorize_img('icon/edit.png', height, Edit_color, self.button_size)
             TrackerWidget.archive_img = resize_and_colorize_img('icon/archive.png', height, Archives_color, self.button_size)
@@ -390,10 +392,11 @@ class TrackerWidget:
             self.loading_widget.update_animation(self.loading_gif, time_between_frames = animation_step)
 
     def show(self, content, window):
-        if self.tracker.state == 'ok':
+        tracker = self.tracker
+        if tracker.state == 'ok':
             
             delivered = '✔' if content and content.get('status', {}).get('delivered') else ''
-            self.desc_widget.update(f'{self.tracker.description.strip()}{delivered}') 
+            self.desc_widget.update(f'{tracker.description.strip()}{delivered}') 
             self.events_widget.update('')
 
             if content and content.get('ok'):
@@ -406,7 +409,7 @@ class TrackerWidget:
                     previous_day = None
                     previous_hour = None
 
-                    pr = self.events_widget.print
+                    prt = self.events_widget.print
                     for event in events:
                         event_courier = f"{event['courier'].rjust(courier_w)}. "
                         
@@ -440,12 +443,12 @@ class TrackerWidget:
                         width = sum( len(txt) for txt in (event_courier, event_date, event_new) )
                         event_labels = textwrap.wrap(event_label, self.max_event_width - len(event_status), subsequent_indent = ' '* width) or ['']
 
-                        pr(event_date, font = f, autoscroll = False, t = 'grey', end = '')
-                        pr(event_courier, font = f, autoscroll = False, t = 'light slate blue', end = '')
-                        pr(event_new, font = f, autoscroll = False, t = 'black', end = '')
-                        pr(event_status, font = self.events_fb if event_warn or event_delivered else f, autoscroll = False, t = event_color or 'black', end = '')
+                        prt(event_date, font = f, autoscroll = False, t = 'grey', end = '')
+                        prt(event_courier, font = f, autoscroll = False, t = 'light slate blue', end = '')
+                        prt(event_new, font = f, autoscroll = False, t = 'black', end = '')
+                        prt(event_status, font = self.events_fb if event_warn or event_delivered else f, autoscroll = False, t = event_color or 'black', end = '')
                         for event_label in event_labels:
-                            pr(event_label, font = f, autoscroll = False, t = event_color or 'grey50')
+                            prt(event_label, font = f, autoscroll = False, t = event_color or 'grey50')
                         
                         width += sum( len(txt) for txt in (event_status, event_labels[0]) )
                         width_events = max(width, width_events)
@@ -499,10 +502,10 @@ class TrackerWidget:
         fromto = content and content.get('fromto')
         fromto = f' {fromto.lower()} ' if fromto else ' '
 
-        pr = self.id_widget.print
-        pr(f'{product}', autoscroll = False, t = 'grey50', end = '')
-        pr(fromto, autoscroll = False, t = 'grey70', end = '')
-        pr(self.tracker.get_pretty_idship(), autoscroll = False, t = 'blue', end = '')
+        prt = self.id_widget.print
+        prt(f'{product}', autoscroll = False, t = 'grey50', end = '')
+        prt(fromto, autoscroll = False, t = 'grey70', end = '')
+        prt(self.tracker.get_pretty_idship(), autoscroll = False, t = 'blue', end = '')
 
     def show_couriers(self, couriers_update):
         if couriers_update:
@@ -522,13 +525,13 @@ class TrackerWidget:
             width_name = max(len(txt[3]) for txt in txts)
             width_ago = max(len(txt[1]) for txt in txts)
 
-            pr = self.couriers_widget.print
+            prt = self.couriers_widget.print
             for updating, ago, ago_color, name, name_color, name_font in txts:
                 maj_txt = maj if updating else ' ' * len(maj)
-                pr(maj_txt, autoscroll = False, font = (FixFontBold, self.courier_fsize), t = Refresh_color, end = '')
-                pr(name.rjust(width_name), autoscroll = False, t = name_color, font = (name_font, self.courier_fsize), end = '')
-                pr(', MàJ ', autoscroll = False, t = 'grey60', end = '')
-                pr(ago.ljust(width_ago), autoscroll = False, t = ago_color)
+                prt(maj_txt, autoscroll = False, font = (FixFontBold, self.courier_fsize), t = Refresh_color, end = '')
+                prt(name.rjust(width_name), autoscroll = False, t = name_color, font = (name_font, self.courier_fsize), end = '')
+                prt(', MàJ ', autoscroll = False, t = 'grey60', end = '')
+                prt(ago.ljust(width_ago), autoscroll = False, t = ago_color)
         
         else:
             self.couriers_widget.update('Pas de trackers', text_color = 'red')
@@ -549,9 +552,10 @@ class TrackerWidget:
         self.disable_buttons(False)
 
     def set_state(self, state, window, ask, visible):
-        if not ask or popup.warning(ask.capitalize(), f'{self.tracker.description} - {self.tracker.get_pretty_idship()}', not is_debugger, window):
+        tracker = self.tracker
+        if not ask or popup.warning(ask.capitalize(), f'{tracker.description} - {tracker.get_pretty_idship()}', not is_debugger, window):
             if self.lock.acquire(blocking=False): # needed ?
-                self.tracker.state = state
+                tracker.state = state
 
                 self.layout.update(visible = visible)
                 self.reset_size()
@@ -564,7 +568,8 @@ class TrackerWidget:
 
         choices = {'Archiver': self.archive, 'Supprimer': self.delete}
         choices_colors = {'Archiver':'green', 'Supprimer':'red', False:'grey75'}
-        choice = popup.one_choice(choices.keys(), choices_colors, f'{self.tracker.description} - {self.tracker.get_pretty_idship()}', not is_debugger, window)
+        tracker = self.tracker
+        choice = popup.one_choice(choices.keys(), choices_colors, f'{tracker.description} - {tracker.get_pretty_idship()}', not is_debugger, window)
         if choice:
             choices[choice](window)
 
@@ -708,7 +713,7 @@ class TrackerWidgets:
 class Fake_grey_window:
     def __init__(self, window):
         self.window = window
-        self.kwargs = dict(keep_on_top = not is_debugger, no_titlebar = not is_debugger, margins = (0, 0), debugger_enabled = False, background_color = 'black', alpha_channel =.25, finalize = True)
+        self.kwargs = dict(keep_on_top = not is_debugger, no_titlebar = not is_debugger, margins = (0, 0), debugger_enabled = False, background_color = 'black', alpha_channel =.5, finalize = True)
         self.bind_id = None
     
     def enable(self, enable):
@@ -771,21 +776,24 @@ class Main_window(sg.Window):
         MyButton.finalize_all(self)
         recenter_widget.bind('<Double-Button-1>', '')
 
-        self.mylog = mylog
-        mylog.create_window((FixFont, 7), (VarFont, 12), not is_debugger, self)
         self.trackers = Trackers(TrackersFile, splash) 
         self.widgets = TrackerWidgets(self, self.trackers, self['TRACKS'], splash) 
 
-        self.TKroot.bind('<Configure>', lambda evt: self.mylog.stick_to_main())
-        self.greys = (Fake_grey_window(self), Fake_grey_window(self.mylog.window))
+        self.greyed = [Fake_grey_window(self)]
 
         self.animation_step = self.animation_step
         self.TKroot.after(self.animation_step, self.animate)
 
         self.reappear()
+    
+    def add_log(self, log):
+        log.link_to(self)
+        self.log = log
+        self.greyed.append(Fake_grey_window(log))
+        self.TKroot.bind('<Configure>', lambda evt: log.stick_to_main())
 
     def close(self):
-        self.grey_other_windows(False)
+        self.do_greyed(False)
         super().close()
 
         try:
@@ -794,15 +802,15 @@ class Main_window(sg.Window):
         except:
             _log (traceback.format_exc(), error = True)
 
-        self.mylog.close()
+        self.log.close()
         self.trackers.close()
 
     def animate(self):
         self.widgets.animate(self.animation_step)
         self.TKroot.after(self.animation_step, self.animate)
 
-    def grey_other_windows(self, enable):
-        for grey in self.greys:
+    def do_greyed(self, enable):
+        for grey in self.greyed:
             grey.enable(enable)
 
     def loop(self):
@@ -826,7 +834,7 @@ class Main_window(sg.Window):
         elif isinstance(event, tuple) and callable(event[0]):
             event[0](window)      
         
-        elif self.mylog.catch_event(window, event):
+        elif self.log.catch_event(window, event):
             pass
 
         elif window == self:
@@ -835,7 +843,7 @@ class Main_window(sg.Window):
                 exit = True
             
             elif event in ('-Log-', 'l'):
-                self.mylog.toggle()
+                self.log.toggle()
 
             elif event == '-RECENTER-':
                 self.widgets.recenter(window, force = True)
@@ -903,6 +911,7 @@ if __name__ == "__main__":
 
     # create main_window
     main_window = Main_window(frame_kwargs, window_kwargs)
+    main_window.add_log(mylog)
     splash.close()
 
     main_window.loop()

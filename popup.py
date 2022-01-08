@@ -9,7 +9,7 @@ from fonts import FixFont, FixFontBold, VarFont, VarFontBold
 class MyPopup:
     def __init__(self, title, body_layout, no_border, main_window):
         self.main_window = main_window
-        self.main_window.grey_other_windows(True)
+        self.main_window.do_greyed(True)
 
         layout =      [ [ sg.T(title, font = (FixFontBold, 20), justification = 'center', expand_x = True) ],
                         [ sg.HorizontalSeparator() ] ]
@@ -44,7 +44,7 @@ class MyPopup:
                         catch_event(self.window, event, values) 
 
     def close(self):
-        self.main_window.grey_other_windows(False)
+        self.main_window.do_greyed(False)
         self.window.close()
         del self.window
 
