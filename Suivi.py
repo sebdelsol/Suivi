@@ -21,7 +21,7 @@ locale.setlocale(locale.LC_ALL, 'fr_FR.utf8') # date in French
 TrackersFile = 'Trackers.trck'
 Refresh_color = '#408040'
 Archives_color = '#B2560D'
-Edit_Color = '#6060FF'
+Edit_color = '#6060FF'
 
 #-----------------------
 class MyGraph(sg.Graph):
@@ -255,7 +255,7 @@ class TrackerWidget:
     button_size = (22, 22)
     img_per = .6
     refresh_img = resize_and_colorize_img('icon/refresh.png', button_size[1] * img_per, Refresh_color, button_size)
-    edit_img = resize_and_colorize_img('icon/edit.png', button_size[1] * img_per, Edit_Color, button_size)
+    edit_img = resize_and_colorize_img('icon/edit.png', button_size[1] * img_per, Edit_color, button_size)
     archive_img = resize_and_colorize_img('icon/archive.png', button_size[1] * img_per, Archives_color, button_size)
 
     def __init__(self, tracker):
@@ -835,8 +835,13 @@ if __name__ == "__main__":
 
     sg.theme('GrayGrayGray')
 
-    splash_log = sg.T('', font=(VarFont, 10))
-    splash = sg.Window('Suivi...', [[sg.T('Suivi...')], [splash_log]], font=(VarFont, 75), keep_on_top = not is_debugger, no_titlebar = not is_debugger, finalize = True)
+    frame_kwargs = dict(p = 0, border_width = 1, relief = sg.RELIEF_SOLID, expand_x = True, expand_y = True)
+    window_kwargs = dict(keep_on_top = not is_debugger, no_titlebar = not is_debugger, return_keyboard_events = True, margins = (0, 0), debugger_enabled = False, finalize = True)
+
+    splash_color = Edit_color
+    splash_log = sg.T('', font=(VarFont, 10), text_color = splash_color)
+    splash_layout = [[sg.Image(data = resize_and_colorize_img('icon/mail.png', 200, splash_color))], [splash_log]]
+    splash = sg.Window('Suivi...', [[sg.Frame('', splash_layout, **frame_kwargs) ]], **window_kwargs)
     def splash_update(txt):
         splash_log.update(f'{txt} ...'.capitalize())
         splash.refresh()
@@ -848,18 +853,17 @@ if __name__ == "__main__":
     im_height, im_margin = 20, 5
     b_kwargs = dict(im_height = im_height, im_margin = im_margin, font = (VarFontBold, b_f_size), mouseover_color = 'grey90')
     log_b = MyButton('Log', p = b_pad, font = (VarFontBold, b_f_size), button_color = ('grey', menu_color), mouseover_color = 'grey90', k = '-Log-')
-    new_b = MyButtonImg('Nouveau', p = (0, b_pad), image_filename = 'icon/edit.png', button_color = (Edit_Color, menu_color), k = '-New-', **b_kwargs)
+    new_b = MyButtonImg('Nouveau', p = (0, b_pad), image_filename = 'icon/edit.png', button_color = (Edit_color, menu_color), k = '-New-', **b_kwargs)
     refresh_b = MyButtonImg('Rafraichir', p = b_pad, image_filename = 'icon/refresh.png', button_color = (Refresh_color, menu_color), k = '-Refresh-', **b_kwargs)
     archives_b = MyButtonImg('Archives', p = (0, b_pad), image_filename = 'icon/archive.png', button_color = (Archives_color, menu_color), disabled = True, k = '-Archives-', **b_kwargs)
     recenter_widget = sg.T('', background_color = menu_color, p = 0, expand_x = True, expand_y = True, k = '-RECENTER-')
     exit_b = MyButton(' X ', p = b_pad, font = (VarFontBold, b_f_size), button_color = menu_color, mouseover_color = 'red', focus = True, k = '-Exit-')
 
-    layout = [ [ sg.Col([[ log_b, new_b, refresh_b, archives_b, recenter_widget, exit_b ]], p = 0, background_color = menu_color, expand_x = True, k = 'MENU') ],
-               [ sg.Col([[]], p = 0, scrollable = True, vertical_scroll_only = True, expand_x = True, expand_y = True, k = 'TRACKS', background_color = menu_color) ] ]
-    frame =  [ [ sg.Frame('', layout, p = 0, border_width = 1, relief = sg.RELIEF_SOLID, expand_x = True, expand_y = True) ] ]
+    layout = [[ sg.Col([[ log_b, new_b, refresh_b, archives_b, recenter_widget, exit_b ]], p = 0, background_color = menu_color, expand_x = True, k = 'MENU') ],
+              [ sg.Col([[]], p = 0, scrollable = True, vertical_scroll_only = True, expand_x = True, expand_y = True, background_color = menu_color, k = 'TRACKS') ]]
 
-    main_window = sg.Window('Suivi', frame, grab_anywhere = True, resizable = True, keep_on_top = not is_debugger, no_titlebar = not is_debugger, 
-                            return_keyboard_events = True, margins = (0, 0), debugger_enabled = False, alpha_channel = 0, finalize = True)
+    window_kwargs.update(dict(alpha_channel = 0, grab_anywhere = True, resizable = True)) #disappear @beginning
+    main_window = sg.Window('Suivi', [ [ sg.Frame('', layout, **frame_kwargs) ] ], **window_kwargs)
 
     MyButton.finalize_all(main_window)
     recenter_widget.bind('<Double-Button-1>', '')
