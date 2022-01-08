@@ -726,23 +726,28 @@ class TrackerWidgets:
 class Fake_grey_window:
     def __init__(self, window):
         self.window = window
-        self.kwargs = dict(keep_on_top = not is_debugger, no_titlebar = not is_debugger, margins = (0, 0), debugger_enabled = False, background_color = 'black', alpha_channel =.5, finalize = True)
+        self.kwargs = dict(keep_on_top = not is_debugger, no_titlebar = not is_debugger, margins = (0, 0), debugger_enabled = False, background_color = 'black', alpha_channel =.25, finalize = True)
         self.bind_id = None
     
     def enable(self, enable):
         if enable:
-            if self.bind_id is None:
-                self.bind_id = self.window.TKroot.bind('<Configure>', self.window_changed, '+')
+            if self.bind_id is None and self.window.TKroot.attributes('-alpha') == 1.0:
+                self.already_bound = self.window.TKroot.bind('<Configure>') # bug with unbind that remove all
+                self.bind_id = self.window.TKroot.bind('<Configure>', self.window_changed, add='+')
                 self.fake = sg.Window('', [[]], size = self.window.size, location = self.window.current_location(), **self.kwargs)    
         else:
             if self.bind_id is not None:
-                self.window.TKroot.unbind('<Configure>', self.bind_id)
+                self.window.TKroot.unbind('<Configure>', self.bind_id) 
+                if self.already_bound not in self.window.TKroot.bind('<Configure>'): # bug with unbind that remove all
+                    self.window.TKroot.bind('<Configure>', self.already_bound)
                 self.bind_id = None
                 self.fake.close()
                 del self.fake
 
     def window_changed(self, evt):
-        self.fake.TKroot.geometry(f'{evt.width}x{evt.height}+{evt.x}+{evt.y}')
+        w, h = self.window.size
+        x, y = self.window.current_location()
+        self.fake.TKroot.geometry(f'{w}x{h}+{x}+{y}')
 
 # ---------------------
 class Main_window_loop:
