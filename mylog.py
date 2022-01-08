@@ -27,8 +27,7 @@ class MyLog:
         self.link_button = MyButton(self.link_txt, p = 0, font = button_font, button_color = ('grey60', 'grey95'), mouseover_color = 'grey80', expand_x = True, expand_y = True, k = 'Link')
         layout = [ [ self.output, sg.Col( [ [self.link_button], [ sg.Sizegrip() ] ], p = 0, expand_x = True, expand_y = True) ] ]
         frame =  [ [ sg.Frame('', layout, p = 0, border_width = 1, relief = sg.RELIEF_SOLID, expand_x = True, expand_y = True) ] ]
-        self.window = sg.Window('', frame, margins = (0, 0), resizable = True, keep_on_top = no_border, no_titlebar = no_border, return_keyboard_events = True, debugger_enabled = False, alpha_channel = 0)
-        self.window.finalize()
+        self.window = sg.Window('', frame, margins = (0, 0), resizable = True, keep_on_top = no_border, no_titlebar = no_border, return_keyboard_events = True, debugger_enabled = False, alpha_channel = 0, finalize = True)
 
         self.window.TKroot.resizable(width = False, height = True)
         self.window.set_min_size(self.window.size)

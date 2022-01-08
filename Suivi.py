@@ -741,9 +741,7 @@ class Fake_grey_window:
                 del self.fake
 
     def window_changed(self, evt):
-        w, h = self.window.size
-        x, y = self.window.current_location()
-        self.fake.TKroot.geometry(f'{w}x{h}+{x}+{y}')
+        self.fake.TKroot.geometry(f'{evt.width}x{evt.height}+{evt.x}+{evt.y}')
 
 # ---------------------
 class Main_window_loop:
@@ -846,25 +844,22 @@ if __name__ == "__main__":
     splash_update('inititialisation')
 
     menu_color = 'grey75'
-    recenter_widget = sg.T('', background_color = menu_color, p = 0, expand_x = True, expand_y = True, k = '-RECENTER-')
-
     b_pad, b_f_size = 10, 12
     im_height, im_margin = 20, 5
     b_kwargs = dict(im_height = im_height, im_margin = im_margin, font = (VarFontBold, b_f_size), mouseover_color = 'grey90')
-    menu =  [   MyButton('Log', p = b_pad, font = (VarFontBold, b_f_size), button_color = ('grey', menu_color), mouseover_color = 'grey90', k = '-Log-'), 
-                MyButtonImg('Nouveau', p = (0, b_pad), image_filename = 'icon/edit.png', button_color = (Edit_Color, menu_color), k = '-New-', **b_kwargs), 
-                MyButtonImg('Rafraichir', p = b_pad, image_filename = 'icon/refresh.png', button_color = (Refresh_color, menu_color), k = '-Refresh-', **b_kwargs), 
-                MyButtonImg('Archives', p = (0, b_pad), image_filename = 'icon/archive.png', button_color = (Archives_color, menu_color), disabled = True, k = '-Archives-', **b_kwargs), 
-                recenter_widget,
-                MyButton(' X ', p = b_pad, font = (VarFontBold, b_f_size), button_color = menu_color, mouseover_color = 'red', focus = True, k = '-Exit-') ]
+    log_b = MyButton('Log', p = b_pad, font = (VarFontBold, b_f_size), button_color = ('grey', menu_color), mouseover_color = 'grey90', k = '-Log-')
+    new_b = MyButtonImg('Nouveau', p = (0, b_pad), image_filename = 'icon/edit.png', button_color = (Edit_Color, menu_color), k = '-New-', **b_kwargs)
+    refresh_b = MyButtonImg('Rafraichir', p = b_pad, image_filename = 'icon/refresh.png', button_color = (Refresh_color, menu_color), k = '-Refresh-', **b_kwargs)
+    archives_b = MyButtonImg('Archives', p = (0, b_pad), image_filename = 'icon/archive.png', button_color = (Archives_color, menu_color), disabled = True, k = '-Archives-', **b_kwargs)
+    recenter_widget = sg.T('', background_color = menu_color, p = 0, expand_x = True, expand_y = True, k = '-RECENTER-')
+    exit_b = MyButton(' X ', p = b_pad, font = (VarFontBold, b_f_size), button_color = menu_color, mouseover_color = 'red', focus = True, k = '-Exit-')
 
-    layout = [ [ sg.Col([menu], p = 0, background_color = menu_color, expand_x = True, k = 'MENU') ],
+    layout = [ [ sg.Col([[ log_b, new_b, refresh_b, archives_b, recenter_widget, exit_b ]], p = 0, background_color = menu_color, expand_x = True, k = 'MENU') ],
                [ sg.Col([[]], p = 0, scrollable = True, vertical_scroll_only = True, expand_x = True, expand_y = True, k = 'TRACKS', background_color = menu_color) ] ]
-
     frame =  [ [ sg.Frame('', layout, p = 0, border_width = 1, relief = sg.RELIEF_SOLID, expand_x = True, expand_y = True) ] ]
 
-    main_window = sg.Window('Suivi', frame, grab_anywhere = True, resizable = True, keep_on_top = not is_debugger, no_titlebar = not is_debugger, return_keyboard_events = True, margins = (0, 0), debugger_enabled = False, alpha_channel = 0)
-    main_window.finalize()
+    main_window = sg.Window('Suivi', frame, grab_anywhere = True, resizable = True, keep_on_top = not is_debugger, no_titlebar = not is_debugger, 
+                            return_keyboard_events = True, margins = (0, 0), debugger_enabled = False, alpha_channel = 0, finalize = True)
 
     MyButton.finalize_all(main_window)
     recenter_widget.bind('<Double-Button-1>', '')
