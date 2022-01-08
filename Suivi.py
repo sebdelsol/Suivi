@@ -26,11 +26,6 @@ def three_char_month(date_txt, i):
     txts[i] =  month[:3] if 'ju' not in month else month[:2] + month[3:]
     return ' '.join(txts)
 
-#----------------------------------
-def trigger_event(window, *events):
-    if window and window.TKroot:
-        window.write_event_value(*events)
-
 #------------------
 class SavedTracker:
     def __init__(self, tracker):
@@ -320,7 +315,7 @@ class TrackerWidget:
         self.expand_events = not self.expand_events
         self.update_expand_button()
 
-        trigger_event(window, '-UPDATE WIDGETS SIZE-', '')
+        window.write_event_value('-UPDATE WIDGETS SIZE-', '')
 
     def update_expand_button(self):
         is_visible = self.is_events_visible() and self.height_events >  self.min_events_shown
@@ -359,7 +354,7 @@ class TrackerWidget:
 
             self.disable_buttons(True)
             self.updating = True
-            trigger_event(window, '-UPDATING CHANGED-', '')
+            window.write_event_value('-UPDATING CHANGED-', '')
             
             self.tracker.prepare_update()
             self.show_current_courier_widget()
@@ -371,24 +366,24 @@ class TrackerWidget:
         try:
             content = None
             for content in self.tracker.update(): # generator multithreaded
-                trigger_event(window, lambda window: self.show(content, window), '')
+                window.write_event_value(lambda window: self.show(content, window), '')
 
             # nothing updated
             if content is None:
-                trigger_event(window, lambda window: self.show(None, window), '')
+                window.write_event_value(lambda window: self.show(None, window), '')
 
         except:
             _log (traceback.format_exc(), error = True)
 
         finally:
             self.lock.release()
-            trigger_event(window, lambda window: self.update_done(window), '')
+            window.write_event_value(lambda window: self.update_done(window), '')
 
     def update_done(self, window):
         self.disable_buttons(False)
         self.loading_widget.update(visible = False)
         self.updating = False
-        trigger_event(window, '-UPDATING CHANGED-', '')
+        window.write_event_value('-UPDATING CHANGED-', '')
 
     def animate(self, animation_step):
         if self.loading_widget.visible:
@@ -495,7 +490,7 @@ class TrackerWidget:
             self.events_widget.update(visible = self.is_events_visible())
             self.update_expand_button()
 
-            trigger_event(window, '-UPDATE WIDGETS SIZE-', '')
+            window.write_event_value('-UPDATE WIDGETS SIZE-', '')
 
     def show_id(self, content):
         self.id_widget.update('') 
@@ -561,7 +556,7 @@ class TrackerWidget:
                 self.layout.update(visible = visible)
                 self.reset_size()
 
-                trigger_event(window, '-UPDATE WIDGETS SIZE-', '')
+                window.write_event_value('-UPDATE WIDGETS SIZE-', '')
                 self.lock.release()
 
     def archive_or_delete(self, window):
@@ -580,11 +575,11 @@ class TrackerWidget:
 
     def archive(self, window):
         self.set_state('archived', window, ask = False, visible = False)
-        trigger_event(window, '-ARCHIVE UPDATED-', '')
+        window.write_event_value('-ARCHIVE UPDATED-', '')
 
     def unarchive(self, window):
         self.set_state('ok', window, ask = False, visible = True)
-        trigger_event(window, '-ARCHIVE UPDATED-', '')
+        window.write_event_value('-ARCHIVE UPDATED-', '')
         self.update(window)
 
 # -------------------
@@ -599,7 +594,7 @@ class TrackerWidgets:
             splash.update(f'création suivi {i + 1}/{n_trackers}')
             self.create_widget(window, tracker, i==0)
 
-        trigger_event(window, '-ARCHIVE UPDATED-', '')
+        window.write_event_value('-ARCHIVE UPDATED-', '')
         self.update_size(window)
         self.recenter(window, True)
 
@@ -809,10 +804,6 @@ class Main_window(sg.Window):
     def grey_other_windows(self, enable):
         for grey in self.greys:
             grey.enable(enable)
-
-    # def trigger_event(self, *events):
-    #     if self.TKroot:
-    #         self.write_event_value(*events)
 
     def loop(self):
         while True:
