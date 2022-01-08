@@ -82,19 +82,19 @@ class Courier:
         if idship and self.check_idship(idship):
             return self._get_url_for_browser(idship)
 
-    def _prepare_response(self, idship): 
-        pass
+    # def _prepare_response(self, idship): 
+    #     pass
 
     def update(self, idship):
         if not self.check_idship(idship):
             _log (f"'{idship}' mal formé : il faut {self.idship_check_msg}", error = True)
         
         else:
-            try:
-                self._prepare_response(idship)
+            # try:
+            #     self._prepare_response(idship)
 
-            except requests.exceptions.Timeout:
-                _log (f' Timeout for request preparation to {self.long_name} about {idship}', error = True)
+            # except requests.exceptions.Timeout:
+            #     _log (f' Timeout for request preparation to {self.long_name} about {idship}', error = True)
             
             nb_retry = self.nb_retry
             while True:
