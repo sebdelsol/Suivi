@@ -823,7 +823,7 @@ class Splash:
     def __init__(self, frame_kwargs, window_kwargs):
         self.log = sg.T('', font = (VarFont, 10))
         layout = [[sg.Image(filename = 'icon/mail.png')], [self.log]]
-        self.window = sg.Window('Suivi...', [[sg.Frame('', layout, **frame_kwargs) ]], **window_kwargs)
+        self.window = sg.Window('', [[sg.Frame('', layout, **frame_kwargs) ]], **window_kwargs)
 
     def update(self, txt):
         self.log.update(f'{txt} ...'.capitalize())
@@ -850,7 +850,7 @@ class Main_window:
                 [ sg.Col([[]], p = 0, scrollable = True, vertical_scroll_only = True, expand_x = True, expand_y = True, background_color = menu_color, k = 'TRACKS') ]]
 
         window_kwargs.update(dict(alpha_channel = 0, grab_anywhere = True, resizable = True)) #disappear @beginning
-        self.window = sg.Window('Suivi', [ [ sg.Frame('', layout, **frame_kwargs) ] ], **window_kwargs)
+        self.window = sg.Window('', [ [ sg.Frame('', layout, **frame_kwargs) ] ], **window_kwargs)
 
         MyButton.finalize_all(self.window)
         recenter_widget.bind('<Double-Button-1>', '')
