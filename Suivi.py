@@ -19,6 +19,7 @@ import locale
 locale.setlocale(locale.LC_ALL, 'fr_FR.utf8') # date in French
 
 TrackersFile = 'Trackers.trck'
+
 Refresh_color = '#408040'
 Archives_color = '#B2560D'
 Edit_color = '#6060FF'
@@ -731,7 +732,7 @@ class Fake_grey_window:
     
     def enable(self, enable):
         if enable:
-            if self.bind_id is None and self.window.TKroot.attributes('-alpha') == 1.0:
+            if self.bind_id is None and self.window.TKroot.attributes('-alpha') == 1.0: # test visibility
                 self.already_bound = self.window.TKroot.bind('<Configure>') # bug with unbind that remove all
                 self.bind_id = self.window.TKroot.bind('<Configure>', self.window_changed, add='+')
                 self.fake = sg.Window('', [[]], size = self.window.size, location = self.window.current_location(), **self.kwargs)    
