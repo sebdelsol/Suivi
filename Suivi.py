@@ -311,17 +311,6 @@ class TrackerWidget:
         self.pin = sg.pin(self.layout, expand_x = True) # collapse when hidden
         self.pin.BackgroundColor = self.bg_color_h if first else self.bg_color
         return [ self.pin ] 
-    
-    # def set_background_color(self, first):
-    #     from tkinter import ttk
-    #     ttk.Style
-    #     color = self.bg_color_h if first else self.bg_color
-    #     self.pin.BackgroundColor = self.bg_color_h if first else self.bg_color
-    #     self.pin.ParentContainer.BackgroundColor = color
-    #     self.pin.Widget.config(bg = color)
-    #     # self.pin.Widget.pack()
-    #     # self.pin.ParentContainer.Widget.config(bg = 'red')
-    #     print (f'update color {color}')
 
     def finalize(self, window):
         for button in  self.buttons:
@@ -689,13 +678,6 @@ class TrackerWidgets:
         max_width = max(widget.width_events for widget in ok) if ok else 0
         for widget in ok:
             widget.update_size(max_width)
-        
-        # # change pin bckg colors
-        # firsts_hidden = True
-        # for widget in self.widgets:
-        #     if widget.tracker.state == 'ok':
-        #         firsts_hidden = False
-        #     widget.set_background_color(firsts_hidden)
 
         window.refresh()
         self.widgets_col.contents_changed()
@@ -740,6 +722,30 @@ class TrackerWidgets:
         window.refresh()
 
 # ---------------------
+class Fake_grey_window:
+    def __init__(self, window):
+        self.window = window
+        self.kwargs = dict(keep_on_top = not is_debugger, no_titlebar = not is_debugger, margins = (0, 0), debugger_enabled = False, background_color = 'black', alpha_channel =.5, finalize = True)
+        self.bind_id = None
+    
+    def enable(self, enable):
+        if enable:
+            if self.bind_id is None:
+                self.bind_id = self.window.TKroot.bind('<Configure>', self.window_changed, '+')
+                self.fake = sg.Window('', [[]], size = self.window.size, location = self.window.current_location(), **self.kwargs)    
+        else:
+            if self.bind_id is not None:
+                self.window.TKroot.unbind('<Configure>', self.bind_id)
+                self.bind_id = None
+                self.fake.close()
+                del self.fake
+
+    def window_changed(self, evt):
+        w, h = self.window.size
+        x, y = self.window.current_location()
+        self.fake.TKroot.geometry(f'{w}x{h}+{x}+{y}')
+
+# ---------------------
 class Main_window_loop:
     def __init__(self, main_window, widgets, mylog, animation_step = 100):
         self.main_window = main_window
@@ -747,26 +753,18 @@ class Main_window_loop:
         self.mylog = mylog
 
         main_window.TKroot.bind('<Configure>', lambda evt: self.mylog.stick_to_main())
+        self.greys = (Fake_grey_window(main_window), Fake_grey_window(mylog.window))
 
         self.animation_step = animation_step
         main_window.TKroot.after(animation_step, self.animate)
 
     def animate(self):
         self.widgets.animate(self.animation_step)
-        main_window.TKroot.after(self.animation_step, self.animate)
+        self.main_window.TKroot.after(self.animation_step, self.animate)
 
     def grey_other_windows(self, enable):
-        if enable:
-            kwargs = dict(keep_on_top = not is_debugger, no_titlebar = not is_debugger, margins = (0, 0), debugger_enabled = False, background_color = 'black', alpha_channel =.5, finalize = True)
-            self.main_window_fake = sg.Window('', [[]], size = self.main_window.size, location = self.main_window.current_location(), **kwargs)    
-            self.log_window_fake = sg.Window('', [[]], size = self.mylog.window.size, location = self.mylog.window.current_location(), **kwargs) if self.mylog.visible else None
-        
-        else:
-            self.main_window_fake.close()
-            del self.main_window_fake
-            if self.log_window_fake:
-                self.log_window_fake.close()
-                del self.log_window_fake
+        for grey in self.greys:
+            grey.enable(enable)
 
     def get_event(self):
         window, event, values = sg.read_all_windows()
@@ -865,8 +863,8 @@ if __name__ == "__main__":
 
     frame =  [ [ sg.Frame('', layout, p = 0, border_width = 1, relief = sg.RELIEF_SOLID, expand_x = True, expand_y = True) ] ]
 
-    main_window = sg.Window('Suivi', frame, grab_anywhere = True, resizable = True, keep_on_top = not is_debugger, no_titlebar = not is_debugger, return_keyboard_events = True, margins = (0, 0), debugger_enabled = False)
-    main_window.finalize().disappear()
+    main_window = sg.Window('Suivi', frame, grab_anywhere = True, resizable = True, keep_on_top = not is_debugger, no_titlebar = not is_debugger, return_keyboard_events = True, margins = (0, 0), debugger_enabled = False, alpha_channel = 0)
+    main_window.finalize()
 
     MyButton.finalize_all(main_window)
     recenter_widget.bind('<Double-Button-1>', '')
@@ -883,6 +881,7 @@ if __name__ == "__main__":
         if main_window_loop.get_event()[0]:
             break
 
+    main_window_loop.grey_other_windows(False)
     main_window.close()
 
     try:
