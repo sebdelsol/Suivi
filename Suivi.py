@@ -481,6 +481,7 @@ class TrackerWidget:
                 self.width_events = 0
                 self.height_events = 0
                 self.status_widget.update('Status inconnu', text_color = 'red')
+                self.desc_widget.update(text_color = 'grey70')
 
             self.show_id(content)
 
