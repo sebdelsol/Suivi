@@ -638,13 +638,12 @@ class TrackerWidgets:
         archived = self.get_widgets_with_state('archived')
         archived.sort(key = lambda w : w.tracker.get_last_event(), reverse = True)
 
-        w_idship = max(len(widget.tracker.get_pretty_idship()) for widget in archived)
-
+        w_desc = max(len(widget.tracker.description) for widget in archived)
         choices = []
         for widget in archived:
             tracker = widget.tracker
             color = 'green' if tracker.get_delivered() else 'red'
-            txt = f'{tracker.get_pretty_last_event()} - {tracker.get_pretty_idship().ljust(w_idship)} - {tracker.description}'
+            txt = f'{tracker.get_pretty_last_event()}, {tracker.description.ljust(w_desc)} - {tracker.get_pretty_idship()}'
             choices.append((txt, color))
 
         chosen = popup.choices(choices, 'Désarchiver', not is_debugger, main_loop)
