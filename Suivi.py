@@ -838,7 +838,7 @@ if __name__ == "__main__":
     frame_kwargs = dict(p = 0, border_width = 1, relief = sg.RELIEF_SOLID, expand_x = True, expand_y = True)
     window_kwargs = dict(keep_on_top = not is_debugger, no_titlebar = not is_debugger, return_keyboard_events = True, margins = (0, 0), debugger_enabled = False, finalize = True)
 
-    splash_color = Edit_color
+    splash_color = '#606060'
     splash_log = sg.T('', font=(VarFont, 10), text_color = splash_color)
     splash_layout = [[sg.Image(data = resize_and_colorize_img('icon/mail.png', 200, splash_color))], [splash_log]]
     splash = sg.Window('Suivi...', [[sg.Frame('', splash_layout, **frame_kwargs) ]], **window_kwargs)
