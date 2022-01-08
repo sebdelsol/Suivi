@@ -1,22 +1,4 @@
-import traceback
-import threading
-import queue
-import os
-import copy
 import PySimpleGUI as sg
-import pickle as pickle
-import timeago
-from bisect import bisect
-import textwrap
-
-from mylog import mylog, _log
-from mybutton import MyButton, MyButtonImg
-from couriers import Couriers, get_local_now
-from imgtool import resize_and_colorize_gif, resize_and_colorize_img
-import popup
-
-import locale
-locale.setlocale(locale.LC_ALL, 'fr_FR.utf8') # date in French
 
 TrackersFile = 'Trackers.trck'
 
@@ -185,9 +167,9 @@ class Tracker:
 
 #--------------
 class Trackers:
-    def __init__(self, filename, splash_update):
+    def __init__(self, filename, splash):
         self.filename = filename
-        self.couriers = Couriers(splash_update)
+        self.couriers = Couriers(splash)
 
         trackers = None
         if os.path.exists(filename):
@@ -607,14 +589,14 @@ class TrackerWidget:
 
 # -------------------
 class TrackerWidgets:
-    def __init__(self, window, trackers, widgets_col, splash_update):
+    def __init__(self, window, trackers, widgets_col, splash):
         self.widgets = []
         self.trackers = trackers
         self.widgets_col = widgets_col
 
         n_trackers = len(trackers.trackers)
         for i, tracker in enumerate(trackers.trackers):
-            splash_update(f'création suivi {i + 1}/{n_trackers}')
+            splash.update(f'création suivi {i + 1}/{n_trackers}')
             self.create_widget(window, tracker, i==0)
 
         trigger_event(window, '-ARCHIVE UPDATED-', '')
@@ -836,56 +818,90 @@ class Main_window_loop:
         
         return exit, forward
 
+# ---------------------------------------------
+class Splash:
+    def __init__(self, frame_kwargs, window_kwargs):
+        self.log = sg.T('', font = (VarFont, 10))
+        layout = [[sg.Image(filename = 'icon/mail.png')], [self.log]]
+        self.window = sg.Window('Suivi...', [[sg.Frame('', layout, **frame_kwargs) ]], **window_kwargs)
+
+    def update(self, txt):
+        self.log.update(f'{txt} ...'.capitalize())
+        self.window.refresh()
+
+    def close(self):
+        self.window.close()
+
+# --------------------------------------------------
+class Main_window:
+    def __init__(self, frame_kwargs, window_kwargs):
+        menu_color = 'grey75'
+        b_pad, b_f_size = 10, 12
+        im_height, im_margin = 20, 5
+        b_kwargs = dict(im_height = im_height, im_margin = im_margin, font = (VarFontBold, b_f_size), mouseover_color = 'grey90')
+        log_b = MyButton('Log', p = b_pad, font = (VarFontBold, b_f_size), button_color = ('grey', menu_color), mouseover_color = 'grey90', k = '-Log-')
+        new_b = MyButtonImg('Nouveau', p = (0, b_pad), image_filename = 'icon/edit.png', button_color = (Edit_color, menu_color), k = '-New-', **b_kwargs)
+        refresh_b = MyButtonImg('Rafraichir', p = b_pad, image_filename = 'icon/refresh.png', button_color = (Refresh_color, menu_color), k = '-Refresh-', **b_kwargs)
+        archives_b = MyButtonImg('Archives', p = (0, b_pad), image_filename = 'icon/archive.png', button_color = (Archives_color, menu_color), disabled = True, k = '-Archives-', **b_kwargs)
+        recenter_widget = sg.T('', background_color = menu_color, p = 0, expand_x = True, expand_y = True, k = '-RECENTER-')
+        exit_b = MyButton(' X ', p = b_pad, font = (VarFontBold, b_f_size), button_color = menu_color, mouseover_color = 'red', focus = True, k = '-Exit-')
+
+        layout = [[ sg.Col([[ log_b, new_b, refresh_b, archives_b, recenter_widget, exit_b ]], p = 0, background_color = menu_color, expand_x = True, k = 'MENU') ],
+                [ sg.Col([[]], p = 0, scrollable = True, vertical_scroll_only = True, expand_x = True, expand_y = True, background_color = menu_color, k = 'TRACKS') ]]
+
+        window_kwargs.update(dict(alpha_channel = 0, grab_anywhere = True, resizable = True)) #disappear @beginning
+        self.window = sg.Window('Suivi', [ [ sg.Frame('', layout, **frame_kwargs) ] ], **window_kwargs)
+
+        MyButton.finalize_all(self.window)
+        recenter_widget.bind('<Double-Button-1>', '')
+
+    def close(self):
+        self.window.close()
+
 # ------------------------
 if __name__ == "__main__":
 
     import sys
     from fonts import FixFont, FixFontBold, VarFont, VarFontBold
 
-    is_debugger = sys.gettrace()
-
     sg.theme('GrayGrayGray')
 
+    is_debugger = sys.gettrace()
     frame_kwargs = dict(p = 0, border_width = 1, relief = sg.RELIEF_SOLID, expand_x = True, expand_y = True)
     window_kwargs = dict(keep_on_top = not is_debugger, no_titlebar = not is_debugger, return_keyboard_events = True, margins = (0, 0), debugger_enabled = False, finalize = True)
 
-    splash_color = '#606060'
-    splash_log = sg.T('', font=(VarFont, 10), text_color = splash_color)
-    splash_layout = [[sg.Image(data = resize_and_colorize_img('icon/mail.png', 200, splash_color))], [splash_log]]
-    splash = sg.Window('Suivi...', [[sg.Frame('', splash_layout, **frame_kwargs) ]], **window_kwargs)
-    def splash_update(txt):
-        splash_log.update(f'{txt} ...'.capitalize())
-        splash.refresh()
+    # create splash before importing to reduce startup time
+    splash = Splash(frame_kwargs, window_kwargs)
+    splash.update('inititialisation')
 
-    splash_update('inititialisation')
+    # import after splash has been created
+    import traceback
+    import threading
+    import queue
+    import os
+    import copy
+    import pickle as pickle
+    import timeago
+    from bisect import bisect
+    import textwrap
+    
+    from mylog import mylog, _log
+    from imgtool import resize_and_colorize_gif, resize_and_colorize_img
+    from couriers import Couriers, get_local_now
+    from mybutton import MyButton, MyButtonImg
+    import popup
+    import locale
+    locale.setlocale(locale.LC_ALL, 'fr_FR.utf8') # date in French
 
-    menu_color = 'grey75'
-    b_pad, b_f_size = 10, 12
-    im_height, im_margin = 20, 5
-    b_kwargs = dict(im_height = im_height, im_margin = im_margin, font = (VarFontBold, b_f_size), mouseover_color = 'grey90')
-    log_b = MyButton('Log', p = b_pad, font = (VarFontBold, b_f_size), button_color = ('grey', menu_color), mouseover_color = 'grey90', k = '-Log-')
-    new_b = MyButtonImg('Nouveau', p = (0, b_pad), image_filename = 'icon/edit.png', button_color = (Edit_color, menu_color), k = '-New-', **b_kwargs)
-    refresh_b = MyButtonImg('Rafraichir', p = b_pad, image_filename = 'icon/refresh.png', button_color = (Refresh_color, menu_color), k = '-Refresh-', **b_kwargs)
-    archives_b = MyButtonImg('Archives', p = (0, b_pad), image_filename = 'icon/archive.png', button_color = (Archives_color, menu_color), disabled = True, k = '-Archives-', **b_kwargs)
-    recenter_widget = sg.T('', background_color = menu_color, p = 0, expand_x = True, expand_y = True, k = '-RECENTER-')
-    exit_b = MyButton(' X ', p = b_pad, font = (VarFontBold, b_f_size), button_color = menu_color, mouseover_color = 'red', focus = True, k = '-Exit-')
+    # create main_window
+    main_window = Main_window(frame_kwargs, window_kwargs)
 
-    layout = [[ sg.Col([[ log_b, new_b, refresh_b, archives_b, recenter_widget, exit_b ]], p = 0, background_color = menu_color, expand_x = True, k = 'MENU') ],
-              [ sg.Col([[]], p = 0, scrollable = True, vertical_scroll_only = True, expand_x = True, expand_y = True, background_color = menu_color, k = 'TRACKS') ]]
-
-    window_kwargs.update(dict(alpha_channel = 0, grab_anywhere = True, resizable = True)) #disappear @beginning
-    main_window = sg.Window('Suivi', [ [ sg.Frame('', layout, **frame_kwargs) ] ], **window_kwargs)
-
-    MyButton.finalize_all(main_window)
-    recenter_widget.bind('<Double-Button-1>', '')
-
-    trackers = Trackers(TrackersFile, splash_update) 
-    widgets = TrackerWidgets(main_window, trackers, main_window['TRACKS'], splash_update) 
-
-    mylog.create_window((FixFont, 7), (VarFont, 12), not is_debugger, main_window)
+    mylog.create_window((FixFont, 7), (VarFont, 12), not is_debugger, main_window.window)
+    trackers = Trackers(TrackersFile, splash) 
+    widgets = TrackerWidgets(main_window.window, trackers, main_window.window['TRACKS'], splash) 
+    main_window_loop = Main_window_loop(main_window.window, widgets, mylog)
+    main_window.window.reappear()
     splash.close()
-    main_window.reappear()
-    main_window_loop = Main_window_loop(main_window, widgets, mylog)
 
     while True:
         if main_window_loop.get_event()[0]:

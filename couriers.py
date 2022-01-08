@@ -30,8 +30,8 @@ def get_leaf_cls(cls):
 
 #------------------------------------------------------------------------------
 class Couriers:
-    def __init__(self, splash_update):
-        self.couriers = dict( (cls.long_name, cls(splash_update)) for cls in get_leaf_cls(Courier) )
+    def __init__(self, splash):
+        self.couriers = dict( (cls.long_name, cls(splash)) for cls in get_leaf_cls(Courier) )
 
     def get(self, name):
         return self.couriers.get(name)
@@ -66,7 +66,7 @@ class Courier:
             (r'^\W', ''),               # remove leading non alphanumeric char
             (r'(\w):(\w)', r'\1: \2'))  # add space after : 
 
-    def __init__(self, splash_update):
+    def __init__(self, splash):
         pass
 
     def check_idship(self, idship):
@@ -195,20 +195,20 @@ class SeleniumScrapper(Courier):
     options_V2 = ('--excludeSwitches --enable-logging', 
                   '--blink-settings=imagesEnabled=false')
 
-    def __init__(self, splash_update):
+    def __init__(self, splash):
         self.drivers = queue.Queue() if self.n_drivers > 0 else None
         self.n_created_drivers = 0
 
         if CREATE_DRIVER_AT_INIT:
             for i in range(self.n_drivers):
-                splash_update(f'création pilote {i + 1}/{self.n_drivers}')
+                splash.update(f'création pilote {i + 1}/{self.n_drivers}')
                 self.create_driver_if_needed()
 
     def create_driver_if_needed(self):
         with self.lock: # prevents driver creation when it's already being created in another thread
             if self.n_created_drivers < self.n_drivers:
 
-                _log ('!! create a driver !!')
+                _log ('Create a DRIVER')
                 options = webdriver.ChromeOptions()
                 options.headless = True
                 options.binary_location = chrome_exe
@@ -225,7 +225,7 @@ class SeleniumScrapper(Courier):
 
                 self.drivers.put(driver)
                 self.n_created_drivers += 1
-                _log (f'!! driver #{self.n_created_drivers} created !!')
+                _log (f'DRIVER #{self.n_created_drivers} created')
 
     def _get_response(self, idship):
         try:
