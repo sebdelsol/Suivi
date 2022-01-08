@@ -1,4 +1,3 @@
-
 import re
 import queue
 import PySimpleGUI as sg
