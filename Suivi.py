@@ -372,7 +372,7 @@ class TrackerWidget:
 
             # nothing updated
             if content is None:
-                window.trigger_event(lambda window: self.show(None, window), '')
+                window.trigger_event(lambda window: self.show({}, window), '')
 
         except:
             _log (traceback.format_exc(), error = True)
@@ -395,11 +395,11 @@ class TrackerWidget:
         tracker = self.tracker
         if tracker.state == 'ok':
             
-            delivered = '✔' if content and content.get('status', {}).get('delivered') else ''
+            delivered = '✔' if content.get('status', {}).get('delivered') else ''
             self.desc_widget.update(f'{tracker.description.strip()}{delivered}') 
             self.events_widget.update('')
 
-            if content and content.get('ok'):
+            if content.get('ok'):
                 events = content['events']
                 width_events = 0
                 self.height_events = len(events)
@@ -470,10 +470,10 @@ class TrackerWidget:
 
             self.show_id(content)
 
-            couriers_update = (content or {}).get('courier_update')
+            couriers_update = content.get('courier_update')
             self.show_couriers(couriers_update)
 
-            elapsed = content.get('elapsed') if content else None
+            elapsed = content.get('elapsed')
             if elapsed:
                 round_elapsed_days = elapsed.days + (1 if elapsed.seconds >= 43200 else 0)
                 elapsed_color = self.days_colors[bisect(self.days_intervals, round_elapsed_days)]
@@ -486,7 +486,7 @@ class TrackerWidget:
             self.days_widget.draw_rounded_box(self.days_size*.5, self.days_size*.5, self.days_size, self.days_size*.9, self.days_size*.15, 'grey90')
             self.days_widget.draw_text(elapsed_txt, (self.days_size*.5, self.days_size*.5), color = elapsed_color, font = self.days_font, text_location = 'center')
 
-            status_date = content and content.get('status', {}).get('date')
+            status_date = content.get('status', {}).get('date')
             status_ago = f"{timeago.format(status_date, get_local_now(), 'fr')}, " if status_date else ''
             self.ago_widget.update(status_ago)
 
@@ -498,8 +498,8 @@ class TrackerWidget:
     def show_id(self, content):
         self.id_widget.update('') 
 
-        product = (content and content.get('product')) or 'Envoi'
-        fromto = content and content.get('fromto')
+        product = content.get('product', 'Envoi')
+        fromto = content.get('fromto')
         fromto = f' {fromto.lower()} ' if fromto else ' '
 
         prt = self.id_widget.print
