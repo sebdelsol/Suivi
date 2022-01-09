@@ -770,8 +770,8 @@ class Main_window(sg.Window):
         layout = [[ sg.Col([[ log_b, new_b, refresh_b, archives_b, recenter_widget, exit_b ]], p = 0, background_color = menu_color, expand_x = True, k = 'MENU') ],
                 [ sg.Col([[]], p = 0, scrollable = True, vertical_scroll_only = True, expand_x = True, expand_y = True, background_color = menu_color, k = 'TRACKS') ]]
 
-        window_kwargs.update(dict(alpha_channel = 0, grab_anywhere = True, resizable = True)) #disappear @beginning
-        super().__init__('', [ [ sg.Frame('', layout, **frame_kwargs) ] ], **window_kwargs)
+        args, kwargs = Get_window_args(layout, alpha_channel = 0, resizable = True)
+        super().__init__(*args, **kwargs)
 
         MyButton.finalize_all(self)
         recenter_widget.bind('<Double-Button-1>', '')
@@ -878,7 +878,7 @@ class Main_window(sg.Window):
 if __name__ == "__main__":
 
     import sys
-    from fonts import FixFont, FixFontBold, VarFont, VarFontBold
+    from style import FixFont, FixFontBold, VarFont, VarFontBold, Get_window_args
 
     sg.theme('GrayGrayGray')
 

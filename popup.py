@@ -3,7 +3,7 @@ from mybutton import MyButton
 import webbrowser
 
 from couriers import Courier
-from fonts import FixFont, FixFontBold, VarFont, VarFontBold
+from style import FixFont, FixFontBold, VarFont, VarFontBold, Get_window_args
 
 #-------------
 class MyPopup:
@@ -13,16 +13,14 @@ class MyPopup:
 
         layout =      [ [ sg.T(title, font = (FixFontBold, 20), justification = 'center', expand_x = True) ],
                         [ sg.HorizontalSeparator() ] ]
-        
-        layout.extend(  body_layout )
+        layout.extend( body_layout )
+        layout.append( [ sg.HorizontalSeparator() ] )
+        layout.append( [ MyButton('OK', font = (VarFont, 12), button_color = 'grey80', mouseover_color = 'grey95', bind_return_key=True), 
+                         MyButton('Cancel', font = (VarFont, 12), button_color = 'grey80', mouseover_color = 'grey95')] )
+        layout = [ [ sg.Col(layout, p = 10) ] ]
 
-        layout.append(  [ sg.HorizontalSeparator() ] )
-        layout.append(  [ MyButton('OK', font = (VarFont, 12), button_color = 'grey80', mouseover_color = 'grey95', bind_return_key=True), 
-                          MyButton('Cancel', font = (VarFont, 12), button_color = 'grey80', mouseover_color = 'grey95')] )
-
-        layout = [ [ sg.Frame('', [[sg.Col(layout, p = 10)]], p = 0, border_width = 3, relief = sg.RELIEF_SOLID) ] ]
-        self.window = sg.Window('', layout, margins = (0, 0), modal = True, grab_anywhere = True, keep_on_top = no_border, no_titlebar = no_border, return_keyboard_events = True, finalize = True, debugger_enabled = False)
-        MyButton.finalize_all(self.window)
+        args, kwargs = Get_window_args(layout)
+        self.window = sg.Window(*args, **kwargs)
 
     def loop(self, catch_event = None):
         while True: 

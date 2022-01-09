@@ -5,7 +5,7 @@ import sys
 is_debugger = sys.gettrace()
 
 from mybutton import MyButton
-from fonts import FixFont, VarFont
+from style import FixFont, VarFont, Get_window_args
 
 class MyLog(sg.Window):
     link_txt = '\n'.join('❱❱❱❱❱')
@@ -27,8 +27,9 @@ class MyLog(sg.Window):
         self.link_button = MyButton(self.link_txt, p = 0, font = button_font, button_color = ('grey60', 'grey95'), mouseover_color = 'grey80', expand_x = True, expand_y = True, k = 'Link')
 
         layout = [ [ self.output, sg.Col( [ [self.link_button], [ sg.Sizegrip() ] ], p = 0, expand_x = True, expand_y = True) ] ]
-        frame =  [ [ sg.Frame('', layout, p = 0, border_width = 1, relief = sg.RELIEF_SOLID, expand_x = True, expand_y = True) ] ]
-        super().__init__('', frame, margins = (0, 0), resizable = True, keep_on_top = no_border, no_titlebar = no_border, return_keyboard_events = True, debugger_enabled = False, alpha_channel = 0, finalize = True)
+        
+        args, kwargs = Get_window_args(layout, alpha_channel = 0, resizable = True)
+        super().__init__(*args, **kwargs)
 
         self.TKroot.resizable(width = False, height = True)
         self.set_min_size(self.size)
