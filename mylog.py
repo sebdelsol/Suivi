@@ -57,32 +57,29 @@ class MyLog(sg.Window):
         if self.linked and ((event.x == 0 and event.y == 0) or self.current_location()!=self.wanted_pos):
             self.stick_to_main()
 
-    def event_handler(self, window, event):
-        if window == self:
-            if event in (None, 'l'): 
-                self.toggle()
+    def event_handler(self, event, values):
+        if event in (None, 'l'): 
+            self.toggle()
 
-            elif event == 'Link':
-                self.linked =  not self.linked
-                if self.linked :
-                    self.output.Widget.tag_remove('sel', '1.0', 'end')
-                    self.output.Widget.configure(selectbackground = self.select_bg_color)
+        elif event == 'Link':
+            self.linked =  not self.linked
+            if self.linked :
+                self.output.Widget.tag_remove('sel', '1.0', 'end')
+                self.output.Widget.configure(selectbackground = self.select_bg_color)
 
-                    self.grab_any_where_off()
-                    self.output.grab_anywhere_exclude()
-                    self.link_button.update(self.link_txt)
-                    self.stick_to_main()
-                
-                else:
-                    # invisible selection
-                    self.output.Widget.configure(selectbackground = self.output.Widget.cget('bg'))
+                self.grab_any_where_off()
+                self.output.grab_anywhere_exclude()
+                self.link_button.update(self.link_txt)
+                self.stick_to_main()
+            
+            else:
+                # invisible selection
+                self.output.Widget.configure(selectbackground = self.output.Widget.cget('bg'))
 
-                    self.grab_any_where_on()
-                    self.output.grab_anywhere_include()
-                    self.link_button.update(self.unlink_txt)
-                    self.stick_to_main(gap = 10, force = True)
-
-            return True
+                self.grab_any_where_on()
+                self.output.grab_anywhere_include()
+                self.link_button.update(self.unlink_txt)
+                self.stick_to_main(gap = 10, force = True)
 
     def stick_to_main(self, gap = 0, force = False):
         if (self.visible and self.linked) or force:

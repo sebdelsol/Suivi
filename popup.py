@@ -22,29 +22,27 @@ class MyPopup(sg.Window):
         args, kwargs = Get_window_args(layout)
         super().__init__(*args, **kwargs)
 
-    def loop(self, event_handler = None):
+    def loop(self, child_event_handler = None):
+        self.child_event_handler = child_event_handler
+
         while True: 
-            exit, forward = self.main_window.get_event()            
-            
+            exit = self.main_window.event_handler()            
             if exit:
-                break
+                return exit
 
-            elif forward:
-                window, event, values = forward
-                if window == self:
-                    if event in (None, 'Cancel', 'Escape:27'):
-                        return None
+    def event_handler(self, event, values):
+        if event in (None, 'Cancel', 'Escape:27'):
+            return 'cancel'
 
-                    elif event == 'OK':
-                        return values
-                    
-                    elif event_handler is not None:
-                        event_handler(self, event, values) 
+        elif event == 'OK':
+            return 'ok'
+        
+        elif self.child_event_handler is not None:
+            self.child_event_handler(self, event, values) 
 
     def close(self):
         self.main_window.do_greyed(False)
         super().close()
-        # del self.window
 
 #------------------------------------------------------------------------------
 def edit(title, idship, description, used_couriers, couriers, main_window):
@@ -73,7 +71,7 @@ def edit(title, idship, description, used_couriers, couriers, main_window):
         idship_widgets.append((msg, button))
         layout.append([cb, msg, button])
 
-    edit_window = MyPopup(title, layout, main_window)
+    window = MyPopup(title, layout, main_window)
     update_idship_widgets(idship)
 
     idship, description = None, None
@@ -90,11 +88,13 @@ def edit(title, idship, description, used_couriers, couriers, main_window):
         elif event in couriers_names:
             window[event].update(text_color = 'black' if values[event] else 'grey60')
 
-    values = edit_window.loop(event_handler)
-    if values:
-        idship, description, used_couriers = values['idship'], values['description'], [name for name in couriers_names if values[name]]
+    exit = window.loop(event_handler)
+    if exit == 'ok':
+        idship = window['idship'].get() 
+        description = window['description'].get()
+        used_couriers = [name for name in couriers_names if window[name].get()]
 
-    edit_window.close()
+    window.close()
     return idship, description, used_couriers
 
 #--------------------------------------
@@ -112,7 +112,7 @@ def choices(choices, title, main_window):
     rows = sg.Col(chcks, scrollable = len(chcks) > max_lines, vertical_scroll_only = True)
     layout = [ [ rows ] ]
 
-    choices_window = MyPopup(title, layout, main_window)
+    window = MyPopup(title, layout, main_window)
     
     for chck in chcks:
         chck[1].bind('<Button-1>', '')
@@ -137,11 +137,11 @@ def choices(choices, title, main_window):
             chck_widget.update(value = is_checked)
             window[event].update(font = selected_font if is_checked else unselected_font)
 
-    values = choices_window.loop(event_handler)
-    if values:
-        chosen = [ int(choice) for choice in values.keys() if values[choice] ]
+    exit = window.loop(event_handler)
+    if exit == 'ok':
+        chosen = [ choice for choice in range(len(choices)) if window[f'{choice}'].get() ]
 
-    choices_window.close()
+    window.close()
     return chosen
 
 #-----------------------------------------
@@ -152,7 +152,7 @@ def one_choice(choices, choice_colors, title, main_window, default = 0):
         radio = sg.Radio(choice, group_id = 'choices', text_color = color, font = (VarFontBold, 20), enable_events = True, default= i==0, k = choice)
         layout.append([radio])
 
-    choices_window = MyPopup(title, layout, main_window)
+    window = MyPopup(title, layout, main_window)
 
     choice = None
 
@@ -162,24 +162,20 @@ def one_choice(choices, choice_colors, title, main_window, default = 0):
                 color = choice_colors[choice if values[choice] else False]
                 window[choice].update(text_color = color)
 
-    values = choices_window.loop(event_handler)
-    if values:
+    exit = window.loop(event_handler)
+    if exit == 'ok':
         # https://stackoverflow.com/questions/2361426/get-the-first-item-from-an-iterable-that-matches-a-condition
-        choice = next(choice for choice in choices if values[choice]) 
+        choice = next(choice for choice in choices if window[choice].get()) 
 
-    choices_window.close()
+    window.close()
     return choice
 
 #------------------------
 def warning(title, text, main_window):
     layout = [ [ sg.Image(filename = 'icon/warn.png'), sg.T(text, font = (VarFont, 15)) ] ]
-    warning_window = MyPopup(title, layout, main_window)
+    window = MyPopup(title, layout, main_window)
 
-    ok = False
+    ok = window.loop() == 'ok'
 
-    values = warning_window.loop()
-    if values is not None:
-        ok = True
-
-    warning_window.close()
+    window.close()
     return ok

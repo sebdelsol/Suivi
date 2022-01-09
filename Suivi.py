@@ -823,18 +823,14 @@ class Main_window(sg.Window):
 
     def loop(self):
         while True:
-            exit = self.get_event()[0]
-            if exit:
+            if self.event_handler():
                 break
 
-    def get_event(self):
+    def event_handler(self):
         window, event, values = sg.read_all_windows()
         
         # if isinstance(event, str) and 'MouseWheel' not in event: 
         #     _log (f'{event = }' + (f', {value = }' if (value := values and values.get(event)) else ''))
-
-        exit = False
-        forward = None
 
         if callable(event):
             event(window) 
@@ -842,13 +838,10 @@ class Main_window(sg.Window):
         elif isinstance(event, tuple) and callable(event[0]):
             event[0](window)      
         
-        elif self.log.event_handler(window, event):
-            pass
-
         elif window == self:
 
             if event in (None, '-Exit-', 'Escape:27'):
-                exit = True
+                return True
             
             elif event in ('-Log-', 'l'):
                 self.log.toggle()
@@ -873,14 +866,9 @@ class Main_window(sg.Window):
 
             elif event == '-Archives-':
                 self.widgets.show_archives(window)
-            
-            else:
-                forward = window, event, values
         
         else:
-            forward = window, event, values
-        
-        return exit, forward
+            return window.event_handler(event, values)
 
 # ------------------------
 if __name__ == "__main__":
