@@ -543,7 +543,7 @@ class TrackerWidget:
     def edit(self, window):
         self.disable_buttons(True)
 
-        idship, description, used_couriers = popup.edit('Édition', self.tracker.idship, self.tracker.description, self.tracker.used_couriers, self.tracker.available_couriers, not is_debugger, window)
+        idship, description, used_couriers = popup.edit('Édition', self.tracker.idship, self.tracker.description, self.tracker.used_couriers, self.tracker.available_couriers, window)
         if idship is not None:
             self.tracker.set_id(idship, description, used_couriers)
             self.reset_size()
@@ -553,7 +553,7 @@ class TrackerWidget:
 
     def set_state(self, state, window, ask, visible):
         tracker = self.tracker
-        if not ask or popup.warning(ask.capitalize(), f'{tracker.description} - {tracker.get_pretty_idship()}', not is_debugger, window):
+        if not ask or popup.warning(ask.capitalize(), f'{tracker.description} - {tracker.get_pretty_idship()}', window):
             if self.lock.acquire(blocking=False): # needed ?
                 tracker.state = state
 
@@ -569,7 +569,7 @@ class TrackerWidget:
         choices = {'Archiver': self.archive, 'Supprimer': self.delete}
         choices_colors = {'Archiver':'green', 'Supprimer':'red', False:'grey75'}
         tracker = self.tracker
-        choice = popup.one_choice(choices.keys(), choices_colors, f'{tracker.description} - {tracker.get_pretty_idship()}', not is_debugger, window)
+        choice = popup.one_choice(choices.keys(), choices_colors, f'{tracker.description} - {tracker.get_pretty_idship()}', window)
         if choice:
             choices[choice](window)
 
@@ -613,7 +613,7 @@ class TrackerWidgets:
         widget.update(window)
 
     def new(self, window):
-        tracker_params = popup.edit('Nouveau', '', 'Nouveau', [], self.trackers.couriers, not is_debugger, window)
+        tracker_params = popup.edit('Nouveau', '', 'Nouveau', [], self.trackers.couriers, window)
         tracker = self.trackers.new(*tracker_params)
         if tracker:
             self.create_widget(window, tracker)
@@ -633,7 +633,7 @@ class TrackerWidgets:
             txt = f'{tracker.get_pretty_last_event()}, {tracker.description.ljust(w_desc)} - {tracker.get_pretty_idship()}'
             choices.append((txt, color))
 
-        chosen = popup.choices(choices, 'Désarchiver', not is_debugger, window)
+        chosen = popup.choices(choices, 'Désarchiver', window)
 
         for i in chosen:
             widget = archived[i]
@@ -713,6 +713,8 @@ class TrackerWidgets:
 class Fake_grey_window:
     def __init__(self, window):
         self.window = window
+
+        is_debugger = Is_debugger()
         self.kwargs = dict(keep_on_top = not is_debugger, no_titlebar = not is_debugger, margins = (0, 0), debugger_enabled = False, background_color = 'black', alpha_channel =.5, finalize = True)
         self.bind_id = None
     
@@ -738,10 +740,11 @@ class Fake_grey_window:
 
 # ---------------------------------------------
 class Splash:
-    def __init__(self, frame_kwargs, window_kwargs):
+    def __init__(self):
         self.log = sg.T('', font = (VarFont, 10))
         layout = [[sg.Image(filename = 'icon/mail.png')], [self.log]]
-        self.window = sg.Window('', [[sg.Frame('', layout, **frame_kwargs) ]], **window_kwargs)
+        args, kwargs = Get_window_args(layout, grab_anywhere = True)
+        self.window = sg.Window(*args, **kwargs)
 
     def update(self, txt):
         self.log.update(f'{txt} ...'.capitalize())
@@ -755,11 +758,12 @@ class Main_window(sg.Window):
     
     animation_step = 100
 
-    def __init__(self, frame_kwargs, window_kwargs):
+    def __init__(self):
         menu_color = 'grey75'
         b_pad, b_f_size = 10, 12
         im_height, im_margin = 20, 5
         b_kwargs = dict(im_height = im_height, im_margin = im_margin, font = (VarFontBold, b_f_size), mouseover_color = 'grey90')
+
         log_b = MyButton('Log', p = b_pad, font = (VarFontBold, b_f_size), button_color = ('grey', menu_color), mouseover_color = 'grey90', k = '-Log-')
         new_b = MyButtonImg('Nouveau', p = (0, b_pad), image_filename = 'icon/edit.png', button_color = (Edit_color, menu_color), k = '-New-', **b_kwargs)
         refresh_b = MyButtonImg('Rafraichir', p = b_pad, image_filename = 'icon/refresh.png', button_color = (Refresh_color, menu_color), k = '-Refresh-', **b_kwargs)
@@ -768,7 +772,7 @@ class Main_window(sg.Window):
         exit_b = MyButton(' X ', p = b_pad, font = (VarFontBold, b_f_size), button_color = menu_color, mouseover_color = 'red', focus = True, k = '-Exit-')
 
         layout = [[ sg.Col([[ log_b, new_b, refresh_b, archives_b, recenter_widget, exit_b ]], p = 0, background_color = menu_color, expand_x = True, k = 'MENU') ],
-                [ sg.Col([[]], p = 0, scrollable = True, vertical_scroll_only = True, expand_x = True, expand_y = True, background_color = menu_color, k = 'TRACKS') ]]
+                  [ sg.Col([[]], p = 0, scrollable = True, vertical_scroll_only = True, expand_x = True, expand_y = True, background_color = menu_color, k = 'TRACKS') ]]
 
         args, kwargs = Get_window_args(layout, alpha_channel = 0, resizable = True)
         super().__init__(*args, **kwargs)
@@ -877,17 +881,17 @@ class Main_window(sg.Window):
 # ------------------------
 if __name__ == "__main__":
 
-    import sys
-    from style import FixFont, FixFontBold, VarFont, VarFontBold, Get_window_args
+    # import sys
+    from style import FixFont, FixFontBold, VarFont, VarFontBold, Get_window_args, Is_debugger
 
     sg.theme('GrayGrayGray')
 
-    is_debugger = sys.gettrace()
-    frame_kwargs = dict(p = 0, border_width = 1, relief = sg.RELIEF_SOLID, expand_x = True, expand_y = True)
-    window_kwargs = dict(keep_on_top = not is_debugger, no_titlebar = not is_debugger, return_keyboard_events = True, margins = (0, 0), debugger_enabled = False, finalize = True)
+    # is_debugger = sys.gettrace()
+    # frame_kwargs = dict(p = 0, border_width = 1, relief = sg.RELIEF_SOLID, expand_x = True, expand_y = True)
+    # window_kwargs = dict(keep_on_top = not is_debugger, no_titlebar = not is_debugger, return_keyboard_events = True, margins = (0, 0), debugger_enabled = False, finalize = True)
 
     # create splash before importing to reduce startup time
-    splash = Splash(frame_kwargs, window_kwargs)
+    splash = Splash()
     splash.update('inititialisation')
 
     # import after splash has been created
@@ -910,7 +914,7 @@ if __name__ == "__main__":
     locale.setlocale(locale.LC_ALL, 'fr_FR.utf8') # date in French
 
     # create main_window
-    main_window = Main_window(frame_kwargs, window_kwargs)
+    main_window = Main_window()
     main_window.add_log(mylog)
     splash.close()
 
