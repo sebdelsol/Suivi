@@ -1,6 +1,6 @@
 from mylog import _log
+from config import chrome_exe
 
-chrome_exe = r'C:/Program Files/Google/Chrome/Application/chrome.exe'
 USE_UC_V2 = True
 CREATE_DRIVER_AT_INIT = False
 
