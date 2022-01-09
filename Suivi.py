@@ -886,10 +886,6 @@ if __name__ == "__main__":
 
     sg.theme('GrayGrayGray')
 
-    # is_debugger = sys.gettrace()
-    # frame_kwargs = dict(p = 0, border_width = 1, relief = sg.RELIEF_SOLID, expand_x = True, expand_y = True)
-    # window_kwargs = dict(keep_on_top = not is_debugger, no_titlebar = not is_debugger, return_keyboard_events = True, margins = (0, 0), debugger_enabled = False, finalize = True)
-
     # create splash before importing to reduce startup time
     splash = Splash()
     splash.update('inititialisation')
