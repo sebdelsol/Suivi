@@ -6,7 +6,7 @@ from couriers import Courier
 from style import FixFont, FixFontBold, VarFont, VarFontBold, Get_window_args
 
 #-------------
-class MyPopup:
+class MyPopup(sg.Window):
     def __init__(self, title, body_layout, main_window):
         self.main_window = main_window
         self.main_window.do_greyed(True)
@@ -20,9 +20,9 @@ class MyPopup:
         layout = [ [ sg.Col(layout, p = 10) ] ]
 
         args, kwargs = Get_window_args(layout)
-        self.window = sg.Window(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
-    def loop(self, catch_event = None):
+    def loop(self, event_handler = None):
         while True: 
             exit, forward = self.main_window.get_event()            
             
@@ -31,20 +31,20 @@ class MyPopup:
 
             elif forward:
                 window, event, values = forward
-                if window == self.window:
+                if window == self:
                     if event in (None, 'Cancel', 'Escape:27'):
                         return None
 
                     elif event == 'OK':
                         return values
                     
-                    elif catch_event is not None:
-                        catch_event(self.window, event, values) 
+                    elif event_handler is not None:
+                        event_handler(self, event, values) 
 
     def close(self):
         self.main_window.do_greyed(False)
-        self.window.close()
-        del self.window
+        super().close()
+        # del self.window
 
 #------------------------------------------------------------------------------
 def edit(title, idship, description, used_couriers, couriers, main_window):
@@ -78,7 +78,7 @@ def edit(title, idship, description, used_couriers, couriers, main_window):
 
     idship, description = None, None
 
-    def catch_event(window, event, values):
+    def event_handler(window, event, values):
         if event == 'idship':
             update_idship_widgets(values['idship'])
         
@@ -90,7 +90,7 @@ def edit(title, idship, description, used_couriers, couriers, main_window):
         elif event in couriers_names:
             window[event].update(text_color = 'black' if values[event] else 'grey60')
 
-    values = edit_window.loop(catch_event)
+    values = edit_window.loop(event_handler)
     if values:
         idship, description, used_couriers = values['idship'], values['description'], [name for name in couriers_names if values[name]]
 
@@ -125,7 +125,7 @@ def choices(choices, title, main_window):
 
     chosen = []
 
-    def catch_event(window, event, values):
+    def event_handler(window, event, values):
         if event.isdigit() and int(event) in range(len(choices)):
             chck_widget = window[f'{text_key}{event}']
             is_checked = values[event]
@@ -137,7 +137,7 @@ def choices(choices, title, main_window):
             chck_widget.update(value = is_checked)
             window[event].update(font = selected_font if is_checked else unselected_font)
 
-    values = choices_window.loop(catch_event)
+    values = choices_window.loop(event_handler)
     if values:
         chosen = [ int(choice) for choice in values.keys() if values[choice] ]
 
@@ -156,13 +156,13 @@ def one_choice(choices, choice_colors, title, main_window, default = 0):
 
     choice = None
 
-    def catch_event(window, event, values):
+    def event_handler(window, event, values):
         if event in choices:
             for choice in choices:
                 color = choice_colors[choice if values[choice] else False]
                 window[choice].update(text_color = color)
 
-    values = choices_window.loop(catch_event)
+    values = choices_window.loop(event_handler)
     if values:
         # https://stackoverflow.com/questions/2361426/get-the-first-item-from-an-iterable-that-matches-a-condition
         choice = next(choice for choice in choices if values[choice]) 

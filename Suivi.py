@@ -842,7 +842,7 @@ class Main_window(sg.Window):
         elif isinstance(event, tuple) and callable(event[0]):
             event[0](window)      
         
-        elif self.log.catch_event(window, event):
+        elif self.log.event_handler(window, event):
             pass
 
         elif window == self:

@@ -57,7 +57,7 @@ class MyLog(sg.Window):
         if self.linked and ((event.x == 0 and event.y == 0) or self.current_location()!=self.wanted_pos):
             self.stick_to_main()
 
-    def catch_event(self, window, event):
+    def event_handler(self, window, event):
         if window == self:
             if event in (None, 'l'): 
                 self.toggle()
