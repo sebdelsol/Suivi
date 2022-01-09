@@ -260,7 +260,7 @@ class TrackerWidget:
                          MyButton('', image_data = self.refresh_img, p = 0, **b_colors, k = self.update),
                          MyButton('', image_data = self.archive_img, p = (0, b_p), **b_colors, k = self.archive_or_delete) ]
 
-        self.courier_fsize = 7
+        self.courier_fsize = 8
         self.events_f = (FixFont, 8)
         self.events_fb = (FixFontBold, 8)
         
@@ -271,7 +271,7 @@ class TrackerWidget:
 
         self.id_widget = sg.MLine('', p = 0, font = (FixFont, 10), disabled = True, border_width = 0, no_scrollbar = True, background_color = self.bg_color_h, expand_x = True, justification = 'r')
         self.couriers_widget = sg.MLine('', p = 0, font = (FixFont, self.courier_fsize), disabled = True, border_width = 0, no_scrollbar = True, background_color = self.bg_color_h, expand_x = True, justification = 'r')
-        id_couriers_widget = sg.Col([[ self.id_widget ], [ self.couriers_widget ]], p = ((5, 0), (b_p, b_p)), background_color = self.bg_color_h, expand_x = True, vertical_alignment = 'center')
+        id_couriers_widget = sg.Col([[ self.id_widget ], [ self.couriers_widget ]], p = ((5, 0), (b_p, b_p)), background_color = self.bg_color_h, expand_x = True, vertical_alignment = 'top')
         buttons = sg.Col([[button] for button in self.buttons], p = (10, 0), background_color = self.bg_color_h, expand_x = False)
 
         self.loading_widget = sg.Image(data = self.loading_gif, p = 3, background_color = self.bg_color, k = lambda w : self.toggle_expand(w))
