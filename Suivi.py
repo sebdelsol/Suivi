@@ -543,7 +543,9 @@ class TrackerWidget:
     def edit(self, window):
         self.disable_buttons(True)
 
-        idship, description, used_couriers = popup.edit('Édition', self.tracker.idship, self.tracker.description, self.tracker.used_couriers, self.tracker.available_couriers, window)
+        popup_edit = popup.edit('Édition', self.tracker.idship, self.tracker.description, self.tracker.used_couriers, self.tracker.available_couriers, window)
+        idship, description, used_couriers = popup_edit.loop()
+        
         if idship is not None:
             self.tracker.set_id(idship, description, used_couriers)
             self.reset_size()
@@ -553,7 +555,15 @@ class TrackerWidget:
 
     def set_state(self, state, window, ask, visible):
         tracker = self.tracker
-        if not ask or popup.warning(ask.capitalize(), f'{tracker.description} - {tracker.get_pretty_idship()}', window):
+
+        if ask: 
+            popup_warning = popup.warning(ask.capitalize(), f'{tracker.description} - {tracker.get_pretty_idship()}', window)
+            doit = popup_warning.loop()
+        
+        else:
+            doit = True
+
+        if doit:
             if self.lock.acquire(blocking=False): # needed ?
                 tracker.state = state
 
@@ -569,7 +579,10 @@ class TrackerWidget:
         choices = {'Archiver': self.archive, 'Supprimer': self.delete}
         choices_colors = {'Archiver':'green', 'Supprimer':'red', False:'grey75'}
         tracker = self.tracker
-        choice = popup.one_choice(choices.keys(), choices_colors, f'{tracker.description} - {tracker.get_pretty_idship()}', window)
+        
+        popup_one_choice = popup.one_choice(choices.keys(), choices_colors, f'{tracker.description} - {tracker.get_pretty_idship()}', window)
+        choice = popup_one_choice.loop()
+        
         if choice:
             choices[choice](window)
 
@@ -613,7 +626,9 @@ class TrackerWidgets:
         widget.update(window)
 
     def new(self, window):
-        tracker_params = popup.edit('Nouveau', '', 'Nouveau', [], self.trackers.couriers, window)
+        popup_edit = popup.edit('Nouveau', '', 'Nouveau', [], self.trackers.couriers, window)
+        tracker_params = popup_edit.loop()
+        
         tracker = self.trackers.new(*tracker_params)
         if tracker:
             self.create_widget(window, tracker)
@@ -633,7 +648,8 @@ class TrackerWidgets:
             txt = f'{tracker.get_pretty_last_event()}, {tracker.description.ljust(w_desc)} - {tracker.get_pretty_idship()}'
             choices.append((txt, color))
 
-        chosen = popup.choices(choices, 'Désarchiver', window)
+        popup_choices = popup.choices(choices, 'Désarchiver', window)
+        chosen = popup_choices.loop()
 
         for i in chosen:
             widget = archived[i]
