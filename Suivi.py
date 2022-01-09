@@ -739,6 +739,7 @@ class Fake_grey_window:
                 self.already_bound = self.window.TKroot.bind('<Configure>') # bug with unbind that remove all
                 self.bind_id = self.window.TKroot.bind('<Configure>', self.window_changed, add='+')
                 self.fake = sg.Window('', [[]], size = self.window.size, location = self.window.current_location(), **self.kwargs)    
+                self.fake.disable()
         else:
             if self.bind_id is not None:
                 self.window.TKroot.unbind('<Configure>', self.bind_id) 
