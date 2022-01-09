@@ -35,7 +35,6 @@ class MyButton(sg.Button):
     def mouseover(self, event):
         self.update(button_color = self.colors.get(event.type.name))
 
-
 #-------------------------------------------------
 class MyButtonImg(MyButton):
     def __init__(self, *args, im_margin = 0, im_height = 20, **kwargs):
