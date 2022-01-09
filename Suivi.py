@@ -1,10 +1,12 @@
 import PySimpleGUI as sg
 
-TrackersFile = 'Trackers.trck'
+TrackersFile = 'Trackers' # either .trck or .json 
 
 Refresh_color = '#408040'
 Archives_color = '#B2560D'
 Edit_color = '#6060FF'
+
+LOAD_AS_JSON = True
 
 #-----------------------
 class MyGraph(sg.Graph):
@@ -167,10 +169,18 @@ class Trackers:
         self.couriers = Couriers(splash)
 
         trackers = None
+
+        filename += '.json' if LOAD_AS_JSON else '.trck'
         if os.path.exists(filename):
-            with open(filename, 'rb') as f:
-                trackers = pickle.load(f)
-                _log(f'trackers loaded from {filename}')
+            if LOAD_AS_JSON:
+                with open(filename, 'r') as f:
+                    trackers = json.load(f, object_hook = json_decode_datetime)
+                    trackers = [Prodict.from_dict(trck) for trck in trackers]
+            else:
+                with open(filename, 'rb') as f:
+                    trackers = pickle.load(f)
+            
+            _log(f'trackers loaded from {filename}')
 
         if trackers:
             trackers = [Tracker(tracker.idship, tracker.description, tracker.used_couriers, self.couriers, tracker.state, tracker.contents) for tracker in trackers]
@@ -183,9 +193,15 @@ class Trackers:
 
         saved_trackers = [SavedTracker(tracker) for tracker in self.trackers]
 
-        with open(self.filename, 'wb') as f:
+        filename = self.filename + '.trck' 
+        with open(filename, 'wb') as f:
             pickle.dump(saved_trackers, f)
-            _log(f'trackers saved from {self.filename}')
+            _log(f"trackers saved to {filename}")
+
+        filename = self.filename + '.json' 
+        with open(self.filename + '.json', 'w') as f:
+            json.dump([trck.__dict__ for trck in saved_trackers], f, default = json_encode_datetime, indent = 4)
+            _log(f"trackers saved to {filename}")
 
     def new(self, idship, description, used_couriers):
         if idship is not None:
@@ -909,14 +925,17 @@ if __name__ == "__main__":
     import timeago
     from bisect import bisect
     import textwrap
-    
-    from mylog import mylog, _log
-    from imgtool import resize_and_colorize_gif, resize_and_colorize_img
-    from couriers import Couriers, get_local_now
-    from mybutton import MyButton, MyButtonImg
-    import popup
+    import json
+    from prodict import Prodict
     import locale
     locale.setlocale(locale.LC_ALL, 'fr_FR.utf8') # date in French
+
+    from imgtool import resize_and_colorize_gif, resize_and_colorize_img
+    from jsondate import json_decode_datetime, json_encode_datetime
+    from couriers import Couriers, get_local_now
+    from mybutton import MyButton, MyButtonImg
+    from mylog import mylog, _log
+    import popup
 
     # create main_window
     main_window = Main_window()
