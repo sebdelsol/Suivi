@@ -868,7 +868,7 @@ class Main_window(sg.Window):
                 self.widgets.show_archives(window)
         
         else:
-            return window.event_handler(event, values)
+            return window.event_handler(event)
 
 # ------------------------
 if __name__ == "__main__":

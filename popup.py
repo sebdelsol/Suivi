@@ -1,7 +1,8 @@
 import PySimpleGUI as sg
-from mybutton import MyButton
+from collections import namedtuple
 import webbrowser
 
+from mybutton import MyButton
 from couriers import Courier
 from style import FixFont, FixFontBold, VarFont, VarFontBold, Get_window_args
 
@@ -30,7 +31,7 @@ class MyPopup(sg.Window):
             if exit:
                 return exit
 
-    def event_handler(self, event, values):
+    def event_handler(self, event):
         if event in (None, 'Cancel', 'Escape:27'):
             return 'cancel'
 
@@ -38,7 +39,7 @@ class MyPopup(sg.Window):
             return 'ok'
         
         elif self.child_event_handler is not None:
-            self.child_event_handler(self, event, values) 
+            self.child_event_handler(self, event) 
 
     def close(self):
         self.main_window.do_greyed(False)
@@ -76,17 +77,17 @@ def edit(title, idship, description, used_couriers, couriers, main_window):
 
     idship, description = None, None
 
-    def event_handler(window, event, values):
+    def event_handler(window, event):
         if event == 'idship':
-            update_idship_widgets(values['idship'])
+            update_idship_widgets(window['idship'].get())
         
         elif isinstance(event, Courier):
-            courier, idship = event, values['idship']
+            courier, idship = event, window['idship'].get()
             url = courier.get_url_for_browser(idship)
             webbrowser.open(url)
         
         elif event in couriers_names:
-            window[event].update(text_color = 'black' if values[event] else 'grey60')
+            window[event].update(text_color = 'black' if window[event].get() else 'grey60')
 
     exit = window.loop(event_handler)
     if exit == 'ok':
@@ -102,44 +103,43 @@ def choices(choices, title, main_window):
     max_lines = 15
     
     selected_font, unselected_font =  (FixFontBold, 9),  (FixFont, 9)
-    text_key = 'choice_desc'
-    chcks = []
+    rows = []
+    row = namedtuple('row', 'cb txt')
     for i, (choice, color) in enumerate(choices):
-        cb = sg.CB(' ', p = 0, default = False, enable_events = True, k = f'{i}')
-        t = sg.T(f'{choice}', p = 0, font = unselected_font, text_color = color, enable_events = True, k = f'{text_key}{i}') 
-        chcks.append( [cb, t] )
+        cb = sg.CB('', p = 0, default = False, enable_events = True, k = f'cb_choice{i}')
+        t = sg.T(choice, p = 0, font = unselected_font, text_color = color, enable_events = True, k = f'txt_choice{i}') 
+        rows.append( row(cb, t) )
 
-    rows = sg.Col(chcks, scrollable = len(chcks) > max_lines, vertical_scroll_only = True)
-    layout = [ [ rows ] ]
+    col = sg.Col(rows, scrollable = len(rows) > max_lines, vertical_scroll_only = True)
+    layout = [ [ col ] ]
 
     window = MyPopup(title, layout, main_window)
     
-    for chck in chcks:
-        chck[1].bind('<Button-1>', '')
+    for row in rows:
+        row.txt.bind('<Button-1>', '')
 
-    if rows.Scrollable:
-        chck_height = chcks[0][0].get_size()[1]
-        height = chck_height * min(max_lines, len(chcks))
+    if col.Scrollable:
+        chck_height = rows[0].cb.get_size()[1]
+        height = chck_height * min(max_lines, len(rows))
         # https://github.com/PySimpleGUI/PySimpleGUI/issues/4407#issuecomment-860863915
         rows.Widget.canvas.configure(width = None, height = height)    
 
     chosen = []
 
-    def event_handler(window, event, values):
-        if event.isdigit() and int(event) in range(len(choices)):
-            chck_widget = window[f'{text_key}{event}']
-            is_checked = values[event]
-            chck_widget.update(font = selected_font if is_checked else unselected_font)
+    def event_handler(window, event):
+        if 'cb_choice' in event:
+            chck_widget, txt_widget = window[event], window[event.replace('cb', 'txt')]
+            txt_widget.update(font = selected_font if chck_widget.get() else unselected_font)
 
-        elif text_key in event:
-            chck_widget = window[event.replace(text_key, '')]
-            is_checked = not chck_widget.get()
-            chck_widget.update(value = is_checked)
-            window[event].update(font = selected_font if is_checked else unselected_font)
+        elif 'txt_choice' in event:
+            chck_widget, txt_widget = window[event.replace('txt', 'cb')], window[event]
+            toggle_check = not chck_widget.get()
+            chck_widget.update(value = toggle_check)
+            txt_widget.update(font = selected_font if toggle_check else unselected_font)
 
     exit = window.loop(event_handler)
     if exit == 'ok':
-        chosen = [ choice for choice in range(len(choices)) if window[f'{choice}'].get() ]
+        chosen = [ i for i in range(len(choices)) if window[f'cb_choice{i}'].get() ]
 
     window.close()
     return chosen
@@ -156,10 +156,10 @@ def one_choice(choices, choice_colors, title, main_window, default = 0):
 
     choice = None
 
-    def event_handler(window, event, values):
+    def event_handler(window, event):
         if event in choices:
             for choice in choices:
-                color = choice_colors[choice if values[choice] else False]
+                color = choice_colors[choice if window[choice].get() else False]
                 window[choice].update(text_color = color)
 
     exit = window.loop(event_handler)
