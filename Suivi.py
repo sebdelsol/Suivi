@@ -317,7 +317,7 @@ class TrackerWidget:
         self.expand_events = not self.expand_events
         self.update_expand_button()
 
-        window.write_event_value('-UPDATE WIDGETS SIZE-', '')
+        window.trigger_event('-UPDATE WIDGETS SIZE-', '')
 
     def update_expand_button(self):
         is_visible = self.is_events_visible() and self.height_events >  self.min_events_shown
@@ -356,7 +356,7 @@ class TrackerWidget:
 
             self.disable_buttons(True)
             self.updating = True
-            window.write_event_value('-UPDATING CHANGED-', '')
+            window.trigger_event('-UPDATING CHANGED-', '')
             
             self.tracker.prepare_update()
             self.show_current_courier_widget()
@@ -368,24 +368,24 @@ class TrackerWidget:
         try:
             content = None
             for content in self.tracker.update(): # generator multithreaded
-                window.write_event_value(lambda window: self.show(content, window), '')
+                window.trigger_event(lambda window: self.show(content, window), '')
 
             # nothing updated
             if content is None:
-                window.write_event_value(lambda window: self.show(None, window), '')
+                window.trigger_event(lambda window: self.show(None, window), '')
 
         except:
             _log (traceback.format_exc(), error = True)
 
         finally:
             self.lock.release()
-            window.write_event_value(lambda window: self.update_done(window), '')
+            window.trigger_event(lambda window: self.update_done(window), '')
 
     def update_done(self, window):
         self.disable_buttons(False)
         self.loading_widget.update(visible = False)
         self.updating = False
-        window.write_event_value('-UPDATING CHANGED-', '')
+        window.trigger_event('-UPDATING CHANGED-', '')
 
     def animate(self, animation_step):
         if self.loading_widget.visible:
@@ -493,7 +493,7 @@ class TrackerWidget:
             self.events_widget.update(visible = self.is_events_visible())
             self.update_expand_button()
 
-            window.write_event_value('-UPDATE WIDGETS SIZE-', '')
+            window.trigger_event('-UPDATE WIDGETS SIZE-', '')
 
     def show_id(self, content):
         self.id_widget.update('') 
@@ -560,7 +560,7 @@ class TrackerWidget:
                 self.layout.update(visible = visible)
                 self.reset_size()
 
-                window.write_event_value('-UPDATE WIDGETS SIZE-', '')
+                window.trigger_event('-UPDATE WIDGETS SIZE-', '')
                 self.lock.release()
 
     def archive_or_delete(self, window):
@@ -580,26 +580,26 @@ class TrackerWidget:
 
     def archive(self, window):
         self.set_state('archived', window, ask = False, visible = False)
-        window.write_event_value('-ARCHIVE UPDATED-', '')
+        window.trigger_event('-ARCHIVE UPDATED-', '')
 
     def unarchive(self, window):
         self.set_state('ok', window, ask = False, visible = True)
-        window.write_event_value('-ARCHIVE UPDATED-', '')
+        window.trigger_event('-ARCHIVE UPDATED-', '')
         self.update(window)
 
 # -------------------
 class TrackerWidgets:
-    def __init__(self, window, trackers, widgets_frame, splash):
+    def __init__(self, window, trackers,splash):
         self.widgets = []
         self.trackers = trackers
-        self.widgets_frame = widgets_frame
+        self.widgets_frame = window['TRACKS']
 
         n_trackers = len(trackers.trackers)
         for i, tracker in enumerate(trackers.trackers):
             splash.update(f'création suivi {i + 1}/{n_trackers}')
             self.create_widget(window, tracker, i==0)
 
-        window.write_event_value('-ARCHIVE UPDATED-', '')
+        window.trigger_event('-ARCHIVE UPDATED-', '')
         self.update_size(window)
         self.recenter(window, True)
 
@@ -709,6 +709,21 @@ class TrackerWidgets:
         window.move(x, y)
         window.refresh()
 
+# ---------------------------------------------
+class Splash:
+    def __init__(self):
+        self.log = sg.T('', font = (VarFont, 10))
+        layout = [[sg.Image(filename = 'icon/mail.png')], [self.log]]
+        args, kwargs = Get_window_args(layout, grab_anywhere = False)
+        self.window = sg.Window(*args, **kwargs)
+
+    def update(self, txt):
+        self.log.update(f'{txt.capitalize()} ...')
+        self.window.refresh()
+
+    def close(self):
+        self.window.close()
+
 # ---------------------
 class Fake_grey_window:
     def __init__(self, window):
@@ -738,21 +753,6 @@ class Fake_grey_window:
         x, y = self.window.current_location()
         self.fake.TKroot.geometry(f'{w}x{h}+{x}+{y}')
 
-# ---------------------------------------------
-class Splash:
-    def __init__(self):
-        self.log = sg.T('', font = (VarFont, 10))
-        layout = [[sg.Image(filename = 'icon/mail.png')], [self.log]]
-        args, kwargs = Get_window_args(layout, grab_anywhere = True)
-        self.window = sg.Window(*args, **kwargs)
-
-    def update(self, txt):
-        self.log.update(f'{txt} ...'.capitalize())
-        self.window.refresh()
-
-    def close(self):
-        self.window.close()
-
 # --------------------------------------------------
 class Main_window(sg.Window):
     
@@ -781,7 +781,7 @@ class Main_window(sg.Window):
         recenter_widget.bind('<Double-Button-1>', '')
 
         self.trackers = Trackers(TrackersFile, splash) 
-        self.widgets = TrackerWidgets(self, self.trackers, self['TRACKS'], splash) 
+        self.widgets = TrackerWidgets(self, self.trackers, splash) 
 
         self.greyed = [Fake_grey_window(self)]
 
@@ -808,6 +808,10 @@ class Main_window(sg.Window):
 
         self.log.close()
         self.trackers.close()
+
+    def trigger_event(self, *evt):
+        if self.TKroot:
+            self.write_event_value(*evt)
 
     def animate(self):
         self.widgets.animate(self.animation_step)

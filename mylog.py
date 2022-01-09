@@ -23,7 +23,7 @@ class MyLog(sg.Window):
         self.visible = False
 
         log_font, button_font = (FixFont, 7), (VarFont, 12)
-        self.output = sg.MLine('', p = 0, font = log_font, s = (80, 40), auto_refresh = True, autoscroll  = True, disabled = True, border_width = 0, expand_x = True, expand_y = True, background_color = None)
+        self.output = sg.MLine('', p = 0, font = log_font, s = (80, 40), auto_refresh = True, autoscroll  = True, disabled = True, border_width = 0, expand_x = True, expand_y = True, background_color = 'grey90')
         self.link_button = MyButton(self.link_txt, p = 0, font = button_font, button_color = ('grey60', 'grey95'), mouseover_color = 'grey80', expand_x = True, expand_y = True, k = 'Link')
 
         layout = [ [ self.output, sg.Col( [ [self.link_button], [ sg.Sizegrip() ] ], p = 0, expand_x = True, expand_y = True) ] ]
