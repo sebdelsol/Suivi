@@ -791,8 +791,8 @@ class Main_window(sg.Window):
         self.reappear()
     
     def add_log(self, log):
-        log.link_to(self)
         self.log = log
+        log.link_to(self)
         self.greyed.append(Fake_grey_window(log))
         self.TKroot.bind('<Configure>', lambda evt: log.stick_to_main())
 

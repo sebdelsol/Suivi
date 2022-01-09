@@ -31,16 +31,10 @@ class MyButton(sg.Button):
     def finalize(self):
         for bind in MyButton.binds:
             self.Widget.bind(bind, self.mouseover)            
-    
-    def update(self, *args, **kwargs):
-        if kwargs.get('disabled') is False:
-            kwargs['button_color'] = self.colors.get('Leave')
-        super().update(*args, **kwargs)
 
     def mouseover(self, event):
-        color = self.colors.get('Leave' if self.Disabled else event.type.name)
-        if color:
-            self.update(button_color = color)
+        self.update(button_color = self.colors.get(event.type.name))
+
 
 #-------------------------------------------------
 class MyButtonImg(MyButton):

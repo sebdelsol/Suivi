@@ -22,6 +22,7 @@ class MyPopup(sg.Window):
 
         args, kwargs = Get_window_args(layout)
         super().__init__(*args, **kwargs)
+        MyButton.finalize_all(self)
 
     def loop(self, child_event_handler = None):
         self.child_event_handler = child_event_handler
@@ -52,7 +53,7 @@ def edit(title, idship, description, used_couriers, couriers, main_window):
         for msg, button in idship_widgets:
             courier = button.Key
             disabled = not courier.get_url_for_browser(idship)
-            button.update(disabled = disabled)
+            button.update(disabled = disabled, visible = not disabled)
             msg.update(text_color = 'red' if disabled else 'green')
 
     couriers_names = couriers.get_names()
@@ -66,11 +67,11 @@ def edit(title, idship, description, used_couriers, couriers, main_window):
 
         is_checked = name in used_couriers
         cb = sg.CB(f' {name}', default = is_checked, text_color = 'black' if is_checked else 'grey60', font = (FixFont, 12), enable_events = True, k = name)
-        msg = sg.T(f'({courier.idship_check_msg})', font = (FixFont, 7), expand_x = True, justification = 'r')
+        msg = sg.T(f'({courier.idship_check_msg})', font = (FixFont, 8), expand_x = True, justification = 'r')
         button = MyButton('voir', font = (FixFont, 8), button_color ='grey90', k = courier)
 
         idship_widgets.append((msg, button))
-        layout.append([cb, msg, button])
+        layout.append([ cb, msg, sg.vcenter(button) ])
 
     window = MyPopup(title, layout, main_window)
     update_idship_widgets(idship)
