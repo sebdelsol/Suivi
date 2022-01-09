@@ -170,20 +170,19 @@ class Trackers:
 
         trackers = None
 
-        filename += '.json' if LOAD_AS_JSON else '.trck'
+        ext, mode = ('.json', 'r') if LOAD_AS_JSON else ('.trck', 'rb')
+        filename += ext
         if os.path.exists(filename):
-            if LOAD_AS_JSON:
-                with open(filename, 'r') as f:
+            with open(filename, mode) as f:
+                if LOAD_AS_JSON:
                     trackers = json.load(f, object_hook = json_decode_datetime)
-                    trackers = [Prodict.from_dict(trck) for trck in trackers]
-            else:
-                with open(filename, 'rb') as f:
+                else:
                     trackers = pickle.load(f)
-            
+
             _log(f'trackers loaded from {filename}')
 
         if trackers:
-            trackers = [Tracker(tracker.idship, tracker.description, tracker.used_couriers, self.couriers, tracker.state, tracker.contents) for tracker in trackers]
+            trackers = [Tracker(tracker['idship'], tracker['description'], tracker['used_couriers'], self.couriers, tracker['state'], tracker['contents']) for tracker in trackers]
 
         self.trackers = trackers or []
         self.trackers.sort(key = lambda t : t.get_last_event(), reverse = True)
@@ -191,7 +190,7 @@ class Trackers:
     def save(self):
         self.trackers = self.get_not_deleted()
 
-        saved_trackers = [SavedTracker(tracker) for tracker in self.trackers]
+        saved_trackers = [SavedTracker(tracker).__dict__ for tracker in self.trackers]
 
         filename = self.filename + '.trck' 
         with open(filename, 'wb') as f:
@@ -199,8 +198,8 @@ class Trackers:
             _log(f"trackers saved to {filename}")
 
         filename = self.filename + '.json' 
-        with open(self.filename + '.json', 'w') as f:
-            json.dump([trck.__dict__ for trck in saved_trackers], f, default = json_encode_datetime, indent = 4)
+        with open(filename, 'w') as f:
+            json.dump(saved_trackers, f, default = json_encode_datetime, indent = 4)
             _log(f"trackers saved to {filename}")
 
     def new(self, idship, description, used_couriers):
@@ -926,7 +925,6 @@ if __name__ == "__main__":
     from bisect import bisect
     import textwrap
     import json
-    from prodict import Prodict
     import locale
     locale.setlocale(locale.LC_ALL, 'fr_FR.utf8') # date in French
 
