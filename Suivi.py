@@ -16,12 +16,12 @@ def three_char_month(date_txt, i):
     return ' '.join(txts)
 
 #------------------
-class SavedTracker:
+class SavedTracker(dict):
     def __init__(self, tracker):
         with tracker.critical:
             # tracker attribute to save
             for attr in ('idship', 'description', 'used_couriers', 'state', 'contents'):
-                self.__dict__[attr] = tracker.__dict__[attr]
+                self[attr] = tracker.__dict__[attr]
 
 #-------------
 class Tracker:
@@ -177,7 +177,7 @@ class Trackers:
     def save(self):
         self.trackers = self.get_not_deleted()
 
-        saved_trackers = [SavedTracker(tracker).__dict__ for tracker in self.trackers]
+        saved_trackers = [SavedTracker(tracker) for tracker in self.trackers]
 
         filename = self.filename + '.trck' 
         with open(filename, 'wb') as f:
