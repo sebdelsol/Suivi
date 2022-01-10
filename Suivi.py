@@ -46,6 +46,7 @@ class Tracker:
         self.description = description.title()
         self.idship = idship.strip()
     
+    # TODO current_events --> loaded_events & remove the 2 funct bellow
     def set_current_events(self):
         self.current_events = set()
         for content in self.contents.values():
