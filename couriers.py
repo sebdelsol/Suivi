@@ -186,7 +186,6 @@ class Scrapper(Courier):
 
 #-------------------------------
 class Cainiao(Scrapper):
-    short_name = 'cn'
     long_name = 'Cainiao'
     fromto = f'CN{Courier.r_arrow}FR'
 
@@ -232,7 +231,6 @@ class Cainiao(Scrapper):
 
 #---------------------------
 class Asendia(Courier):
-    short_name = 'ase'
     long_name = 'Asendia'
     fromto = f'CN{Courier.r_arrow}FR'
 
@@ -269,7 +267,6 @@ class Asendia(Courier):
 
 #----------------------
 class MondialRelay(Courier):
-    short_name = 'mr'
     long_name = 'Mondial Relay'
     product = 'Colis'
     fromto = f'FR{Courier.r_arrow}FR'
@@ -308,7 +305,6 @@ class MondialRelay(Courier):
 
 #------------------
 class GLS(Courier):
-    short_name = 'gls'
     long_name = 'GLS'
 
     def _get_url_for_browser(self, idship):
@@ -358,7 +354,6 @@ class GLS(Courier):
 
 #----------------------
 class DPD(Courier):
-    short_name = 'dpd'
     long_name = 'DPD'
 
     def _get_url_for_browser(self, idship):
@@ -395,7 +390,6 @@ class DPD(Courier):
 
 #----------------------
 class NLPost(Courier):
-    short_name = 'nl'
     long_name = 'NL Post'
 
     url = 'https://postnl.post/details/'
@@ -421,7 +415,6 @@ class NLPost(Courier):
 
 #----------------------
 class FourPX(Courier):
-    short_name = '4px'
     long_name = '4PX'
 
     url = 'https://postnl.post/details/'
@@ -450,7 +443,6 @@ class FourPX(Courier):
 
 #----------------------
 class LaPoste(Courier):
-    short_name = 'lp'
     long_name = 'La Poste'
 
     idship_check_pattern, idship_check_msg = get_simple_check(11, 15)
@@ -522,7 +514,6 @@ class LaPoste(Courier):
 
 #----------------------
 class DHL(Courier):
-    short_name = 'dhl'
     long_name = 'DHL'
 
     idship_check_pattern, idship_check_msg = r'^\d{10}$', f'10 chiffres'
@@ -605,7 +596,6 @@ class DHL(Courier):
 
 #----------------------
 # class Asendia(Ship24):
-#     short_name = 'as'
 #     long_name = 'Asendia'
 #     courier = 'asendia'
 
@@ -784,7 +774,6 @@ class DHL(Courier):
 
 # #-------------------
 # class Cainiao(PKGE):
-#     short_name = 'cn'
 #     long_name = 'Cainiao'
 #     couriers = ('Aliexpress Standard Shipping', 'Aliexpress', 'Global Cainiao')
 
