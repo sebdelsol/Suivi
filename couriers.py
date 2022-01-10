@@ -18,7 +18,7 @@ from config import LaPoste_key, dhl_key # , Ship24_key, PKGE_key
 
 #------------------------------------------------------------------------------
 def get_sentence(txt, nb = -1):
-    return ''.join(txt.split('.')[:nb])
+    return ''.join(re.split(r'[.!]', txt)[:nb])
 
 def get_local_time(date):
     return parse(date).astimezone(get_localzone())
