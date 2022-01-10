@@ -569,22 +569,6 @@ class TrackerWidget:
     def update_visiblity(self):
         self.layout.update(visible = self.tracker.state=='shown')
     
-    def set_state(self, state, window, ask):
-        tracker = self.tracker
-
-        do_it = True
-        if ask: 
-            popup_warning = popup.warning(ask.capitalize(), f'{tracker.description} - {tracker.get_pretty_idship()}', window)
-            do_it = popup_warning.loop()
-
-        if do_it:
-            tracker.state = state
-
-            self.update_visiblity()
-            self.reset_size()
-
-            window.trigger_event('-UPDATE WIDGETS SIZE-', '')
-
     def archive_or_delete(self, window):
         self.disable_buttons(True)
 
@@ -600,23 +584,37 @@ class TrackerWidget:
 
         self.disable_buttons(False)
 
+    def set_state(self, state, window, ask, event, do_update = False):
+        tracker = self.tracker
+
+        do_it = True
+        if ask: 
+            popup_warning = popup.warning(ask.capitalize(), f'{tracker.description} - {tracker.get_pretty_idship()}', window)
+            do_it = popup_warning.loop()
+
+        if do_it:
+            tracker.state = state
+
+            self.update_visiblity()
+            self.reset_size()
+
+            window.trigger_event('-UPDATE WIDGETS SIZE-', '')
+            
+            window.trigger_event(event, '')
+            if do_update:
+                self.update(window)
+
     def delete(self, window):
-        self.set_state('deleted', window, ask = 'Supprimer')
-        window.trigger_event('-DELETED UPDATED-', '')
+        self.set_state('deleted', window, 'Supprimer', '-DELETED UPDATED-')
 
     def undelete(self, window):
-        self.set_state('shown', window, ask = False)
-        window.trigger_event('-DELETED UPDATED-', '')
-        self.update(window)
+        self.set_state('shown', window, False, '-DELETED UPDATED-', True)
 
     def archive(self, window):
-        self.set_state('archived', window, ask = False)
-        window.trigger_event('-ARCHIVE UPDATED-', '')
+        self.set_state('archived', window, False, '-ARCHIVE UPDATED-')
 
     def unarchive(self, window):
-        self.set_state('shown', window, ask = False)
-        window.trigger_event('-ARCHIVE UPDATED-', '')
-        self.update(window)
+        self.set_state('shown', window, False, '-ARCHIVE UPDATED-', True)
 
 # -------------------
 class TrackerWidgets:
