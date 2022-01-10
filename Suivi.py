@@ -166,7 +166,7 @@ class Trackers:
                 else:
                     trackers = pickle.load(f)
 
-            _log(f'trackers loaded from {filename}')
+            _log(f'trackers LOADED from "{filename}"')
 
         if trackers:
             trackers = [Tracker(tracker['idship'], tracker['description'], tracker['used_couriers'], self.couriers, tracker['state'], tracker['contents']) for tracker in trackers]
@@ -182,12 +182,12 @@ class Trackers:
         filename = self.filename + '.trck' 
         with open(filename, 'wb') as f:
             pickle.dump(saved_trackers, f)
-            _log(f"trackers saved to {filename}")
+            _log(f'trackers SAVED to "{filename}"')
 
         filename = self.filename + '.json' 
         with open(filename, 'w') as f:
             json.dump(saved_trackers, f, default = json_encode_datetime, indent = 4)
-            _log(f"trackers saved to {filename}")
+            _log(f'trackers SAVED to "{filename}"')
 
     def new(self, idship, description, used_couriers):
         if idship is not None:

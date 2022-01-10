@@ -50,7 +50,7 @@ class Drivers:
         with self.lock: # prevents driver creation when it's already being created in another thread
             if self.n_created_drivers < self.n_drivers:
 
-                _log ('DRIVER creation')
+                _log ('driver CREATION')
                 options = webdriver.ChromeOptions()
                 options.headless = True
                 options.binary_location = chrome_exe
@@ -67,7 +67,7 @@ class Drivers:
 
                 self.drivers.put(driver)
                 self.n_created_drivers += 1
-                _log (f'DRIVER #{self.n_created_drivers} created')
+                _log (f'driver #{self.n_created_drivers} CREATED')
 
     def get(self):
         self.create_driver_if_needed()
@@ -79,5 +79,5 @@ class Drivers:
     def close(self):
         for proc in psutil.process_iter():
             if 'chromedriver.exe' in proc.name().lower():
-                _log (f'kill {proc.name()} {proc.pid}')
+                _log (f'KILL {proc.name()} {proc.pid}')
                 proc.kill()
