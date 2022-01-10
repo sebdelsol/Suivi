@@ -64,7 +64,7 @@ class Courier:
 
     idship_check_pattern, idship_check_msg = get_simple_check(8, 20)
 
-    delivered_matchs = (r'delivered', r'final delivery', r'(?<!être) livré', r'(?<!être) distribué')
+    delivered_matchs = (r'delivered', r'final delivery', r'(?<!être )livré', r'(?<!être )distribué')
     error_words = ('error', 'erreur')
 
     subs = ((r'\.$', ''),               # remove ending .

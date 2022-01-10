@@ -106,7 +106,8 @@ class Tracker:
                 events.sort(key = lambda evt : evt['date'], reverse = True)
                 consolidated['events'] = self.update_events_new(events) 
                 
-                delivered = consolidated['status'].get('delivered')
+                delivered = any(c['status'].get('delivered') for c in contents_ok)
+                consolidated['status']['delivered'] = delivered
                 consolidated['elapsed'] = events and (events[0]['date'] if delivered else get_local_now()) - events[-1]['date']
                 consolidated['status']['date'] = self.no_future(consolidated['status']['date'])
             
