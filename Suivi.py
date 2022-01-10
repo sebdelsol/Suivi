@@ -182,8 +182,8 @@ class Trackers:
         if os.path.exists(filename):
             with open(filename, mode) as f:
                 obj = load(f)
-            _log(f'trackers LOADED from "{filename}"')
             
+            _log(f'trackers LOADED from "{filename}"')
             return obj
 
     def _save(self, obj, ext, mode, save):
@@ -192,10 +192,13 @@ class Trackers:
             save(obj, f)
             _log(f'trackers SAVED to "{filename}"')
 
-    def sort(self, trackers):
+    def sort(self, objs, get_tracker = None): 
         now = get_local_now() # all trackers without date will have the same now, so that they stay in the same order
-        return sorted(trackers, key = lambda tracker : tracker.get_last_event(now = now), reverse = True)
-
+        if get_tracker:
+            return sorted(objs, key = lambda obj : get_tracker(obj).get_last_event(now = now), reverse = True)
+        
+        else:
+            return sorted(objs, key = lambda obj : obj.get_last_event(now = now), reverse = True)
 
     def new(self, idship, description, used_couriers):
         if idship is not None:
@@ -704,15 +707,12 @@ class TrackerWidgets:
             widget.update(window)
 
     def get_sorted(self, widgets):
-        get_widget = dict((widget.tracker, widget) for widget in widgets)
-        trackers = [widget.tracker for widget in widgets]
-        sorted_trackers = self.trackers.sort(trackers)
-        return [get_widget[tracker] for tracker in sorted_trackers]
+        return self.trackers.sort(widgets, get_tracker = lambda widget : widget.tracker)
 
     def sort_if_needed(self, window):
         sorted_widgets = self.get_sorted(self.widgets)
-        if self.widgets!=sorted_widgets:
-            _log (f'SORT Widgets')
+        if self.widgets != sorted_widgets:
+            _log (f'SORT widgets')
             sorted_trackers = [widget.tracker for widget in sorted_widgets]
             for widget, tracker in zip(self.widgets, sorted_trackers):
                 if widget.tracker != tracker:
