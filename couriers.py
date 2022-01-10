@@ -129,7 +129,7 @@ class Courier:
             # add couriers and check for delivery & errors events
             delivered = infos.get('delivered', False)
             for event in events:
-                event['courier'] = self.short_name
+                event['courier'] = self.long_name
                 # clean label
                 for sub in self.subs:
                     event['label'] = re.sub(sub[0], sub[1], event['label'].strip())
