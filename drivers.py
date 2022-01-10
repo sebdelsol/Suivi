@@ -67,7 +67,7 @@ class Drivers:
 
                 self.drivers.put(driver)
                 self.n_created_drivers += 1
-                _log (f'driver #{self.n_created_drivers} CREATED')
+                _log (f'driver ({self.n_created_drivers}/{self.n_drivers}) CREATED')
 
     def get(self):
         self.create_driver_if_needed()
