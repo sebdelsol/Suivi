@@ -62,11 +62,11 @@ class Tracker:
                 self.couriers_error[courier_name] = True
                 self.couriers_updating[courier_name] = True
 
-    def update(self):
+    def update_all_couriers(self):
         content_queue = queue.Queue()
         for courier_name in self.used_couriers:
             _log (f'update START - {self.description} - {self.get_pretty_idship()}, {courier_name}')
-            threading.Thread(target = self.update_thread, args = (courier_name, content_queue)).start()
+            threading.Thread(target = self.update_courier, args = (courier_name, content_queue)).start()
 
         for _ in range(len(self.used_couriers)):
             courier_name, new_content = content_queue.get()
@@ -83,7 +83,7 @@ class Tracker:
 
             yield self.get_consolidated_content()
 
-    def update_thread(self, courier_name, content_queue):
+    def update_courier(self, courier_name, content_queue):
         try:
             courier = self.available_couriers.get(courier_name)
             if courier:
@@ -380,8 +380,9 @@ class TrackerWidget:
     def update_thread(self, window): 
         try:
             content = None
-            for content in self.tracker.update(): # generator multithreaded
-                window.trigger_event(lambda window: self.show(content, window), '')
+            for content in self.tracker.update_all_couriers(): 
+                # https://stackoverflow.com/questions/10452770/python-lambdas-binding-to-local-values
+                window.trigger_event(lambda window, content = content: self.show(content, window), '')
 
             # nothing updated
             if content is None:
