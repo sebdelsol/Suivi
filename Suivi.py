@@ -190,7 +190,7 @@ class Trackers:
         filename = self.filename + ext
         with open(filename, mode) as f:
             save(obj, f)
-            _log(f'trackers SAVED to "{filename}"')
+        _log(f'trackers SAVED to "{filename}"')
 
     def sort(self, objs, get_tracker = None): 
         now = get_local_now() # all trackers without date will have the same now, so that they stay in the same order
