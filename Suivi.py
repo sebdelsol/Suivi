@@ -403,8 +403,8 @@ class TrackerWidget:
 
             if content.get('ok'):
                 events = content['events']
-                width_events = 0
-                self.height_events = len(events)
+                self.width_events = 0
+                self.height_events = 0
 
                 if events:
                     courier_w = max(len(evt['courier']) for evt in events)
@@ -453,9 +453,8 @@ class TrackerWidget:
                             prt(event_label, font = f, autoscroll = False, t = event_color or 'grey50')
                         
                         width += sum( len(txt) for txt in (event_status, event_labels[0]) )
-                        width_events = max(width, width_events)
-
-                self.width_events = width_events
+                        self.width_events = max(width, self.width_events)
+                        self.height_events += len(event_labels)
                 
                 status_warn = content['status'].get('warn', False)
                 status_delivered = content['status'].get('delivered', False)
