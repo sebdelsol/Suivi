@@ -25,7 +25,7 @@ class SavedTracker(dict):
 
 #-------------
 class Tracker:
-    def __init__(self, idship, description, used_couriers, available_couriers, state = 'ok', contents = None):
+    def __init__(self, idship, description, used_couriers, available_couriers, state = 'shown', contents = None):
         self.set_id(idship, description, used_couriers)
         self.state = state
         self.contents = contents or {}
@@ -293,7 +293,7 @@ class TrackerWidget:
                    [ sg.Col([[ loading_widget_pin, self.ago_widget, self.status_widget, self.expand_button ]], p = (10, 0), background_color = self.bg_color, expand_x = True) ],
                    [ events_widget_pin ] ]
 
-        self.layout = sg.Col(layout, expand_x = True, p = 0, visible = self.tracker.state == 'ok', background_color = self.bg_color)
+        self.layout = sg.Col(layout, expand_x = True, p = 0, visible = self.tracker.state == 'shown', background_color = self.bg_color)
         self.pin = sg.pin(self.layout, expand_x = True) # collapse when hidden
         self.pin.BackgroundColor = self.bg_color_h if first else self.bg_color
         return [ self.pin ] 
@@ -355,7 +355,7 @@ class TrackerWidget:
         self.update_couriers_id_size()
 
     def update(self, window):
-        if self.tracker.state == 'ok' and self.lock.acquire(blocking = False):
+        if self.tracker.state == 'shown' and self.lock.acquire(blocking = False):
 
             self.disable_buttons(True)
             self.updating = True
@@ -396,7 +396,7 @@ class TrackerWidget:
 
     def show(self, content, window):
         tracker = self.tracker
-        if tracker.state == 'ok':
+        if tracker.state == 'shown':
             
             delivered = '✔' if content.get('status', {}).get('delivered') else ''
             self.desc_widget.update(f'{tracker.description.strip()}{delivered}') 
@@ -603,7 +603,7 @@ class TrackerWidget:
         window.trigger_event('-ARCHIVE UPDATED-', '')
 
     def unarchive(self, window):
-        self.set_state('ok', window, ask = False, visible = True)
+        self.set_state('shown', window, ask = False, visible = True)
         window.trigger_event('-ARCHIVE UPDATED-', '')
         self.update(window)
 
@@ -668,10 +668,10 @@ class TrackerWidgets:
         archives_button.update(txt, disabled = disabled)
 
     def count_not_updating(self):
-        return [widget.updating for widget in self.get_widgets_with_state('ok')].count(False)
+        return [widget.updating for widget in self.get_widgets_with_state('shown')].count(False)
 
     def update(self, window):
-        for widget in self.get_widgets_with_state('ok'):
+        for widget in self.get_widgets_with_state('shown'):
             widget.update(window)
 
     def updating_changed(self, refresh_button):
@@ -679,23 +679,23 @@ class TrackerWidgets:
         refresh_button.update(disabled = n_updating == 0)
 
     def animate(self, animation_step):
-        for widget in self.get_widgets_with_state('ok'):
+        for widget in self.get_widgets_with_state('shown'):
             widget.animate(animation_step)
     
     def update_size(self, window):
-        ok = self.get_widgets_with_state('ok')
+        shown = self.get_widgets_with_state('shown')
 
         # resize all widgets with the max width & and change pin color
-        max_width = max(widget.width_events for widget in ok) if ok else 0
-        for widget in ok:
+        max_width = max(widget.width_events for widget in shown) if shown else 0
+        for widget in shown:
             widget.update_size(max_width)
 
         window.refresh()
         self.widgets_frame.contents_changed()
 
         # wanted size
-        if ok:
-            w = max(widget.get_pixel_size()[0] for widget in ok) 
+        if shown:
+            w = max(widget.get_pixel_size()[0] for widget in shown) 
             h = sum(widget.get_pixel_size()[1] for widget in self.widgets) + window['MENU'].get_size()[1] + 3
         else:
             w, h = 400, 200
