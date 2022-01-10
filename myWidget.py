@@ -3,6 +3,19 @@ from tkinter import font
 
 from imgtool import expand_right_img64, get_img64_size, resize_and_colorize_img
 
+#-----------------------
+class MyGraph(sg.Graph):
+    def draw_rounded_box(self, x, y, w, h, r, color):
+        w2, h2, r2 = w * .5, h * .5, r * 2
+        # cross
+        self.draw_rectangle((x-w2, y+h2-r), (x+w2, y-h2+r), fill_color = color, line_color = color)
+        self.draw_rectangle((x-w2+r, y+h2), (x+w2-r, y-h2), fill_color = color, line_color = color)
+        # corners
+        self.draw_arc((x-w2, y+h2-r2),    (x-w2+r2, y+h2),    90, 90,  fill_color = color, arc_color = color) 
+        self.draw_arc((x+w2-r2, y+h2-r2), (x+w2, y+h2),       90, 0,   fill_color = color, arc_color = color)
+        self.draw_arc((x-w2, y-h2),       (x-w2+r2, y-h2+r2), 90, 180, fill_color = color, arc_color = color) 
+        self.draw_arc((x+w2-r2, y-h2),    (x+w2, y-h2+r2),    90, 270, fill_color = color, arc_color = color)
+
 #-------------------------
 class MyButton(sg.Button):
     default_colors = dict( Enter = 'grey75', Leave = 'grey95')

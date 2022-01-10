@@ -8,19 +8,6 @@ Edit_color = '#6060FF'
 
 LOAD_AS_JSON = True
 
-#-----------------------
-class MyGraph(sg.Graph):
-    def draw_rounded_box(self, x, y, w, h, r, color):
-        w2, h2, r2 = w * .5, h * .5, r * 2
-        # cross
-        self.draw_rectangle((x-w2, y+h2-r), (x+w2, y-h2+r), fill_color = color, line_color = color)
-        self.draw_rectangle((x-w2+r, y+h2), (x+w2-r, y-h2), fill_color = color, line_color = color)
-        # corners
-        self.draw_arc((x-w2, y+h2-r2),    (x-w2+r2, y+h2),    90, 90,  fill_color = color, arc_color = color) 
-        self.draw_arc((x+w2-r2, y+h2-r2), (x+w2, y+h2),       90, 0,   fill_color = color, arc_color = color)
-        self.draw_arc((x-w2, y-h2),       (x-w2+r2, y-h2+r2), 90, 180, fill_color = color, arc_color = color) 
-        self.draw_arc((x+w2-r2, y-h2),    (x+w2, y-h2+r2),    90, 270, fill_color = color, arc_color = color)
-
 #---------------------------------
 def three_char_month(date_txt, i):
     txts = date_txt.split()
@@ -931,7 +918,7 @@ if __name__ == "__main__":
     from imgtool import resize_and_colorize_gif, resize_and_colorize_img
     from jsondate import json_decode_datetime, json_encode_datetime
     from couriers import Couriers, get_local_now
-    from mybutton import MyButton, MyButtonImg
+    from myWidget import MyButton, MyButtonImg, MyGraph
     from mylog import mylog, _log
     import popup
 

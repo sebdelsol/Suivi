@@ -4,7 +4,7 @@ import PySimpleGUI as sg
 import sys
 is_debugger = sys.gettrace()
 
-from mybutton import MyButton
+from myWidget import MyButton
 from style import FixFont, VarFont, Get_window_args
 
 class MyLog(sg.Window):

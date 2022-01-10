@@ -2,7 +2,7 @@ import PySimpleGUI as sg
 from collections import namedtuple
 import webbrowser
 
-from mybutton import MyButton
+from myWidget import MyButton
 from couriers import Courier
 from style import FixFont, FixFontBold, VarFont, VarFontBold, Get_window_args
 
