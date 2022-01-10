@@ -560,21 +560,19 @@ class TrackerWidget:
 
         self.disable_buttons(False)
 
-    def set_state(self, state, window, ask, visible):
+    def set_state(self, state, window, ask):
         tracker = self.tracker
 
+        do_it = True
         if ask: 
             popup_warning = popup.warning(ask.capitalize(), f'{tracker.description} - {tracker.get_pretty_idship()}', window)
-            doit = popup_warning.loop()
-        
-        else:
-            doit = True
+            do_it = popup_warning.loop()
 
-        if doit:
+        if do_it:
             if self.lock.acquire(blocking=False): # needed ?
                 tracker.state = state
 
-                self.layout.update(visible = visible)
+                self.layout.update(visible = state=='shown')
                 self.reset_size()
 
                 window.trigger_event('-UPDATE WIDGETS SIZE-', '')
@@ -596,14 +594,14 @@ class TrackerWidget:
         self.disable_buttons(False)
 
     def delete(self, window):
-        self.set_state('deleted', window, ask = 'Supprimer', visible = False)
+        self.set_state('deleted', window, ask = 'Supprimer')
 
     def archive(self, window):
-        self.set_state('archived', window, ask = False, visible = False)
+        self.set_state('archived', window, ask = False)
         window.trigger_event('-ARCHIVE UPDATED-', '')
 
     def unarchive(self, window):
-        self.set_state('shown', window, ask = False, visible = True)
+        self.set_state('shown', window, ask = False)
         window.trigger_event('-ARCHIVE UPDATED-', '')
         self.update(window)
 
