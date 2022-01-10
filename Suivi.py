@@ -160,40 +160,42 @@ class Trackers:
         self.filename = filename
         self.couriers = Couriers(splash)
 
-        trackers = None
-
         if LOAD_AS_JSON:
-            ext, mode, load = '.json', 'r', lambda f: json.load(f, object_hook = json_decode_datetime)
+            trackers = self._load('.json', 'r', lambda f: json.load(f, object_hook = json_decode_datetime))
         else:
-            ext, mode, load = '.trck', 'rb', lambda f: pickle.load(f)
-
-        filename += ext
-        if os.path.exists(filename):
-            with open(filename, mode) as f:
-                trackers = load(f)
-            _log(f'trackers LOADED from "{filename}"')
+            trackers = self._load('.trck', 'rb', lambda f: pickle.load(f))
 
         if trackers:
             trackers = [Tracker(tracker['idship'], tracker['description'], tracker['used_couriers'], self.couriers, tracker['state'], tracker['contents']) for tracker in trackers]
 
         self.trackers = self.sort(trackers or [])
 
-    def sort(self, trackers):
-        now = get_local_now() # all trackers without date will have the same now, so that they stay in the same order
-        return sorted(trackers, key = lambda tracker : tracker.get_last_event(now = now), reverse = True)
-
-    def _save(self, obj, ext, mode, save):
-        filename = self.filename + ext
-        with open(filename, mode) as f:
-            save(obj, f)
-            _log(f'trackers SAVED to "{filename}"')
-    
     def save(self):
         trackers = self.sort(self.get_not_deleted())
         saved_trackers = [SavedTracker(tracker) for tracker in trackers]
 
         self._save(saved_trackers, '.trck', 'wb', lambda obj, f: pickle.dump(obj, f))
         self._save(saved_trackers, '.json', 'w', lambda obj, f: json.dump(obj, f, default = json_encode_datetime, indent = 4))
+
+    def _load(self, ext, mode, load):
+        filename = self.filename + ext
+        if os.path.exists(filename):
+            with open(filename, mode) as f:
+                obj = load(f)
+            _log(f'trackers LOADED from "{filename}"')
+            
+            return obj
+
+    def _save(self, obj, ext, mode, save):
+        filename = self.filename + ext
+        with open(filename, mode) as f:
+            save(obj, f)
+            _log(f'trackers SAVED to "{filename}"')
+
+    def sort(self, trackers):
+        now = get_local_now() # all trackers without date will have the same now, so that they stay in the same order
+        return sorted(trackers, key = lambda tracker : tracker.get_last_event(now = now), reverse = True)
+
 
     def new(self, idship, description, used_couriers):
         if idship is not None:
