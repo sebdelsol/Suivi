@@ -152,6 +152,7 @@ class Tracker:
     def get_pretty_idship(self):
         return self.idship.strip() or 'N° indéfini'
 
+    # TODO faster without get_consolidated, use self.critical
     def get_delivered(self):
         content = self.get_consolidated_content() 
         return content and content.get('status', {}).get('delivered')
