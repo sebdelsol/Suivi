@@ -9,7 +9,7 @@ window_kwargs = dict(keep_on_top = not is_debugger, no_titlebar = not is_debugge
 def Is_debugger():
     return is_debugger
 
-def Get_window_args(layout, **new_kwargs):
+def Get_window_params(layout, **new_kwargs):
     args = ('', [ [ sg.Frame('', layout, **frame_kwargs) ] ])
     kwargs = window_kwargs.copy()
     kwargs.update(new_kwargs) 

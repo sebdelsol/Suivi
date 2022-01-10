@@ -7,6 +7,8 @@ Archives_color = '#B2560D'
 Edit_color = '#6060FF'
 
 LOAD_AS_JSON = True
+SHOW_EVENTS = False
+SORT_ON_THE_FLY = False
 
 #---------------------------------
 def three_char_month(date_txt, i):
@@ -61,12 +63,12 @@ class Tracker:
     def update(self):
         content_queue = queue.Queue()
         for courier_name in self.used_couriers:
-            _log (f'update START {self.description} {self.idship} {courier_name}')
+            _log (f'update START - {self.description} - {self.get_pretty_idship()}, {courier_name}')
             threading.Thread(target = self.update_thread, args = (courier_name, content_queue)).start()
 
         for _ in range(len(self.used_couriers)):
             courier_name, new_content = content_queue.get()
-            _log (f'update DONE {self.description} {self.idship} {courier_name}')
+            _log (f'update DONE - {self.description} - {self.get_pretty_idship()}, {courier_name}')
 
             with self.critical:
                 if new_content is not None:
@@ -131,9 +133,9 @@ class Tracker:
         if date : # not in future
             return min(date, get_local_now())
 
-    def get_last_event(self):
+    def get_last_event(self, now = None):
         content = self.get_consolidated_content() or {}
-        return content.get('status', {}).get('date', get_local_now())
+        return content.get('status', {}).get('date', now or get_local_now())
 
     def get_pretty_last_event(self):
         last_event = self.get_last_event()
@@ -172,13 +174,15 @@ class Trackers:
         if trackers:
             trackers = [Tracker(tracker['idship'], tracker['description'], tracker['used_couriers'], self.couriers, tracker['state'], tracker['contents']) for tracker in trackers]
 
-        self.trackers = trackers or []
-        self.trackers.sort(key = lambda t : t.get_last_event(), reverse = True)
+        self.trackers = self.sort(trackers or [])
+
+    def sort(self, trackers):
+        now = get_local_now() # all trackers without date will have the same now, so that they stay in the same order
+        return sorted(trackers, key = lambda tracker : tracker.get_last_event(now = now), reverse = True)
 
     def save(self):
-        self.trackers = self.get_not_deleted()
-
-        saved_trackers = [SavedTracker(tracker) for tracker in self.trackers]
+        trackers = self.sort(self.get_not_deleted())
+        saved_trackers = [SavedTracker(tracker) for tracker in trackers]
 
         filename = self.filename + '.trck' 
         with open(filename, 'wb') as f:
@@ -277,7 +281,7 @@ class TrackerWidget:
         id_couriers_widget = sg.Col([[ self.id_widget ], [ self.couriers_widget ]], p = ((5, 0), (b_p, b_p)), background_color = self.bg_color_h, expand_x = True, vertical_alignment = 'top')
         buttons = sg.Col([[button] for button in self.buttons], p = (10, 0), background_color = self.bg_color_h, expand_x = False)
 
-        self.loading_widget = sg.Image(data = self.loading_gif, p = 3, background_color = self.bg_color, k = lambda w : self.toggle_expand(w))
+        self.loading_widget = sg.Image(data = self.loading_gif, p = 3, visible = False, background_color = self.bg_color, k = lambda w : self.toggle_expand(w))
         loading_widget_pin = sg.pin(self.loading_widget)
         loading_widget_pin.BackgroundColor = self.bg_color
 
@@ -346,8 +350,8 @@ class TrackerWidget:
         txt = self.id_widget.get()
         self.id_widget.set_size((len(txt), 1))
 
-    def show_current_content(self, window):
-        self.show(self.tracker.get_consolidated_content(), window)
+    def show_current_content(self, window, force = False):
+        self.show(self.tracker.get_consolidated_content(), window, force)
 
     def show_current_courier_widget(self):
         couriers_update = self.tracker.get_courrier_update()
@@ -359,7 +363,7 @@ class TrackerWidget:
 
             self.disable_buttons(True)
             self.updating = True
-            window.trigger_event('-UPDATING CHANGED-', '')
+            window.trigger_event('-UPDATING CHANGED-', 'start')
             
             self.tracker.prepare_update()
             self.show_current_courier_widget()
@@ -388,15 +392,15 @@ class TrackerWidget:
         self.disable_buttons(False)
         self.loading_widget.update(visible = False)
         self.updating = False
-        window.trigger_event('-UPDATING CHANGED-', '')
+        window.trigger_event('-UPDATING CHANGED-', 'done')
 
     def animate(self, animation_step):
         if self.loading_widget.visible:
             self.loading_widget.update_animation(self.loading_gif, time_between_frames = animation_step)
 
-    def show(self, content, window):
+    def show(self, content, window, force = False):
         tracker = self.tracker
-        if tracker.state == 'shown':
+        if force or tracker.state == 'shown':
             
             delivered = '✔' if content.get('status', {}).get('delivered') else ''
             self.desc_widget.update(f'{tracker.description.strip()}{delivered}') 
@@ -560,6 +564,9 @@ class TrackerWidget:
 
         self.disable_buttons(False)
 
+    def update_visiblity(self):
+        self.layout.update(visible = self.tracker.state=='shown')
+    
     def set_state(self, state, window, ask):
         tracker = self.tracker
 
@@ -569,14 +576,12 @@ class TrackerWidget:
             do_it = popup_warning.loop()
 
         if do_it:
-            if self.lock.acquire(blocking=False): # needed ?
-                tracker.state = state
+            tracker.state = state
 
-                self.layout.update(visible = state=='shown')
-                self.reset_size()
+            self.update_visiblity()
+            self.reset_size()
 
-                window.trigger_event('-UPDATE WIDGETS SIZE-', '')
-                self.lock.release()
+            window.trigger_event('-UPDATE WIDGETS SIZE-', '')
 
     def archive_or_delete(self, window):
         self.disable_buttons(True)
@@ -607,10 +612,14 @@ class TrackerWidget:
 
 # -------------------
 class TrackerWidgets:
-    def __init__(self, window, trackers,splash):
+    def __init__(self, window, trackers, splash):
         self.widgets = []
         self.trackers = trackers
+        
         self.widgets_frame = window['TRACKS']
+        self.widget_menu = window['MENU']
+        self.archives_button = window['-Archives-']
+        self.refresh_button = window['-Refresh-']
 
         n_trackers = len(trackers.trackers)
         for i, tracker in enumerate(trackers.trackers):
@@ -642,8 +651,7 @@ class TrackerWidgets:
         return [widget for widget in self.widgets if widget.tracker.state == state]
 
     def show_archives(self, window):
-        archived = self.get_widgets_with_state('archived')
-        archived.sort(key = lambda w : w.tracker.get_last_event(), reverse = True)
+        archived = self.get_sorted(self.get_widgets_with_state('archived'))
 
         w_desc = max(len(widget.tracker.description) for widget in archived)
         choices = []
@@ -657,24 +665,47 @@ class TrackerWidgets:
         chosen = popup_choices.loop()
 
         for i in chosen:
-            widget = archived[i]
-            widget.unarchive(window)
+            archived[i].unarchive(window)
 
-    def archives_updated(self, archives_button):
+    def archives_updated(self):
         n_archives = self.trackers.count_archived()
         txt, disabled = (f'Archives ({n_archives})', False) if n_archives > 0 else ('Archives', True)
-        archives_button.update(txt, disabled = disabled)
+        self.archives_button.update(txt, disabled = disabled)
 
-    def count_not_updating(self):
-        return [widget.updating for widget in self.get_widgets_with_state('shown')].count(False)
+    def count_updating(self):
+        shown = self.get_widgets_with_state('shown')
+        return [widget.updating for widget in shown].count(True), len(shown)
 
     def update(self, window):
         for widget in self.get_widgets_with_state('shown'):
             widget.update(window)
 
-    def updating_changed(self, refresh_button):
-        n_updating = self.count_not_updating()
-        refresh_button.update(disabled = n_updating == 0)
+    def get_sorted(self, widgets):
+        get_widget = dict((widget.tracker, widget) for widget in widgets)
+        trackers = [widget.tracker for widget in widgets]
+        return [get_widget[tracker] for tracker in self.trackers.sort(trackers)]
+
+    def sort_if_needed(self, window):
+        sorted_widgets = self.get_sorted(self.widgets)
+        if self.widgets!=sorted_widgets:
+            _log (f'SORT Widgets')
+            sorted_trackers = [widget.tracker for widget in sorted_widgets]
+            for widget, tracker in zip(self.widgets, sorted_trackers):
+                if widget.tracker != tracker:
+                    widget.tracker = tracker
+                    widget.show_current_content(window, force = True)
+                    widget.update_visiblity()
+
+            window.trigger_event('-UPDATE WIDGETS SIZE-', '')
+
+    def updating_changed(self, window, event_value):
+        n_updating, n_shown = self.count_updating()
+        self.refresh_button.update(disabled = n_updating == n_shown)
+
+        if SORT_ON_THE_FLY:
+            if event_value == 'done':
+                if n_updating == 0:
+                    self.sort_if_needed(window)
 
     def animate(self, animation_step):
         for widget in self.get_widgets_with_state('shown'):
@@ -694,7 +725,7 @@ class TrackerWidgets:
         # wanted size
         if shown:
             w = max(widget.get_pixel_size()[0] for widget in shown) 
-            h = sum(widget.get_pixel_size()[1] for widget in self.widgets) + window['MENU'].get_size()[1] + 3
+            h = sum(widget.get_pixel_size()[1] for widget in self.widgets) + self.widget_menu.get_size()[1] + 3
         else:
             w, h = 400, 200
 
@@ -735,7 +766,7 @@ class Splash:
     def __init__(self):
         self.log = sg.T('', font = (VarFont, 10))
         layout = [[sg.Image(filename = 'icon/mail.png')], [self.log]]
-        args, kwargs = Get_window_args(layout, grab_anywhere = False)
+        args, kwargs = Get_window_params(layout, grab_anywhere = False)
         self.window = sg.Window(*args, **kwargs)
 
     def update(self, txt):
@@ -796,7 +827,7 @@ class Main_window(sg.Window):
         layout = [[ sg.Col([[ log_b, new_b, refresh_b, archives_b, recenter_widget, exit_b ]], p = 0, background_color = menu_color, expand_x = True, k = 'MENU') ],
                   [ sg.Col([[]], p = 0, scrollable = True, vertical_scroll_only = True, expand_x = True, expand_y = True, background_color = menu_color, k = 'TRACKS') ]]
 
-        args, kwargs = Get_window_args(layout, alpha_channel = 0, resizable = True)
+        args, kwargs = Get_window_params(layout, alpha_channel = 0, resizable = True)
         super().__init__(*args, **kwargs)
 
         MyButton.finalize_all(self)
@@ -851,8 +882,8 @@ class Main_window(sg.Window):
     def event_handler(self):
         window, event, values = sg.read_all_windows()
         
-        # if isinstance(event, str) and 'MouseWheel' not in event: 
-        #     _log (f'{event = }' + (f', {value = }' if (value := values and values.get(event)) else ''))
+        if SHOW_EVENTS and isinstance(event, str) and 'MouseWheel' not in event: 
+            _log (f'{event = }' + (f', {value = }' if (value := values and values.get(event)) else ''))
 
         if callable(event):
             event(window) 
@@ -872,10 +903,10 @@ class Main_window(sg.Window):
                 self.widgets.recenter(window, force = True)
 
             elif event == '-UPDATING CHANGED-':
-                self.widgets.updating_changed(window['-Refresh-'])
+                self.widgets.updating_changed(window, values[event])
 
             elif event == '-ARCHIVE UPDATED-':
-                self.widgets.archives_updated(window['-Archives-'])
+                self.widgets.archives_updated()
 
             elif event == '-UPDATE WIDGETS SIZE-':
                 self.widgets.update_size(window)
@@ -896,7 +927,7 @@ class Main_window(sg.Window):
 if __name__ == "__main__":
 
     # import sys
-    from style import FixFont, FixFontBold, VarFont, VarFontBold, Get_window_args, Is_debugger
+    from style import FixFont, FixFontBold, VarFont, VarFontBold, Get_window_params, Is_debugger
 
     sg.theme('GrayGrayGray')
 

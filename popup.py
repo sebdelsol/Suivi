@@ -4,7 +4,7 @@ import webbrowser
 
 from myWidget import MyButton
 from couriers import Courier
-from style import FixFont, FixFontBold, VarFont, VarFontBold, Get_window_args
+from style import FixFont, FixFontBold, VarFont, VarFontBold, Get_window_params
 
 #-------------
 class MyPopup(sg.Window):
@@ -20,7 +20,7 @@ class MyPopup(sg.Window):
                          MyButton('Cancel', font = (VarFont, 12), button_color = 'grey80', mouseover_color = 'grey95')] )
         layout = [ [ sg.Col(layout, p = 10) ] ]
 
-        args, kwargs = Get_window_args(layout)
+        args, kwargs = Get_window_params(layout)
         super().__init__(*args, **kwargs)
         MyButton.finalize_all(self)
 

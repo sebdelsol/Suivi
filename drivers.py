@@ -50,7 +50,7 @@ class Drivers:
         with self.lock: # prevents driver creation when it's already being created in another thread
             if self.n_created_drivers < self.n_drivers:
 
-                _log ('driver CREATION')
+                _log (f'driver ({self.n_created_drivers+1}/{self.n_drivers}) CREATION')
                 options = webdriver.ChromeOptions()
                 options.headless = True
                 options.binary_location = chrome_exe
