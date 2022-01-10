@@ -5,7 +5,7 @@ import sys
 is_debugger = sys.gettrace()
 
 from myWidget import MyButton
-from style import FixFont, VarFont, Get_window_args
+from style import FixFont, FixFontBold, VarFont, Get_window_args
 
 class MyLog(sg.Window):
     link_txt = '\n'.join('❱❱❱❱❱')
@@ -22,7 +22,8 @@ class MyLog(sg.Window):
         self.resizing = False
         self.visible = False
 
-        log_font, button_font = (FixFont, 7), (VarFont, 12)
+        log_f_size = 8
+        log_font, self.log_font_bold, button_font = (FixFont, log_f_size), (FixFontBold, log_f_size),  (VarFont, 12)
         self.output = sg.MLine('', p = 0, font = log_font, s = (80, 40), auto_refresh = True, autoscroll  = True, disabled = True, border_width = 0, expand_x = True, expand_y = True, background_color = 'grey90')
         self.link_button = MyButton(self.link_txt, p = 0, font = button_font, button_color = ('grey60', 'grey90'), mouseover_color = 'grey80', expand_x = True, expand_y = True, k = 'Link')
 
@@ -48,7 +49,7 @@ class MyLog(sg.Window):
             while True:
                 args, error, kwargs = self.prints.get_nowait()
                 print(*args, **kwargs)
-                self.output.print(*args, **kwargs, t = 'red' if error else 'green')
+                self.output.print(*args, **kwargs, t = 'red' if error else 'green', font = self.log_font_bold if error else None)
 
         except queue.Empty:
             self.TKroot.after(self.listen_step, self.listen)
