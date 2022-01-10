@@ -225,7 +225,7 @@ class TrackerWidget:
     days_intervals = [10, 20, 30]
     days_colors = ['lime green', 'dark orange', 'red', 'black']
 
-    max_event_width = 110 # chars
+    max_event_width = 90 # chars
 
     bg_color = 'grey90'
     bg_color_h = 'grey85'
@@ -413,7 +413,7 @@ class TrackerWidget:
 
                     prt = self.events_widget.print
                     for event in events:
-                        event_courier = f"{event['courier'].rjust(courier_w)}. "
+                        event_courier = f"{event['courier'].rjust(courier_w)}, "
                         
                         day, hour = f"{event['date']:%a %d %b %y, %Hh%M}".replace('.', '').split(',')
                         day = three_char_month(day, 2)
@@ -443,10 +443,15 @@ class TrackerWidget:
                         event_new, f = ('(new) ', self.events_fb) if event.get('new') else ('', self.events_f)
 
                         width = sum( len(txt) for txt in (event_courier, event_date, event_new) )
-                        event_labels = textwrap.wrap(event_label, self.max_event_width - len(event_status), subsequent_indent = ' '* width) or ['']
+
+                        event_labels = textwrap.wrap(event_label, self.max_event_width - len(event_status), drop_whitespace = False) or ['']
+                        if len(event_labels) > 1:
+                            following_labels = textwrap.wrap(''.join(event_labels[1:]), self.max_event_width)
+                            event_labels[1:] = [f"{' '* width}{label.strip()}" for label in following_labels]
+                        event_labels[0] = event_labels[0].strip()
 
                         prt(event_date, font = f, autoscroll = False, t = 'grey', end = '')
-                        prt(event_courier, font = f, autoscroll = False, t = 'light slate blue', end = '')
+                        prt(event_courier, font = f, autoscroll = False, t = 'grey70', end = '')
                         prt(event_new, font = f, autoscroll = False, t = 'black', end = '')
                         prt(event_status, font = self.events_fb if event_warn or event_delivered else f, autoscroll = False, t = event_color or 'black', end = '')
                         for event_label in event_labels:
