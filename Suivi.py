@@ -33,7 +33,7 @@ class Tracker:
         self.set_id(idship, description, used_couriers)
         self.state = state
         self.contents = contents or {}
-
+        # TODO self.creation_date   & sort with it
         self.available_couriers = available_couriers
         self.critical = threading.Lock()
         self.couriers_error = {}
@@ -100,6 +100,7 @@ class Tracker:
         consolidated = {}
 
         with self.critical:
+            # TODO remove hard to read list comprehension
             contents_ok = [copy.deepcopy(content) for courier_name, content in self.contents.items() if courier_name in self.used_couriers and content['ok'] and content.get('idship') == self.idship]
 
             if len(contents_ok) > 0:
