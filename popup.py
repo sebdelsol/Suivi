@@ -113,20 +113,25 @@ class choices(MyPopup):
             t = sg.T(choice, p = 0, font = self.unselected_font, text_color = color, enable_events = True, k = f'txt_choice{i}') 
             rows.append( row(cb, t) )
 
-        col = sg.Col(rows, scrollable = len(rows) > self.max_lines, vertical_scroll_only = True)
-        layout = [ [ col ] ]
+        if rows:
+            col = sg.Col(rows, scrollable = len(rows) > self.max_lines, vertical_scroll_only = True)
+            layout = [[ col ]]
+        
+        else:
+            layout = [[ sg.T('Vide', expand_x = True, font = self.selected_font, text_color = 'red', justification = 'center') ]]
 
         self.choices = choices
         super().__init__(title, layout, main_window)
 
-        for row in rows:
-            row.txt.bind('<Button-1>', '')
+        if rows: 
+            for row in rows:
+                row.txt.bind('<Button-1>', '')
 
-        if col.Scrollable:
-            cb_height = rows[0].cb.get_size()[1]
-            height = cb_height * min(self.max_lines, len(rows))
-            # https://github.com/PySimpleGUI/PySimpleGUI/issues/4407#issuecomment-860863915
-            rows.Widget.canvas.configure(width = None, height = height)    
+            if col.Scrollable:
+                cb_height = rows[0].cb.get_size()[1]
+                height = cb_height * min(self.max_lines, len(rows))
+                # https://github.com/PySimpleGUI/PySimpleGUI/issues/4407#issuecomment-860863915
+                rows.Widget.canvas.configure(width = None, height = height)    
 
     def event_handler(self, event):
         if 'cb_choice' in event:

@@ -5,6 +5,8 @@ TrackersFile = 'Trackers' # either .trck or .json
 Refresh_color = '#408040'
 Archives_color = '#B2560D'
 Edit_color = '#6060FF'
+Trash_color = '#909090'
+Log_color = 'grey'
 
 LOAD_AS_JSON = True
 SHOW_EVENTS = False
@@ -218,8 +220,8 @@ class Trackers:
     def get_archived(self):
         return [tracker for tracker in self.trackers if tracker.state == 'archived']
 
-    def count_archived(self):
-        return len(self.get_archived())
+    def count_state(self, state):
+        return len([tracker for tracker in self.trackers if tracker.state == state])
 
     def close(self):
         self.couriers.close()
@@ -600,6 +602,12 @@ class TrackerWidget:
 
     def delete(self, window):
         self.set_state('deleted', window, ask = 'Supprimer')
+        window.trigger_event('-DELETED UPDATED-', '')
+
+    def undelete(self, window):
+        self.set_state('shown', window, ask = False)
+        window.trigger_event('-DELETED UPDATED-', '')
+        self.update(window)
 
     def archive(self, window):
         self.set_state('archived', window, ask = False)
@@ -620,6 +628,7 @@ class TrackerWidgets:
         self.widget_menu = window['MENU']
         self.archives_button = window['-Archives-']
         self.refresh_button = window['-Refresh-']
+        self.deleted_button = window['-Deleted-']
 
         n_trackers = len(trackers.trackers)
         for i, tracker in enumerate(trackers.trackers):
@@ -627,6 +636,7 @@ class TrackerWidgets:
             self.create_widget(window, tracker, i==0)
 
         window.trigger_event('-ARCHIVE UPDATED-', '')
+        window.trigger_event('-DELETED UPDATED-', '')
         self.update_size(window)
         self.recenter(window, True)
 
@@ -651,26 +661,40 @@ class TrackerWidgets:
         return [widget for widget in self.widgets if widget.tracker.state == state]
 
     def show_archives(self, window):
-        archived = self.get_sorted(self.get_widgets_with_state('archived'))
+        widgets = self.choose(window, 'Désarchiver', 'archived')
 
-        w_desc = max(len(widget.tracker.description) for widget in archived)
+        for widget in widgets:
+            widget.unarchive(window)
+
+    def show_deleted(self, window):
+        widgets = self.choose(window, 'Restaurer', 'deleted')
+
+        for widget in widgets:
+            widget.undelete(window)
+
+    def choose(self, window, title, state):
+        widgets = self.get_sorted(self.get_widgets_with_state(state))
+
+        w_desc = max(len(widget.tracker.description) for widget in widgets) if widgets else 0
         choices = []
-        for widget in archived:
+        for widget in widgets:
             tracker = widget.tracker
             color = 'green' if tracker.get_delivered() else 'red'
             txt = f'{tracker.get_pretty_last_event()}, {tracker.description.ljust(w_desc)} - {tracker.get_pretty_idship()}'
             choices.append((txt, color))
 
-        popup_choices = popup.choices(choices, 'Désarchiver', window)
+        popup_choices = popup.choices(choices, title, window)
         chosen = popup_choices.loop()
 
-        for i in chosen:
-            archived[i].unarchive(window)
+        return [widgets[i] for i in chosen]
 
     def archives_updated(self):
-        n_archives = self.trackers.count_archived()
-        txt, disabled = (f'Archives ({n_archives})', False) if n_archives > 0 else ('Archives', True)
-        self.archives_button.update(txt, disabled = disabled)
+        n_archives = self.trackers.count_state('archived')
+        self.archives_button.update(f'Archive ({n_archives})')
+
+    def deleted_updated(self):
+        n_deleted = self.trackers.count_state('deleted')
+        self.deleted_button.update(f'Poubelle ({n_deleted})')
 
     def count_updating(self):
         shown = self.get_widgets_with_state('shown')
@@ -817,14 +841,15 @@ class Main_window(sg.Window):
         im_height, im_margin = 20, 5
         b_kwargs = dict(im_height = im_height, im_margin = im_margin, font = (VarFontBold, b_f_size), mouseover_color = 'grey90')
 
-        log_b = MyButtonImg('Log', p = b_pad, image_filename = 'icon/log.png', button_color = ('grey', menu_color), k = '-Log-', **b_kwargs)
+        log_b = MyButtonImg('Log', p = b_pad, image_filename = 'icon/log.png', button_color = (Log_color, menu_color), k = '-Log-', **b_kwargs)
         new_b = MyButtonImg('Nouveau', p = (0, b_pad), image_filename = 'icon/edit.png', button_color = (Edit_color, menu_color), k = '-New-', **b_kwargs)
         refresh_b = MyButtonImg('Rafraichir', p = b_pad, image_filename = 'icon/refresh.png', button_color = (Refresh_color, menu_color), k = '-Refresh-', **b_kwargs)
-        archives_b = MyButtonImg('Archives', p = (0, b_pad), image_filename = 'icon/archive.png', button_color = (Archives_color, menu_color), disabled = True, k = '-Archives-', **b_kwargs)
+        archives_b = MyButtonImg('Archive', p = (0, b_pad), image_filename = 'icon/archive.png', button_color = (Archives_color, menu_color), k = '-Archives-', **b_kwargs)
+        trash_b = MyButtonImg('Poubelle', p = b_pad, image_filename = 'icon/trash.png', button_color = (Trash_color, menu_color), k = '-Deleted-', **b_kwargs)
         recenter_widget = sg.T('', background_color = menu_color, p = 0, expand_x = True, expand_y = True, k = '-RECENTER-')
         exit_b = MyButton(' X ', p = b_pad, font = (VarFontBold, b_f_size), button_color = menu_color, mouseover_color = 'red', focus = True, k = '-Exit-')
 
-        layout = [[ sg.Col([[ log_b, new_b, refresh_b, archives_b, recenter_widget, exit_b ]], p = 0, background_color = menu_color, expand_x = True, k = 'MENU') ],
+        layout = [[ sg.Col([[ log_b, new_b, refresh_b, archives_b, trash_b, recenter_widget, exit_b ]], p = 0, background_color = menu_color, expand_x = True, k = 'MENU') ],
                   [ sg.Col([[]], p = 0, scrollable = True, vertical_scroll_only = True, expand_x = True, expand_y = True, background_color = menu_color, k = 'TRACKS') ]]
 
         args, kwargs = Get_window_params(layout, alpha_channel = 0, resizable = True)
@@ -908,6 +933,9 @@ class Main_window(sg.Window):
             elif event == '-ARCHIVE UPDATED-':
                 self.widgets.archives_updated()
 
+            elif event == '-DELETED UPDATED-':
+                self.widgets.deleted_updated()
+
             elif event == '-UPDATE WIDGETS SIZE-':
                 self.widgets.update_size(window)
 
@@ -919,6 +947,9 @@ class Main_window(sg.Window):
 
             elif event == '-Archives-':
                 self.widgets.show_archives(window)
+
+            elif event == '-Deleted-':
+                self.widgets.show_deleted(window)
         
         else:
             return window.event_handler(event)
