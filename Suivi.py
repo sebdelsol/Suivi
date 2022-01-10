@@ -162,15 +162,15 @@ class Trackers:
 
         trackers = None
 
-        ext, mode = ('.json', 'r') if LOAD_AS_JSON else ('.trck', 'rb')
+        if LOAD_AS_JSON:
+            ext, mode, load = '.json', 'r', lambda f: json.load(f, object_hook = json_decode_datetime)
+        else:
+            ext, mode, load = '.trck', 'rb', lambda f: pickle.load(f)
+
         filename += ext
         if os.path.exists(filename):
             with open(filename, mode) as f:
-                if LOAD_AS_JSON:
-                    trackers = json.load(f, object_hook = json_decode_datetime)
-                else:
-                    trackers = pickle.load(f)
-
+                trackers = load(f)
             _log(f'trackers LOADED from "{filename}"')
 
         if trackers:
@@ -182,19 +182,18 @@ class Trackers:
         now = get_local_now() # all trackers without date will have the same now, so that they stay in the same order
         return sorted(trackers, key = lambda tracker : tracker.get_last_event(now = now), reverse = True)
 
+    def _save(self, obj, ext, mode, save):
+        filename = self.filename + ext
+        with open(filename, mode) as f:
+            save(obj, f)
+            _log(f'trackers SAVED to "{filename}"')
+    
     def save(self):
         trackers = self.sort(self.get_not_deleted())
         saved_trackers = [SavedTracker(tracker) for tracker in trackers]
 
-        filename = self.filename + '.trck' 
-        with open(filename, 'wb') as f:
-            pickle.dump(saved_trackers, f)
-            _log(f'trackers SAVED to "{filename}"')
-
-        filename = self.filename + '.json' 
-        with open(filename, 'w') as f:
-            json.dump(saved_trackers, f, default = json_encode_datetime, indent = 4)
-            _log(f'trackers SAVED to "{filename}"')
+        self._save(saved_trackers, '.trck', 'wb', lambda obj, f: pickle.dump(obj, f))
+        self._save(saved_trackers, '.json', 'w', lambda obj, f: json.dump(obj, f, default = json_encode_datetime, indent = 4))
 
     def new(self, idship, description, used_couriers):
         if idship is not None:
@@ -705,7 +704,8 @@ class TrackerWidgets:
     def get_sorted(self, widgets):
         get_widget = dict((widget.tracker, widget) for widget in widgets)
         trackers = [widget.tracker for widget in widgets]
-        return [get_widget[tracker] for tracker in self.trackers.sort(trackers)]
+        sorted_trackers = self.trackers.sort(trackers)
+        return [get_widget[tracker] for tracker in sorted_trackers]
 
     def sort_if_needed(self, window):
         sorted_widgets = self.get_sorted(self.widgets)
