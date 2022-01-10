@@ -64,7 +64,7 @@ class Courier:
 
     idship_check_pattern, idship_check_msg = get_simple_check(8, 20)
 
-    delivered_words = ('delivered', 'final delivery', 'livré', 'distribué')
+    delivered_matchs = (r'delivered', r'final delivery', r'(?<!être) livré', r'(?<!être) distribué')
     error_words = ('error', 'erreur')
 
     subs = ((r'\.$', ''),               # remove ending .
@@ -134,7 +134,7 @@ class Courier:
                 for sub in self.subs:
                     event['label'] = re.sub(sub[0], sub[1], event['label'].strip())
                 
-                event['delivered'] = event.get('delivered', False) or any(delivered_word in event['label'].lower() for delivered_word in self.delivered_words)
+                event['delivered'] = event.get('delivered', False) or any(re.search(match, event['label'].lower()) for match in self.delivered_matchs)
                 if event['delivered']:
                     delivered = True
 
@@ -504,13 +504,13 @@ class LaPoste(Courier):
             
             for event in shipment.get('event', ()):
                 code = event['code']
-                if code in ('DI1', 'DI2'):
-                    delivered = True
+                event_delivered = code in ('DI1', 'DI2')
+                delivered |= event_delivered
 
                 status, warn = self.codes.get(code, '?')
                 label = f"{get_sentence(event['label'], 1)}"
 
-                events.append(dict(date = get_local_time(event['date']), status = status, warn = warn, label = label))
+                events.append(dict(date = get_local_time(event['date']), status = status, warn = warn, label = label, delivered = event_delivered))
 
             status_warn = events[-1]['warn'] if events else False
             return events, dict(product = product, fromto = fromto, delivered = delivered, status_warn = status_warn, status_label = status_label.replace('.', ''))
