@@ -757,7 +757,7 @@ class TrackerWidgets:
 
         if h > screen_h - h_screen_margin:
             self.widgets_frame.Widget.vscrollbar.pack(side=sg.tk.RIGHT, fill='y')
-            w += 15 # size of scrollbar
+            w += int(self.widgets_frame.Widget.vscrollbar['width']) 
 
         else:
             self.widgets_frame.Widget.vscrollbar.pack_forget()
