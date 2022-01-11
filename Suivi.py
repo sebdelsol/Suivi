@@ -2,15 +2,103 @@ import PySimpleGUI as sg
 
 TrackersFile = 'Trackers' # either .trck or .json 
 
+LOAD_AS_JSON = True
+SHOW_EVENTS = False
+SORT_ON_THE_FLY = False
+
+#-----------------------
 Refresh_color = '#408040'
 Archives_color = '#B2560D'
 Edit_color = '#6060FF'
 Trash_color = '#909090'
 Log_color = 'grey'
 
-LOAD_AS_JSON = True
-SHOW_EVENTS = False
-SORT_ON_THE_FLY = False
+Log_txt = 'Log'
+New_txt = 'Nouveau'
+Refresh_Txt = 'Rafraichir'
+Archives_txt = 'Archive'
+Trash_txt = 'Poubelle'
+Exit_txt = ' X '
+
+Do_delete_txt = 'Supprimer'
+Do_archive_txt = 'Archiver'
+Do_restore_txt = 'Restaurer'
+Do_unarchive_txt = 'Désarchiver'
+Do_edit_txt = 'Édition'
+
+Init_txt = 'inititialisation'
+Tracker_creation_txt = 'création suivi'
+Updating_txt ='Mise à jour... '
+Updated_txt = 'MàJ'
+Empty_txt = 'Vide'
+No_couriers_txt = 'Pas de Service Postaux'
+No_idship_txt = 'N° indéfini'
+Never_txt = 'jamais'
+Ago_txt = 'il y a'
+Unkown_status_txt = 'Status inconnu'
+Default_product_txt = 'Envoi'
+
+#-----------------------
+Log_img = 'icon/log.png'
+Edit_img = 'icon/edit.png'
+Refresh_img = 'icon/refresh.png'
+Archives_img = 'icon/archive.png'
+Trash_img = 'icon/trash.png'
+Mail_img = 'icon/mail.png'
+
+#-----------------------
+delete_state = 'deleted'
+archived_state = 'archived'
+shown_state = 'shown'
+
+#----------------------------
+Recenter_event = '-RECENTER-'
+Updating_changed_event = '-UPDATING CHANGED-'
+Updating_done_event = 'done'
+Archive_update_event = '-ARCHIVE UPDATED-'
+Delete_updated_event = '-DELETE UPDATED-'
+Update_widgets_size_event = '-UPDATE WIDGETS SIZE-'
+
+New_event = '-New-'
+Refresh_event = '-Refresh-'
+Archives_event = '-Archives-'
+Trash_event = '-Trash-'
+Log_event = '-Log-'
+Exit_event = '-Exit-'
+
+Menu_key = 'MENU'
+Its_empty_key = 'ITS EMPTY'
+Tracker_widgets_key = 'TRACKS'
+
+Exit_shorcuts = ('Escape:27', )
+Log_shorcut = 'l'
+
+#--------------------
+menu_color = 'grey75'
+empty_color = 'grey90'
+empty_font_size = 20
+menu_button_pad = 5
+menu_button_font_size = 12
+menu_button_img_height = 20
+menu_button_img_margin = 5
+
+widget_button_pad = 4
+widget_courier_font_size = 8
+widget_event_font_size = 8
+widget_elapsed_days_box_size = 50
+widget_elapsed_days_font_size = 15
+widget_description_font_size = 40
+widget_idship_font_size = 10
+widget_status_font_size = 15
+widget_expand_font_size = 10
+widget_button_size = 22
+widget_button_img_percent = .6
+widget_background_title_color = 'grey85'
+widget_background_event_color = 'grey90'
+widget_event_max_width = 90
+widget_min_events_shown = 1
+widget_elpapse_days_intervals = [10, 20, 30]
+widget_elpased_days_colors = ['lime green', 'dark orange', 'red', 'black']
 
 #---------------------------------
 def three_char_month(date_txt, i):
@@ -29,7 +117,7 @@ class SavedTracker(dict):
 
 #-------------
 class Tracker:
-    def __init__(self, idship, description, used_couriers, available_couriers, state = 'shown', contents = None, creation_date = None):
+    def __init__(self, idship, description, used_couriers, available_couriers, state = shown_state, contents = None, creation_date = None):
         self.set_id(idship, description, used_couriers)
         self.state = state
         self.contents = contents or {}
@@ -135,20 +223,12 @@ class Tracker:
         if date : # not in future
             return min(date, get_local_now())
 
-    # def get_last_event(self, now = None):
-    #     content = self.get_consolidated_content() or {}
-    #     return content.get('status', {}).get('date', now or get_local_now())
-
-    # def get_pretty_last_event(self):
-    #     last_event = self.get_last_event()
-    #     if last_event:
-    #         date = f'{last_event:%a %d %b %y}'.replace('.', '')
-    #         return three_char_month(date, 2)
-    #     else:
-    #         return 'Pas de date'
+    def get_pretty_creation_date(self):
+        date = f'{self.creation_date:%a %d %b %y}'.replace('.', '')
+        return three_char_month(date, 2)
 
     def get_pretty_idship(self):
-        return self.idship.strip() or 'N° indéfini'
+        return self.idship.strip() or No_idship_txt 
 
     def get_delivered(self):
         content = self.get_consolidated_content() 
@@ -214,10 +294,10 @@ class Trackers:
     #                 courier.clean(valid_idships, archived_idships)
 
     def get_not_deleted(self):
-        return [tracker for tracker in self.trackers if tracker.state != 'deleted']
+        return [tracker for tracker in self.trackers if tracker.state != delete_state]
     
     def get_archived(self):
-        return [tracker for tracker in self.trackers if tracker.state == 'archived']
+        return [tracker for tracker in self.trackers if tracker.state == archived_state]
 
     def count_state(self, state):
         return len([tracker for tracker in self.trackers if tracker.state == state])
@@ -227,17 +307,14 @@ class Trackers:
 
 #-------------------
 class TrackerWidget:
-    min_events_shown = 1
-    days_intervals = [10, 20, 30]
-    days_colors = ['lime green', 'dark orange', 'red', 'black']
+    min_events_shown = widget_min_events_shown
+    days_intervals = widget_elpapse_days_intervals
+    days_colors = widget_elpased_days_colors
 
-    max_event_width = 90 # chars
+    max_event_width = widget_event_max_width # chars
 
-    bg_color = 'grey90'
-    bg_color_h = 'grey85'
-
-    button_size = (22, 22)
-    img_per = .6
+    button_size = (widget_button_size, widget_button_size)
+    img_per = widget_button_img_percent
     loading_gif, refresh_img, edit_img, archive_img = None, None, None, None
 
     def __init__(self, tracker):
@@ -252,9 +329,9 @@ class TrackerWidget:
             TrackerWidget.loading_gif = resize_and_colorize_gif(sg.DEFAULT_BASE64_LOADING_GIF, 20, Refresh_color)
 
             height = self.button_size[1] * self.img_per
-            TrackerWidget.refresh_img = resize_and_colorize_img('icon/refresh.png', height, Refresh_color, self.button_size)
-            TrackerWidget.edit_img = resize_and_colorize_img('icon/edit.png', height, Edit_color, self.button_size)
-            TrackerWidget.archive_img = resize_and_colorize_img('icon/archive.png', height, Archives_color, self.button_size)
+            TrackerWidget.refresh_img = resize_and_colorize_img(Refresh_img, height, Refresh_color, self.button_size)
+            TrackerWidget.edit_img = resize_and_colorize_img(Edit_img, height, Edit_color, self.button_size)
+            TrackerWidget.archive_img = resize_and_colorize_img(Archives_img, height, Archives_color, self.button_size)
 
     def reset_size(self):
         self.width_events = 0
@@ -262,45 +339,48 @@ class TrackerWidget:
         self.expand_events = False
 
     def create_layout(self, first = False):
-        b_p = 4
-        b_colors = dict(button_color = self.bg_color_h, mouseover_color = 'grey95')
+        bg_color_h = widget_background_title_color
+        bg_color = widget_background_event_color
+
+        b_p = widget_button_pad
+        b_colors = dict(button_color = bg_color_h, mouseover_color = 'grey95')
         self.buttons = [ MyButton('', image_data = self.edit_img, p = (0, b_p), **b_colors, k = self.edit),
                          MyButton('', image_data = self.refresh_img, p = 0, **b_colors, k = self.update),
                          MyButton('', image_data = self.archive_img, p = (0, b_p), **b_colors, k = self.archive_or_delete) ]
 
-        self.courier_fsize = 8
-        self.events_f = (FixFont, 8)
-        self.events_fb = (FixFontBold, 8)
+        self.courier_fsize = widget_courier_font_size
+        self.events_f = (FixFont, widget_event_font_size)
+        self.events_fb = (FixFontBold, widget_event_font_size)
         
-        self.days_size = 50
-        self.days_font = (FixFontBold, 15) 
-        self.days_widget = MyGraph(canvas_size=(self.days_size, self.days_size), graph_bottom_left=(0, 0), graph_top_right=(self.days_size, self.days_size), p = (10, 0), background_color=self.bg_color_h)
-        self.desc_widget = sg.T('', p = 0, font = (VarFont, 40), text_color = 'grey40', background_color = self.bg_color_h, expand_x = True, justification = 'l') 
+        self.days_size = widget_elapsed_days_box_size
+        self.days_font = (FixFontBold, widget_elapsed_days_font_size) 
+        self.days_widget = MyGraph(canvas_size=(self.days_size, self.days_size), graph_bottom_left=(0, 0), graph_top_right=(self.days_size, self.days_size), p = (10, 0), background_color = bg_color_h)
+        self.desc_widget = sg.T('', p = 0, font = (VarFont, widget_description_font_size), text_color = 'grey40', background_color = bg_color_h, expand_x = True, justification = 'l') 
 
-        self.id_widget = sg.MLine('', p = 0, font = (FixFont, 10), disabled = True, border_width = 0, no_scrollbar = True, background_color = self.bg_color_h, expand_x = True, justification = 'r')
-        self.couriers_widget = sg.MLine('', p = 0, font = (FixFont, self.courier_fsize), disabled = True, border_width = 0, no_scrollbar = True, background_color = self.bg_color_h, expand_x = True, justification = 'r')
-        id_couriers_widget = sg.Col([[ self.id_widget ], [ self.couriers_widget ]], p = ((5, 0), (b_p, b_p)), background_color = self.bg_color_h, expand_x = True, vertical_alignment = 'top')
-        buttons = sg.Col([[button] for button in self.buttons], p = (10, 0), background_color = self.bg_color_h, expand_x = False)
+        self.id_widget = sg.MLine('', p = 0, font = (FixFont, widget_idship_font_size), disabled = True, border_width = 0, no_scrollbar = True, background_color = bg_color_h, expand_x = True, justification = 'r')
+        self.couriers_widget = sg.MLine('', p = 0, font = (FixFont, self.courier_fsize), disabled = True, border_width = 0, no_scrollbar = True, background_color = bg_color_h, expand_x = True, justification = 'r')
+        id_couriers_widget = sg.Col([[ self.id_widget ], [ self.couriers_widget ]], p = ((5, 0), (b_p, b_p)), background_color = bg_color_h, expand_x = True, vertical_alignment = 'top')
+        buttons = sg.Col([[button] for button in self.buttons], p = (10, 0), background_color = bg_color_h, expand_x = False)
 
-        self.loading_widget = sg.Image(data = self.loading_gif, p = 3, visible = False, background_color = self.bg_color, k = lambda w : self.toggle_expand(w))
+        self.loading_widget = sg.Image(data = self.loading_gif, p = 3, visible = False, background_color = bg_color, k = lambda w : self.toggle_expand(w))
         loading_widget_pin = sg.pin(self.loading_widget)
-        loading_widget_pin.BackgroundColor = self.bg_color
+        loading_widget_pin.BackgroundColor = bg_color
 
-        self.ago_widget = sg.T('', p = 0, font = (VarFont, 15), expand_x = False, background_color = self.bg_color, text_color = 'grey50', k = lambda w : self.toggle_expand(w))
-        self.status_widget = sg.T('', p = 0, font = (VarFont, 15), expand_x = True, background_color = self.bg_color, k = lambda w : self.toggle_expand(w))
-        self.expand_button = MyButton('▼', p = (b_p, 0), font = (VarFont, 10), button_color = ('grey70', self.bg_color), mouseover_color = 'grey95', k = lambda w : self.toggle_expand(w))
+        self.ago_widget = sg.T('', p = 0, font = (VarFont, widget_status_font_size), expand_x = False, background_color = bg_color, text_color = 'grey50', k = lambda w : self.toggle_expand(w))
+        self.status_widget = sg.T('', p = 0, font = (VarFont, widget_status_font_size), expand_x = True, background_color = bg_color, k = lambda w : self.toggle_expand(w))
+        self.expand_button = MyButton('▼', p = (b_p, 0), font = (VarFont, widget_expand_font_size), button_color = ('grey70', bg_color), mouseover_color = 'grey95', k = lambda w : self.toggle_expand(w))
 
-        self.events_widget = sg.MLine('', p = ((5, 5), (0, 5)), font = self.events_f, visible = False, disabled = True, border_width = 0, background_color = self.bg_color, no_scrollbar = True, s = (None, 1), expand_x = True, k = self.toggle_expand)
-        events_widget_pin = sg.pin(sg.Col([ [self.events_widget] ], p = (10, 0), background_color = self.bg_color, expand_x = True), expand_x = True)
-        events_widget_pin.BackgroundColor = self.bg_color
+        self.events_widget = sg.MLine('', p = ((5, 5), (0, 5)), font = self.events_f, visible = False, disabled = True, border_width = 0, background_color = bg_color, no_scrollbar = True, s = (None, 1), expand_x = True, k = self.toggle_expand)
+        events_widget_pin = sg.pin(sg.Col([ [self.events_widget] ], p = (10, 0), background_color = bg_color, expand_x = True), expand_x = True)
+        events_widget_pin.BackgroundColor = bg_color
 
-        layout = [ [ sg.Col([[ self.days_widget, self.desc_widget, id_couriers_widget, buttons ]], p = 0, background_color = self.bg_color_h, expand_x = True) ],
-                   [ sg.Col([[ loading_widget_pin, self.ago_widget, self.status_widget, self.expand_button ]], p = (10, 0), background_color = self.bg_color, expand_x = True) ],
+        layout = [ [ sg.Col([[ self.days_widget, self.desc_widget, id_couriers_widget, buttons ]], p = 0, background_color = bg_color_h, expand_x = True) ],
+                   [ sg.Col([[ loading_widget_pin, self.ago_widget, self.status_widget, self.expand_button ]], p = (10, 0), background_color = bg_color, expand_x = True) ],
                    [ events_widget_pin ] ]
 
-        self.layout = sg.Col(layout, expand_x = True, p = 0, visible = self.tracker.state == 'shown', background_color = self.bg_color)
+        self.layout = sg.Col(layout, expand_x = True, p = 0, visible = self.tracker.state == shown_state, background_color = bg_color)
         self.pin = sg.pin(self.layout, expand_x = True) # collapse when hidden
-        self.pin.BackgroundColor = self.bg_color_h if first else self.bg_color
+        self.pin.BackgroundColor = bg_color_h if first else bg_color
         return [[ self.pin ]]
 
     def finalize(self, window):
@@ -320,12 +400,12 @@ class TrackerWidget:
             widget.bind('<Button-1>', '')
         
         self.show_current_content(window)
-
+    
     def toggle_expand(self, window):
         self.expand_events = not self.expand_events
         self.update_expand_button()
 
-        window.trigger_event('-UPDATE WIDGETS SIZE-', '')
+        window.trigger_event(Update_widgets_size_event, '')
 
     def update_expand_button(self):
         is_visible = self.is_events_visible() and self.height_events >  self.min_events_shown
@@ -360,11 +440,11 @@ class TrackerWidget:
         self.update_couriers_id_size()
 
     def update(self, window):
-        if self.tracker.state == 'shown' and self.lock.acquire(blocking = False):
+        if self.tracker.state == shown_state and self.lock.acquire(blocking = False):
 
             self.disable_buttons(True)
             self.updating = True
-            window.trigger_event('-UPDATING CHANGED-', 'start')
+            window.trigger_event(Updating_changed_event, '')
             
             self.tracker.prepare_update()
             self.show_current_courier_widget()
@@ -394,7 +474,7 @@ class TrackerWidget:
         self.disable_buttons(False)
         self.loading_widget.update(visible = False)
         self.updating = False
-        window.trigger_event('-UPDATING CHANGED-', 'done')
+        window.trigger_event(Updating_changed_event, Updating_done_event)
 
     def animate(self, animation_step):
         if self.loading_widget.visible:
@@ -402,7 +482,7 @@ class TrackerWidget:
 
     def show(self, content, window, force = False):
         tracker = self.tracker
-        if force or tracker.state == 'shown':
+        if force or tracker.state == shown_state:
             
             delivered = '✔' if content.get('status', {}).get('delivered') else ''
             self.desc_widget.update(f'{tracker.description.strip()}{delivered}') 
@@ -478,7 +558,7 @@ class TrackerWidget:
             else:
                 self.width_events = 0
                 self.height_events = 0
-                self.status_widget.update('Status inconnu', text_color = 'red')
+                self.status_widget.update(Unkown_status_txt, text_color = 'red') 
                 self.desc_widget.update(text_color = 'grey70')
 
             self.show_id(content)
@@ -506,12 +586,12 @@ class TrackerWidget:
             self.events_widget.update(visible = self.is_events_visible())
             self.update_expand_button()
 
-            window.trigger_event('-UPDATE WIDGETS SIZE-', '')
+            window.trigger_event(Update_widgets_size_event, '')
 
     def show_id(self, content):
         self.id_widget.update('') 
 
-        product = content.get('product', 'Envoi')
+        product = content.get('product', Default_product_txt) 
         fromto = content.get('fromto')
         fromto = f' {fromto.lower()} ' if fromto else ' '
 
@@ -527,11 +607,10 @@ class TrackerWidget:
 
             self.couriers_widget.update('') 
             
-            maj = 'Mise à jour... '
             txts = []
             for name in couriers_update_names:
                 date, error, updating = couriers_update[name]
-                ago_color, ago = ('green', f"{timeago.format(date, get_local_now(), 'fr').replace('il y a', '').strip()}") if date else ('red' , 'jamais')
+                ago_color, ago = ('green', f"{timeago.format(date, get_local_now(), 'fr').replace(Ago_txt, '').strip()}") if date else ('red' , Never_txt)
                 name_color, name_font = ('red', FixFontBold) if error else ('green', FixFont)
                 txts.append((updating, ago, ago_color, name, name_color, name_font))
 
@@ -540,14 +619,14 @@ class TrackerWidget:
 
             prt = self.couriers_widget.print
             for updating, ago, ago_color, name, name_color, name_font in txts:
-                maj_txt = maj if updating else ' ' * len(maj)
+                maj_txt = Updating_txt if updating else ' ' * len(Updating_txt)
                 prt(maj_txt, autoscroll = False, font = (FixFontBold, self.courier_fsize), t = Refresh_color, end = '')
                 prt(name.rjust(width_name), autoscroll = False, t = name_color, font = (name_font, self.courier_fsize), end = '')
-                prt(', MàJ ', autoscroll = False, t = 'grey60', end = '')
+                prt(f', {Updated_txt} ', autoscroll = False, t = 'grey60', end = '') 
                 prt(ago.ljust(width_ago), autoscroll = False, t = ago_color)
         
         else:
-            self.couriers_widget.update('Pas de trackers', text_color = 'red')
+            self.couriers_widget.update(f"{' ' * len(Updating_txt)}{No_couriers_txt}", text_color = 'red')
 
     def disable_buttons(self, disabled):
         for button in  self.buttons:
@@ -556,7 +635,7 @@ class TrackerWidget:
     def edit(self, window):
         self.disable_buttons(True)
 
-        popup_edit = popup.edit('Édition', self.tracker.idship, self.tracker.description, self.tracker.used_couriers, self.tracker.available_couriers, window)
+        popup_edit = popup.edit(Do_edit_txt, self.tracker.idship, self.tracker.description, self.tracker.used_couriers, self.tracker.available_couriers, window)
         idship, description, used_couriers = popup_edit.loop()
         
         if idship is not None:
@@ -567,13 +646,13 @@ class TrackerWidget:
         self.disable_buttons(False)
 
     def update_visiblity(self):
-        self.layout.update(visible = self.tracker.state=='shown')
+        self.layout.update(visible = self.tracker.state==shown_state)
     
     def archive_or_delete(self, window):
         self.disable_buttons(True)
 
-        choices = {'Archiver': self.archive, 'Supprimer': self.delete}
-        choices_colors = {'Archiver':'green', 'Supprimer':'red', False:'grey75'}
+        choices = {Do_archive_txt: self.archive, Do_delete_txt: self.delete}
+        choices_colors = {Do_archive_txt:'green', Do_delete_txt:'red', False:'grey75'}
         tracker = self.tracker
         
         popup_one_choice = popup.one_choice(choices.keys(), choices_colors, f'{tracker.description} - {tracker.get_pretty_idship()}', window)
@@ -598,23 +677,23 @@ class TrackerWidget:
             self.update_visiblity()
             self.reset_size()
 
-            window.trigger_event('-UPDATE WIDGETS SIZE-', '')
+            window.trigger_event(Update_widgets_size_event, '')
             
             window.trigger_event(event, '')
             if do_update:
                 self.update(window)
 
     def delete(self, window):
-        self.set_state('deleted', window, 'Supprimer', '-DELETED UPDATED-')
+        self.set_state(delete_state, window, Do_delete_txt, Delete_updated_event)
 
     def undelete(self, window):
-        self.set_state('shown', window, False, '-DELETED UPDATED-', True)
+        self.set_state(shown_state, window, False, Delete_updated_event, True)
 
     def archive(self, window):
-        self.set_state('archived', window, False, '-ARCHIVE UPDATED-')
+        self.set_state(archived_state, window, False, Archive_update_event)
 
     def unarchive(self, window):
-        self.set_state('shown', window, False, '-ARCHIVE UPDATED-', True)
+        self.set_state(shown_state, window, False, Archive_update_event, True)
 
 # -------------------
 class TrackerWidgets:
@@ -622,18 +701,19 @@ class TrackerWidgets:
         self.widgets = []
         self.trackers = trackers
         
-        self.widgets_frame = window['TRACKS']
-        self.widget_menu = window['MENU']
-        self.archives_button = window['-Archives-']
-        self.refresh_button = window['-Refresh-']
-        self.deleted_button = window['-Deleted-']
+        self.widgets_frame = window[Tracker_widgets_key]
+        self.widget_menu = window[Menu_key]
+        self.archives_button = window[Archives_event]
+        self.refresh_button = window[Refresh_event]
+        self.deleted_button = window[Trash_event]
+        self.its_empty = window[Its_empty_key]
 
-        window.trigger_event('-ARCHIVE UPDATED-', '')
-        window.trigger_event('-DELETED UPDATED-', '')
+        self.archives_updated()
+        self.deleted_updated()
 
         n_trackers = len(trackers.trackers)
         for i, tracker in enumerate(trackers.trackers):
-            splash.update(f'création suivi {i + 1}/{n_trackers}')
+            splash.update(f'{Tracker_creation_txt} {i + 1}/{n_trackers}')
             self.create_widget(window, tracker, i==0)
 
         self.update_size(window)
@@ -644,12 +724,12 @@ class TrackerWidgets:
 
         window.extend_layout(self.widgets_frame, widget.create_layout(first))
         self.widgets.append(widget)
-
+        
         widget.finalize(window)
         widget.update(window)
 
     def new(self, window):
-        popup_edit = popup.edit('Nouveau', '', 'Nouveau', [], self.trackers.couriers, window)
+        popup_edit = popup.edit(New_txt, '', New_txt, [], self.trackers.couriers, window)
         tracker_params = popup_edit.loop()
         
         tracker = self.trackers.new(*tracker_params)
@@ -660,13 +740,13 @@ class TrackerWidgets:
         return [widget for widget in self.widgets if widget.tracker.state == state]
 
     def show_archives(self, window):
-        widgets = self.choose(window, 'Désarchiver', 'archived')
+        widgets = self.choose(window, Do_unarchive_txt, archived_state)
 
         for widget in widgets:
             widget.unarchive(window)
 
     def show_deleted(self, window):
-        widgets = self.choose(window, 'Restaurer', 'deleted')
+        widgets = self.choose(window, Do_restore_txt, delete_state)
 
         for widget in widgets:
             widget.undelete(window)
@@ -679,7 +759,7 @@ class TrackerWidgets:
         for widget in widgets:
             tracker = widget.tracker
             color = 'green' if tracker.get_delivered() else 'red'
-            # txt = f'{tracker.get_pretty_last_event()}, {tracker.description.ljust(w_desc)} - {tracker.get_pretty_idship()}'
+            # txt = f'{tracker.get_pretty_creation_date()}, {tracker.description.ljust(w_desc)} - {tracker.get_pretty_idship()}'
             txt = f'{tracker.description.ljust(w_desc)} - {tracker.get_pretty_idship()}'
             choices.append((txt, color))
 
@@ -689,19 +769,19 @@ class TrackerWidgets:
         return [widgets[i] for i in chosen]
 
     def archives_updated(self):
-        n_archives = self.trackers.count_state('archived')
-        self.archives_button.update(f'Archive ({n_archives})')
+        n_archives = self.trackers.count_state(archived_state)
+        self.archives_button.update(f'{Archives_txt}({n_archives})')
 
     def deleted_updated(self):
-        n_deleted = self.trackers.count_state('deleted')
-        self.deleted_button.update(f'Poubelle ({n_deleted})')
+        n_deleted = self.trackers.count_state(delete_state)
+        self.deleted_button.update(f'{Trash_txt}({n_deleted})')
 
     def count_updating(self):
-        shown = self.get_widgets_with_state('shown')
+        shown = self.get_widgets_with_state(shown_state)
         return [widget.updating for widget in shown].count(True), len(shown)
 
     def update(self, window):
-        for widget in self.get_widgets_with_state('shown'):
+        for widget in self.get_widgets_with_state(shown_state):
             widget.update(window)
 
     def get_sorted(self, widgets):
@@ -718,58 +798,68 @@ class TrackerWidgets:
                     widget.show_current_content(window, force = True)
                     widget.update_visiblity()
 
-            window.trigger_event('-UPDATE WIDGETS SIZE-', '')
+            window.trigger_event(Update_widgets_size_event, '')
 
     def updating_changed(self, window, event_value):
         n_updating, n_shown = self.count_updating()
         self.refresh_button.update(disabled = n_updating == n_shown)
 
         if SORT_ON_THE_FLY:
-            if event_value == 'done':
+            if event_value == Updating_done_event:
                 if n_updating == 0:
                     self.sort_if_needed(window)
 
     def animate(self, animation_step):
-        for widget in self.get_widgets_with_state('shown'):
+        for widget in self.get_widgets_with_state(shown_state):
             widget.animate(animation_step)
-    
+
     def update_size(self, window):
-        shown = self.get_widgets_with_state('shown')
+        shown = self.get_widgets_with_state(shown_state)
 
         # resize all widgets with the max width & and change pin color
-        max_width = max(widget.width_events for widget in shown) if shown else 0
+        max_width_shown = max(widget.width_events for widget in shown) if shown else 0
         for widget in shown:
-            widget.update_size(max_width)
+            widget.update_size(max_width_shown)
 
-        window.refresh()
+        self.its_empty.update(visible = False if shown else True)
+
+        window.refresh() # for getting correct pixel sizes
         self.widgets_frame.contents_changed()
+
+        menu_w = self.widget_menu.Widget.winfo_reqwidth()
+        menu_h = self.widget_menu.Widget.winfo_reqheight()
 
         # wanted size
         if shown:
             w = max(widget.get_pixel_size()[0] for widget in shown) 
-            h = sum(widget.get_pixel_size()[1] for widget in self.widgets) + self.widget_menu.get_size()[1] + 3
-        else:
-            w, h = 400, 200
+            h = sum(widget.get_pixel_size()[1] for widget in self.widgets) + menu_h + 3
 
-        # need scrollbar ?
-        screen_w, screen_h = window.get_screen_size()
-        h_screen_margin = 0 #400
+            # need scrollbar ?
+            screen_w, screen_h = window.get_screen_size()
+            h_screen_margin = 0 #400
+            max_h = screen_h - h_screen_margin
 
-        if h > screen_h - h_screen_margin:
-            self.widgets_frame.Widget.vscrollbar.pack(side=sg.tk.RIGHT, fill='y')
-            w += int(self.widgets_frame.Widget.vscrollbar['width']) 
+            if h > max_h:
+                self.widgets_frame.Widget.vscrollbar.pack(side=sg.tk.RIGHT, fill='y')
+                w += int(self.widgets_frame.Widget.vscrollbar['width']) 
 
+            else:
+                self.widgets_frame.Widget.vscrollbar.pack_forget()
+
+            window.size = max(menu_w, min(w, screen_w)), min(h, max_h)
+
+            self.recenter(window)
+        
         else:
             self.widgets_frame.Widget.vscrollbar.pack_forget()
 
-        # min size
-        window.set_min_size((min(w, screen_w), min(h, screen_h - h_screen_margin)))
-
-        # shrink window if needed
-        window_w, window_h = window.size
-        window.size = min(w, window_w), min(h, window_h)
-
-        self.recenter(window)
+            # need to set height beacuse the scrollbar missing prevents the right height computation in pySimpleGUI
+            window.size = menu_w, menu_h + self.its_empty.Widget.winfo_reqheight() + self.its_empty.Pad[1] * 2
+            
+            # add spaces in its_empty to fit w
+            wfont = font.Font(self.its_empty.ParentForm.TKroot, self.its_empty.Font)
+            spaces = round(menu_w / wfont.measure(' ')) # in ' '
+            self.its_empty.update(Empty_txt.center(spaces))
 
     def recenter(self, window, force = False):
         W, H = window.get_screen_size()
@@ -781,13 +871,12 @@ class TrackerWidgets:
         else:
             y = max(0, int((H-h)*.5)) if y+h > H else y
         window.move(x, y)
-        window.refresh()
 
 # ---------------------------------------------
 class Splash:
     def __init__(self):
         self.log = sg.T('', font = (VarFont, 10))
-        layout = [[sg.Image(filename = 'icon/mail.png')], [self.log]]
+        layout = [[sg.Image(filename = Mail_img)], [self.log]] 
         args, kwargs = Get_window_params(layout, grab_anywhere = False)
         self.window = sg.Window(*args, **kwargs)
 
@@ -834,21 +923,24 @@ class Main_window(sg.Window):
     animation_step = 100
 
     def __init__(self):
-        menu_color = 'grey75'
-        b_pad, b_f_size = 10, 12
-        im_height, im_margin = 20, 5
-        b_kwargs = dict(im_height = im_height, im_margin = im_margin, font = (VarFontBold, b_f_size), mouseover_color = 'grey90')
+        p = menu_button_pad
+        fs = menu_button_font_size
+        b_kwargs = dict(im_height = menu_button_img_height, im_margin = menu_button_img_margin, font = (VarFontBold, fs), mouseover_color = 'grey90')
 
-        log_b = MyButtonImg('Log', p = b_pad, image_filename = 'icon/log.png', button_color = (Log_color, menu_color), k = '-Log-', **b_kwargs)
-        new_b = MyButtonImg('Nouveau', p = (0, b_pad), image_filename = 'icon/edit.png', button_color = (Edit_color, menu_color), k = '-New-', **b_kwargs)
-        refresh_b = MyButtonImg('Rafraichir', p = b_pad, image_filename = 'icon/refresh.png', button_color = (Refresh_color, menu_color), k = '-Refresh-', **b_kwargs)
-        archives_b = MyButtonImg('Archive', p = (0, b_pad), image_filename = 'icon/archive.png', button_color = (Archives_color, menu_color), k = '-Archives-', **b_kwargs)
-        trash_b = MyButtonImg('Poubelle', p = b_pad, image_filename = 'icon/trash.png', button_color = (Trash_color, menu_color), k = '-Deleted-', **b_kwargs)
-        recenter_widget = sg.T('', background_color = menu_color, p = 0, expand_x = True, expand_y = True, k = '-RECENTER-')
-        exit_b = MyButton(' X ', p = b_pad, font = (VarFontBold, b_f_size), button_color = menu_color, mouseover_color = 'red', focus = True, k = '-Exit-')
+        log_b = MyButtonImg(Log_txt, p = p, image_filename = Log_img, button_color = (Log_color, menu_color), k = Log_event, **b_kwargs)
+        new_b = MyButtonImg(New_txt, p = (0, p), image_filename = Edit_img, button_color = (Edit_color, menu_color), k = New_event, **b_kwargs)
+        refresh_b = MyButtonImg(Refresh_Txt, p = p, image_filename = Refresh_img, button_color = (Refresh_color, menu_color), k = Refresh_event, **b_kwargs)
+        archives_b = MyButtonImg(Archives_txt, p = (0, p), image_filename = Archives_img, button_color = (Archives_color, menu_color), k = Archives_event, **b_kwargs)
+        trash_b = MyButtonImg(Trash_txt, p = p, image_filename = Trash_img, button_color = (Trash_color, menu_color), k = Trash_event, **b_kwargs)
+        recenter_widget = sg.T('', background_color = menu_color, p = 0, expand_x = True, expand_y = True, k = Recenter_event) 
+        exit_b = MyButton(Exit_txt, p = p, font = (VarFontBold, fs), button_color = menu_color, mouseover_color = 'red', focus = True, k = Exit_event)
 
-        layout = [[ sg.Col([[ log_b, new_b, refresh_b, archives_b, trash_b, recenter_widget, exit_b ]], p = 0, background_color = menu_color, expand_x = True, k = 'MENU') ],
-                  [ sg.Col([[]], p = 0, scrollable = True, vertical_scroll_only = True, expand_x = True, expand_y = True, background_color = menu_color, k = 'TRACKS') ]]
+        its_empty = sg.T(Empty_txt, p = (0, 15), expand_x = True, expand_y = True, font = (VarFontBold, empty_font_size), text_color = 'grey', background_color = empty_color, k = Its_empty_key)
+        pin_empty = sg.pin(its_empty, expand_x = True)
+        pin_empty.BackgroundColor = empty_color
+
+        layout = [[ sg.Col([[ log_b, new_b, refresh_b, archives_b, trash_b, recenter_widget, exit_b ]], p = 0, background_color = menu_color, expand_x = True, k = Menu_key) ],
+                  [ sg.Col([[ pin_empty ]], p = 0, scrollable = True, vertical_scroll_only = True, expand_x = True, expand_y = True, background_color = menu_color, k = Tracker_widgets_key) ]]
 
         args, kwargs = Get_window_params(layout, alpha_channel = 0, resizable = True)
         super().__init__(*args, **kwargs)
@@ -916,37 +1008,37 @@ class Main_window(sg.Window):
         
         elif window == self:
 
-            if event in (None, '-Exit-', 'Escape:27'):
+            if event in (None, Exit_event, *Exit_shorcuts): 
                 return True
             
-            elif event in ('-Log-', 'l'):
+            elif event in (Log_event, Log_shorcut): 
                 self.log.toggle()
 
-            elif event == '-RECENTER-':
+            elif event == Recenter_event:
                 self.widgets.recenter(window, force = True)
 
-            elif event == '-UPDATING CHANGED-':
+            elif event == Updating_changed_event: 
                 self.widgets.updating_changed(window, values[event])
 
-            elif event == '-ARCHIVE UPDATED-':
+            elif event == Archive_update_event: 
                 self.widgets.archives_updated()
 
-            elif event == '-DELETED UPDATED-':
+            elif event == Delete_updated_event: 
                 self.widgets.deleted_updated()
 
-            elif event == '-UPDATE WIDGETS SIZE-':
+            elif event == Update_widgets_size_event: 
                 self.widgets.update_size(window)
 
-            elif event == '-New-':
+            elif event == New_event: 
                 self.widgets.new(window)
 
-            elif event == '-Refresh-':
+            elif event == Refresh_event: 
                 self.widgets.update(window)
 
-            elif event == '-Archives-':
+            elif event == Archives_event: 
                 self.widgets.show_archives(window)
 
-            elif event == '-Deleted-':
+            elif event == Trash_event:  
                 self.widgets.show_deleted(window)
         
         else:
@@ -962,7 +1054,7 @@ if __name__ == "__main__":
 
     # create splash before importing to reduce startup time
     splash = Splash()
-    splash.update('inititialisation')
+    splash.update(Init_txt)
 
     # import after splash has been created
     import traceback
@@ -975,6 +1067,7 @@ if __name__ == "__main__":
     from bisect import bisect
     import textwrap
     import json
+    from tkinter import font
     import locale
     locale.setlocale(locale.LC_ALL, 'fr_FR.utf8') # date in French
 
