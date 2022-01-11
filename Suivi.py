@@ -305,7 +305,7 @@ class TrackerWidget:
         self.layout = sg.Col(layout, expand_x = True, p = 0, visible = self.tracker.state == 'shown', background_color = self.bg_color)
         self.pin = sg.pin(self.layout, expand_x = True) # collapse when hidden
         self.pin.BackgroundColor = self.bg_color_h if first else self.bg_color
-        return [ self.pin ] 
+        return [[ self.pin ]]
 
     def finalize(self, window):
         for button in  self.buttons:
@@ -632,20 +632,21 @@ class TrackerWidgets:
         self.refresh_button = window['-Refresh-']
         self.deleted_button = window['-Deleted-']
 
+        window.trigger_event('-ARCHIVE UPDATED-', '')
+        window.trigger_event('-DELETED UPDATED-', '')
+
         n_trackers = len(trackers.trackers)
         for i, tracker in enumerate(trackers.trackers):
             splash.update(f'création suivi {i + 1}/{n_trackers}')
             self.create_widget(window, tracker, i==0)
 
-        window.trigger_event('-ARCHIVE UPDATED-', '')
-        window.trigger_event('-DELETED UPDATED-', '')
         self.update_size(window)
         self.recenter(window, True)
 
     def create_widget(self, window, tracker, first = False):
         widget = TrackerWidget(tracker)
 
-        window.extend_layout(self.widgets_frame, [widget.create_layout(first)])
+        window.extend_layout(self.widgets_frame, widget.create_layout(first))
         self.widgets.append(widget)
 
         widget.finalize(window)
