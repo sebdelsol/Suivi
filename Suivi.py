@@ -192,12 +192,8 @@ class Trackers:
             save(obj, f)
         _log(f'trackers SAVED to "{filename}"')
 
-    def sort(self, objs, get_tracker = None): 
-        if get_tracker:
-            return sorted(objs, key = lambda obj : get_tracker(obj).creation_date, reverse = True)
-        
-        else:
-            return sorted(objs, key = lambda obj : obj.creation_date, reverse = True)
+    def sort(self, objs, get_tracker = lambda obj : obj): 
+        return sorted(objs, key = lambda obj : get_tracker(obj).creation_date, reverse = True)
 
     def new(self, idship, description, used_couriers):
         if idship is not None:
@@ -205,17 +201,17 @@ class Trackers:
             self.trackers.append(tracker)
             return tracker
 
-    def clean_couriers(self):
-        not_deleted = self.get_not_deleted()
-        archived = self.get_archived()
+    # def clean_couriers(self):
+    #     not_deleted = self.get_not_deleted()
+    #     archived = self.get_archived()
         
-        for courier_name in self.couriers.get_names():
-            valid_idships = [tracker.idship for tracker in not_deleted if courier_name in tracker.used_couriers]
-            if valid_idships:
-                archived_idships = [tracker.idship for tracker in archived if courier_name in tracker.used_couriers]
-                courier = self.couriers.get(courier_name)
-                if courier:
-                    courier.clean(valid_idships, archived_idships)
+    #     for courier_name in self.couriers.get_names():
+    #         valid_idships = [tracker.idship for tracker in not_deleted if courier_name in tracker.used_couriers]
+    #         if valid_idships:
+    #             archived_idships = [tracker.idship for tracker in archived if courier_name in tracker.used_couriers]
+    #             courier = self.couriers.get(courier_name)
+    #             if courier:
+    #                 courier.clean(valid_idships, archived_idships)
 
     def get_not_deleted(self):
         return [tracker for tracker in self.trackers if tracker.state != 'deleted']
@@ -882,7 +878,7 @@ class Main_window(sg.Window):
 
         try:
             self.trackers.save()
-            self.trackers.clean_couriers()
+            # self.trackers.clean_couriers()
         except:
             _log (traceback.format_exc(), error = True)
 

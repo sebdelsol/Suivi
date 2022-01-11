@@ -78,8 +78,8 @@ class Courier:
     def check_idship(self, idship):
         return re.match(self.idship_check_pattern, idship)
 
-    def clean(self, valid_idships, archived_idships): 
-        pass
+    # def clean(self, valid_idships, archived_idships): 
+    #     pass
 
     def close(self): 
         pass
