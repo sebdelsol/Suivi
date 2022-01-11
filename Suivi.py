@@ -33,7 +33,6 @@ class Tracker:
         self.set_id(idship, description, used_couriers)
         self.state = state
         self.contents = contents or {}
-        # TODO self.creation_date   & sort with it
         self.creation_date = creation_date or get_local_now()
         
         self.available_couriers = available_couriers
@@ -136,17 +135,17 @@ class Tracker:
         if date : # not in future
             return min(date, get_local_now())
 
-    def get_last_event(self, now = None):
-        content = self.get_consolidated_content() or {}
-        return content.get('status', {}).get('date', now or get_local_now())
+    # def get_last_event(self, now = None):
+    #     content = self.get_consolidated_content() or {}
+    #     return content.get('status', {}).get('date', now or get_local_now())
 
-    def get_pretty_last_event(self):
-        last_event = self.get_last_event()
-        if last_event:
-            date = f'{last_event:%a %d %b %y}'.replace('.', '')
-            return three_char_month(date, 2)
-        else:
-            return 'Pas de date'
+    # def get_pretty_last_event(self):
+    #     last_event = self.get_last_event()
+    #     if last_event:
+    #         date = f'{last_event:%a %d %b %y}'.replace('.', '')
+    #         return three_char_month(date, 2)
+    #     else:
+    #         return 'Pas de date'
 
     def get_pretty_idship(self):
         return self.idship.strip() or 'N° indéfini'
@@ -194,12 +193,11 @@ class Trackers:
         _log(f'trackers SAVED to "{filename}"')
 
     def sort(self, objs, get_tracker = None): 
-        now = get_local_now() # all trackers without date will have the same now, so that they stay in the same order
         if get_tracker:
-            return sorted(objs, key = lambda obj : get_tracker(obj).get_last_event(now = now), reverse = True)
+            return sorted(objs, key = lambda obj : get_tracker(obj).creation_date, reverse = True)
         
         else:
-            return sorted(objs, key = lambda obj : obj.get_last_event(now = now), reverse = True)
+            return sorted(objs, key = lambda obj : obj.creation_date, reverse = True)
 
     def new(self, idship, description, used_couriers):
         if idship is not None:
@@ -684,7 +682,8 @@ class TrackerWidgets:
         for widget in widgets:
             tracker = widget.tracker
             color = 'green' if tracker.get_delivered() else 'red'
-            txt = f'{tracker.get_pretty_last_event()}, {tracker.description.ljust(w_desc)} - {tracker.get_pretty_idship()}'
+            # txt = f'{tracker.get_pretty_last_event()}, {tracker.description.ljust(w_desc)} - {tracker.get_pretty_idship()}'
+            txt = f'{tracker.description.ljust(w_desc)} - {tracker.get_pretty_idship()}'
             choices.append((txt, color))
 
         popup_choices = popup.choices(choices, title, window)
