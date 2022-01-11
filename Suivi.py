@@ -52,12 +52,12 @@ archived_state = 'archived'
 shown_state = 'shown'
 
 #----------------------------
-Recenter_event = '-RECENTER-'
-Updating_changed_event = '-UPDATING CHANGED-'
+Recenter_event = '-Recenter-'
+Updating_event = '-Updating Changed-'
 Updating_done_event = 'done'
-Archive_update_event = '-ARCHIVE UPDATED-'
-Delete_updated_event = '-DELETE UPDATED-'
-Update_widgets_size_event = '-UPDATE WIDGETS SIZE-'
+Archives_updated_event = '-Archives updated-'
+Trash_updated_event = '-Trash Updated-'
+Update_widgets_size_event = '-Update Widgets Size-'
 
 New_event = '-New-'
 Refresh_event = '-Refresh-'
@@ -66,9 +66,9 @@ Trash_event = '-Trash-'
 Log_event = '-Log-'
 Exit_event = '-Exit-'
 
-Menu_key = 'MENU'
-Its_empty_key = 'ITS EMPTY'
-Tracker_widgets_key = 'TRACKS'
+Menu_key = '-Menu-'
+Its_empty_key = '-Empty-'
+Tracker_widgets_key = '-Tracks-'
 
 Exit_shorcuts = ('Escape:27', )
 Log_shorcut = 'l'
@@ -82,6 +82,8 @@ menu_button_font_size = 12
 menu_button_img_height = 20
 menu_button_img_margin = 5
 
+widget_background_title_color = 'grey85'
+widget_background_event_color = 'grey90'
 widget_button_pad = 4
 widget_courier_font_size = 8
 widget_event_font_size = 8
@@ -93,8 +95,6 @@ widget_status_font_size = 15
 widget_expand_font_size = 10
 widget_button_size = 22
 widget_button_img_percent = .6
-widget_background_title_color = 'grey85'
-widget_background_event_color = 'grey90'
 widget_event_max_width = 90
 widget_min_events_shown = 1
 widget_elpapse_days_intervals = [10, 20, 30]
@@ -444,7 +444,7 @@ class TrackerWidget:
 
             self.disable_buttons(True)
             self.updating = True
-            window.trigger_event(Updating_changed_event, '')
+            window.trigger_event(Updating_event, '')
             
             self.tracker.prepare_update()
             self.show_current_courier_widget()
@@ -474,7 +474,7 @@ class TrackerWidget:
         self.disable_buttons(False)
         self.loading_widget.update(visible = False)
         self.updating = False
-        window.trigger_event(Updating_changed_event, Updating_done_event)
+        window.trigger_event(Updating_event, Updating_done_event)
 
     def animate(self, animation_step):
         if self.loading_widget.visible:
@@ -684,16 +684,16 @@ class TrackerWidget:
                 self.update(window)
 
     def delete(self, window):
-        self.set_state(delete_state, window, Do_delete_txt, Delete_updated_event)
+        self.set_state(delete_state, window, Do_delete_txt, Trash_updated_event)
 
     def undelete(self, window):
-        self.set_state(shown_state, window, False, Delete_updated_event, True)
+        self.set_state(shown_state, window, False, Trash_updated_event, True)
 
     def archive(self, window):
-        self.set_state(archived_state, window, False, Archive_update_event)
+        self.set_state(archived_state, window, False, Archives_updated_event)
 
     def unarchive(self, window):
-        self.set_state(shown_state, window, False, Archive_update_event, True)
+        self.set_state(shown_state, window, False, Archives_updated_event, True)
 
 # -------------------
 class TrackerWidgets:
@@ -1017,13 +1017,13 @@ class Main_window(sg.Window):
             elif event == Recenter_event:
                 self.widgets.recenter(window, force = True)
 
-            elif event == Updating_changed_event: 
+            elif event == Updating_event: 
                 self.widgets.updating_changed(window, values[event])
 
-            elif event == Archive_update_event: 
+            elif event == Archives_updated_event: 
                 self.widgets.archives_updated()
 
-            elif event == Delete_updated_event: 
+            elif event == Trash_updated_event: 
                 self.widgets.deleted_updated()
 
             elif event == Update_widgets_size_event: 
