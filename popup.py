@@ -129,7 +129,7 @@ class choices(MyPopup):
                 cb_height = rows[0].cb.get_size()[1]
                 height = cb_height * min(self.max_lines, len(rows))
                 # https://github.com/PySimpleGUI/PySimpleGUI/issues/4407#issuecomment-860863915
-                rows.Widget.canvas.configure(width = None, height = height)    
+                col.Widget.canvas.configure(width = None, height = height)    
 
     def event_handler(self, event):
         if 'cb_choice' in event:
