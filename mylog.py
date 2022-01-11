@@ -107,7 +107,6 @@ class MyLog(sg.Window):
     def close(self):
         if self.visible: 
             self.log ('<< HIT a key to CLOSE >>', error = True)
-
             self.link_button.update(self.close_txt, button_color = ('red', 'grey85'))
             self.force_focus()
             self.TKroot.unbind('<Configure>')
@@ -117,6 +116,9 @@ class MyLog(sg.Window):
 
                 if event in (None, 'Link') or len(event) == 1 or re.match(r'\w+\:\d+', event):
                     break
+        
+        else:
+            self.listen()
 
         super().close()
 
