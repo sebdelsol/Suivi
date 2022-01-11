@@ -24,20 +24,18 @@ class SavedTracker(dict):
     def __init__(self, tracker):
         with tracker.critical:
             # tracker attribute to save
-            for attr in ('idship', 'description', 'used_couriers', 'state', 'contents'):
+            for attr in ('idship', 'description', 'used_couriers', 'state', 'contents', 'creation_date'):
                 self[attr] = tracker.__dict__[attr]
 
 #-------------
 class Tracker:
-    def __init__(self, idship, description, used_couriers, available_couriers, state = 'shown', contents = None):
+    def __init__(self, idship, description, used_couriers, available_couriers, state = 'shown', contents = None, creation_date = None):
         self.set_id(idship, description, used_couriers)
         self.state = state
         self.contents = contents or {}
-        
         # TODO self.creation_date   & sort with it
-        # self.creation_date = creation_date or get_local_now()
-        # self.creation_date = creation_date or self.get_last_event() # for first run !!!!
-
+        self.creation_date = creation_date or get_local_now()
+        
         self.available_couriers = available_couriers
         self.critical = threading.Lock()
         self.couriers_error = {}
@@ -169,7 +167,7 @@ class Trackers:
             trackers = self._load('.trck', 'rb', lambda f: pickle.load(f))
 
         if trackers:
-            trackers = [Tracker(tracker['idship'], tracker['description'], tracker['used_couriers'], self.couriers, tracker['state'], tracker['contents']) for tracker in trackers]
+            trackers = [Tracker(trk['idship'], trk['description'], trk['used_couriers'], self.couriers, trk['state'], trk['contents'], trk['creation_date']) for trk in trackers]
 
         self.trackers = self.sort(trackers or [])
 
