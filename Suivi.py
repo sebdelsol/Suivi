@@ -33,29 +33,24 @@ class Tracker:
         self.set_id(idship, description, used_couriers)
         self.state = state
         self.contents = contents or {}
+        
         # TODO self.creation_date   & sort with it
+        # self.creation_date = creation_date or get_local_now()
+        # self.creation_date = creation_date or self.get_last_event() # for first run !!!!
+
         self.available_couriers = available_couriers
         self.critical = threading.Lock()
         self.couriers_error = {}
         self.couriers_updating = {}
 
-        self.set_current_events()
+        self.loaded_events = set()
+        for content in self.contents.values():
+            self.loaded_events |= set( frozenset(evt.items()) for evt in content.get('events', []) ) # can't hash dict
 
     def set_id(self, idship, description, used_couriers):
         self.used_couriers = used_couriers
         self.description = description.title()
         self.idship = idship.strip()
-    
-    # TODO current_events --> loaded_events & remove the 2 funct bellow
-    def set_current_events(self):
-        self.current_events = set()
-        for content in self.contents.values():
-            self.current_events |= set( frozenset(evt.items()) for evt in content.get('events', []) ) # can't hash dict
-
-    def update_events_new(self, events):
-        for event in events:
-            event['new'] = frozenset(event.items()) not in self.current_events
-        return events
 
     def prepare_update(self):
         with self.critical:
@@ -101,8 +96,10 @@ class Tracker:
         consolidated = {}
 
         with self.critical:
-            # TODO remove hard to read list comprehension
-            contents_ok = [copy.deepcopy(content) for courier_name, content in self.contents.items() if courier_name in self.used_couriers and content['ok'] and content.get('idship') == self.idship]
+            contents_ok = []
+            for courier_name, content in self.contents.items():
+                if courier_name in self.used_couriers and content['ok'] and content.get('idship') == self.idship:
+                    contents_ok.append(copy.deepcopy(content))
 
             if len(contents_ok) > 0:
                 contents_ok.sort(key = lambda c : c['status']['date'], reverse = True)
@@ -110,7 +107,11 @@ class Tracker:
                 
                 events = sum((content['events'] for content in contents_ok), [])
                 events.sort(key = lambda evt : evt['date'], reverse = True)
-                consolidated['events'] = self.update_events_new(events) 
+
+                for event in events:
+                    event['new'] = frozenset(event.items()) not in self.loaded_events
+
+                consolidated['events'] = events 
                 
                 delivered = any(c['status'].get('delivered') for c in contents_ok)
                 consolidated['status']['delivered'] = delivered
@@ -131,7 +132,7 @@ class Tracker:
                 updating = self.couriers_updating.get(courier_name, False)
                 couriers_update[courier_name] = (ok_date, error, updating)
 
-            return couriers_update
+        return couriers_update
 
     def no_future(self, date):
         if date : # not in future
@@ -152,7 +153,6 @@ class Tracker:
     def get_pretty_idship(self):
         return self.idship.strip() or 'N° indéfini'
 
-    # TODO faster without get_consolidated, use self.critical
     def get_delivered(self):
         content = self.get_consolidated_content() 
         return content and content.get('status', {}).get('delivered')

@@ -24,9 +24,7 @@ class MyPopup(sg.Window):
         super().__init__(*args, **kwargs)
         MyButton.finalize_all(self)
 
-    def loop(self, child_event_handler = None):
-        self.child_event_handler = child_event_handler
-
+    def loop(self):
         while True: 
             exit = self.main_window.event_handler()            
             if exit:
