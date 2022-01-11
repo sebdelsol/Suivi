@@ -194,6 +194,5 @@ class warning(MyPopup):
 
     def loop(self):
         ok = super().loop() == 'ok'
-
         self.close()
         return ok
