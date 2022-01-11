@@ -79,12 +79,11 @@ empty_color = 'grey90'
 empty_font_size = 20
 menu_button_pad = 5
 menu_button_font_size = 12
-menu_button_img_height = 20
+menu_button_height = 20
 menu_button_img_margin = 5
 
 widget_background_title_color = 'grey85'
 widget_background_event_color = 'grey90'
-widget_button_pad = 4
 widget_courier_font_size = 8
 widget_event_font_size = 8
 widget_elapsed_days_box_size = 50
@@ -93,8 +92,10 @@ widget_description_font_size = 40
 widget_idship_font_size = 10
 widget_status_font_size = 15
 widget_expand_font_size = 10
+widget_button_pad = 4
 widget_button_size = 22
 widget_button_img_percent = .6
+widget_updating_gif_height = 20
 widget_event_max_width = 90
 widget_min_events_shown = 1
 widget_elpapse_days_intervals = [10, 20, 30]
@@ -315,7 +316,7 @@ class TrackerWidget:
 
     button_size = (widget_button_size, widget_button_size)
     img_per = widget_button_img_percent
-    loading_gif, refresh_img, edit_img, archive_img = None, None, None, None
+    updating_gif, refresh_img, edit_img, archive_img = None, None, None, None
 
     def __init__(self, tracker):
         self.tracker = tracker
@@ -325,8 +326,8 @@ class TrackerWidget:
         self.updating = False
 
         # faster startup
-        if not TrackerWidget.loading_gif:
-            TrackerWidget.loading_gif = resize_and_colorize_gif(sg.DEFAULT_BASE64_LOADING_GIF, 20, Refresh_color)
+        if not TrackerWidget.updating_gif:
+            TrackerWidget.updating_gif = resize_and_colorize_gif(sg.DEFAULT_BASE64_LOADING_GIF, widget_updating_gif_height, Refresh_color) 
 
             height = self.button_size[1] * self.img_per
             TrackerWidget.refresh_img = resize_and_colorize_img(Refresh_img, height, Refresh_color, self.button_size)
@@ -362,9 +363,9 @@ class TrackerWidget:
         id_couriers_widget = sg.Col([[ self.id_widget ], [ self.couriers_widget ]], p = ((5, 0), (b_p, b_p)), background_color = bg_color_h, expand_x = True, vertical_alignment = 'top')
         buttons = sg.Col([[button] for button in self.buttons], p = (10, 0), background_color = bg_color_h, expand_x = False)
 
-        self.loading_widget = sg.Image(data = self.loading_gif, p = 3, visible = False, background_color = bg_color, k = lambda w : self.toggle_expand(w))
-        loading_widget_pin = sg.pin(self.loading_widget)
-        loading_widget_pin.BackgroundColor = bg_color
+        self.updating_widget = sg.Image(data = self.updating_gif, p = 3, visible = False, background_color = bg_color, k = lambda w : self.toggle_expand(w))
+        updating_widget_pin = sg.pin(self.updating_widget)
+        updating_widget_pin.BackgroundColor = bg_color
 
         self.ago_widget = sg.T('', p = 0, font = (VarFont, widget_status_font_size), expand_x = False, background_color = bg_color, text_color = 'grey50', k = lambda w : self.toggle_expand(w))
         self.status_widget = sg.T('', p = 0, font = (VarFont, widget_status_font_size), expand_x = True, background_color = bg_color, k = lambda w : self.toggle_expand(w))
@@ -375,7 +376,7 @@ class TrackerWidget:
         events_widget_pin.BackgroundColor = bg_color
 
         layout = [ [ sg.Col([[ self.days_widget, self.desc_widget, id_couriers_widget, buttons ]], p = 0, background_color = bg_color_h, expand_x = True) ],
-                   [ sg.Col([[ loading_widget_pin, self.ago_widget, self.status_widget, self.expand_button ]], p = (10, 0), background_color = bg_color, expand_x = True) ],
+                   [ sg.Col([[ updating_widget_pin, self.ago_widget, self.status_widget, self.expand_button ]], p = (10, 0), background_color = bg_color, expand_x = True) ],
                    [ events_widget_pin ] ]
 
         self.layout = sg.Col(layout, expand_x = True, p = 0, visible = self.tracker.state == shown_state, background_color = bg_color)
@@ -396,7 +397,7 @@ class TrackerWidget:
             widget.Widget.bindtags((str(widget.Widget), str(window.TKroot), 'all'))
         
         # toggle expand
-        for widget in (self.events_widget, self.status_widget, self.ago_widget, self.loading_widget):
+        for widget in (self.events_widget, self.status_widget, self.ago_widget, self.updating_widget):
             widget.bind('<Button-1>', '')
         
         self.show_current_content(window)
@@ -448,7 +449,7 @@ class TrackerWidget:
             
             self.tracker.prepare_update()
             self.show_current_courier_widget()
-            self.loading_widget.update(visible = True)
+            self.updating_widget.update(visible = True)
 
             threading.Thread(target = self.update_thread, args = (window,), daemon = True).start()
 
@@ -472,13 +473,13 @@ class TrackerWidget:
 
     def update_done(self, window):
         self.disable_buttons(False)
-        self.loading_widget.update(visible = False)
+        self.updating_widget.update(visible = False)
         self.updating = False
         window.trigger_event(Updating_event, Updating_done_event)
 
     def animate(self, animation_step):
-        if self.loading_widget.visible:
-            self.loading_widget.update_animation(self.loading_gif, time_between_frames = animation_step)
+        if self.updating_widget.visible:
+            self.updating_widget.update_animation(self.updating_gif, time_between_frames = animation_step)
 
     def show(self, content, window, force = False):
         tracker = self.tracker
@@ -925,7 +926,7 @@ class Main_window(sg.Window):
     def __init__(self):
         p = menu_button_pad
         fs = menu_button_font_size
-        b_kwargs = dict(im_height = menu_button_img_height, im_margin = menu_button_img_margin, font = (VarFontBold, fs), mouseover_color = 'grey90')
+        b_kwargs = dict(im_height = menu_button_height, im_margin = menu_button_img_margin, font = (VarFontBold, fs), mouseover_color = 'grey90')
 
         log_b = MyButtonImg(Log_txt, p = p, image_filename = Log_img, button_color = (Log_color, menu_color), k = Log_event, **b_kwargs)
         new_b = MyButtonImg(New_txt, p = (0, p), image_filename = Edit_img, button_color = (Edit_color, menu_color), k = New_event, **b_kwargs)
