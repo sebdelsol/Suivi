@@ -1,10 +1,10 @@
 import traceback
 import threading
-import queue
 import os
 import copy
 import json
 import pickle as pickle
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from jsondate import json_decode_datetime, json_encode_datetime
 from couriers import Couriers, get_local_now
@@ -53,38 +53,37 @@ class Tracker:
                 self.couriers_updating[courier_name] = True
 
     def update_all_couriers(self):
-        content_queue = queue.Queue()
-        for courier_name in self.used_couriers:
-            _log (f'update START - {self.description} - {self.idship}, {courier_name}')
-            threading.Thread(target = self.update_courier, args = (courier_name, content_queue)).start()
+        if self.idship and (n_couriers := len(self.used_couriers)) > 0:
 
-        for _ in range(len(self.used_couriers)):
-            courier_name, new_content = content_queue.get()
-            _log (f'update DONE - {self.description} - {self.idship}, {courier_name}')
+            with ThreadPoolExecutor(max_workers = n_couriers) as executor:
+                to_courier = {executor.submit(self.update_courier, courier_name): courier_name for courier_name in self.used_couriers}
 
-            with self.critical:
-                if new_content is not None:
-                    if new_content['ok'] or courier_name not in self.contents:
-                        new_content['courier_name'] = courier_name
-                        self.contents[courier_name] = new_content
+                for future in as_completed(to_courier):
+                    courier_name = to_courier[future]
+                    new_content = future.result()
 
-                self.couriers_error[courier_name] = not(new_content and new_content['ok'])
-                self.couriers_updating[courier_name] = False
+                    with self.critical:
+                        if new_content is not None:
+                            if new_content['ok'] or courier_name not in self.contents:
+                                new_content['courier_name'] = courier_name
+                                self.contents[courier_name] = new_content
 
-            yield self.get_consolidated_content()
+                        self.couriers_error[courier_name] = not(new_content and new_content['ok'])
+                        self.couriers_updating[courier_name] = False
 
-    def update_courier(self, courier_name, content_queue):
+                    yield self.get_consolidated_content()
+
+    def update_courier(self, courier_name):
+        # _log (f'update START - {self.description} - {self.idship}, {courier_name}')
         try:
-            courier = self.available_couriers.get(courier_name)
-            if courier:
-                content = courier.update(self.idship) if self.idship else {'ok' : False}
-                content_queue.put((courier_name, content))
-            else:
-                content_queue.put((courier_name, None))
+            if courier := self.available_couriers.get(courier_name):
+                return courier.update(self.idship)
         
         except:
             _log (traceback.format_exc(), error = True)
-            content_queue.put((courier_name, None))
+        
+        finally:
+            _log (f'update DONE - {self.description} - {self.idship}, {courier_name}')
 
     def get_consolidated_content(self):
         consolidated = {}
@@ -121,7 +120,7 @@ class Tracker:
             couriers_update = {}
             for courier_name in self.used_couriers:
                 content = self.contents.get(courier_name)
-                ok_date = self.no_future(content and content.get('status', {}).get('ok_date'))
+                ok_date = self.no_future(content.setdefault('status', {}).get('ok_date'))
                 error = self.couriers_error.get(courier_name, True)
                 updating = self.couriers_updating.get(courier_name, False)
                 couriers_update[courier_name] = (ok_date, error, updating)
@@ -134,7 +133,7 @@ class Tracker:
 
     def get_delivered(self):
         content = self.get_consolidated_content() 
-        return content and content.get('status', {}).get('delivered')
+        return content.setdefault('status', {}).get('delivered')
 
 
 #--------------
