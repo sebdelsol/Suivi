@@ -107,9 +107,9 @@ class Courier:
 
             events, infos = self._update(r) if ok else ([], {})
 
-            # remove duplicates
-            events = set( tuple(evt.items()) for evt in events )
-            events = [ dict(evt) for evt in events ]
+            # remove duplicate events
+            # https://stackoverflow.com/questions/9427163/remove-duplicate-dict-in-list-in-python
+            events = [ dict(evt_tuple) for evt_tuple in {tuple(evt.items()) for evt in events} ]
 
             # sort by date
             events.sort(key = lambda evt : evt['date'], reverse = True)
