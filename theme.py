@@ -15,6 +15,13 @@ def Get_window_params(layout, **new_kwargs):
     kwargs.update(new_kwargs) 
     return args, kwargs
 
+def three_char_month(date_txt, month_index):
+    txts = date_txt.split()
+    month = txts[month_index]
+    txts[month_index] =  month[:3] if 'ju' not in month else month[:2] + month[3:]
+    return ' '.join(txts)
+
+#----------------------------
 FixFont = 'Roboto Mono Light'
 FixFontBold = 'Roboto Mono Bold'
 

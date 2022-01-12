@@ -2,15 +2,9 @@ import PySimpleGUI as sg
 from all_txts import *
 from theme import *
 
+TrackersFile = 'Trackers' 
 LOAD_AS_JSON = True
 SHOW_EVENTS = False
-
-TrackersFile = 'Trackers' 
-
-#-----------------------
-delete_state = 'deleted'
-archived_state = 'archived'
-shown_state = 'shown'
 
 #----------------------------
 Recenter_event = '-Recenter-'
@@ -34,211 +28,6 @@ New_Tracker_widgets_key = '-New Tracks-'
 
 Exit_shorcuts = ('Escape:27', )
 Log_shorcut = 'l'
-
-#---------------------------------
-def three_char_month(date_txt, i):
-    txts = date_txt.split()
-    month = txts[i]
-    txts[i] =  month[:3] if 'ju' not in month else month[:2] + month[3:]
-    return ' '.join(txts)
-
-#------------------
-class SavedTracker(dict):
-    def __init__(self, tracker):
-        with tracker.critical:
-            # tracker attribute to save
-            for attr in ('idship', 'description', 'used_couriers', 'state', 'contents', 'creation_date'):
-                self[attr] = tracker.__dict__[attr]
-
-#-------------
-class Tracker:
-    def __init__(self, idship, description, used_couriers, available_couriers, state = shown_state, contents = None, creation_date = None):
-        self.set_id(idship, description, used_couriers)
-        self.state = state
-        self.contents = contents or {}
-        self.creation_date = creation_date or get_local_now()
-        
-        self.available_couriers = available_couriers
-        self.critical = threading.Lock()
-        self.couriers_error = {}
-        self.couriers_updating = {}
-
-        self.loaded_events = set()
-        for content in self.contents.values():
-            self.loaded_events |= set( frozenset(evt.items()) for evt in content.get('events', []) ) # can't hash dict
-
-    def set_id(self, idship, description, used_couriers):
-        self.used_couriers = used_couriers
-        self.description = description.title()
-        self.idship = idship.strip()
-
-    def prepare_update(self):
-        with self.critical:
-            for courier_name in self.used_couriers:
-                self.couriers_error[courier_name] = True
-                self.couriers_updating[courier_name] = True
-
-    def update_all_couriers(self):
-        content_queue = queue.Queue()
-        for courier_name in self.used_couriers:
-            _log (f'update START - {self.description} - {self.get_pretty_idship()}, {courier_name}')
-            threading.Thread(target = self.update_courier, args = (courier_name, content_queue)).start()
-
-        for _ in range(len(self.used_couriers)):
-            courier_name, new_content = content_queue.get()
-            _log (f'update DONE - {self.description} - {self.get_pretty_idship()}, {courier_name}')
-
-            with self.critical:
-                if new_content is not None:
-                    if new_content['ok'] or courier_name not in self.contents:
-                        new_content['courier_name'] = courier_name
-                        self.contents[courier_name] = new_content
-
-                self.couriers_error[courier_name] = not(new_content and new_content['ok'])
-                self.couriers_updating[courier_name] = False
-
-            yield self.get_consolidated_content()
-
-    def update_courier(self, courier_name, content_queue):
-        try:
-            courier = self.available_couriers.get(courier_name)
-            if courier:
-                content = courier.update(self.idship) if self.idship else {'ok' : False}
-                content_queue.put((courier_name, content))
-            else:
-                content_queue.put((courier_name, None))
-        
-        except:
-            _log (traceback.format_exc(), error = True)
-            content_queue.put((courier_name, None))
-
-    def get_consolidated_content(self):
-        consolidated = {}
-
-        with self.critical:
-            contents_ok = []
-            for courier_name, content in self.contents.items():
-                if courier_name in self.used_couriers and content['ok'] and content.get('idship') == self.idship:
-                    contents_ok.append(copy.deepcopy(content))
-
-            if len(contents_ok) > 0:
-                contents_ok.sort(key = lambda c : c['status']['date'], reverse = True)
-                consolidated = contents_ok[0]
-                
-                events = sum((content['events'] for content in contents_ok), [])
-                events.sort(key = lambda evt : evt['date'], reverse = True)
-
-                for event in events:
-                    event['new'] = frozenset(event.items()) not in self.loaded_events
-
-                consolidated['events'] = events 
-                
-                delivered = any(c['status'].get('delivered') for c in contents_ok)
-                consolidated['status']['delivered'] = delivered
-                consolidated['elapsed'] = events and (events[0]['date'] if delivered else get_local_now()) - events[-1]['date']
-                consolidated['status']['date'] = self.no_future(consolidated['status']['date'])
-            
-        consolidated['courier_update'] = self.get_courrier_update()
-        
-        return consolidated
-    
-    def get_courrier_update(self):
-        with self.critical:
-            couriers_update = {}
-            for courier_name in self.used_couriers:
-                content = self.contents.get(courier_name)
-                ok_date = self.no_future(content.get('status',{}).get('ok_date') if content else None)
-                error = self.couriers_error.get(courier_name, True)
-                updating = self.couriers_updating.get(courier_name, False)
-                couriers_update[courier_name] = (ok_date, error, updating)
-
-        return couriers_update
-
-    def no_future(self, date):
-        if date : # not in future
-            return min(date, get_local_now())
-
-    def get_pretty_creation_date(self):
-        date = f'{self.creation_date:%a %d %b %y}'.replace('.', '')
-        return three_char_month(date, 2)
-
-    def get_pretty_idship(self):
-        return self.idship.strip() or No_idship_txt 
-
-    def get_delivered(self):
-        content = self.get_consolidated_content() 
-        return content and content.get('status', {}).get('delivered')
-
-#--------------
-class Trackers:
-    def __init__(self, filename, splash):
-        self.filename = filename
-        self.couriers = Couriers(splash)
-
-        if LOAD_AS_JSON:
-            trackers = self._load('.json', 'r', lambda f: json.load(f, object_hook = json_decode_datetime))
-        else:
-            trackers = self._load('.trck', 'rb', lambda f: pickle.load(f))
-
-        if trackers:
-            trackers = [Tracker(trk['idship'], trk['description'], trk['used_couriers'], self.couriers, trk['state'], trk['contents'], trk['creation_date']) for trk in trackers]
-
-        self.trackers = self.sort(trackers or [])
-
-    def save(self):
-        trackers = self.sort(self.get_not_deleted())
-        saved_trackers = [SavedTracker(tracker) for tracker in trackers]
-
-        self._save(saved_trackers, '.trck', 'wb', lambda obj, f: pickle.dump(obj, f))
-        self._save(saved_trackers, '.json', 'w', lambda obj, f: json.dump(obj, f, default = json_encode_datetime, indent = 4))
-
-    def _load(self, ext, mode, load):
-        filename = self.filename + ext
-        if os.path.exists(filename):
-            with open(filename, mode) as f:
-                obj = load(f)
-            
-            _log(f'trackers LOADED from "{filename}"')
-            return obj
-
-    def _save(self, obj, ext, mode, save):
-        filename = self.filename + ext
-        with open(filename, mode) as f:
-            save(obj, f)
-        _log(f'trackers SAVED to "{filename}"')
-
-    def sort(self, objs, get_tracker = lambda obj : obj): 
-        return sorted(objs, key = lambda obj : get_tracker(obj).creation_date, reverse = True)
-
-    def new(self, idship, description, used_couriers):
-        if idship is not None:
-            tracker = Tracker(idship, description, used_couriers, self.couriers)
-            self.trackers.append(tracker)
-            return tracker
-
-    # def clean_couriers(self):
-    #     not_deleted = self.get_not_deleted()
-    #     archived = self.get_archived()
-        
-    #     for courier_name in self.couriers.get_names():
-    #         valid_idships = [tracker.idship for tracker in not_deleted if courier_name in tracker.used_couriers]
-    #         if valid_idships:
-    #             archived_idships = [tracker.idship for tracker in archived if courier_name in tracker.used_couriers]
-    #             courier = self.couriers.get(courier_name)
-    #             if courier:
-    #                 courier.clean(valid_idships, archived_idships)
-
-    def get_not_deleted(self):
-        return [tracker for tracker in self.trackers if tracker.state != delete_state]
-    
-    def get_archived(self):
-        return [tracker for tracker in self.trackers if tracker.state == archived_state]
-
-    def count_state(self, state):
-        return len([tracker for tracker in self.trackers if tracker.state == state])
-
-    def close(self):
-        self.couriers.close()
 
 #-------------------
 class TrackerWidget:
@@ -313,7 +102,7 @@ class TrackerWidget:
                    [ sg.Col([[ updating_widget_pin, self.ago_widget, self.status_widget, self.expand_button ]], p = (10, 0), background_color = bg_color, expand_x = True) ],
                    [ events_widget_pin ] ]
 
-        self.layout = sg.Col(layout, expand_x = True, p = 0, visible = self.tracker.state == shown_state, background_color = bg_color)
+        self.layout = sg.Col(layout, expand_x = True, p = 0, visible = self.tracker.state == TrackerState.shown, background_color = bg_color)
         self.pin = sg.pin(self.layout, expand_x = True) # collapse when hidden
         self.pin.BackgroundColor = bg_color
         return [[ self.pin ]]
@@ -375,7 +164,7 @@ class TrackerWidget:
         self.update_couriers_id_size()
 
     def update(self, window):
-        if self.tracker.state == shown_state and self.lock.acquire(blocking = False):
+        if self.tracker.state == TrackerState.shown and self.lock.acquire(blocking = False):
 
             self.disable_buttons(True)
             self.updating = True
@@ -417,10 +206,10 @@ class TrackerWidget:
 
     def show(self, content, window, force = False):
         tracker = self.tracker
-        if force or tracker.state == shown_state:
+        if force or tracker.state == TrackerState.shown:
             
             delivered = '✔' if content.get('status', {}).get('delivered') else ''
-            self.desc_widget.update(f'{tracker.description.strip()}{delivered}') 
+            self.desc_widget.update(f'{self.get_pretty_description()}{delivered}') 
             self.events_widget.update('')
 
             if content.get('ok'):
@@ -533,7 +322,7 @@ class TrackerWidget:
         prt = self.id_widget.print
         prt(f'{product}', autoscroll = False, t = 'grey50', end = '')
         prt(fromto, autoscroll = False, t = 'grey70', end = '')
-        prt(self.tracker.get_pretty_idship(), autoscroll = False, t = 'blue', end = '')
+        prt(self.get_pretty_idship(), autoscroll = False, t = 'blue', end = '')
 
     def show_couriers(self, couriers_update):
         if couriers_update:
@@ -581,16 +370,15 @@ class TrackerWidget:
         self.disable_buttons(False)
 
     def update_visiblity(self):
-        self.layout.update(visible = self.tracker.state==shown_state)
+        self.layout.update(visible = self.tracker.state==TrackerState.shown)
     
     def archive_or_delete(self, window):
         self.disable_buttons(True)
 
         choices = {Do_archive_txt: self.archive, Do_delete_txt: self.delete}
         choices_colors = {Do_archive_txt:'green', Do_delete_txt:'red', False:'grey75'}
-        tracker = self.tracker
         
-        popup_one_choice = popup.one_choice(choices.keys(), choices_colors, f'{tracker.description} - {tracker.get_pretty_idship()}', window)
+        popup_one_choice = popup.one_choice(choices.keys(), choices_colors, f'{self.get_pretty_description()} - {self.get_pretty_idship()}', window)
         choice = popup_one_choice.loop()
         
         if choice:
@@ -599,15 +387,13 @@ class TrackerWidget:
         self.disable_buttons(False)
 
     def set_state(self, state, window, ask, event, do_update = False):
-        tracker = self.tracker
-
         do_it = True
         if ask: 
-            popup_warning = popup.warning(ask.capitalize(), f'{tracker.description} - {tracker.get_pretty_idship()}', window)
+            popup_warning = popup.warning(ask.capitalize(), f'{self.get_pretty_description()} - {self.get_pretty_idship()}', window)
             do_it = popup_warning.loop()
 
         if do_it:
-            tracker.state = state
+            self.tracker.state = state
 
             self.update_visiblity()
             self.reset_size()
@@ -619,16 +405,30 @@ class TrackerWidget:
                 self.update(window)
 
     def delete(self, window):
-        self.set_state(delete_state, window, Do_delete_txt, Trash_updated_event)
+        self.set_state(TrackerState.deleted, window, Do_delete_txt, Trash_updated_event)
 
     def undelete(self, window):
-        self.set_state(shown_state, window, False, Trash_updated_event, True)
+        self.set_state(TrackerState.shown, window, False, Trash_updated_event, True)
 
     def archive(self, window):
-        self.set_state(archived_state, window, False, Archives_updated_event)
+        self.set_state(TrackerState.archived, window, False, Archives_updated_event)
 
     def unarchive(self, window):
-        self.set_state(shown_state, window, False, Archives_updated_event, True)
+        self.set_state(TrackerState.shown, window, False, Archives_updated_event, True)
+
+
+    def get_pretty_creation_date(self):
+        date = f'{self.tracker.creation_date:%a %d %b %y}'.replace('.', '')
+        return three_char_month(date, 2)
+
+    def get_pretty_idship(self):
+        return self.tracker.idship.strip() or No_idship_txt 
+
+    def get_pretty_description(self):
+        return self.tracker.description.strip().title() or No_idship_txt 
+
+    def get_delivered(self):
+        return self.tracker.get_delivered()
 
 # -------------------
 class TrackerWidgets:
@@ -678,13 +478,13 @@ class TrackerWidgets:
         return [widget for widget in self.widgets if widget.tracker.state == state]
 
     def show_archives(self, window):
-        widgets = self.choose(window, Do_unarchive_txt, archived_state)
+        widgets = self.choose(window, Do_unarchive_txt, TrackerState.archived)
 
         for widget in widgets:
             widget.unarchive(window)
 
     def show_deleted(self, window):
-        widgets = self.choose(window, Do_restore_txt, delete_state)
+        widgets = self.choose(window, Do_restore_txt, TrackerState.deleted)
 
         for widget in widgets:
             widget.undelete(window)
@@ -692,13 +492,11 @@ class TrackerWidgets:
     def choose(self, window, title, state):
         widgets = self.get_sorted(self.get_widgets_with_state(state))
 
-        w_desc = max(len(widget.tracker.description) for widget in widgets) if widgets else 0
+        w_desc = max(len(widget.get_pretty_description()) for widget in widgets) if widgets else 0
         choices = []
         for widget in widgets:
-            tracker = widget.tracker
-            color = 'green' if tracker.get_delivered() else 'red'
-            txt = f'{tracker.get_pretty_creation_date()}, {tracker.description.ljust(w_desc)} - {tracker.get_pretty_idship()}'
-            # txt = f'{tracker.description.ljust(w_desc)} - {tracker.get_pretty_idship()}'
+            color = 'green' if widget.get_delivered() else 'red'
+            txt = f'{widget.get_pretty_creation_date()}, {widget.get_pretty_description.ljust(w_desc)} - {widget.get_pretty_idship()}'
             choices.append((txt, color))
 
         popup_choices = popup.choices(choices, title, window)
@@ -707,19 +505,19 @@ class TrackerWidgets:
         return [widgets[i] for i in chosen]
 
     def archives_updated(self):
-        n_archives = self.trackers.count_state(archived_state)
+        n_archives = self.trackers.count_state(TrackerState.archived)
         self.archives_button.update(f'{Archives_txt}({n_archives})')
 
     def deleted_updated(self):
-        n_deleted = self.trackers.count_state(delete_state)
+        n_deleted = self.trackers.count_state(TrackerState.deleted)
         self.deleted_button.update(f'{Trash_txt}({n_deleted})')
 
     def count_updating(self):
-        shown = self.get_widgets_with_state(shown_state)
+        shown = self.get_widgets_with_state(TrackerState.shown)
         return [widget.updating for widget in shown].count(True), len(shown)
 
     def update(self, window):
-        for widget in self.get_widgets_with_state(shown_state):
+        for widget in self.get_widgets_with_state(TrackerState.shown):
             widget.update(window)
 
     def get_sorted(self, widgets):
@@ -730,11 +528,11 @@ class TrackerWidgets:
         self.refresh_button.update(disabled = n_updating == n_shown)
 
     def animate(self, animation_step):
-        for widget in self.get_widgets_with_state(shown_state):
+        for widget in self.get_widgets_with_state(TrackerState.shown):
             widget.animate(animation_step)
 
     def update_size(self, window):
-        shown = self.get_widgets_with_state(shown_state)
+        shown = self.get_widgets_with_state(TrackerState.shown)
 
         # resize all widgets with the max width & and change pin color
         max_width_shown = max(widget.width_events for widget in shown) if shown else 0
@@ -872,7 +670,7 @@ class Main_window(sg.Window):
         MyButton.finalize_all(self)
         recenter_widget.bind('<Double-Button-1>', '')
 
-        self.trackers = Trackers(TrackersFile, splash) 
+        self.trackers = Trackers(TrackersFile, LOAD_AS_JSON, splash) 
         self.widgets = TrackerWidgets(self, self.trackers, splash) 
 
         self.greyed = [Fake_grey_window(self)]
@@ -978,23 +776,18 @@ if __name__ == "__main__":
     splash.update(Init_txt)
 
     # import after splash has been created
-    import traceback
     import threading
-    import queue
-    import os
-    import copy
-    import pickle as pickle
+    import traceback
     import timeago
     from bisect import bisect
     import textwrap
-    import json
     from tkinter import font
     import locale
     locale.setlocale(locale.LC_ALL, 'fr_FR.utf8') # date in French
 
+    from trackers import Trackers, TrackerState
     from imgtool import resize_and_colorize_gif, resize_and_colorize_img
-    from jsondate import json_decode_datetime, json_encode_datetime
-    from couriers import Couriers, get_local_now
+    from couriers import get_local_now
     from myWidget import MyButton, MyButtonImg, MyGraph
     from mylog import mylog, _log
     import popup
