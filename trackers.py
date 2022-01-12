@@ -95,22 +95,22 @@ class Tracker:
                 if courier_name in self.used_couriers and content['ok'] and content.get('idship') == self.idship:
                     contents_ok.append(copy.deepcopy(content))
 
-            if len(contents_ok) > 0:
-                contents_ok.sort(key = lambda c : c['status']['date'], reverse = True)
-                consolidated = contents_ok[0]
+        if len(contents_ok) > 0:
+            contents_ok.sort(key = lambda c : c['status']['date'], reverse = True)
+            consolidated = contents_ok[0]
                 
-                events = sum((content['events'] for content in contents_ok), [])
-                events.sort(key = lambda evt : evt['date'], reverse = True)
+            events = sum((content['events'] for content in contents_ok), [])
+            events.sort(key = lambda evt : evt['date'], reverse = True)
 
-                for event in events:
-                    event['new'] = frozenset(event.items()) not in self.loaded_events
+            for event in events:
+                event['new'] = frozenset(event.items()) not in self.loaded_events
 
-                consolidated['events'] = events 
+            consolidated['events'] = events 
                 
-                delivered = any(c['status'].get('delivered') for c in contents_ok)
-                consolidated['status']['delivered'] = delivered
-                consolidated['elapsed'] = events and (events[0]['date'] if delivered else get_local_now()) - events[-1]['date']
-                consolidated['status']['date'] = self.no_future(consolidated['status']['date'])
+            delivered = any(c['status'].get('delivered') for c in contents_ok)
+            consolidated['status']['delivered'] = delivered
+            consolidated['elapsed'] = events and (events[0]['date'] if delivered else get_local_now()) - events[-1]['date']
+            consolidated['status']['date'] = self.no_future(consolidated['status']['date'])
             
         consolidated['courier_update'] = self.get_courrier_update()
         
@@ -121,7 +121,7 @@ class Tracker:
             couriers_update = {}
             for courier_name in self.used_couriers:
                 content = self.contents.get(courier_name)
-                ok_date = self.no_future(content.get('status',{}).get('ok_date') if content else None)
+                ok_date = self.no_future(content and content.get('status', {}).get('ok_date'))
                 error = self.couriers_error.get(courier_name, True)
                 updating = self.couriers_updating.get(courier_name, False)
                 couriers_update[courier_name] = (ok_date, error, updating)
