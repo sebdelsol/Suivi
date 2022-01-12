@@ -74,16 +74,15 @@ class Tracker:
                     yield self.get_consolidated_content()
 
     def update_courier(self, courier_name):
-        # _log (f'update START - {self.description} - {self.idship}, {courier_name}')
         try:
             if courier := self.available_couriers.get(courier_name):
-                return courier.update(self.idship)
+                # _log (f'update START - {self.description} - {self.idship}, {courier_name}')
+                content = courier.update(self.idship)
+                _log (f'update DONE - {self.description} - {self.idship}, {courier_name}')
+                return content
         
         except:
             _log (traceback.format_exc(), error = True)
-        
-        finally:
-            _log (f'update DONE - {self.description} - {self.idship}, {courier_name}')
 
     def get_consolidated_content(self):
         consolidated = {}
