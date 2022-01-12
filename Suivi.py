@@ -47,6 +47,7 @@ class TrackerWidget:
         self.min_events_shown = self.min_events_shown
         self.reset_size()
         self.updating = False
+        self.min_width = 0
 
         # faster startup
         if not TrackerWidget.updating_gif:
@@ -94,7 +95,7 @@ class TrackerWidget:
         self.status_widget = sg.T('', p = 0, font = (VarFont, widget_status_font_size), expand_x = True, background_color = bg_color, k = lambda w : self.toggle_expand(w))
         self.expand_button = MyButton('▼', p = (b_p, 0), font = (VarFont, widget_expand_font_size), button_color = ('grey70', bg_color), mouseover_color = 'grey95', k = lambda w : self.toggle_expand(w))
 
-        self.events_widget = sg.MLine('', p = ((5, 5), (0, 5)), font = self.events_f, visible = False, disabled = True, border_width = 0, background_color = bg_color, no_scrollbar = True, s = (None, 1), expand_x = True, k = self.toggle_expand)
+        self.events_widget = sg.MLine('', p = ((5, 5), (0, 5)), font = self.events_f, visible = False, disabled = True, border_width = 0, background_color = bg_color, no_scrollbar = True, s = (None, self.min_events_shown), expand_x = True, k = self.toggle_expand)
         events_widget_pin = sg.pin(sg.Col([ [self.events_widget] ], p = (10, 0), background_color = bg_color, expand_x = True), expand_x = True)
         events_widget_pin.BackgroundColor = bg_color
 
@@ -141,8 +142,41 @@ class TrackerWidget:
     def is_events_visible(self):
         return self.height_events > 0
 
-    def get_pixel_size(self):
-        return self.pin.get_size()
+    def set_min_width(self, width):
+        self.min_width = width
+
+    def get_pixel_width(self):
+        return max(self.min_width, self.layout.Widget.winfo_reqwidth())
+        # max_w = 0
+        # if self.layout.visible:
+        #     rows = (self.title_col, self.status_col, self.events_widget)
+        #     for row in rows:
+        #         w = row.Widget.winfo_reqwidth()
+        #         padx = row.Pad[0]
+        #         w += sum(padx) if isinstance(padx, tuple) else (padx * 2)
+        #         max_w = max(w, max_w)
+
+        # print ('W', self.tracker.description, max_w, self.layout.Widget.winfo_reqwidth())
+        # return max(self.min_width, max_w)
+        # # return max(self.min_width, self.layout.Widget.winfo_reqwidth())
+
+    def get_pixel_height(self):
+        return self.pin.Widget.winfo_height() # get_size()[1]
+        # return self.layout.Widget.winfo_reqheight()
+        
+        # if self.layout.visible:
+        #     rows = (self.title_col, self.status_col, self.events_widget)
+        #     h = 0
+        #     for row in rows:
+        #         h += row.Widget.winfo_reqheight()
+        #         pady = row.Pad[1]
+        #         h += sum(pady) if isinstance(pady, tuple) else (pady * 2)
+
+        #     print ('H', self.tracker.description, h, self.layout.Widget.winfo_reqheight())
+        #     # return self.layout.Widget.winfo_reqheight()
+        #     return h
+        # else:
+        #     return 1
 
     def update_size(self, w):
         nb_events_shown =  float('inf') if self.expand_events else self.min_events_shown
@@ -151,18 +185,11 @@ class TrackerWidget:
 
         self.update_couriers_id_size()
 
-        # # tell frame not to let its children control its size
-        # self.layout.Widget.pack_propagate(0)
-        # h = 0
-        # for row in self.layout.Rows:
-        #     h += row[0].Widget.winfo_reqheight()
-        #     # h += row[0].Pad[1] * 2
+        # print ('UPDATE SIZE', self.tracker.description, w, h)
 
-
-        # h = self.title_col.Widget.winfo_reqheight() 
-        # h += self.status_col.Widget.winfo_reqheight()
-        # h += self.events_widget.Widget.winfo_reqheight() + sum(self.events_widget.Pad[1])
-        # self.layout.set_size((1200, h))
+        # tell frame not to let its children control its size
+        # self.layout.Widget.pack_propagate(0) # size not controlled by its children
+        # self.layout.set_size((self.get_pixel_width(), self.get_pixel_height()))
 
     def update_couriers_id_size(self):
         txts = [t for t in self.couriers_widget.get().split('\n')]
@@ -361,7 +388,7 @@ class TrackerWidget:
                 prt(ago.ljust(width_ago), autoscroll = False, t = ago_color)
         
         else:
-            self.couriers_widget.update(f"{' ' * len(Updating_txt)}{No_couriers_txt}", text_color = 'red')
+            self.couriers_widget.update(No_couriers_txt, text_color = 'red')
 
     def disable_buttons(self, disabled):
         for button in  self.buttons:
@@ -542,8 +569,17 @@ class TrackerWidgets:
         for widget in self.get_widgets_with_state(TrackerState.shown):
             widget.animate(animation_step)
 
+    def set_min_width(self, width):
+        for widget in self.get_widgets_with_state(TrackerState.shown):
+            widget.set_min_width(width)
+
     def update_size(self, window):
         shown = self.get_widgets_with_state(TrackerState.shown)
+
+        menu_w = self.widget_menu.Widget.winfo_reqwidth()
+        menu_h = self.widget_menu.Widget.winfo_reqheight()
+
+        self.set_min_width(menu_w)
 
         # resize all widgets with the max width & and change pin color
         max_width_shown = max(widget.width_events for widget in shown) if shown else 0
@@ -552,16 +588,13 @@ class TrackerWidgets:
 
         self.its_empty.update(visible = False if shown else True)
 
-        window.refresh() # for getting correct pixel sizes
         self.widgets_frame.contents_changed()
-
-        menu_w = self.widget_menu.Widget.winfo_reqwidth()
-        menu_h = self.widget_menu.Widget.winfo_reqheight()
+        window.refresh() # needed to get correct req width & height after MLines.setsize....
 
         # wanted size
         if shown:
-            w = max(widget.get_pixel_size()[0] for widget in shown) 
-            h = sum(widget.get_pixel_size()[1] for widget in self.widgets) + menu_h + 4
+            w = max(widget.get_pixel_width() for widget in shown) 
+            h = sum(widget.get_pixel_height() for widget in self.widgets) + menu_h + 4
 
             # need scrollbar ?
             screen_w, screen_h = window.get_screen_size()
@@ -582,13 +615,15 @@ class TrackerWidgets:
         else:
             self.widgets_frame.Widget.vscrollbar.pack_forget()
 
-            # need to set height beacuse the scrollbar missing prevents the right height computation in pySimpleGUI
+            # need to set height because the scrollbar missing prevents the right height computation in pySimpleGUI
             window.size = menu_w, menu_h + self.its_empty.Widget.winfo_reqheight() + self.its_empty.Pad[1] * 2
             
             # add spaces in its_empty to fit w
             wfont = font.Font(self.its_empty.ParentForm.TKroot, self.its_empty.Font)
             spaces = round(menu_w / wfont.measure(' ')) # in ' '
             self.its_empty.update(Empty_txt.center(spaces))
+
+        # window.refresh()
 
     def recenter(self, window, force = False):
         W, H = window.get_screen_size()
@@ -611,7 +646,7 @@ class Splash:
 
     def update(self, txt):
         self.log.update(f'{txt.capitalize()} ...')
-        self.window.refresh()
+        self.window.refresh() # needed since there's no window loop
 
     def close(self):
         self.window.close()
