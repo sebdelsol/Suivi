@@ -187,9 +187,6 @@ class Trackers:
     def get_not_deleted(self):
         return [tracker for tracker in self.trackers if tracker.state != TrackerState.deleted]
     
-    def get_archived(self):
-        return [tracker for tracker in self.trackers if tracker.state == TrackerState.archived]
-
     def count_state(self, state):
         return len([tracker for tracker in self.trackers if tracker.state == state])
 

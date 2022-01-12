@@ -614,7 +614,7 @@ class Fake_grey_window:
             if self.bind_id is None and self.window.TKroot.attributes('-alpha') == 1.0: # test visibility
                 self.fake = sg.Window('', [[]], size = self.window.size, location = self.window.current_location(), **self.kwargs)
                 self.fake.disable()
-                self.bind_id = self.window.TKroot.bind('<Configure>', self.window_changed, add='+')
+                self.bind_id = self.window.TKroot.bind('<Configure>', self.window_changed, add = '+')
         else:
             if self.bind_id is not None:
                 self.unbind('<Configure>', self.bind_id) 
