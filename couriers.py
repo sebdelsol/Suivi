@@ -129,7 +129,7 @@ class Courier:
                 event['warn'] = event.get('warn', False) or any(error_word in event['label'].lower() for error_word in self.error_words)
                 event['status'] = event.get('status', '')
 
-            status_date = infos.get('status_date', events[0]['date'] if events else get_local_now())
+            status_date = infos.get('status_date', events[0]['date'] if events else None) # get_local_now())
 
             if not (events or infos.get('status_label')):
                 ok = False
