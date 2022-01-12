@@ -454,7 +454,6 @@ class TrackerWidget:
     def unarchive(self, window):
         self.set_state(TrackerState.shown, window, False, Archives_updated_event, True)
 
-
     def get_pretty_creation_date(self):
         date = f'{self.tracker.creation_date:%a %d %b %y}'.replace('.', '')
         return three_char_month(date, 2)
@@ -843,3 +842,4 @@ if __name__ == "__main__":
 
     main_window.loop()
     main_window.close()
+    print ('exiting')

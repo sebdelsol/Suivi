@@ -37,7 +37,7 @@ def get_leaf_cls(cls):
 #------------------------------------------------------------------------------
 class Couriers:
     def __init__(self, splash):
-        self.couriers = dict( (cls.long_name, cls(splash)) for cls in get_leaf_cls(Courier) )
+        self.couriers = {cls.long_name: cls(splash) for cls in get_leaf_cls(Courier)}
 
     def get(self, name):
         return self.couriers.get(name)

@@ -44,7 +44,7 @@ class MyLog(sg.Window):
         self.TKroot.bind('<Configure>', self.resize)
         self.TKroot.after(self.listen_step, self.listen)
 
-    def listen(self):
+    def listen(self, exiting = False):
         try:
             while True:
                 args, error, kwargs = self.prints.get_nowait()
@@ -52,7 +52,8 @@ class MyLog(sg.Window):
                 self.output.print(*args, **kwargs, t = 'red' if error else 'green', font = self.log_font_bold if error else None)
 
         except queue.Empty:
-            self.TKroot.after(self.listen_step, self.listen)
+            if not exiting:
+                self.TKroot.after(self.listen_step, self.listen)
 
     def resize(self, event):
         if self.linked and ((event.x == 0 and event.y == 0) or self.current_location()!=self.wanted_pos):
@@ -117,8 +118,7 @@ class MyLog(sg.Window):
                 if event in (None, 'Link') or len(event) == 1 or re.match(r'\w+\:\d+', event):
                     break
         
-        else:
-            self.listen()
+        self.listen(exiting = True)
 
         super().close()
 
