@@ -98,8 +98,11 @@ class TrackerWidget:
         events_widget_pin = sg.pin(sg.Col([ [self.events_widget] ], p = (10, 0), background_color = bg_color, expand_x = True), expand_x = True)
         events_widget_pin.BackgroundColor = bg_color
 
-        layout = [ [ sg.Col([[ self.days_widget, self.desc_widget, id_couriers_widget, buttons ]], p = 0, background_color = bg_color_h, expand_x = True) ],
-                   [ sg.Col([[ updating_widget_pin, self.ago_widget, self.status_widget, self.expand_button ]], p = (10, 0), background_color = bg_color, expand_x = True) ],
+        self.title_col = sg.Col([[ self.days_widget, self.desc_widget, id_couriers_widget, buttons ]], p = 0, background_color = bg_color_h, expand_x = True)
+        self.status_col = sg.Col([[ updating_widget_pin, self.ago_widget, self.status_widget, self.expand_button ]], p = (10, 0), background_color = bg_color, expand_x = True)
+
+        layout = [ [ self.title_col ],
+                   [ self.status_col ],
                    [ events_widget_pin ] ]
 
         self.layout = sg.Col(layout, expand_x = True, p = 0, visible = self.tracker.state == TrackerState.shown, background_color = bg_color)
@@ -147,6 +150,19 @@ class TrackerWidget:
         self.events_widget.set_size((w, h))
 
         self.update_couriers_id_size()
+
+        # # tell frame not to let its children control its size
+        # self.layout.Widget.pack_propagate(0)
+        # h = 0
+        # for row in self.layout.Rows:
+        #     h += row[0].Widget.winfo_reqheight()
+        #     # h += row[0].Pad[1] * 2
+
+
+        # h = self.title_col.Widget.winfo_reqheight() 
+        # h += self.status_col.Widget.winfo_reqheight()
+        # h += self.events_widget.Widget.winfo_reqheight() + sum(self.events_widget.Pad[1])
+        # self.layout.set_size((1200, h))
 
     def update_couriers_id_size(self):
         txts = [t for t in self.couriers_widget.get().split('\n')]

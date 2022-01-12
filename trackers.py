@@ -39,7 +39,7 @@ class Tracker:
 
         self.loaded_events = set()
         for content in self.contents.values():
-            self.loaded_events |= set( frozenset(evt.items()) for evt in content.get('events', []) ) # can't hash dict
+            self.loaded_events |=  { tuple(evt.items()) for evt in content.get('events', []) } # can't hash dict
 
     def set_id(self, idship, description, used_couriers):
         self.used_couriers = used_couriers
@@ -101,7 +101,7 @@ class Tracker:
             events.sort(key = lambda evt : evt['date'], reverse = True)
 
             for event in events:
-                event['new'] = frozenset(event.items()) not in self.loaded_events
+                event['new'] = tuple(event.items()) not in self.loaded_events
 
             consolidated['events'] = events 
                 
@@ -133,7 +133,6 @@ class Tracker:
     def get_delivered(self):
         content = self.get_consolidated_content() 
         return content.setdefault('status', {}).get('delivered')
-
 
 #--------------
 class Trackers:
