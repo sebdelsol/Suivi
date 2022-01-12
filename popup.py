@@ -4,7 +4,7 @@ import webbrowser
 
 from myWidget import MyButton
 from couriers import Courier
-from style import FixFont, FixFontBold, VarFont, VarFontBold, Get_window_params
+from theme import FixFont, FixFontBold, VarFont, VarFontBold, Get_window_params
 
 #-------------
 class MyPopup(sg.Window):

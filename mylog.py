@@ -5,7 +5,7 @@ import sys
 is_debugger = sys.gettrace()
 
 from myWidget import MyButton
-from style import FixFont, FixFontBold, VarFont, Get_window_params
+from theme import FixFont, FixFontBold, VarFont, Get_window_params
 
 class MyLog(sg.Window):
     link_txt = '\n'.join('❱❱❱❱❱')

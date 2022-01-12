@@ -1,50 +1,12 @@
 import PySimpleGUI as sg
-
-TrackersFile = 'Trackers' # either .trck or .json 
+from all_txts import *
+from theme import *
 
 LOAD_AS_JSON = True
 SHOW_EVENTS = False
 SORT_ON_THE_FLY = False
 
-#-----------------------
-Refresh_color = '#408040'
-Archives_color = '#B2560D'
-Edit_color = '#6060FF'
-Trash_color = '#909090'
-Log_color = 'grey'
-
-Log_txt = 'Log'
-New_txt = 'Nouveau'
-Refresh_Txt = 'Rafraichir'
-Archives_txt = 'Archive'
-Trash_txt = 'Poubelle'
-Exit_txt = ' X '
-
-Do_delete_txt = 'Supprimer'
-Do_archive_txt = 'Archiver'
-Do_restore_txt = 'Restaurer'
-Do_unarchive_txt = 'Désarchiver'
-Do_edit_txt = 'Édition'
-
-Init_txt = 'inititialisation'
-Tracker_creation_txt = 'création suivi'
-Updating_txt ='Mise à jour... '
-Updated_txt = 'MàJ'
-Empty_txt = 'Vide'
-No_couriers_txt = 'Pas de Service Postaux'
-No_idship_txt = 'N° indéfini'
-Never_txt = 'jamais'
-Ago_txt = 'il y a'
-Unkown_status_txt = 'Status inconnu'
-Default_product_txt = 'Envoi'
-
-#-----------------------
-Log_img = 'icon/log.png'
-Edit_img = 'icon/edit.png'
-Refresh_img = 'icon/refresh.png'
-Archives_img = 'icon/archive.png'
-Trash_img = 'icon/trash.png'
-Mail_img = 'icon/mail.png'
+TrackersFile = 'Trackers' 
 
 #-----------------------
 delete_state = 'deleted'
@@ -72,34 +34,6 @@ Tracker_widgets_key = '-Tracks-'
 
 Exit_shorcuts = ('Escape:27', )
 Log_shorcut = 'l'
-
-#--------------------
-menu_color = 'grey75'
-empty_color = 'grey90'
-empty_font_size = 20
-menu_button_pad = 5
-menu_button_font_size = 12
-menu_button_height = 20
-menu_button_img_margin = 5
-
-widget_background_title_color = 'grey85'
-widget_background_event_color = 'grey90'
-widget_courier_font_size = 8
-widget_event_font_size = 8
-widget_elapsed_days_box_size = 50
-widget_elapsed_days_font_size = 15
-widget_description_font_size = 40
-widget_idship_font_size = 10
-widget_status_font_size = 15
-widget_expand_font_size = 10
-widget_button_pad = 4
-widget_button_size = 22
-widget_button_img_percent = .6
-widget_updating_gif_height = 20
-widget_event_max_width = 90
-widget_min_events_shown = 1
-widget_elpapse_days_intervals = [10, 20, 30]
-widget_elpased_days_colors = ['lime green', 'dark orange', 'red', 'black']
 
 #---------------------------------
 def three_char_month(date_txt, i):
@@ -1047,9 +981,6 @@ class Main_window(sg.Window):
 
 # ------------------------
 if __name__ == "__main__":
-
-    # import sys
-    from style import FixFont, FixFontBold, VarFont, VarFontBold, Get_window_params, Is_debugger
 
     sg.theme('GrayGrayGray')
 
