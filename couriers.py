@@ -182,12 +182,12 @@ class Cainiao(Scrapper):
     def _get_url_for_browser(self, idship):
         return f'https://global.cainiao.com/detail.htm?mailNoList={idship}&lang=zh'
 
-    def _scrape(self, driver, idship):
-        def get_timeline():
-            return driver.find_elements(By.XPATH, '//ol[@class="waybill-path"]/li/p')
+    def get_timeline(self, driver):
+        return driver.find_elements(By.XPATH, '//ol[@class="waybill-path"]/li/p')
 
+    def _scrape(self, driver, idship):
         try:
-            timeline = get_timeline()
+            timeline = self.get_timeline(driver)
         
         except NoSuchElementException:
             timeline = None
@@ -204,7 +204,7 @@ class Cainiao(Scrapper):
             _log(f'scrapper WAIT datas - {idship}')
             data_locator = (By.XPATH, f'//p[@class="waybill-num"][contains(text(),"{idship}")]')
             WebDriverWait(driver, self.timeout_elt).until(EC.visibility_of_element_located(data_locator))
-            timeline = get_timeline()
+            timeline = self.get_timeline(driver)
 
         return [ p.text for p in timeline ]
   
