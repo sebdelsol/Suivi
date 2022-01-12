@@ -39,11 +39,12 @@ class Tracker:
 
         self.loaded_events = set()
         for content in self.contents.values():
-            self.loaded_events |=  { tuple(evt.items()) for evt in content.get('events', []) } # can't hash dict
+            if events := content.get('events'):
+                self.loaded_events |=  { tuple(event.items()) for event in events } # can't hash dict
 
     def set_id(self, idship, description, used_couriers):
         self.used_couriers = used_couriers
-        self.description = description.title()
+        self.description = description.strip().title()
         self.idship = idship.strip()
 
     def prepare_update(self):
@@ -56,11 +57,11 @@ class Tracker:
         if self.idship and (n_couriers := len(self.used_couriers)) > 0:
 
             with ThreadPoolExecutor(max_workers = n_couriers) as executor:
-                to_courier = {executor.submit(self.update_courier, courier_name): courier_name for courier_name in self.used_couriers}
+                threads_to_courier = {executor.submit(self.update_courier, courier_name): courier_name for courier_name in self.used_couriers}
 
-                for future in as_completed(to_courier):
-                    courier_name = to_courier[future]
-                    new_content = future.result()
+                for thread in as_completed(threads_to_courier.keys()):
+                    courier_name = threads_to_courier[thread]
+                    new_content = thread.result()
 
                     with self.critical:
                         if new_content is not None:
@@ -105,7 +106,7 @@ class Tracker:
 
             consolidated['events'] = events 
                 
-            delivered = any(c['status'].get('delivered') for c in contents_ok)
+            delivered = any(content['status'].get('delivered') for content in contents_ok)
             consolidated['status']['delivered'] = delivered
             consolidated['elapsed'] = events and (events[0]['date'] if delivered else get_local_now()) - events[-1]['date']
             consolidated['status']['date'] = self.no_future(consolidated['status']['date'])
