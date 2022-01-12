@@ -1,4 +1,4 @@
-PySimpleGUI>=4.56.0
+PySimpleGUI==4.56.0
 timeago>=1.0.15
 Pillow>=9.0.0
 selenium>=4.1.0
