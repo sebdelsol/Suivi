@@ -4,7 +4,6 @@ from theme import *
 
 LOAD_AS_JSON = True
 SHOW_EVENTS = False
-SORT_ON_THE_FLY = False
 
 TrackersFile = 'Trackers' 
 
@@ -16,7 +15,6 @@ shown_state = 'shown'
 #----------------------------
 Recenter_event = '-Recenter-'
 Updating_event = '-Updating Changed-'
-Updating_done_event = 'done'
 Archives_updated_event = '-Archives updated-'
 Trash_updated_event = '-Trash Updated-'
 Update_widgets_size_event = '-Update Widgets Size-'
@@ -30,7 +28,9 @@ Exit_event = '-Exit-'
 
 Menu_key = '-Menu-'
 Its_empty_key = '-Empty-'
-Tracker_widgets_key = '-Tracks-'
+All_Tracker_widgets_key = '-Tracks-'
+Old_Tracker_widgets_key = '-Old Tracks-'
+New_Tracker_widgets_key = '-New Tracks-'
 
 Exit_shorcuts = ('Escape:27', )
 Log_shorcut = 'l'
@@ -273,7 +273,7 @@ class TrackerWidget:
         self.height_events = 0
         self.expand_events = False
 
-    def create_layout(self, first = False):
+    def create_layout(self):
         bg_color_h = widget_background_title_color
         bg_color = widget_background_event_color
 
@@ -315,7 +315,7 @@ class TrackerWidget:
 
         self.layout = sg.Col(layout, expand_x = True, p = 0, visible = self.tracker.state == shown_state, background_color = bg_color)
         self.pin = sg.pin(self.layout, expand_x = True) # collapse when hidden
-        self.pin.BackgroundColor = bg_color_h if first else bg_color
+        self.pin.BackgroundColor = bg_color
         return [[ self.pin ]]
 
     def finalize(self, window):
@@ -409,7 +409,7 @@ class TrackerWidget:
         self.disable_buttons(False)
         self.updating_widget.update(visible = False)
         self.updating = False
-        window.trigger_event(Updating_event, Updating_done_event)
+        window.trigger_event(Updating_event, '')
 
     def animate(self, animation_step):
         if self.updating_widget.visible:
@@ -636,7 +636,9 @@ class TrackerWidgets:
         self.widgets = []
         self.trackers = trackers
         
-        self.widgets_frame = window[Tracker_widgets_key]
+        self.widgets_frame = window[All_Tracker_widgets_key]
+        self.old_trackers = window[Old_Tracker_widgets_key]
+        self.new_trackers = window[New_Tracker_widgets_key]
         self.widget_menu = window[Menu_key]
         self.archives_button = window[Archives_event]
         self.refresh_button = window[Refresh_event]
@@ -649,15 +651,16 @@ class TrackerWidgets:
         n_trackers = len(trackers.trackers)
         for i, tracker in enumerate(trackers.trackers):
             splash.update(f'{Tracker_creation_txt} {i + 1}/{n_trackers}')
-            self.create_widget(window, tracker, i==0)
+            self.create_widget(window, tracker, new = False)
 
         self.update_size(window)
         self.recenter(window, True)
 
-    def create_widget(self, window, tracker, first = False):
+    def create_widget(self, window, tracker, new = False):
         widget = TrackerWidget(tracker)
 
-        window.extend_layout(self.widgets_frame, widget.create_layout(first))
+        where = self.new_trackers if new else self.old_trackers
+        window.extend_layout(where, widget.create_layout())
         self.widgets.append(widget)
         
         widget.finalize(window)
@@ -669,7 +672,7 @@ class TrackerWidgets:
         
         tracker = self.trackers.new(*tracker_params)
         if tracker:
-            self.create_widget(window, tracker)
+            self.create_widget(window, tracker, new = True)
 
     def get_widgets_with_state(self, state):
         return [widget for widget in self.widgets if widget.tracker.state == state]
@@ -694,8 +697,8 @@ class TrackerWidgets:
         for widget in widgets:
             tracker = widget.tracker
             color = 'green' if tracker.get_delivered() else 'red'
-            # txt = f'{tracker.get_pretty_creation_date()}, {tracker.description.ljust(w_desc)} - {tracker.get_pretty_idship()}'
-            txt = f'{tracker.description.ljust(w_desc)} - {tracker.get_pretty_idship()}'
+            txt = f'{tracker.get_pretty_creation_date()}, {tracker.description.ljust(w_desc)} - {tracker.get_pretty_idship()}'
+            # txt = f'{tracker.description.ljust(w_desc)} - {tracker.get_pretty_idship()}'
             choices.append((txt, color))
 
         popup_choices = popup.choices(choices, title, window)
@@ -722,27 +725,9 @@ class TrackerWidgets:
     def get_sorted(self, widgets):
         return self.trackers.sort(widgets, get_tracker = lambda widget : widget.tracker)
 
-    def sort_if_needed(self, window):
-        sorted_widgets = self.get_sorted(self.widgets)
-        if self.widgets != sorted_widgets:
-            _log (f'SORT widgets')
-            sorted_trackers = [widget.tracker for widget in sorted_widgets]
-            for widget, tracker in zip(self.widgets, sorted_trackers):
-                if widget.tracker != tracker:
-                    widget.tracker = tracker
-                    widget.show_current_content(window, force = True)
-                    widget.update_visiblity()
-
-            window.trigger_event(Update_widgets_size_event, '')
-
-    def updating_changed(self, window, event_value):
+    def updating_changed(self):
         n_updating, n_shown = self.count_updating()
         self.refresh_button.update(disabled = n_updating == n_shown)
-
-        if SORT_ON_THE_FLY:
-            if event_value == Updating_done_event:
-                if n_updating == 0:
-                    self.sort_if_needed(window)
 
     def animate(self, animation_step):
         for widget in self.get_widgets_with_state(shown_state):
@@ -767,7 +752,7 @@ class TrackerWidgets:
         # wanted size
         if shown:
             w = max(widget.get_pixel_size()[0] for widget in shown) 
-            h = sum(widget.get_pixel_size()[1] for widget in self.widgets) + menu_h + 3
+            h = sum(widget.get_pixel_size()[1] for widget in self.widgets) + menu_h + 4
 
             # need scrollbar ?
             screen_w, screen_h = window.get_screen_size()
@@ -834,10 +819,10 @@ class Fake_grey_window:
     def enable(self, enable):
         if enable:
             if self.bind_id is None and self.window.TKroot.attributes('-alpha') == 1.0: # test visibility
+                self.fake = sg.Window('', [[]], size = self.window.size, location = self.window.current_location(), **self.kwargs)
+                self.fake.disable()
                 self.already_bound = self.window.TKroot.bind('<Configure>') # bug with unbind that remove all
                 self.bind_id = self.window.TKroot.bind('<Configure>', self.window_changed, add='+')
-                self.fake = sg.Window('', [[]], size = self.window.size, location = self.window.current_location(), **self.kwargs)    
-                self.fake.disable()
         else:
             if self.bind_id is not None:
                 self.window.TKroot.unbind('<Configure>', self.bind_id) 
@@ -874,8 +859,12 @@ class Main_window(sg.Window):
         pin_empty = sg.pin(its_empty, expand_x = True)
         pin_empty.BackgroundColor = empty_color
 
-        layout = [[ sg.Col([[ log_b, new_b, refresh_b, archives_b, trash_b, recenter_widget, exit_b ]], p = 0, background_color = menu_color, expand_x = True, k = Menu_key) ],
-                  [ sg.Col([[ pin_empty ]], p = 0, scrollable = True, vertical_scroll_only = True, expand_x = True, expand_y = True, background_color = menu_color, k = Tracker_widgets_key) ]]
+        menu = sg.Col([[ log_b, new_b, refresh_b, archives_b, trash_b, recenter_widget, exit_b ]], p = 0, background_color = menu_color, expand_x = True, k = Menu_key)
+        new_trakers = sg.Col([[ ]], p = 0, scrollable = False, expand_x = True, expand_y = True, background_color = menu_color, k = New_Tracker_widgets_key)
+        old_trakers = sg.Col([[ pin_empty ]], p = 0, scrollable = False, expand_x = True, expand_y = True, background_color = menu_color, k = Old_Tracker_widgets_key)
+
+        all_trackers = sg.Col([[ new_trakers ], [ old_trakers ]], p = 0, scrollable = True, vertical_scroll_only = True, expand_x = True, expand_y = True, background_color = menu_color, k = All_Tracker_widgets_key)
+        layout = [ [ menu ], [ all_trackers ]]
 
         args, kwargs = Get_window_params(layout, alpha_channel = 0, resizable = True)
         super().__init__(*args, **kwargs)
@@ -953,7 +942,7 @@ class Main_window(sg.Window):
                 self.widgets.recenter(window, force = True)
 
             elif event == Updating_event: 
-                self.widgets.updating_changed(window, values[event])
+                self.widgets.updating_changed()
 
             elif event == Archives_updated_event: 
                 self.widgets.archives_updated()
