@@ -177,22 +177,17 @@ class TrackerWidget:
             threading.Thread(target = self.update_thread, args = (window,), daemon = True).start()
 
     def update_thread(self, window): 
-        try:
-            content = None
-            for content in self.tracker.update_all_couriers(): 
-                # https://stackoverflow.com/questions/10452770/python-lambdas-binding-to-local-values
-                window.trigger_event(lambda window, content = content: self.show(content, window))
+        content = None
+        for content in self.tracker.update_all_couriers(): 
+            # https://stackoverflow.com/questions/10452770/python-lambdas-binding-to-local-values
+            window.trigger_event(lambda window, content = content: self.show(content, window))
 
-            # nothing updated
-            if content is None:
-                window.trigger_event(lambda window: self.show({}, window))
+        # nothing updated
+        if content is None:
+            window.trigger_event(lambda window: self.show({}, window))
 
-        except:
-            _log (traceback.format_exc(), error = True)
-
-        finally:
-            self.lock.release()
-            window.trigger_event(lambda window: self.update_done(window))
+        self.lock.release()
+        window.trigger_event(lambda window: self.update_done(window))
 
     def update_done(self, window):
         self.disable_buttons(False)
@@ -496,7 +491,7 @@ class TrackerWidgets:
         choices = []
         for widget in widgets:
             color = 'green' if widget.get_delivered() else 'red'
-            txt = f'{widget.get_pretty_creation_date()}, {widget.get_pretty_description.ljust(w_desc)} - {widget.get_pretty_idship()}'
+            txt = f'{widget.get_pretty_creation_date()}, {widget.get_pretty_description().ljust(w_desc)} - {widget.get_pretty_idship()}'
             choices.append((txt, color))
 
         popup_choices = popup.choices(choices, title, window)
@@ -619,16 +614,19 @@ class Fake_grey_window:
             if self.bind_id is None and self.window.TKroot.attributes('-alpha') == 1.0: # test visibility
                 self.fake = sg.Window('', [[]], size = self.window.size, location = self.window.current_location(), **self.kwargs)
                 self.fake.disable()
-                self.already_bound = self.window.TKroot.bind('<Configure>') # bug with unbind that remove all
                 self.bind_id = self.window.TKroot.bind('<Configure>', self.window_changed, add='+')
         else:
             if self.bind_id is not None:
-                self.window.TKroot.unbind('<Configure>', self.bind_id) 
-                if self.already_bound not in self.window.TKroot.bind('<Configure>'): # bug with unbind that remove all
-                    self.window.TKroot.bind('<Configure>', self.already_bound)
+                self.unbind('<Configure>', self.bind_id) 
                 self.bind_id = None
                 self.fake.close()
                 del self.fake
+
+    # bug with unbind that remove all
+    def unbind(self, sequence, bind_id):
+        binds = self.window.TKroot.bind(sequence).split('\n')
+        new_binds = [l for l in binds if l[6:6 + len(bind_id)] != bind_id]
+        self.window.TKroot.bind(sequence, '\n'.join(new_binds))
 
     def window_changed(self, evt):
         w, h = self.window.size
@@ -690,11 +688,7 @@ class Main_window(sg.Window):
         self.do_greyed(False)
         super().close()
 
-        try:
-            self.trackers.save()
-            # self.trackers.clean_couriers()
-        except:
-            _log (traceback.format_exc(), error = True)
+        self.trackers.save()
 
         self.log.close()
         self.trackers.close()
@@ -769,7 +763,7 @@ class Main_window(sg.Window):
 # ------------------------
 if __name__ == "__main__":
 
-    sg.theme('GrayGrayGray')
+    sg.theme(Main_theme) 
 
     # create splash before importing to reduce startup time
     splash = Splash()
@@ -777,7 +771,6 @@ if __name__ == "__main__":
 
     # import after splash has been created
     import threading
-    import traceback
     import timeago
     from bisect import bisect
     import textwrap

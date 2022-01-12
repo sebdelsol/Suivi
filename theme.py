@@ -22,6 +22,8 @@ def three_char_month(date_txt, month_index):
     return ' '.join(txts)
 
 #----------------------------
+Main_theme = 'GrayGrayGray'
+
 FixFont = 'Roboto Mono Light'
 FixFontBold = 'Roboto Mono Bold'
 

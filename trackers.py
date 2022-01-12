@@ -184,18 +184,6 @@ class Trackers:
             self.trackers.append(tracker)
             return tracker
 
-    # def clean_couriers(self):
-    #     not_deleted = self.get_not_deleted()
-    #     archived = self.get_archived()
-        
-    #     for courier_name in self.couriers.get_names():
-    #         valid_idships = [tracker.idship for tracker in not_deleted if courier_name in tracker.used_couriers]
-    #         if valid_idships:
-    #             archived_idships = [tracker.idship for tracker in archived if courier_name in tracker.used_couriers]
-    #             courier = self.couriers.get(courier_name)
-    #             if courier:
-    #                 courier.clean(valid_idships, archived_idships)
-
     def get_not_deleted(self):
         return [tracker for tracker in self.trackers if tracker.state != TrackerState.deleted]
     

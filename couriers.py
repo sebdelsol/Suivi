@@ -14,7 +14,7 @@ from selenium.webdriver.common.by import By
 
 from mylog import _log
 from drivers import Drivers
-from config import LaPoste_key, dhl_key # , Ship24_key, PKGE_key
+from config import LaPoste_key, dhl_key 
 
 #------------------------------------------------------------------------------
 def get_sentence(txt, nb = -1):
@@ -75,33 +75,21 @@ class Courier:
     def __init__(self, splash):
         pass
 
-    def check_idship(self, idship):
-        return re.match(self.idship_check_pattern, idship)
-
-    # def clean(self, valid_idships, archived_idships): 
-    #     pass
-
     def close(self): 
         pass
+
+    def check_idship(self, idship):
+        return re.match(self.idship_check_pattern, idship)
 
     def get_url_for_browser(self, idship):
         if idship and self.check_idship(idship):
             return self._get_url_for_browser(idship)
-
-    # def _prepare_response(self, idship): 
-    #     pass
 
     def update(self, idship):
         if not self.check_idship(idship):
             _log (f"'{idship}' mal formé : il faut {self.idship_check_msg}", error = True)
         
         else:
-            # try:
-            #     self._prepare_response(idship)
-
-            # except requests.exceptions.Timeout:
-            #     _log (f' Timeout for request preparation to {self.long_name} about {idship}', error = True)
-            
             nb_retry = self.nb_retry
             while True:
                 ok = False
@@ -541,243 +529,3 @@ class DHL(Courier):
                 events.append(dict(date = get_local_time(event['date']), label = event['description']))
 
             return events, dict(product = product)
-
-#----------------------
-# class Ship24(Courier):
-    
-#     url = 'https://api.ship24.com/public/v1'
-#     api_key = Ship24_key
-
-#     def __init__(self):
-#         self.headers = {'Authorization': f'Bearer {self.api_key}',
-#                         'Content-Type': 'application/json',
-#                         'charset' : 'utf-8' }
-
-#     def request(self, method, url, json = None):
-#         r = requests.request(method, self.url + url, headers = self.headers, json = json, timeout = self.request_timeout)
-#         errors = r.json().get('errors')
-#         if errors:
-#             _log (f'Ship24 error request({url}): {errors}', error = True)
-#         return errors is None, r.json()['data']
-
-#     # use to know available couriers code
-#     # def show_couriers(self):
-#     #     couriers = self.request('GET', '/couriers')['couriers']
-#     #     for courier in couriers:
-#     #         print (f"FOR {courier['courierName']} USE '{courier['courierCode']}'")
-
-#     def _get_response(self, idship): 
-#         json = dict(trackingNumber = idship, courierCode = self.courier)
-#         return self.request('POST', f'/trackers/track', json = json)
-
-#     def _update(self, r): 
-#         events = []
-#         delivered = False
-
-#         trackings = r['trackings'][0]
-#         timeline = [evt for evt in trackings['events'] if evt['courierCode'] == self.courier]
-
-#         for event in timeline:
-#             event_date = get_local_time(event['datetime'])  # event['utcOffset'] ???
-#             event_status = event['location'].replace(self.long_name, '')
-#             event_label = event['status']
-#             events.append(dict( date = event_date, 
-#                                 status = event_status, 
-#                                 warn = False, 
-#                                 label = event_label))
-
-#             if 'delivered' in event_label.lower():
-#                 delivered = True
-
-#         shipment = trackings.get('shipment')
-#         fromto = f"{shipment['originCountryCode']}{Courier.r_arrow}{shipment['destinationCountryCode']}"
-        
-#         return events, dict(fromto = fromto, delivered = delivered)
-
-#----------------------
-# class Asendia(Ship24):
-#     long_name = 'Asendia'
-#     courier = 'asendia'
-
-#     def _get_url_for_browser(self, idship):
-#         return f'https://tracking.asendia.com/tracking/{idship}'
-
-#-------------------
-# import traceback 
-# import threading
-# from html import unescape
-# from datetime import timedelta 
-
-# class PKGE(Courier):
-    
-#     too_old_archived = 30 # days
-#     time_between_update = 5 #hours
-#     nb_retry = 2
-
-#     url = 'https://api.pkge.net/v1'
-#     api_key = PKGE_key
-
-#     status = dict((
-#         (0, ("Suivi en attente de mise à jour", True)),
-#         (1, ('Mise à jour du suivi en cours', True)),
-#         (2,	("Pas d'information de suivi disponible", True)),
-#         (3,	('Colis en transit', False)),
-#         (4,	('Colis arrivé à son point de retrait', False)),
-#         (5,	('Colis livré', False)),
-#         (6,	('Colis non livré', True)),
-#         (7,	('Erreur de livraison', True)),
-#         (8,	('Colis en préparation pour envoi', True)),
-#         (9,	('Fin de suivi du colis', False)),
-#     ))
-
-#     def __init__(self):
-#         self.headers = {'X-Api-Key': self.api_key, 'Accept-Language' : 'fr'}
-
-#         self.lock = threading.Lock()
-#         self.courier_ids = None
-#         self.existing = None
-
-#         self.init_courier_ids()
-#         self.init_existing()
-
-#     def request(self, method, url):
-#         r = requests.request(method, self.url + url, headers = self.headers, timeout = self.request_timeout)
-#         code = r.json()['code']
-#         if code != 200:
-#             _log (f"PKGE error {code} request({url}): {r.json()['payload']}", error = True)
-#             return None
-
-#         return r.json()['payload']
-
-#     def init_courier_ids(self):
-#         if self.lock.acquire(blocking=False):
-#             _log('PKGE init courier_id')
-#             try:
-#                 couriers = self.request('GET', '/couriers/enabled')
-#                 if couriers:
-#                     couriers_ids = dict((c['name'], c['id']) for c in couriers)
-#                     self.courier_ids = [couriers_ids.get(courier) for courier in self.couriers]
-#                     if not self.courier_ids:
-#                         _log (f'PKGE !!!!!!! add courier {self.courier} on https://business.pkge.net/docs/packages/add', error = True)
-#             except:
-#                 _log (traceback.format_exc(), error = True)
-#             finally:
-#                 self.lock.release()
-
-#     def check_courier_ids(self):
-#         if not self.courier_ids:
-#             self.init_courier_ids()
-
-#     def init_existing(self):
-#         if self.lock.acquire(blocking=False):
-#             _log('PKGE init existing')
-#             try:
-#                 trackings = self.request('GET', '/packages/list')
-#                 if trackings:
-#                     self.existing = dict( (t['track_number'], t) for t in trackings )
-#             except:
-#                 _log (traceback.format_exc(), error = True)
-#             finally:
-#                 self.lock.release()
-   
-#     def reinit_existing(self):
-#         if self.lock.acquire():
-#             self.existing = None
-#             self.lock.release()
-
-#     def check_existing(self):
-#         if not self.existing:
-#             self.init_existing()
-
-#     def ask_update(self, idship):
-#         _log (f'PKGE update {idship}')
-#         self.request('POST', f'/packages/update?trackNumber={idship}')
-#         self.reinit_existing()
-
-#     def add(self, idship):
-#         self.check_courier_ids()
-
-#         if self.courier_ids:
-#             _log (f'PKGE add {idship}')
-#             self.request('POST', f'/packages?trackNumber={idship}&courierId={self.courier_ids[0]}')
-#             self.reinit_existing()
-#             self.init_existing()
-
-#     def delete(self, idship):
-#         self.check_courier_ids()
-#         self.check_existing()
-
-#         if set(self.courier_ids or ()) & set(self.get_existing(idship, 'couriers_ids')):
-#         # if self.courier_id and self.courier_id in self.get_existing(idship, 'couriers_ids'):
-#             _log (f'PKGE delete {idship}')
-#             self.request('DELETE', f'/packages?trackNumber={idship}')
-
-#     def get_existing(self, idship, attr):
-#         return self.existing.get(idship, {}).get(attr)
-
-
-#     def _prepare_response(self, idship): 
-#         self.check_existing()
-
-#         if self.existing:
-#             if idship not in self.existing.keys():
-#                 self.add(idship)
-            
-#             # elif not (set(self.courier_ids or ()) & set(self.get_existing(idship, 'couriers_ids'))):
-#             #     self.add(idship)
-
-#             last_update = self.get_existing(idship, 'last_tracking_date')
-#             if not last_update or get_local_now() - get_local_time(last_update) > timedelta(hours = self.time_between_update):
-#                 self.ask_update(idship)
-
-#     def _get_response(self, idship): 
-#             r = self.request('GET', f'/packages?trackNumber={idship}')
-#             ok = not (r is None or r=='Package not found' or r['updating'] or r['status'] in (0, 1, 2))
-#             return ok, r
-
-#     def _update(self, r): 
-#         events = []
-
-#         timeline = r['checkpoints']
-
-#         for event in timeline:
-#             if event['courier_id'] in self.courier_ids:
-#                 event_date = get_local_time(event['date'])
-#                 event_label = f"{get_sentence(unescape(event['title']), 1)}"
-#                 events.append(dict( date = event_date, 
-#                                     status = '', 
-#                                     warn = 'error' in event_label.lower() or 'erreur' in event_label.lower(), 
-#                                     label = event_label))
-
-#         info_status = r['status']
-#         status_label, status_warn = self.status[info_status]
-#         delivered = info_status==5
-#         status_date = get_local_time(r['last_status_date'])
-
-#         return events, dict(delivered = delivered, status_label = status_label, status_warn = status_warn, status_date = status_date)
-
-#     def clean(self, valid_idships, archived_idships):
-#         self.check_existing()
-
-#         if self.existing:
-#             # delete trackings that no longer exists
-#             for idship in set(self.existing.keys()) - set(valid_idships):
-#                 self.delete(idship)
-        
-#             # delete archived trackings that have'nt been updated since too_old_archived
-#             for idship in set(archived_idships):
-#                 last_tracking_date = self.get_existing(idship, 'last_tracking_date')
-#                 if last_tracking_date:
-#                     elapsed = get_local_now() - get_local_time(last_tracking_date)
-#                     if elapsed.days > self.too_old_archived:
-#                         self.delete(idship)
-
-# #-------------------
-# class Cainiao(PKGE):
-#     long_name = 'Cainiao'
-#     couriers = ('Aliexpress Standard Shipping', 'Aliexpress', 'Global Cainiao')
-
-#     fromto = f'CN{Courier.r_arrow}FR'
-
-#     def _get_url_for_browser(self, idship):
-#         return f'https://global.cainiao.com/detail.htm?mailNoList={idship}'
