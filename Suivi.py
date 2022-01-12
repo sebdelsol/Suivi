@@ -340,7 +340,7 @@ class TrackerWidget:
         self.expand_events = not self.expand_events
         self.update_expand_button()
 
-        window.trigger_event(Update_widgets_size_event, '')
+        window.trigger_event(Update_widgets_size_event)
 
     def update_expand_button(self):
         is_visible = self.is_events_visible() and self.height_events >  self.min_events_shown
@@ -379,7 +379,7 @@ class TrackerWidget:
 
             self.disable_buttons(True)
             self.updating = True
-            window.trigger_event(Updating_event, '')
+            window.trigger_event(Updating_event)
             
             self.tracker.prepare_update()
             self.show_current_courier_widget()
@@ -392,24 +392,24 @@ class TrackerWidget:
             content = None
             for content in self.tracker.update_all_couriers(): 
                 # https://stackoverflow.com/questions/10452770/python-lambdas-binding-to-local-values
-                window.trigger_event(lambda window, content = content: self.show(content, window), '')
+                window.trigger_event(lambda window, content = content: self.show(content, window))
 
             # nothing updated
             if content is None:
-                window.trigger_event(lambda window: self.show({}, window), '')
+                window.trigger_event(lambda window: self.show({}, window))
 
         except:
             _log (traceback.format_exc(), error = True)
 
         finally:
             self.lock.release()
-            window.trigger_event(lambda window: self.update_done(window), '')
+            window.trigger_event(lambda window: self.update_done(window))
 
     def update_done(self, window):
         self.disable_buttons(False)
         self.updating_widget.update(visible = False)
         self.updating = False
-        window.trigger_event(Updating_event, '')
+        window.trigger_event(Updating_event)
 
     def animate(self, animation_step):
         if self.updating_widget.visible:
@@ -521,7 +521,7 @@ class TrackerWidget:
             self.events_widget.update(visible = self.is_events_visible())
             self.update_expand_button()
 
-            window.trigger_event(Update_widgets_size_event, '')
+            window.trigger_event(Update_widgets_size_event)
 
     def show_id(self, content):
         self.id_widget.update('') 
@@ -612,9 +612,9 @@ class TrackerWidget:
             self.update_visiblity()
             self.reset_size()
 
-            window.trigger_event(Update_widgets_size_event, '')
+            window.trigger_event(Update_widgets_size_event)
             
-            window.trigger_event(event, '')
+            window.trigger_event(event)
             if do_update:
                 self.update(window)
 
@@ -901,9 +901,9 @@ class Main_window(sg.Window):
         self.log.close()
         self.trackers.close()
 
-    def trigger_event(self, *evt):
+    def trigger_event(self, evt):
         if self.TKroot:
-            self.write_event_value(*evt)
+            self.write_event_value(evt, '')
 
     def animate(self):
         self.widgets.animate(self.animation_step)
