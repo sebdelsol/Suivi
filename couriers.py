@@ -12,6 +12,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 
+import urllib3
+
 from mylog import _log
 from drivers import Drivers
 from config import LaPoste_key, dhl_key 
@@ -149,6 +151,12 @@ class Courier:
 
 #-----------------------
 class Scrapper(Courier):
+
+    errors_catched = (WebDriverException, TimeoutException, 
+                      urllib3.exceptions.ProtocolError, 
+                      urllib3.exceptions.NewConnectionError, 
+                      urllib3.exceptions.MaxRetryError)
+
     def __init__(self, splash):
         self.drivers = Drivers(splash)
 
@@ -156,18 +164,20 @@ class Scrapper(Courier):
         try:
             driver = self.drivers.get()
 
-            _log(f'scrapper LOAD - {idship}')
-            driver.get(self._get_url_for_browser(idship))
-                
-            events = self._scrape(driver, idship)
-            return True, events
+            if driver:
+                _log(f'scrapper LOAD - {idship}')
+                driver.get(self._get_url_for_browser(idship))
+                    
+                events = self._scrape(driver, idship)
+                return True, events
         
-        except (WebDriverException, TimeoutException) as e:
+        except self.errors_catched as e: 
             _log (f'scrapper FAILURE - {type(e).__name__} for {idship}', error = True)
             return False, None
 
         finally:
-            self.drivers.dispose(driver)
+            if hasattr(self, 'driver') and driver:
+                self.drivers.dispose(driver)
 
     def close(self):
         self.drivers.close()
