@@ -82,7 +82,7 @@ class Drivers:
             _log (f'QUIT driver {i + 1}')
             driver.quit()
         
-        for proc in psutil.process_iter():
-            if 'chromedriver.exe' in proc.name().lower():
-                _log (f'KILL {proc.name()} {proc.pid}')
-                proc.kill()
+        # for proc in psutil.process_iter():
+        #     if 'chromedriver.exe' in proc.name().lower():
+        #         _log (f'KILL {proc.name()} {proc.pid}')
+        #         proc.kill()
