@@ -651,7 +651,7 @@ class Splash:
         self.window.close()
 
 # ---------------------
-class Fake_grey_window:
+class Grey_window:
     def __init__(self, window):
         self.window = window
 
@@ -662,15 +662,15 @@ class Fake_grey_window:
     def enable(self, enable):
         if enable:
             if self.bind_id is None and self.window.TKroot.attributes('-alpha') == 1.0: # test visibility
-                self.fake = sg.Window('', [[]], size = self.window.size, location = self.window.current_location(), **self.kwargs)
-                self.fake.disable()
+                self.grey = sg.Window('', [[]], size = self.window.size, location = self.window.current_location(), **self.kwargs)
+                self.grey.disable()
                 self.bind_id = self.window.TKroot.bind('<Configure>', self.window_changed, add = '+')
         else:
             if self.bind_id is not None:
                 self.unbind('<Configure>', self.bind_id) 
                 self.bind_id = None
-                self.fake.close()
-                del self.fake
+                self.grey.close()
+                del self.grey
 
     # bug with unbind that remove all
     def unbind(self, sequence, bind_id):
@@ -681,7 +681,7 @@ class Fake_grey_window:
     def window_changed(self, evt):
         w, h = self.window.size
         x, y = self.window.current_location()
-        self.fake.TKroot.geometry(f'{w}x{h}+{x}+{y}')
+        self.grey.TKroot.geometry(f'{w}x{h}+{x}+{y}')
 
 # --------------------------------------------------
 class Main_window(sg.Window):
@@ -721,7 +721,7 @@ class Main_window(sg.Window):
         self.trackers = Trackers(TrackersFile, LOAD_AS_JSON, splash) 
         self.widgets = TrackerWidgets(self, self.trackers, splash) 
 
-        self.greyed = [Fake_grey_window(self)]
+        self.grey_windows = [Grey_window(self)]
 
         self.animation_step = self.animation_step
         self.TKroot.after(self.animation_step, self.animate)
@@ -731,16 +731,14 @@ class Main_window(sg.Window):
     def add_log(self, log):
         self.log = log
         log.link_to(self)
-        self.greyed.append(Fake_grey_window(log))
+        self.grey_windows.append(Grey_window(log))
         self.TKroot.bind('<Configure>', lambda evt: log.stick_to_main())
 
     def close(self):
-        self.do_greyed(False)
+        self.grey(False)
         super().close()
 
         self.trackers.save()
-
-        self.log.close()
         self.trackers.close()
 
     def trigger_event(self, evt):
@@ -751,9 +749,9 @@ class Main_window(sg.Window):
         self.widgets.animate(self.animation_step)
         self.TKroot.after(self.animation_step, self.animate)
 
-    def do_greyed(self, enable):
-        for grey in self.greyed:
-            grey.enable(enable)
+    def grey(self, enable):
+        for grey_window in self.grey_windows:
+            grey_window.enable(enable)
 
     def loop(self):
         while True:
@@ -842,4 +840,5 @@ if __name__ == "__main__":
 
     main_window.loop()
     main_window.close()
+    mylog.close()
     print ('exiting')
