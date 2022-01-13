@@ -40,7 +40,6 @@ class TrackerWidget:
     max_event_width = widget_event_max_width # chars
 
     button_size = (widget_button_size, widget_button_size)
-    img_per = widget_button_img_percent
     updating_gif, refresh_img, edit_img, archive_img = None, None, None, None
 
     def __init__(self, tracker):
@@ -55,10 +54,11 @@ class TrackerWidget:
         if not TrackerWidget.updating_gif:
             TrackerWidget.updating_gif = resize_and_colorize_gif(sg.DEFAULT_BASE64_LOADING_GIF, widget_updating_gif_height, Refresh_color) 
 
-            height = self.button_size[1] * self.img_per
-            TrackerWidget.refresh_img = resize_and_colorize_img(Refresh_img, height, Refresh_color, self.button_size)
-            TrackerWidget.edit_img = resize_and_colorize_img(Edit_img, height, Edit_color, self.button_size)
-            TrackerWidget.archive_img = resize_and_colorize_img(Archives_img, height, Archives_color, self.button_size)
+            height = widget_button_size - widget_button_img_margin * 2
+            size = (widget_button_size, widget_button_size)
+            TrackerWidget.refresh_img = resize_and_colorize_img(Refresh_img, height, Refresh_color, size)
+            TrackerWidget.edit_img = resize_and_colorize_img(Edit_img, height, Edit_color, size)
+            TrackerWidget.archive_img = resize_and_colorize_img(Archives_img, height, Archives_color, size)
 
     def reset_size(self):
         self.width_events = 0
@@ -114,8 +114,9 @@ class TrackerWidget:
         return [[ self.pin ]]
 
     def finalize(self, window):
+        size = (widget_button_size, widget_button_size)
         for button in  self.buttons:
-            button.set_size(self.button_size) 
+            button.set_size(size) 
             button.finalize()
 
         self.expand_button.finalize()
