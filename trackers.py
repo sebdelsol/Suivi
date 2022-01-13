@@ -42,7 +42,7 @@ class Tracker:
         self.couriers_updating = {}
 
         self.executor_ops = threading.Lock()
-        self.executor = None
+        self.executors = []
 
         self.loaded_events = set()
         for content in self.contents.values():
@@ -50,47 +50,71 @@ class Tracker:
                 self.loaded_events |=  { tuple(event.items()) for event in events } # can't hash dict
 
     def set_id(self, idship, description, used_couriers):
-        self.used_couriers = used_couriers
-        self.description = description.strip().title()
-        self.idship = idship.strip()
+        self.used_couriers = used_couriers or []
+        self.description = (description or '').strip().title()
+        self.idship = (idship or '').strip()
 
-    def prepare_update(self):
-        with self.critical:
-            for courier_name in self.used_couriers:
-                self.couriers_error[courier_name] = True
-                self.couriers_updating[courier_name] = True
+    def _get_and_prepare_idle_couriers_names(self):
+        if self.idship: 
+            with self.critical:
+                for courier_name in self.used_couriers:
+                    if not self.couriers_updating.get(courier_name):
+                        self.couriers_error[courier_name] = True
+                        self.couriers_updating[courier_name] = True
+                        yield courier_name
 
-    def update_all_couriers(self):
-        if self.idship and (n_couriers := len(self.used_couriers)) > 0:
-            
-            with self.executor_ops:
-                self.executor = ThreadPoolExecutor(max_workers = n_couriers)
-                futures = (self.executor.submit(self.update_courier, courier_name) for courier_name in self.used_couriers)
+    def get_idle_couriers(self):
+        return list(self._get_and_prepare_idle_couriers_names())
 
-            if self.executor:
-                for future in as_completed(futures):
-                    if result := future.result():
-                        new_content, courier_name = result
-                        with self.critical:
-                            if new_content is not None:
-                                if new_content['ok'] or courier_name not in self.contents:
-                                    new_content['courier_name'] = courier_name
-                                    self.contents[courier_name] = new_content
+    def is_courier_still_updating(self):
+        if self.idship: 
+            with self.critical:
+                for courier_name in self.used_couriers:
+                    if self.couriers_updating.get(courier_name):
+                        return True
+                else:
+                    return False
+        else:
+            return True
 
-                            error = not(new_content and new_content['ok'])
-                            self.couriers_error[courier_name] = error
-                            self.couriers_updating[courier_name] = False
-                            
-                            msg = 'FAILED' if error else 'DONE'
-                            _log (f'update {msg} - {self.description} - {self.idship}, {courier_name}', error = error)
-
-                        yield self.get_consolidated_content()
-                
+    def update_idle_couriers(self, courier_names):
+        if self.idship: 
+            _log (f'start UPDATE - {self.description} - {self.idship} - [{" - ".join(courier_names)}]')
+            if (n_couriers := len(courier_names)) > 0:
                 with self.executor_ops:
-                    self.executor.shutdown()
-                    self.executor = None
+                    executor = ThreadPoolExecutor(max_workers = n_couriers)
+                    futures = (executor.submit(self._update_courier, courier_name) for courier_name in courier_names)
+                    self.executors.append(executor)
 
-    def update_courier(self, courier_name):
+                if executor:
+                    for future in as_completed(futures):
+                        if result := future.result():
+                            new_content, courier_name = result
+                            with self.critical:
+                                if new_content is not None:
+                                    if new_content['ok'] or courier_name not in self.contents:
+                                        new_content['courier_name'] = courier_name
+                                        self.contents[courier_name] = new_content
+
+                                error = not(new_content and new_content['ok'])
+                                self.couriers_error[courier_name] = error
+                                self.couriers_updating[courier_name] = False
+                                
+                                msg = 'FAILED' if error else 'DONE'
+                                _log (f'update {msg} - {self.description} - {self.idship}, {courier_name}', error = error)
+
+                            yield self.get_consolidated_content()
+                    
+                    with self.executor_ops:
+                        executor.shutdown()
+                        self.executors.remove(executor)
+                
+                # be sure to remove all updating flag
+                with self.critical:
+                    for courier_name in courier_names:
+                        self.couriers_updating[courier_name] = False
+
+    def _update_courier(self, courier_name):
         try:
             if courier := self.available_couriers.get(courier_name):
                 content = courier.update(self.idship)
@@ -123,7 +147,7 @@ class Tracker:
             delivered = any(content['status'].get('delivered') for content in contents_ok)
             consolidated['status']['delivered'] = delivered
             consolidated['elapsed'] = events and (events[0]['date'] if delivered else get_local_now()) - events[-1]['date']
-            consolidated['status']['date'] = self.no_future(consolidated['status']['date'])
+            consolidated['status']['date'] = self._no_future(consolidated['status']['date'])
             
         consolidated['courier_update'] = self.get_courrier_update()
         
@@ -134,14 +158,14 @@ class Tracker:
             couriers_update = {}
             for courier_name in self.used_couriers:
                 content = self.contents.get(courier_name)
-                ok_date = self.no_future(content and content.setdefault('status', {}).get('ok_date'))
+                ok_date = self._no_future(content and content.setdefault('status', {}).get('ok_date'))
                 error = self.couriers_error.get(courier_name, True)
                 updating = self.couriers_updating.get(courier_name, False)
                 couriers_update[courier_name] = (ok_date, error, updating)
 
         return couriers_update
 
-    def no_future(self, date):
+    def _no_future(self, date):
         if date : # not in future
             return min(date, get_local_now())
 
@@ -151,10 +175,11 @@ class Tracker:
 
     def close(self):
         with self.executor_ops:
-            if self.executor:
-                # https://stackoverflow.com/questions/49992329/the-workers-in-threadpoolexecutor-is-not-really-daemon
-                for thread in self.executor._threads:
-                    del _threads_queues[thread] 
+            if self.executors :
+                for executor in self.executors:
+                    # https://stackoverflow.com/questions/49992329/the-workers-in-threadpoolexecutor-is-not-really-daemon
+                    for thread in executor._threads:
+                        del _threads_queues[thread] 
 
 #--------------
 class Trackers:
@@ -199,10 +224,9 @@ class Trackers:
         return sorted(objs, key = lambda obj : get_tracker(obj).creation_date, reverse = True)
 
     def new(self, idship, description, used_couriers):
-        if idship is not None:
-            tracker = Tracker(idship, description, used_couriers, self.couriers)
-            self.trackers.append(tracker)
-            return tracker
+        tracker = Tracker(idship, description, used_couriers, self.couriers)
+        self.trackers.append(tracker)
+        return tracker
 
     def get_not_deleted(self):
         return [tracker for tracker in self.trackers if tracker.state != TrackerState.deleted]

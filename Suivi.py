@@ -44,10 +44,9 @@ class TrackerWidget:
 
     def __init__(self, tracker):
         self.tracker = tracker
-        self.lock = threading.Lock()
         self.min_events_shown = self.min_events_shown
         self.reset_size()
-        self.updating = False
+        self.free_to_update = True
         self.min_width = 0
 
         # faster startup
@@ -71,9 +70,12 @@ class TrackerWidget:
 
         b_p = widget_button_pad
         b_colors = dict(button_color = bg_color_h, mouseover_color = 'grey95')
-        self.buttons = [ MyButton('', image_data = self.edit_img, p = (0, b_p), **b_colors, k = self.edit),
-                         MyButton('', image_data = self.refresh_img, p = 0, **b_colors, k = self.update),
-                         MyButton('', image_data = self.archive_img, p = (0, b_p), **b_colors, k = self.archive_or_delete) ]
+
+        edit_button = MyButton('', image_data = self.edit_img, p = (0, b_p), **b_colors, k = self.edit)
+        self.refresh_button = MyButton('', image_data = self.refresh_img, p = 0, **b_colors, k = self.update)
+        archive_button = MyButton('', image_data = self.archive_img, p = (0, b_p), **b_colors, k = self.archive_or_delete)
+
+        self.buttons = [ edit_button, self.refresh_button, archive_button ]
 
         self.courier_fsize = widget_courier_font_size
         self.events_f = (FixFont, widget_event_font_size)
@@ -201,8 +203,8 @@ class TrackerWidget:
         txt = self.id_widget.get()
         self.id_widget.set_size((len(txt), 1))
 
-    def show_current_content(self, window, force = False):
-        self.show(self.tracker.get_consolidated_content(), window, force)
+    def show_current_content(self, window):
+        self.show(self.tracker.get_consolidated_content(), window)
 
     def show_current_courier_widget(self):
         couriers_update = self.tracker.get_courrier_update()
@@ -210,44 +212,46 @@ class TrackerWidget:
         self.update_couriers_id_size()
 
     def update(self, window):
-        if self.tracker.state == TrackerState.shown and self.lock.acquire(blocking = False):
+        if self.tracker.state == TrackerState.shown:
+            self.free_to_update = False
+            if couriers := self.tracker.get_idle_couriers():
+                self.disable_buttons(True)
+                window.trigger_event(Updating_event)
 
-            self.disable_buttons(True)
-            self.updating = True
-            window.trigger_event(Updating_event)
-            
-            self.tracker.prepare_update()
-            self.show_current_courier_widget()
-            self.updating_widget.update(visible = True)
+                self.show_current_courier_widget()
+                self.updating_widget.update(visible = True)
 
-            threading.Thread(target = self.update_thread, args = (window,), daemon = True).start()
+                threading.Thread(target = self.update_thread, args = (window, couriers), daemon = True).start()
+            else:
+                self.refresh_button.update(disabled = True)
+                self.show_current_content(window)
 
-    def update_thread(self, window): 
+    def update_thread(self, window, couriers): 
         content = None
-        for content in self.tracker.update_all_couriers(): 
+        for content in self.tracker.update_idle_couriers(couriers): 
             # https://stackoverflow.com/questions/10452770/python-lambdas-binding-to-local-values
-            window.trigger_event(lambda window, content = content: self.show(content, window))
+            window.trigger_event(lambda window, content = content: self.update_one_courier_done(content, window))
 
-        # nothing updated
-        if content is None:
-            window.trigger_event(lambda window: self.show({}, window))
-
-        self.lock.release()
         window.trigger_event(lambda window: self.update_done(window))
 
+    def update_one_courier_done(self, content, window):
+        self.show(content, window)
+        self.refresh_button.update(disabled = False)
+        self.free_to_update = True
+        window.trigger_event(Updating_event)
+    
     def update_done(self, window):
         self.disable_buttons(False)
-        self.updating_widget.update(visible = False)
-        self.updating = False
+        self.updating_widget.update(visible = self.tracker.is_courier_still_updating())
         window.trigger_event(Updating_event)
 
     def animate(self, animation_step):
         if self.updating_widget.visible:
             self.updating_widget.update_animation(self.updating_gif, time_between_frames = animation_step)
 
-    def show(self, content, window, force = False):
+    def show(self, content, window):
         tracker = self.tracker
-        if force or tracker.state == TrackerState.shown:
+        if tracker.state == TrackerState.shown:
             
             delivered = '✔' if content.get('status', {}).get('delivered') else ''
             self.desc_widget.update(f'{self.get_pretty_description()}{delivered}') 
@@ -398,17 +402,13 @@ class TrackerWidget:
             button.update(disabled = disabled)
 
     def edit(self, window):
-        self.disable_buttons(True)
-
         popup_edit = popup.edit(Do_edit_txt, self.tracker.idship, self.tracker.description, self.tracker.used_couriers, self.tracker.available_couriers, window)
-        idship, description, used_couriers = popup_edit.loop()
-        
-        if idship is not None:
+        ok, idship, description, used_couriers = popup_edit.loop()
+
+        if ok:        
             self.tracker.set_id(idship, description, used_couriers)
             self.reset_size()
             self.update(window)
-
-        self.disable_buttons(False)
 
     def update_visiblity(self):
         self.layout.update(visible = self.tracker.state==TrackerState.shown)
@@ -508,10 +508,10 @@ class TrackerWidgets:
 
     def new(self, window):
         popup_edit = popup.edit(New_txt, '', New_txt, [], self.trackers.couriers, window)
-        tracker_params = popup_edit.loop()
+        ok, *tracker_params = popup_edit.loop()
         
-        tracker = self.trackers.new(*tracker_params)
-        if tracker:
+        if ok:
+            tracker = self.trackers.new(*tracker_params)
             self.create_widget(window, tracker, new = True)
 
     def get_widgets_with_state(self, state):
@@ -552,10 +552,6 @@ class TrackerWidgets:
         n_deleted = self.trackers.count_state(TrackerState.deleted)
         self.deleted_button.update(f'{Trash_txt}({n_deleted})')
 
-    def count_updating(self):
-        shown = self.get_widgets_with_state(TrackerState.shown)
-        return [widget.updating for widget in shown].count(True), len(shown)
-
     def update(self, window):
         for widget in self.get_widgets_with_state(TrackerState.shown):
             widget.update(window)
@@ -563,9 +559,13 @@ class TrackerWidgets:
     def get_sorted(self, widgets):
         return self.trackers.sort(widgets, get_tracker = lambda widget : widget.tracker)
 
+    def count_free_to_update(self):
+        shown = self.get_widgets_with_state(TrackerState.shown)
+        return [widget.free_to_update for widget in shown].count(True)
+
     def updating_changed(self):
-        n_updating, n_shown = self.count_updating()
-        self.refresh_button.update(disabled = n_updating == n_shown)
+        n_free_to_update = self.count_free_to_update()
+        self.refresh_button.update(disabled = n_free_to_update == 0)
 
     def animate(self, animation_step):
         for widget in self.get_widgets_with_state(TrackerState.shown):

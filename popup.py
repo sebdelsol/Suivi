@@ -89,15 +89,16 @@ class edit(MyPopup):
             return super().event_handler(event)
 
     def loop(self):
-        idship, description, used_couriers = None, None, None
+        ok, idship, description, used_couriers = False, None, None, None
 
         if super().loop():
+            ok = True
             idship = self['idship'].get() 
             description = self['description'].get()
             used_couriers = [name for name in self.couriers_names if self[name].get()]
 
         self.close()
-        return idship, description, used_couriers
+        return ok, idship, description, used_couriers
 
 #--------------------------------------
 class choices(MyPopup):
