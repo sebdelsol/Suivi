@@ -17,6 +17,9 @@ class TrackerState:
     archived = 'archived'
     shown = 'shown'
 
+json_ext = '.json'
+pickle_ext = '.trck'
+
 #------------------------
 class SavedTracker(dict):
     def __init__(self, tracker):
@@ -160,10 +163,10 @@ class Trackers:
         self.couriers = Couriers(splash)
 
         if load_as_json:
-            trackers = self._load('.json', 'r', lambda f: json.load(f, object_hook = json_decode_datetime))
+            trackers = self._load(json_ext, 'r', lambda f: json.load(f, object_hook = json_decode_datetime))
         
         else:
-            trackers = self._load('.trck', 'rb', lambda f: pickle.load(f))
+            trackers = self._load(pickle_ext, 'rb', lambda f: pickle.load(f))
 
         if trackers:
             trackers = [Tracker(trk['idship'], trk['description'], trk['used_couriers'], self.couriers, trk['state'], trk['contents'], trk['creation_date']) for trk in trackers]
@@ -174,8 +177,8 @@ class Trackers:
         trackers = self.sort(self.get_not_deleted())
         saved_trackers = [SavedTracker(tracker) for tracker in trackers]
 
-        self._save(saved_trackers, '.trck', 'wb', lambda obj, f: pickle.dump(obj, f))
-        self._save(saved_trackers, '.json', 'w', lambda obj, f: json.dump(obj, f, default = json_encode_datetime, indent = 4))
+        self._save(saved_trackers, pickle_ext, 'wb', lambda obj, f: pickle.dump(obj, f))
+        self._save(saved_trackers, json_ext, 'w', lambda obj, f: json.dump(obj, f, default = json_encode_datetime, indent = 4))
 
     def _load(self, ext, mode, load):
         filename = self.filename + ext
