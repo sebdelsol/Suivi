@@ -134,7 +134,7 @@ class Tracker:
             couriers_update = {}
             for courier_name in self.used_couriers:
                 content = self.contents.get(courier_name)
-                ok_date = self.no_future(content.setdefault('status', {}).get('ok_date'))
+                ok_date = self.no_future(content and content.setdefault('status', {}).get('ok_date'))
                 error = self.couriers_error.get(courier_name, True)
                 updating = self.couriers_updating.get(courier_name, False)
                 couriers_update[courier_name] = (ok_date, error, updating)
