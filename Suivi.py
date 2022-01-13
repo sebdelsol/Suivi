@@ -91,20 +91,20 @@ class TrackerWidget:
         id_couriers_widget = sg.Col([[ self.id_widget ], [ self.couriers_widget ]], p = ((5, 0), (b_p, b_p)), background_color = bg_color_h, expand_x = True, vertical_alignment = 'top')
         buttons = sg.Col([[button] for button in self.buttons], p = (10, 0), background_color = bg_color_h, expand_x = False)
 
-        self.updating_widget = sg.Image(data = self.updating_gif, p = 3, visible = False, background_color = bg_color, k = lambda w : self.toggle_expand(w))
+        self.updating_widget = sg.Image(data = self.updating_gif, p = 1, visible = False, background_color = bg_color, k = lambda w : self.toggle_expand(w))
         updating_widget_pin = sg.pin(self.updating_widget)
         updating_widget_pin.BackgroundColor = bg_color
 
         self.ago_widget = sg.T('', p = 0, font = (VarFont, widget_status_font_size), expand_x = False, background_color = bg_color, text_color = 'grey50', k = lambda w : self.toggle_expand(w))
         self.status_widget = sg.T('', p = 0, font = (VarFont, widget_status_font_size), expand_x = True, background_color = bg_color, k = lambda w : self.toggle_expand(w))
-        self.expand_button = MyButton('▼', p = (b_p, 0), font = (VarFont, widget_expand_font_size), button_color = ('grey70', bg_color), mouseover_color = 'grey95', k = lambda w : self.toggle_expand(w))
+        self.expand_button = MyButton('▼', p = (4, 0), font = (VarFont, widget_expand_font_size), button_color = ('grey70', bg_color), mouseover_color = 'grey95', k = lambda w : self.toggle_expand(w))
 
         self.events_widget = sg.MLine('', p = ((5, 5), (0, 5)), font = self.events_f, visible = False, disabled = True, border_width = 0, background_color = bg_color, no_scrollbar = True, s = (None, self.min_events_shown), expand_x = True, k = self.toggle_expand)
         events_widget_pin = sg.pin(sg.Col([ [self.events_widget] ], p = (10, 0), background_color = bg_color, expand_x = True), expand_x = True)
         events_widget_pin.BackgroundColor = bg_color
 
         self.title_col = sg.Col([[ self.days_widget, self.desc_widget, id_couriers_widget, buttons ]], p = 0, background_color = bg_color_h, expand_x = True)
-        self.status_col = sg.Col([[ updating_widget_pin, self.ago_widget, self.status_widget, self.expand_button ]], p = (10, 0), background_color = bg_color, expand_x = True)
+        self.status_col = sg.Col([[ self.expand_button, self.ago_widget, self.status_widget, updating_widget_pin ]], p = (10, 0), background_color = bg_color, expand_x = True)
 
         layout = [ [ self.title_col ],
                    [ self.status_col ],
