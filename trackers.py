@@ -7,7 +7,6 @@ import pickle as pickle
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from concurrent.futures.thread import _threads_queues
 
-
 from jsondate import json_decode_datetime, json_encode_datetime
 from couriers import Couriers, get_local_now
 from mylog import _log
@@ -63,27 +62,26 @@ class Tracker:
             
             with self.executor_ops:
                 self.executor = ThreadPoolExecutor(max_workers = n_couriers)
-                futures = {self.executor.submit(self.update_courier, courier_name): courier_name for courier_name in self.used_couriers}
+                futures = (self.executor.submit(self.update_courier, courier_name) for courier_name in self.used_couriers)
 
             if self.executor:
                 for future in as_completed(futures):
-                    courier_name = futures[future]
-                    new_content = future.result()
+                    if result := future.result():
+                        new_content, courier_name = result
+                        with self.critical:
+                            if new_content is not None:
+                                if new_content['ok'] or courier_name not in self.contents:
+                                    new_content['courier_name'] = courier_name
+                                    self.contents[courier_name] = new_content
 
-                    with self.critical:
-                        if new_content is not None:
-                            if new_content['ok'] or courier_name not in self.contents:
-                                new_content['courier_name'] = courier_name
-                                self.contents[courier_name] = new_content
+                            error = not(new_content and new_content['ok'])
+                            self.couriers_error[courier_name] = error
+                            self.couriers_updating[courier_name] = False
+                            
+                            msg = 'FAILED' if error else 'DONE'
+                            _log (f'update {msg} - {self.description} - {self.idship}, {courier_name}', error = error)
 
-                        error = not(new_content and new_content['ok'])
-                        self.couriers_error[courier_name] = error
-                        self.couriers_updating[courier_name] = False
-                        
-                        msg = 'FAILED' if error else 'DONE'
-                        _log (f'update {msg} - {self.description} - {self.idship}, {courier_name}', error = error)
-
-                    yield self.get_consolidated_content()
+                        yield self.get_consolidated_content()
                 
                 with self.executor_ops:
                     self.executor.shutdown()
@@ -93,7 +91,7 @@ class Tracker:
         try:
             if courier := self.available_couriers.get(courier_name):
                 content = courier.update(self.idship)
-                return content
+                return content, courier_name
         
         except:
             _log (traceback.format_exc(), error = True)
@@ -163,6 +161,7 @@ class Trackers:
 
         if load_as_json:
             trackers = self._load('.json', 'r', lambda f: json.load(f, object_hook = json_decode_datetime))
+        
         else:
             trackers = self._load('.trck', 'rb', lambda f: pickle.load(f))
 
@@ -210,6 +209,5 @@ class Trackers:
 
     def close(self):
         self.couriers.close()
-
         for tracker in self.trackers:
             tracker.close()
