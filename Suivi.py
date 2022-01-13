@@ -725,8 +725,7 @@ class Main_window(sg.Window):
 
         self.grey_windows = [Grey_window(self)]
 
-        self.animation_step = self.animation_step
-        self.TKroot.after(self.animation_step, self.animate)
+        self.animate()
 
         self.reappear()
     
@@ -737,7 +736,7 @@ class Main_window(sg.Window):
         self.TKroot.bind('<Configure>', lambda evt: log.stick_to_main())
 
     def close(self):
-        self.grey(False)
+        self.grey_all(False)
         super().close()
         self.trackers.save()
         self.trackers.close()
@@ -750,7 +749,7 @@ class Main_window(sg.Window):
         self.widgets.animate(self.animation_step)
         self.TKroot.after(self.animation_step, self.animate)
 
-    def grey(self, enable):
+    def grey_all(self, enable):
         for grey_window in self.grey_windows:
             grey_window.enable(enable)
 

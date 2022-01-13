@@ -10,7 +10,7 @@ from theme import FixFont, FixFontBold, VarFont, VarFontBold, Get_window_params
 class MyPopup(sg.Window):
     def __init__(self, title, body_layout, main_window):
         self.main_window = main_window
-        self.main_window.grey(True)
+        self.main_window.grey_all(True)
 
         layout =      [ [ sg.T(title, font = (FixFontBold, 20), justification = 'center', expand_x = True) ],
                         [ sg.HorizontalSeparator() ] ]
@@ -38,7 +38,7 @@ class MyPopup(sg.Window):
             return 'ok'
 
     def close(self):
-        self.main_window.grey(False)
+        self.main_window.grey_all(False)
         super().close()
 
 #------------------------------------------------------------------------------
