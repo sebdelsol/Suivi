@@ -1,5 +1,6 @@
 from mylog import _log
 from config import chrome_exe
+import time
 
 USE_UC_V2 = True
 CREATE_DRIVER_AT_INIT = False
@@ -15,7 +16,7 @@ import queue
 
 class Drivers:
     driver_timeout = 100 # s
-    lock = threading.Lock()
+    driver_creation = threading.Lock()
     n_drivers = 1
 
     experimental_options = dict(
@@ -38,19 +39,19 @@ class Drivers:
                   '--blink-settings=imagesEnabled=false')
 
     def __init__(self, splash):
-        self.drivers = queue.Queue() if self.n_drivers > 0 else None
-        self.n_created_drivers = 0
-
+        self.drivers_available = queue.Queue() if self.n_drivers > 0 else None
+        self.drivers = []
+        
         if CREATE_DRIVER_AT_INIT:
             for i in range(self.n_drivers):
                 splash.update(f'création pilote {i + 1}/{self.n_drivers}')
                 self.create_driver_if_needed()
 
     def create_driver_if_needed(self):
-        with self.lock: # prevents driver creation when it's already being created in another thread
-            if self.n_created_drivers < self.n_drivers:
+        with self.driver_creation: # prevents driver creation when it's already being created in another thread
+            if len(self.drivers) < self.n_drivers:
 
-                _log (f'driver ({self.n_created_drivers+1}/{self.n_drivers}) CREATION')
+                _log (f'driver ({len(self.drivers) + 1}/{self.n_drivers}) CREATION')
                 options = webdriver.ChromeOptions()
                 options.headless = True
                 options.binary_location = chrome_exe
@@ -65,18 +66,22 @@ class Drivers:
                 driver = webdriver.Chrome(options = options) 
                 driver.set_page_load_timeout(self.driver_timeout)
 
-                self.drivers.put(driver)
-                self.n_created_drivers += 1
-                _log (f'driver ({self.n_created_drivers}/{self.n_drivers}) CREATED')
+                self.drivers_available.put(driver)
+                self.drivers.append(driver)
+                _log (f'driver ({len(self.drivers)}/{self.n_drivers}) CREATED')
 
     def get(self):
         self.create_driver_if_needed()
-        return self.drivers.get()
+        return self.drivers_available.get()
 
     def dispose(self, driver):
-        self.drivers.put(driver)
+        self.drivers_available.put(driver)
 
     def close(self):
+        for i, driver in enumerate(self.drivers):
+            _log (f'QUIT driver {i + 1}')
+            driver.quit()
+        
         for proc in psutil.process_iter():
             if 'chromedriver.exe' in proc.name().lower():
                 _log (f'KILL {proc.name()} {proc.pid}')

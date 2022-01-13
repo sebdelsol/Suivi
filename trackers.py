@@ -5,6 +5,8 @@ import copy
 import json
 import pickle as pickle
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures.thread import _threads_queues
+
 
 from jsondate import json_decode_datetime, json_encode_datetime
 from couriers import Couriers, get_local_now
@@ -37,6 +39,9 @@ class Tracker:
         self.couriers_error = {}
         self.couriers_updating = {}
 
+        self.executor = None
+        self.closing = False
+
         self.loaded_events = set()
         for content in self.contents.values():
             if events := content.get('events'):
@@ -55,10 +60,13 @@ class Tracker:
 
     def update_all_couriers(self):
         if self.idship and (n_couriers := len(self.used_couriers)) > 0:
+            
+            with self.critical:
+                if not self.closing:
+                    self.executor = ThreadPoolExecutor(max_workers = n_couriers)
+                    threads_to_courier = {self.executor.submit(self.update_courier, courier_name): courier_name for courier_name in self.used_couriers}
 
-            with ThreadPoolExecutor(max_workers = n_couriers) as executor:
-                threads_to_courier = {executor.submit(self.update_courier, courier_name): courier_name for courier_name in self.used_couriers}
-
+            if not self.closing:
                 for thread in as_completed(threads_to_courier.keys()):
                     courier_name = threads_to_courier[thread]
                     new_content = thread.result()
@@ -77,6 +85,10 @@ class Tracker:
                         _log (f'update {msg} - {self.description} - {self.idship}, {courier_name}', error = error)
 
                     yield self.get_consolidated_content()
+                
+                with self.critical:
+                    self.executor.shutdown()
+                    self.executor = None
 
     def update_courier(self, courier_name):
         try:
@@ -137,6 +149,14 @@ class Tracker:
         content = self.get_consolidated_content() 
         return content.setdefault('status', {}).get('delivered')
 
+    def close(self):
+        with self.critical:
+            self.closing = True
+            if self.executor:
+                for thread in self.executor._threads:
+                    # https://stackoverflow.com/questions/49992329/the-workers-in-threadpoolexecutor-is-not-really-daemon
+                    del _threads_queues[thread] 
+
 #--------------
 class Trackers:
     def __init__(self, filename, load_as_json, splash):
@@ -192,3 +212,6 @@ class Trackers:
 
     def close(self):
         self.couriers.close()
+
+        for tracker in self.trackers:
+            tracker.close()

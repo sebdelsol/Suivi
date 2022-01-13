@@ -176,7 +176,7 @@ class Scrapper(Courier):
             return False, None
 
         finally:
-            if hasattr(self, 'driver') and driver:
+            if 'driver' in locals() and driver:
                 self.drivers.dispose(driver)
 
     def close(self):

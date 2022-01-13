@@ -1,7 +1,9 @@
 import PySimpleGUI as sg
+from packaging.specifiers import SpecifierSet
 from all_txts import *
 from theme import *
 
+Python_version = '>=3.8, <3.9'
 TrackersFile = 'Trackers' 
 LOAD_AS_JSON = True
 SHOW_EVENTS = False
@@ -737,7 +739,6 @@ class Main_window(sg.Window):
     def close(self):
         self.grey(False)
         super().close()
-
         self.trackers.save()
         self.trackers.close()
 
@@ -811,34 +812,45 @@ class Main_window(sg.Window):
 # ------------------------
 if __name__ == "__main__":
 
-    sg.theme(Main_theme) 
+    needs = SpecifierSet(Python_version)
+    version = '.'.join(str(v) for v in sys.version_info[:3])
 
-    # create splash before importing to reduce startup time
-    splash = Splash()
-    splash.update(Init_txt)
+    if version not in needs:
+        needs = ' and '.join(need for need in str(needs).split(','))
+        print (f"Running Python version {version}, it needs python {needs}")
 
-    # import after splash has been created
-    import threading
-    import timeago
-    from bisect import bisect
-    import textwrap
-    from tkinter import font
-    import locale
-    locale.setlocale(locale.LC_ALL, 'fr_FR.utf8') # date in French
+    else:
+        print (f'Python {version} running')
 
-    from trackers import Trackers, TrackerState
-    from imgtool import resize_and_colorize_gif, resize_and_colorize_img
-    from couriers import get_local_now
-    from myWidget import MyButton, MyButtonImg, MyGraph
-    from mylog import mylog, _log
-    import popup
+        sg.theme(Main_theme) 
 
-    # create main_window
-    main_window = Main_window()
-    main_window.add_log(mylog)
-    splash.close()
+        # create splash before importing to reduce startup time
+        splash = Splash()
+        splash.update(Init_txt)
 
-    main_window.loop()
-    main_window.close()
-    mylog.close()
+        # import after splash has been created
+        import threading
+        import timeago
+        from bisect import bisect
+        import textwrap
+        from tkinter import font
+        import locale
+        locale.setlocale(locale.LC_ALL, 'fr_FR.utf8') # date in French
+
+        from trackers import Trackers, TrackerState
+        from imgtool import resize_and_colorize_gif, resize_and_colorize_img
+        from couriers import get_local_now
+        from myWidget import MyButton, MyButtonImg, MyGraph
+        from mylog import mylog, _log
+        import popup
+
+        # create main_window
+        main_window = Main_window()
+        main_window.add_log(mylog)
+        splash.close()
+
+        main_window.loop()
+        main_window.close()
+        mylog.close()
+    
     print ('exiting')
