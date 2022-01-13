@@ -821,7 +821,7 @@ if __name__ == "__main__":
 
     if version not in needs:
         needs = ' and '.join(need for need in str(needs).split(','))
-        print (f"Running Python version {version}, it needs python {needs}")
+        print (f"Running Python version {version}, it needs Python {needs}")
 
     else:
         print (f'Python {version} running')
