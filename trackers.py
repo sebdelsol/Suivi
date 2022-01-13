@@ -75,11 +75,11 @@ class Tracker:
                 else:
                     return False
         else:
-            return True
+            return True # as if updating, to prevent enabling refresh button 
 
     def update_idle_couriers(self, courier_names):
         if self.idship: 
-            _log (f'start UPDATE - {self.description} - {self.idship} - [{" - ".join(courier_names)}]')
+            _log (f'update START - {self.description} - {self.idship}, {" - ".join(courier_names)}')
             if (n_couriers := len(courier_names)) > 0:
                 with self.executor_ops:
                     executor = ThreadPoolExecutor(max_workers = n_couriers)
@@ -100,8 +100,8 @@ class Tracker:
                                 self.couriers_error[courier_name] = error
                                 self.couriers_updating[courier_name] = False
                                 
-                                msg = 'FAILED' if error else 'DONE'
-                                _log (f'update {msg} - {self.description} - {self.idship}, {courier_name}', error = error)
+                            msg = 'FAILED' if error else 'DONE'
+                            _log (f'update {msg} - {self.description} - {self.idship}, {courier_name}', error = error)
 
                             yield self.get_consolidated_content()
                     

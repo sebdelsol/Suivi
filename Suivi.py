@@ -258,65 +258,7 @@ class TrackerWidget:
             self.events_widget.update('')
 
             if content.get('ok'):
-                events = content['events']
-                self.width_events = 0
-                self.height_events = 0
-
-                if events:
-                    event_dates = [f"{evt['date']:{Long_date_format}}".replace('.', '').split(',') for evt in events]
-                    date_w = max(len(date) for date in event_dates)
-                    courier_w = max(len(evt['courier']) for evt in events)
-                    previous_day = None
-                    previous_hour = None
-
-                    prt = self.events_widget.print
-                    for i, event in enumerate(events):
-                        event_courier = f"{event['courier'].rjust(courier_w)}, "
-                        
-                        day, hour = event_dates[i]
-
-                        hour = hour.strip()
-                        same_day, previous_day = day == previous_day, day
-                        same_hour, previous_hour = hour == previous_hour, hour
-                        if same_day:
-                            day = ' ' * len(previous_day)
-                            if same_hour:
-                                hour = ' ' * len(previous_hour)
-
-                        event_date = f"{day}{' ' if same_day else ','} {hour}{' ' if same_hour and same_day else ','} ".ljust(date_w)
-                        event_status = f"{event['status'].capitalize()}, " if event['status'] else ''
-                        event_label = f"{event['label']}."
-                        if event_label:
-                            event_label = event_label.capitalize() if not event_status else (event_label[0].lower() + event_label[1:])
-
-                        # create a fake status if missing with firstwords of label
-                        if event_label and not event_status:
-                            wrap = textwrap.wrap(event_label, 25)
-                            event_status, event_label = (wrap[0]+ ' ', ' '.join(wrap[1:]))  if len(wrap) > 1 else (event_label, '')
-
-                        event_warn = event.get('warn')
-                        event_delivered = event.get('delivered')
-                        event_color ='red' if event_warn else ('green' if event_delivered else None)
-                        event_new, f = ('(new) ', self.events_fb) if event.get('new') else ('', self.events_f)
-
-                        width = sum( len(txt) for txt in (event_courier, event_date, event_new) )
-
-                        event_labels = textwrap.wrap(event_label, self.max_event_width - len(event_status), drop_whitespace = False) or ['']
-                        if len(event_labels) > 1:
-                            following_labels = textwrap.wrap(''.join(event_labels[1:]), self.max_event_width)
-                            event_labels[1:] = [f"{' '* width}{label.strip()}" for label in following_labels]
-                        event_labels[0] = event_labels[0].strip()
-
-                        prt(event_date, font = f, autoscroll = False, t = 'grey', end = '')
-                        prt(event_courier, font = f, autoscroll = False, t = 'grey70', end = '')
-                        prt(event_new, font = f, autoscroll = False, t = 'black', end = '')
-                        prt(event_status, font = self.events_fb if event_warn or event_delivered else f, autoscroll = False, t = event_color or 'black', end = '')
-                        for event_label in event_labels:
-                            prt(event_label, font = f, autoscroll = False, t = event_color or 'grey50')
-                        
-                        width += sum( len(txt) for txt in (event_status, event_labels[0]) )
-                        self.width_events = max(width, self.width_events)
-                        self.height_events += len(event_labels)
+                self.show_events(content)
                 
                 status_warn = content['status'].get('warn', False)
                 status_delivered = content['status'].get('delivered', False)
@@ -358,6 +300,67 @@ class TrackerWidget:
 
             window.trigger_event(Update_widgets_size_event)
 
+    def show_events(self, content):
+        events = content['events']
+        self.width_events = 0
+        self.height_events = 0
+
+        if events:
+            event_dates = [f"{evt['date']:{Long_date_format}}".replace('.', '').split(',') for evt in events]
+            date_w = max(len(date) for date in event_dates)
+            courier_w = max(len(evt['courier']) for evt in events)
+            previous_day = None
+            previous_hour = None
+
+            prt = self.events_widget.print
+            for i, event in enumerate(events):
+                event_courier = f"{event['courier'].rjust(courier_w)}, "
+                
+                day, hour = event_dates[i]
+
+                hour = hour.strip()
+                same_day, previous_day = day == previous_day, day
+                same_hour, previous_hour = hour == previous_hour, hour
+                if same_day:
+                    day = ' ' * len(previous_day)
+                    if same_hour:
+                        hour = ' ' * len(previous_hour)
+
+                event_date = f"{day}{' ' if same_day else ','} {hour}{' ' if same_hour and same_day else ','} ".ljust(date_w)
+                event_status = f"{event['status'].capitalize()}, " if event['status'] else ''
+                event_label = f"{event['label']}."
+                if event_label:
+                    event_label = event_label.capitalize() if not event_status else (event_label[0].lower() + event_label[1:])
+
+                # create a fake status if missing with firstwords of label
+                if event_label and not event_status:
+                    wrap = textwrap.wrap(event_label, 25)
+                    event_status, event_label = (wrap[0]+ ' ', ' '.join(wrap[1:]))  if len(wrap) > 1 else (event_label, '')
+
+                event_warn = event.get('warn')
+                event_delivered = event.get('delivered')
+                event_color ='red' if event_warn else ('green' if event_delivered else None)
+                event_new, f = ('(new) ', self.events_fb) if event.get('new') else ('', self.events_f)
+
+                width = sum( len(txt) for txt in (event_courier, event_date, event_new) )
+
+                event_labels = textwrap.wrap(event_label, self.max_event_width - len(event_status), drop_whitespace = False) or ['']
+                if len(event_labels) > 1:
+                    following_labels = textwrap.wrap(''.join(event_labels[1:]), self.max_event_width)
+                    event_labels[1:] = [f"{' '* width}{label.strip()}" for label in following_labels]
+                event_labels[0] = event_labels[0].strip()
+
+                prt(event_date, font = f, autoscroll = False, t = 'grey', end = '')
+                prt(event_courier, font = f, autoscroll = False, t = 'grey70', end = '')
+                prt(event_new, font = f, autoscroll = False, t = 'black', end = '')
+                prt(event_status, font = self.events_fb if event_warn or event_delivered else f, autoscroll = False, t = event_color or 'black', end = '')
+                for event_label in event_labels:
+                    prt(event_label, font = f, autoscroll = False, t = event_color or 'grey50')
+                
+                width += sum( len(txt) for txt in (event_status, event_labels[0]) )
+                self.width_events = max(width, self.width_events)
+                self.height_events += len(event_labels)
+    
     def show_id(self, content):
         self.id_widget.update('') 
 
@@ -670,6 +673,7 @@ class Grey_window:
                 self.grey = sg.Window('', [[]], size = self.window.size, location = self.window.current_location(), **self.kwargs)
                 self.grey.disable()
                 self.bind_id = self.window.TKroot.bind('<Configure>', self.window_changed, add = '+')
+        
         else:
             if self.bind_id is not None:
                 self.unbind('<Configure>', self.bind_id) 
@@ -727,9 +731,7 @@ class Main_window(sg.Window):
         self.widgets = TrackerWidgets(self, self.trackers, splash) 
 
         self.grey_windows = [Grey_window(self)]
-
         self.animate()
-
         self.reappear()
     
     def add_log(self, log):
