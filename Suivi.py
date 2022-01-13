@@ -263,16 +263,17 @@ class TrackerWidget:
                 self.height_events = 0
 
                 if events:
+                    event_dates = [f"{evt['date']:{Long_date_format}}".replace('.', '').split(',') for evt in events]
+                    date_w = max(len(date) for date in event_dates)
                     courier_w = max(len(evt['courier']) for evt in events)
                     previous_day = None
                     previous_hour = None
 
                     prt = self.events_widget.print
-                    for event in events:
+                    for i, event in enumerate(events):
                         event_courier = f"{event['courier'].rjust(courier_w)}, "
                         
-                        day, hour = f"{event['date']:{Long_date_format}}".replace('.', '').split(',')
-                        day = three_char_month(day, 2)
+                        day, hour = event_dates[i]
 
                         hour = hour.strip()
                         same_day, previous_day = day == previous_day, day
@@ -282,7 +283,7 @@ class TrackerWidget:
                             if same_hour:
                                 hour = ' ' * len(previous_hour)
 
-                        event_date = f"{day}{' ' if same_day else ','} {hour}{' ' if same_hour and same_day else ','} "
+                        event_date = f"{day}{' ' if same_day else ','} {hour}{' ' if same_hour and same_day else ','} ".ljust(date_w)
                         event_status = f"{event['status'].capitalize()}, " if event['status'] else ''
                         event_label = f"{event['label']}."
                         if event_label:
@@ -458,8 +459,7 @@ class TrackerWidget:
         self.set_state(TrackerState.shown, window, False, Archives_updated_event, True)
 
     def get_pretty_creation_date(self):
-        date = f'{self.tracker.creation_date:{Short_date_format}}'.replace('.', '')
-        return three_char_month(date, 2)
+        return f'{self.tracker.creation_date:{Short_date_format}}'.replace('.', '')
 
     def get_pretty_idship(self):
         return self.tracker.idship.strip() or No_idship_txt 
@@ -533,10 +533,12 @@ class TrackerWidgets:
         widgets = self.get_sorted(self.get_widgets_with_state(state))
 
         w_desc = max(len(widget.get_pretty_description()) for widget in widgets) if widgets else 0
+        w_date = max(len(widget.get_pretty_creation_date()) for widget in widgets) if widgets else 0
         choices = []
         for widget in widgets:
             color = 'green' if widget.get_delivered() else 'red'
-            txt = f'{widget.get_pretty_creation_date()}, {widget.get_pretty_description().ljust(w_desc)} - {widget.get_pretty_idship()}'
+            date = f'{widget.get_pretty_creation_date()},'.ljust(w_date + 1)
+            txt = f'{date} {widget.get_pretty_description().ljust(w_desc)} - {widget.get_pretty_idship()}'
             choices.append((txt, color))
 
         popup_choices = popup.choices(choices, title, window)
