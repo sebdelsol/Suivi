@@ -69,17 +69,19 @@ class Tracker:
                                 new_content['courier_name'] = courier_name
                                 self.contents[courier_name] = new_content
 
-                        self.couriers_error[courier_name] = not(new_content and new_content['ok'])
+                        error = not(new_content and new_content['ok'])
+                        self.couriers_error[courier_name] = error
                         self.couriers_updating[courier_name] = False
+                        
+                        msg = 'FAILED' if error else 'DONE'
+                        _log (f'update {msg} - {self.description} - {self.idship}, {courier_name}', error = error)
 
                     yield self.get_consolidated_content()
 
     def update_courier(self, courier_name):
         try:
             if courier := self.available_couriers.get(courier_name):
-                # _log (f'update START - {self.description} - {self.idship}, {courier_name}')
                 content = courier.update(self.idship)
-                _log (f'update DONE - {self.description} - {self.idship}, {courier_name}')
                 return content
         
         except:
