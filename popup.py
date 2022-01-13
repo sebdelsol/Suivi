@@ -5,6 +5,7 @@ import webbrowser
 from myWidget import MyButton
 from couriers import Courier
 from theme import FixFont, FixFontBold, VarFont, VarFontBold, Get_window_params
+from all_txts import *
 
 #-------------
 class MyPopup(sg.Window):
@@ -12,13 +13,13 @@ class MyPopup(sg.Window):
         self.main_window = main_window
         self.main_window.grey_all(True)
 
-        layout =      [ [ sg.T(title, font = (FixFontBold, 20), justification = 'center', expand_x = True) ],
-                        [ sg.HorizontalSeparator() ] ]
+        layout =      [[ sg.T(title, font = (FixFontBold, 20), justification = 'center', expand_x = True) ],
+                       [ sg.HorizontalSeparator() ]]
         layout.extend( body_layout )
-        layout.append( [ sg.HorizontalSeparator() ] )
-        layout.append( [ MyButton('OK', font = (VarFont, 12), button_color = 'grey80', mouseover_color = 'grey95', bind_return_key=True), 
-                         MyButton('Cancel', font = (VarFont, 12), button_color = 'grey80', mouseover_color = 'grey95')] )
-        layout = [ [ sg.Col(layout, p = 10) ] ]
+        layout.append( [ sg.HorizontalSeparator() ])
+        layout.append( [ MyButton(OK_txt, font = (VarFont, 12), button_color = 'grey80', mouseover_color = 'grey95', bind_return_key=True), 
+                         MyButton(Cancel_txt, font = (VarFont, 12), button_color = 'grey80', mouseover_color = 'grey95') ])
+        layout = [[ sg.Col(layout, p = 10) ]]
 
         args, kwargs = Get_window_params(layout)
         super().__init__(*args, **kwargs)
@@ -27,15 +28,15 @@ class MyPopup(sg.Window):
     def loop(self):
         while True: 
             exit = self.main_window.event_handler()            
-            if exit:
+            if exit is not None:
                 return exit
 
     def event_handler(self, event):
-        if event in (None, 'Cancel', 'Escape:27'):
-            return 'cancel'
+        if event in (None, Cancel_txt, 'Escape:27'):
+            return False
 
-        elif event == 'OK':
-            return 'ok'
+        elif event == OK_txt:
+            return True
 
     def close(self):
         self.main_window.grey_all(False)
@@ -46,8 +47,8 @@ class edit(MyPopup):
     def __init__(self, title, idship, description, used_couriers, couriers, main_window):
         self.couriers_names = couriers.get_names()
         self.couriers_names.sort()
-        layout = [      [ sg.T('Description', font = (FixFont, 10)), sg.Input(description, font = (FixFont, 10), border_width = 0, key='description') ],
-                        [ sg.T('Tracking n°', font = (FixFont, 10)), sg.Input(idship, font = (FixFont, 10), border_width = 0, enable_events = True, key='idship') ] ]
+        layout = [[ sg.T(description_txt, font = (FixFont, 10)), sg.Input(description, font = (FixFont, 10), border_width = 0, key='description') ],
+                  [ sg.T(Idship_txt, font = (FixFont, 10)), sg.Input(idship, font = (FixFont, 10), border_width = 0, enable_events = True, key='idship') ]]
 
         self.idship_widgets = []
         for name in self.couriers_names:
@@ -90,7 +91,7 @@ class edit(MyPopup):
     def loop(self):
         idship, description, used_couriers = None, None, None
 
-        if super().loop() == 'ok':
+        if super().loop():
             idship = self['idship'].get() 
             description = self['description'].get()
             used_couriers = [name for name in self.couriers_names if self[name].get()]
@@ -116,7 +117,7 @@ class choices(MyPopup):
             layout = [[ col ]]
         
         else:
-            layout = [[ sg.T('Vide', expand_x = True, font = self.selected_font, text_color = 'red', justification = 'center') ]]
+            layout = [[ sg.T(Empty_txt, expand_x = True, font = self.selected_font, text_color = 'red', justification = 'center') ]]
 
         self.choices = choices
         super().__init__(title, layout, main_window)
@@ -148,7 +149,7 @@ class choices(MyPopup):
     def loop(self):
         chosen = []
     
-        if super().loop() == 'ok':
+        if super().loop():
             chosen = [ i for i in range(len(self.choices)) if self[f'cb_choice{i}'].get() ]
 
         self.close()
@@ -179,7 +180,7 @@ class one_choice(MyPopup):
     def loop(self):
         choice = None
 
-        if super().loop() == 'ok':
+        if super().loop():
             # https://stackoverflow.com/questions/2361426/get-the-first-item-from-an-iterable-that-matches-a-condition
             choice = next(choice for choice in self.choices if self[choice].get()) 
 
@@ -193,6 +194,6 @@ class warning(MyPopup):
         super().__init__(title, layout, main_window)
 
     def loop(self):
-        ok = super().loop() == 'ok'
+        ok = super().loop()
         self.close()
         return ok

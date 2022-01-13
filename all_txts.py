@@ -11,6 +11,10 @@ Archives_txt = 'Archive'
 Trash_txt = 'Poubelle'
 Exit_txt = ' X '
 
+OK_txt = 'OK'
+Cancel_txt = 'Annuler'
+Close_txt = 'Fermer'
+
 Do_delete_txt = 'Supprimer'
 Do_archive_txt = 'Archiver'
 Do_restore_txt = 'Restaurer'
@@ -26,5 +30,19 @@ No_couriers_txt = 'Pas de Service Postaux'
 No_idship_txt = 'N° indéfini'
 Never_txt = 'jamais'
 Ago_txt = 'il y a'
+
+Idship_txt = 'N° de suivi'
+description_txt = 'Description'
+
 Unkown_status_txt = 'Status inconnu'
+Status_Error_txt = 'Erreur'
 Default_product_txt = 'Envoi'
+
+Digits_txt = 'chiffres'
+Letters_txt = 'lettres'
+Zipcode_txt = 'code postal'
+From_txt = 'de'
+To_txt = 'à'
+Or_txt = 'ou'
+
+
