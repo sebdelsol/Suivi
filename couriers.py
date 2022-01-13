@@ -17,7 +17,7 @@ import urllib3
 from mylog import _log
 from drivers import Drivers
 from config import LaPoste_key, dhl_key 
-from all_txts import *
+from local_txts import *
 
 #------------------------------------------------------------------------------
 def get_sentence(txt, nb = -1):

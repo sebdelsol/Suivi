@@ -1,6 +1,6 @@
 import PySimpleGUI as sg
 from packaging.specifiers import SpecifierSet
-from all_txts import *
+from local_txts import *
 from theme import *
 
 Python_version = '>=3.8, <3.9'
@@ -266,7 +266,7 @@ class TrackerWidget:
                     for event in events:
                         event_courier = f"{event['courier'].rjust(courier_w)}, "
                         
-                        day, hour = f"{event['date']:%a %d %b %y, %Hh%M}".replace('.', '').split(',')
+                        day, hour = f"{event['date']:{Long_date_format}}".replace('.', '').split(',')
                         day = three_char_month(day, 2)
 
                         hour = hour.strip()
@@ -457,7 +457,7 @@ class TrackerWidget:
         self.set_state(TrackerState.shown, window, False, Archives_updated_event, True)
 
     def get_pretty_creation_date(self):
-        date = f'{self.tracker.creation_date:%a %d %b %y}'.replace('.', '')
+        date = f'{self.tracker.creation_date:{Short_date_format}}'.replace('.', '')
         return three_char_month(date, 2)
 
     def get_pretty_idship(self):
@@ -834,7 +834,7 @@ if __name__ == "__main__":
         import textwrap
         from tkinter import font
         import locale
-        locale.setlocale(locale.LC_ALL, 'fr_FR.utf8') # date in French
+        locale.setlocale(locale.LC_ALL, Locale_setting) # date in correct language
 
         from trackers import Trackers, TrackerState
         from imgtool import resize_and_colorize_gif, resize_and_colorize_img

@@ -1,8 +1,14 @@
-Refresh_color = '#408040'
-Archives_color = '#B2560D'
-Edit_color = '#6060FF'
-Trash_color = '#909090'
-Log_color = 'grey'
+Locale_setting = 'fr_FR.utf8'
+
+Long_date_format = '%a %d %b %y, %Hh%M'
+Short_date_format = '%a %d %b %y'
+
+# works in french only
+def three_char_month(date_txt, month_index):
+    txts = date_txt.split()
+    month = txts[month_index]
+    txts[month_index] =  month[:3] if 'ju' not in month else month[:2] + month[3:]
+    return ' '.join(txts)
 
 Log_txt = 'Log'
 New_txt = 'Nouveau'

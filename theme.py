@@ -15,20 +15,19 @@ def Get_window_params(layout, **new_kwargs):
     kwargs.update(new_kwargs) 
     return args, kwargs
 
-def three_char_month(date_txt, month_index):
-    txts = date_txt.split()
-    month = txts[month_index]
-    txts[month_index] =  month[:3] if 'ju' not in month else month[:2] + month[3:]
-    return ' '.join(txts)
-
 #----------------------------
 Main_theme = 'GrayGrayGray'
 
 FixFont = 'Roboto Mono Light'
 FixFontBold = 'Roboto Mono Bold'
-
 VarFont = 'Roboto Light'
 VarFontBold = 'Roboto Bold'
+
+Refresh_color = '#408040'
+Archives_color = '#B2560D'
+Edit_color = '#6060FF'
+Trash_color = '#909090'
+Log_color = 'grey'
 
 Log_img = 'icon/log.png'
 Edit_img = 'icon/edit.png'

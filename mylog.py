@@ -6,7 +6,7 @@ is_debugger = sys.gettrace()
 
 from myWidget import MyButton
 from theme import FixFont, FixFontBold, VarFont, Get_window_params
-from all_txts import *
+from local_txts import *
 
 #----------------------
 class MyLog(sg.Window):
