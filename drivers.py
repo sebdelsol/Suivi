@@ -81,3 +81,5 @@ class Drivers:
         for i, driver in enumerate(self.drivers):
             _log (f'QUIT driver {i + 1}')
             driver.quit()
+
+        # remaining driver in creation is handled by undetected_chromedriver @ exit
