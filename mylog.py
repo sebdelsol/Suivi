@@ -44,6 +44,8 @@ class MyLog(sg.Window):
         self.main_window = main_window
         
         self.TKroot.bind('<Configure>', self.resize)
+        self.main_window.TKroot.bind('<Configure>', lambda evt: self.stick_to_main(), add='+')
+
         self.listen()
 
     def listen(self, exiting=False):

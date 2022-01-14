@@ -738,7 +738,6 @@ class Main_window(sg.Window):
         self.log = log
         log.link_to(self)
         self.grey_windows.append(Grey_window(log))
-        self.TKroot.bind('<Configure>', lambda evt: log.stick_to_main(), add='+')
 
     def close(self):
         for grey_window in self.grey_windows:
