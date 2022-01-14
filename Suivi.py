@@ -83,7 +83,7 @@ class TrackerWidget:
         self.days_size = widget_elapsed_days_box_size
         self.days_font = (FixFontBold, widget_elapsed_days_font_size)
         self.days_widget = MyGraph(canvas_size=(self.days_size, self.days_size), graph_bottom_left=(0, 0), graph_top_right=(self.days_size, self.days_size), p=(10, 0), background_color=bg_color_h)
-        self.desc_widget = sg.T('', p=0, font=(VarFont, widget_description_font_size), text_color='grey40', background_color=bg_color_h, expand_x=False, justification='l')
+        self.desc_widget = sg.T('', p=0, font=(VarFont, widget_description_font_size), text_color=widget_descrition_text_color, background_color=bg_color_h, expand_x=False, justification='l')
 
         self.updating_widget = sg.Image(data=self.updating_gif, p=((10, 0), (0, 0)), visible=False, background_color=bg_color_h, k=lambda w: self.toggle_expand(w))
         updating_widget_pin = sg.pin(self.updating_widget)
@@ -107,7 +107,7 @@ class TrackerWidget:
         self.title_col = sg.Col([[self.days_widget, self.desc_widget, updating_widget_pin, to_expand, id_couriers_widget, buttons]], p=0, background_color=bg_color_h, expand_x=True)
         self.status_col = sg.Col([[self.ago_widget, self.status_widget, self.expand_button]], p=(10, 0), background_color=bg_color, expand_x=True)
 
-        vs = sg.Col([[]], s=(None, 1), background_color='grey70', p=0, expand_x=True)
+        vs = sg.Col([[]], s=(None, 1), background_color=widget_separator_color, p=0, expand_x=True)
         layout = [[vs],
                   [self.title_col],
                   [self.status_col],
@@ -176,7 +176,7 @@ class TrackerWidget:
         #     rows = (self.title_col, self.status_col, self.events_widget)
         #     h = 0
         #     for row in rows:
-        #         if row.visible:                
+        #         if row.visible:           
         #             h += row.Widget.winfo_reqheight()
         #             pady = row.Pad[1]
         #             h += sum(pady) if isinstance(pady, tuple) else (pady * 2)
@@ -715,8 +715,8 @@ class Main_window(sg.Window):
         pin_empty.BackgroundColor = empty_color
 
         menu = sg.Col([[log_b, new_b, refresh_b, archives_b, trash_b, recenter_widget, exit_b]], p=0, background_color=menu_color, expand_x=True, k=Menu_key)
-        new_trakers = sg.Col([[]], p=0, scrollable=False, expand_x=True, expand_y=True, background_color=menu_color, k=New_Tracker_widgets_key)
-        old_trakers = sg.Col([[pin_empty]], p=0, scrollable=False, expand_x=True, expand_y=True, background_color=menu_color, k=Old_Tracker_widgets_key)
+        new_trakers = sg.Col([[]], p=0, expand_x=True, expand_y=True, background_color=menu_color, k=New_Tracker_widgets_key)
+        old_trakers = sg.Col([[pin_empty]], p=0, expand_x=True, expand_y=True, background_color=menu_color, k=Old_Tracker_widgets_key)
 
         all_trackers = sg.Col([[new_trakers], [old_trakers]], p=0, scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color=menu_color, k=All_Tracker_widgets_key)
         layout = [[menu], [all_trackers]]

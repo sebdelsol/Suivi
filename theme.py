@@ -3,19 +3,21 @@ import PySimpleGUI as sg
 
 is_debugger = sys.gettrace()
 
-frame_kwargs = dict(p = 0, border_width = 1, relief = sg.RELIEF_SOLID, expand_x = True, expand_y = True)
-window_kwargs = dict(keep_on_top = not is_debugger, no_titlebar = not is_debugger, return_keyboard_events = True, grab_anywhere = True, margins = (0, 0), debugger_enabled = False, finalize = True)
+frame_kwargs = dict(p=0, border_width=1, relief=sg.RELIEF_SOLID, expand_x=True, expand_y=True)
+window_kwargs = dict(keep_on_top=not is_debugger, no_titlebar=not is_debugger, return_keyboard_events=True, grab_anywhere=True, margins=(0, 0), debugger_enabled=False, finalize=True)
+
 
 def Is_debugger():
     return is_debugger
 
+
 def Get_window_params(layout, **new_kwargs):
-    args = ('', [ [ sg.Frame('', layout, **frame_kwargs) ] ])
+    args = ('', [[sg.Frame('', layout, **frame_kwargs)]])
     kwargs = window_kwargs.copy()
-    kwargs.update(new_kwargs) 
+    kwargs.update(new_kwargs)
     return args, kwargs
 
-#----------------------------
+
 Main_theme = 'GrayGrayGray'
 
 FixFont = 'Roboto Mono Light'
@@ -46,6 +48,8 @@ menu_button_img_margin = 5
 
 widget_background_title_color = 'grey85'
 widget_background_event_color = 'grey90'
+widget_separator_color = 'grey70'
+widget_descrition_text_color = 'grey40'
 widget_courier_font_size = 8
 widget_event_font_size = 8
 widget_elapsed_days_box_size = 50
