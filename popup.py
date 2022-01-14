@@ -27,7 +27,8 @@ class MyPopup(sg.Window):
 
     def loop(self):
         while True: 
-            exit = self.main_window.event_handler()            
+            # to keep main_window correctly refreshing
+            exit = self.main_window.event_handler() 
             if exit is not None:
                 return exit
 
@@ -196,5 +197,6 @@ class warning(MyPopup):
 
     def loop(self):
         ok = super().loop()
+        
         self.close()
         return ok

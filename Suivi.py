@@ -64,7 +64,7 @@ class TrackerWidget:
         self.height_events = 0
         self.expand_events = False
 
-    def create_layout(self):
+    def create_layout(self, new):
         bg_color_h = widget_background_title_color
         bg_color = widget_background_event_color
 
@@ -102,7 +102,7 @@ class TrackerWidget:
 
         self.events_widget = sg.MLine('', p=((5, 5), (0, 5)), font=self.events_f, visible=False, disabled=True, border_width=0, background_color=bg_color, no_scrollbar=True, s=(None, self.min_events_shown), expand_x=True, k=self.toggle_expand)
         events_widget_pin = sg.pin(sg.Col([ [self.events_widget] ], p=(10, 0), background_color=bg_color, expand_x=True), expand_x=True)
-        events_widget_pin.BackgroundColor = bg_color
+        events_widget_pin.BackgroundColor = bg_color_h if new else bg_color
 
         self.title_col = sg.Col([[ self.days_widget, self.desc_widget, updating_widget_pin, to_expand, id_couriers_widget, buttons ]], p=0, background_color=bg_color_h, expand_x=True)
         self.status_col = sg.Col([[ self.ago_widget, self.status_widget, self.expand_button ]], p=(10, 0), background_color=bg_color, expand_x=True)
@@ -222,12 +222,12 @@ class TrackerWidget:
                 self.show_current_courier_widget()
                 self.updating_widget.update(visible=True)
 
-                threading.Thread(target=self.update_thread, args=(window, couriers), daemon=True).start()
+                threading.Thread(target=self.update_idle_couriers, args=(window, couriers), daemon=True).start()
             else:
                 self.refresh_button.update(disabled=True)
                 self.show_current_content(window)
 
-    def update_thread(self, window, couriers): 
+    def update_idle_couriers(self, window, couriers): 
         content = None
         for content in self.tracker.update_idle_couriers(couriers): 
             # https://stackoverflow.com/questions/10452770/python-lambdas-binding-to-local-values
@@ -251,11 +251,10 @@ class TrackerWidget:
             self.updating_widget.update_animation(self.updating_gif, time_between_frames=animation_step)
 
     def show(self, content, window):
-        tracker = self.tracker
-        if tracker.state == TrackerState.shown:
+        if self.tracker.state == TrackerState.shown:
             
             delivered = '✔' if content.get('status', {}).get('delivered') else ''
-            self.desc_widget.update(f'{self.get_pretty_description()}{delivered}') 
+            self.desc_widget.update(f'{self.get_description()}{delivered}') 
             self.events_widget.update('')
 
             if content.get('ok'):
@@ -281,7 +280,7 @@ class TrackerWidget:
 
             elapsed = content.get('elapsed')
             if elapsed:
-                round_elapsed_days = elapsed.days + (1 if elapsed.seconds >= 43200 else 0)
+                round_elapsed_days = elapsed.days + (1 if elapsed.seconds >= 43200 else 0) # half a day in sec
                 elapsed_color = self.days_colors[bisect(self.days_intervals, round_elapsed_days)]
                 elapsed_txt = f"{round_elapsed_days}{'j' if round_elapsed_days <= 100 else ''}"
             else:
@@ -372,7 +371,7 @@ class TrackerWidget:
         prt = self.id_widget.print
         prt(f'{product}', autoscroll=False, t='grey50', end='')
         prt(fromto, autoscroll=False, t='grey70', end='')
-        prt(self.get_pretty_idship(), autoscroll=False, t='blue', end='')
+        prt(self.get_idship(), autoscroll=False, t='blue', end='')
 
     def show_couriers(self, couriers_update):
         if couriers_update:
@@ -424,7 +423,7 @@ class TrackerWidget:
         choices = {Do_archive_txt: self.archive, Do_delete_txt: self.delete}
         choices_colors = {Do_archive_txt:'green', Do_delete_txt:'red', False:'grey75'}
         
-        popup_one_choice = popup.one_choice(choices.keys(), choices_colors, f'{self.get_pretty_description()} - {self.get_pretty_idship()}', window)
+        popup_one_choice = popup.one_choice(choices.keys(), choices_colors, f'{self.get_description()} - {self.get_idship()}', window)
         choice = popup_one_choice.loop()
         
         if choice:
@@ -435,7 +434,7 @@ class TrackerWidget:
     def set_state(self, state, window, ask, event, do_update = False):
         do_it = True
         if ask: 
-            popup_warning = popup.warning(ask.capitalize(), f'{self.get_pretty_description()} - {self.get_pretty_idship()}', window)
+            popup_warning = popup.warning(ask.capitalize(), f'{self.get_description()} - {self.get_idship()}', window)
             do_it = popup_warning.loop()
 
         if do_it:
@@ -445,8 +444,8 @@ class TrackerWidget:
             self.reset_size()
 
             window.trigger_event(Update_widgets_size_event)
-            
             window.trigger_event(event)
+
             if do_update:
                 self.update(window)
 
@@ -462,13 +461,13 @@ class TrackerWidget:
     def unarchive(self, window):
         self.set_state(TrackerState.shown, window, False, Archives_updated_event, True)
 
-    def get_pretty_creation_date(self):
+    def get_creation_date(self):
         return f'{self.tracker.creation_date:{Short_date_format}}'.replace('.', '')
 
-    def get_pretty_idship(self):
+    def get_idship(self):
         return self.tracker.idship.strip() or No_idship_txt 
 
-    def get_pretty_description(self):
+    def get_description(self):
         return self.tracker.description.strip().title() or No_idship_txt 
 
     def get_delivered(self):
@@ -504,7 +503,7 @@ class TrackerWidgets:
         widget = TrackerWidget(tracker)
 
         where = self.new_trackers if new else self.old_trackers
-        window.extend_layout(where, widget.create_layout())
+        window.extend_layout(where, widget.create_layout(new))
         self.widgets.append(widget)
         
         widget.finalize(window)
@@ -536,13 +535,13 @@ class TrackerWidgets:
     def choose(self, window, title, state):
         widgets = self.get_sorted(self.get_widgets_with_state(state))
 
-        w_desc = max(len(widget.get_pretty_description()) for widget in widgets) if widgets else 0
-        w_date = max(len(widget.get_pretty_creation_date()) for widget in widgets) if widgets else 0
+        w_desc = max(len(widget.get_description()) for widget in widgets) if widgets else 0
+        w_date = max(len(widget.get_creation_date()) for widget in widgets) if widgets else 0
         choices = []
         for widget in widgets:
             color = 'green' if widget.get_delivered() else 'red'
-            date = f'{widget.get_pretty_creation_date()},'.ljust(w_date + 1)
-            txt = f'{date} {widget.get_pretty_description().ljust(w_desc)} - {widget.get_pretty_idship()}'
+            date = f'{widget.get_creation_date()},'.ljust(w_date + 1)
+            txt = f'{date} {widget.get_description().ljust(w_desc)} - {widget.get_idship()}'
             choices.append((txt, color))
 
         popup_choices = popup.choices(choices, title, window)
@@ -683,6 +682,7 @@ class Grey_window:
                 del self.grey
 
     # bug with unbind that remove all
+    # https://stackoverflow.com/questions/6433369/deleting-and-changing-a-tkinter-event-binding
     def unbind(self, sequence, bind_id):
         binds = self.window.TKroot.bind(sequence).split('\n')
         new_binds = [l for l in binds if l[6:6 + len(bind_id)] != bind_id]
