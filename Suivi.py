@@ -695,7 +695,6 @@ class Grey_window:
 
 # --------------------------------------------------
 class Main_window(sg.Window):
-    
     animation_step = 100
 
     def __init__(self):

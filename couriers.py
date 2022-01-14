@@ -51,10 +51,11 @@ class Couriers:
         for courier in self.couriers.values():
             courier.close()
 
-#-------------
-def get_simple_check(_min, _max):
+#-------------------------------
+def get_simple_validation(_min, _max):
     return f'^\w{{{_min},{_max}}}$', f'{From_txt} {_min} {To_txt} {_max} {Letters_txt} {Or_txt} {Digits_txt}'
 
+#-------------
 class Courier:
     r_arrow = '→'
     product = Default_product_txt
@@ -64,9 +65,9 @@ class Courier:
     nb_retry = 0 
     time_between_retry = 5 # sec
 
-    idship_check_pattern, idship_check_msg = get_simple_check(8, 20)
+    idship_validation, idship_validation_msg = get_simple_validation(8, 20)
 
-    delivered_matchs = (r'(?<!be )delivered', r'final delivery', r'(?<!être )livré', r'(?<!être )distribué')
+    delivered_searchs = (r'(?<!be )delivered', r'final delivery', r'(?<!être )livré', r'(?<!être )distribué')
     error_words = ('error', 'erreur')
 
     subs = ((r'\.$', ''),               # remove ending .
@@ -75,13 +76,14 @@ class Courier:
             (r'(\w):(\w)', r'\1: \2'))  # add space after : 
 
     def __init__(self, splash):
-        pass
+        self.idship_validation = re.compile(self.idship_validation).match
+        self.delivered_searchs = [ re.compile(pattern).search for pattern in self.delivered_searchs ]
 
     def close(self): 
         pass
 
     def check_idship(self, idship):
-        return re.match(self.idship_check_pattern, idship)
+        return self.idship_validation(idship)
 
     def get_url_for_browser(self, idship):
         if idship and self.check_idship(idship):
@@ -89,7 +91,7 @@ class Courier:
 
     def update(self, idship):
         if not self.check_idship(idship):
-            _log (f'Wrong {Idship_txt} {idship} ({self.idship_check_msg})', error=True)
+            _log (f'Wrong {Idship_txt} {idship} ({self.idship_validation_msg})', error=True)
         
         else:
             nb_retry = self.nb_retry
@@ -124,7 +126,7 @@ class Courier:
                 for sub in self.subs:
                     event['label'] = re.sub(sub[0], sub[1], event['label'].strip())
                 
-                event['delivered'] = event.get('delivered', False) or any(re.search(match, event['label'].lower()) for match in self.delivered_matchs)
+                event['delivered'] = event.get('delivered', False) or any(search(event['label'].lower()) for search in self.delivered_searchs)
                 if event['delivered']:
                     delivered = True
 
@@ -151,13 +153,13 @@ class Courier:
 
 #-----------------------
 class Scrapper(Courier):
-
     errors_catched = (WebDriverException, TimeoutException, 
                       urllib3.exceptions.ProtocolError, 
                       urllib3.exceptions.NewConnectionError, 
                       urllib3.exceptions.MaxRetryError)
 
     def __init__(self, splash):
+        super().__init__(splash)
         self.drivers = Drivers(splash)
 
     def _get_response(self, idship):
@@ -269,8 +271,8 @@ class MondialRelay(Courier):
     product = 'Colis'
     fromto = f'FR{Courier.r_arrow}FR'
 
-    idship_check_pattern = r'^\d{8}(\d{2})?(\d{2})?\-\d{5}$'
-    idship_check_msg = f'8, 10 {Or_txt} 12 {Digits_txt}-{Zipcode_txt}'
+    idship_validation = r'^\d{8}(\d{2})?(\d{2})?\-\d{5}$'
+    idship_validation_msg = f'8, 10 {Or_txt} 12 {Digits_txt}-{Zipcode_txt}'
 
     def _get_url_for_browser(self, idship):
         number, zip_code = idship.split('-')
@@ -443,7 +445,7 @@ class FourPX(Courier):
 class LaPoste(Courier):
     name = 'La Poste'
 
-    idship_check_pattern, idship_check_msg = get_simple_check(11, 15)
+    idship_validation, idship_validation_msg = get_simple_validation(11, 15)
     headers = {'X-Okapi-Key': LaPoste_key, 'Accept': 'application/json'}
 
     codes = dict(
@@ -514,7 +516,7 @@ class LaPoste(Courier):
 class DHL(Courier):
     name = 'DHL'
 
-    idship_check_pattern, idship_check_msg = r'^\d{10}$', f'10 {Letters_txt}'
+    idship_validation, idship_validation_msg = r'^\d{10}$', f'10 {Letters_txt}'
     headers = {'Accept': 'application/json', 'DHL-API-Key': dhl_key }
 
     def _get_url_for_browser(self, idship):

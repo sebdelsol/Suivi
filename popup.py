@@ -56,7 +56,7 @@ class edit(MyPopup):
 
             is_checked = name in used_couriers
             cb = sg.CB(f' {name}', default=is_checked, text_color='black' if is_checked else 'grey60', font=(FixFont, 12), enable_events=True, k=name)
-            msg = sg.T(f'({courier.idship_check_msg})', font=(FixFont, 8), expand_x=True, justification='r')
+            msg = sg.T(f'({courier.idship_validation_msg})', font=(FixFont, 8), expand_x=True, justification='r')
             button = MyButton('voir', font=(FixFont, 8), button_color ='grey90', k=courier)
 
             self.idship_widgets.append((msg, button))
