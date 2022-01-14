@@ -211,7 +211,6 @@ class Trackers:
         if os.path.exists(filename):
             with open(filename, mode) as f:
                 obj = load(f)
-
             _log(f'trackers LOADED from "{filename}"')
             return obj
 

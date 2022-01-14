@@ -627,8 +627,8 @@ class TrackerWidgets:
 
             # add spaces in its_empty to fit w
             wfont = font.Font(self.its_empty.ParentForm.TKroot, self.its_empty.Font)
-            spaces = round(menu_w / wfont.measure(' '))  # in ' '
-            self.its_empty.update(Empty_txt.center(spaces))
+            n_spaces = round(menu_w / wfont.measure(' '))
+            self.its_empty.update(Empty_txt.center(n_spaces))
 
     def recenter(self, window, force=False):
         W, H = window.get_screen_size()
