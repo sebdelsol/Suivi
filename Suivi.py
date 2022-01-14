@@ -327,7 +327,7 @@ class TrackerWidget:
                         hour = ' ' * len(previous_hour)
 
                 event_date = f"{day}{' ' if same_day else ','} {hour}{' ' if same_hour and same_day else ','} ".ljust(date_w)
-                event_status = f"{event['status'].capitalize()}, " if event['status'] else ''
+                event_status = f"{event['status']}, " if event['status'] else ''
                 event_label = f"{event['label']}."
                 if event_label:
                     event_label = event_label.capitalize() if not event_status else (event_label[0].lower() + event_label[1:])
@@ -585,7 +585,6 @@ class TrackerWidgets:
 
         menu_w = self.widget_menu.Widget.winfo_reqwidth()
         menu_h = self.widget_menu.Widget.winfo_reqheight()
-
         self.set_min_width(menu_w)
 
         # resize all widgets with the max width & and change pin color
@@ -597,7 +596,7 @@ class TrackerWidgets:
 
         window.visibility_changed()
         self.widgets_frame.contents_changed()
-        window.refresh() # needed to get correct req width & height after MLines.setsize....
+        # window.refresh() # needed to get correct req width & height after MLines.setsize....
 
         # wanted size
         if shown:
@@ -630,8 +629,6 @@ class TrackerWidgets:
             wfont = font.Font(self.its_empty.ParentForm.TKroot, self.its_empty.Font)
             spaces = round(menu_w / wfont.measure(' ')) # in ' '
             self.its_empty.update(Empty_txt.center(spaces))
-
-        # window.refresh()
 
     def recenter(self, window, force=False):
         W, H = window.get_screen_size()
