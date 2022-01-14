@@ -661,7 +661,7 @@ class Splash:
 
 # ---------------------
 class Grey_window:
-    alpha_grey = .5
+    alpha_grey = .4
     
     def __init__(self, window):
         self.followed_window = window
@@ -670,22 +670,19 @@ class Grey_window:
         kwargs = dict(keep_on_top=not is_debugger, no_titlebar=not is_debugger, margins=(0, 0), debugger_enabled=False, background_color='black', alpha_channel=0, finalize=True)
         self.window = sg.Window('', [[]], size=(0, 0), location=(0, 0), **kwargs)
         self.window.disable()
-        self.is_visible = False
         self.followed_window.TKroot.bind('<Configure>', lambda evt : self.followed_window_changed(), add='+')
     
-    def is_followed_window_visible(self):
-        return self.followed_window.TKroot.attributes('-alpha') == 1.0
+    def is_visible(self, window):
+        return window.TKroot.attributes('-alpha') > 0.0
 
     def enable(self, enable):
         if enable:
-            if not self.is_visible and self.is_followed_window_visible(): 
-                self.is_visible = True
+            if not self.is_visible(self.window) and self.is_visible(self.followed_window): 
                 self.window.bring_to_front()
                 self.window.set_alpha(self.alpha_grey)
         
-        elif self.is_visible:
+        elif self.is_visible(self.window):
             self.window.set_alpha(0)
-            self.is_visible = False
 
     def followed_window_changed(self):
         w, h = self.followed_window.size
