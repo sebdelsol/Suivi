@@ -46,7 +46,6 @@ class TrackerWidget:
         self.min_events_shown = self.min_events_shown
         self.reset_size()
         self.free_to_update = True
-        self.min_width = 0
 
         # faster startup
         if not TrackerWidget.updating_gif:
@@ -62,6 +61,7 @@ class TrackerWidget:
         self.width_events = 0
         self.height_events = 0
         self.expand_events = False
+        self.min_width = 0
 
     def create_layout(self, new):
         bg_color_h = widget_background_title_color
@@ -102,18 +102,20 @@ class TrackerWidget:
         self.events_widget = sg.MLine('', p=((5, 5), (0, 5)), font=self.events_f, visible=False, disabled=True, border_width=0, background_color=bg_color,
                                       no_scrollbar=True, s=(None, self.min_events_shown), expand_x=True, k=self.toggle_expand)
         events_widget_pin = sg.pin(sg.Col([[self.events_widget]], p=(10, 0), background_color=bg_color, expand_x=True), expand_x=True)
-        events_widget_pin.BackgroundColor = bg_color_h if new else bg_color
+        events_widget_pin.BackgroundColor = bg_color
 
         self.title_col = sg.Col([[self.days_widget, self.desc_widget, updating_widget_pin, to_expand, id_couriers_widget, buttons]], p=0, background_color=bg_color_h, expand_x=True)
         self.status_col = sg.Col([[self.ago_widget, self.status_widget, self.expand_button]], p=(10, 0), background_color=bg_color, expand_x=True)
 
-        layout = [[self.title_col],
+        vs = sg.Col([[]], s=(None, 1), background_color='grey70', p=0, expand_x=True)
+        layout = [[vs],
+                  [self.title_col],
                   [self.status_col],
                   [events_widget_pin]]
 
         self.layout = sg.Col(layout, expand_x=True, p=0, visible=self.tracker.state == TrackerState.shown, background_color=bg_color)
         self.pin = sg.pin(self.layout, expand_x=True)  # collapse when hidden
-        self.pin.BackgroundColor = bg_color
+        self.pin.BackgroundColor = bg_color_h if new else bg_color
         return [[self.pin]]
 
     def finalize(self, window):
@@ -174,9 +176,10 @@ class TrackerWidget:
         #     rows = (self.title_col, self.status_col, self.events_widget)
         #     h = 0
         #     for row in rows:
-        #         h += row.Widget.winfo_reqheight()
-        #         pady = row.Pad[1]
-        #         h += sum(pady) if isinstance(pady, tuple) else (pady * 2)
+        #         if row.visible:                
+        #             h += row.Widget.winfo_reqheight()
+        #             pady = row.Pad[1]
+        #             h += sum(pady) if isinstance(pady, tuple) else (pady * 2)
 
         #     print ('H', self.tracker.description, h, self.layout.Widget.winfo_reqheight())
         #     # return self.layout.Widget.winfo_reqheight()
