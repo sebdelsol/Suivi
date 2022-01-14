@@ -346,8 +346,8 @@ class TrackerWidget:
 
                 event_labels = textwrap.wrap(event_label, self.max_event_width - len(event_status), drop_whitespace=False) or ['']
                 if len(event_labels) > 1:
-                    following_labels = textwrap.wrap(''.join(event_labels[1:]), self.max_event_width)
-                    event_labels[1:] = [f"{' '* width}{label.strip()}" for label in following_labels]
+                    next_labels = textwrap.wrap(''.join(event_labels[1:]), self.max_event_width)
+                    event_labels[1:] = [f"{' '* width}{label.strip()}" for label in next_labels]
                 event_labels[0] = event_labels[0].strip()
 
                 prt(event_date, font=f, autoscroll=False, t='grey', end='')
@@ -595,6 +595,7 @@ class TrackerWidgets:
 
         self.its_empty.update(visible=False if shown else True)
 
+        window.visibility_changed()
         self.widgets_frame.contents_changed()
         window.refresh() # needed to get correct req width & height after MLines.setsize....
 
@@ -660,38 +661,40 @@ class Splash:
 
 # ---------------------
 class Grey_window:
+    alpha_grey = .5
+    
     def __init__(self, window):
-        self.window = window
+        self.followed_window = window
 
         is_debugger = Is_debugger()
-        self.kwargs = dict(keep_on_top=not is_debugger, no_titlebar=not is_debugger, margins=(0, 0), debugger_enabled=False, background_color='black', alpha_channel=.5, finalize=True)
-        self.bind_id = None
+        kwargs = dict(keep_on_top=not is_debugger, no_titlebar=not is_debugger, margins=(0, 0), debugger_enabled=False, background_color='black', alpha_channel=0, finalize=True)
+        self.window = sg.Window('', [[]], size=(0, 0), location=(0, 0), **kwargs)
+        self.window.disable()
+        self.is_visible = False
+        self.followed_window.TKroot.bind('<Configure>', lambda evt : self.followed_window_changed(), add='+')
     
+    def is_followed_window_visible(self):
+        return self.followed_window.TKroot.attributes('-alpha') == 1.0
+
     def enable(self, enable):
         if enable:
-            if self.bind_id is None and self.window.TKroot.attributes('-alpha') == 1.0: # test visibility
-                self.grey = sg.Window('', [[]], size=self.window.size, location=self.window.current_location(), **self.kwargs)
-                self.grey.disable()
-                self.bind_id = self.window.TKroot.bind('<Configure>', self.window_changed, add='+')
+            if not self.is_visible and self.is_followed_window_visible(): 
+                self.is_visible = True
+                self.window.bring_to_front()
+                self.window.set_alpha(self.alpha_grey)
         
-        else:
-            if self.bind_id is not None:
-                self.unbind('<Configure>', self.bind_id) 
-                self.bind_id = None
-                self.grey.close()
-                del self.grey
+        elif self.is_visible:
+            self.window.set_alpha(0)
+            self.is_visible = False
 
-    # bug with unbind that remove all
-    # https://stackoverflow.com/questions/6433369/deleting-and-changing-a-tkinter-event-binding
-    def unbind(self, sequence, bind_id):
-        binds = self.window.TKroot.bind(sequence).split('\n')
-        new_binds = [l for l in binds if l[6:6 + len(bind_id)] != bind_id]
-        self.window.TKroot.bind(sequence, '\n'.join(new_binds))
+    def followed_window_changed(self):
+        w, h = self.followed_window.size
+        x, y = self.followed_window.current_location()
+        self.window.TKroot.geometry(f'{w}x{h}+{x}+{y}')
 
-    def window_changed(self, evt):
-        w, h = self.window.size
-        x, y = self.window.current_location()
-        self.grey.TKroot.geometry(f'{w}x{h}+{x}+{y}')
+    def close(self):
+        self.enable(False)
+        self.window.close()
 
 # --------------------------------------------------
 class Main_window(sg.Window):
@@ -738,10 +741,12 @@ class Main_window(sg.Window):
         self.log = log
         log.link_to(self)
         self.grey_windows.append(Grey_window(log))
-        self.TKroot.bind('<Configure>', lambda evt: log.stick_to_main())
+        self.TKroot.bind('<Configure>', lambda evt: log.stick_to_main(), add='+')
 
     def close(self):
-        self.grey_all(False)
+        for grey_window in self.grey_windows:
+            grey_window.close()
+
         super().close()
         self.trackers.save()
         self.trackers.close()
