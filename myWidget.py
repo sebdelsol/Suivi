@@ -26,7 +26,7 @@ class MyButton(sg.Button):
         for button in filter(lambda elt: isinstance(elt, cls), window.element_list()):
             button.finalize()
 
-    def __init__(self, *args, mouseover_color = None, **kwargs):
+    def __init__(self, *args, mouseover_color=None, **kwargs):
         colors = kwargs.get('button_color')
         if isinstance(colors, tuple):
             text_color, button_color = colors
@@ -68,15 +68,15 @@ class MyButtonImg(MyButton):
 
         # expand the img to the right to fill the whole button
         self.set_size(new_size)
-        self.Widget.configure(wraplength = new_size[0])
+        self.Widget.configure(wraplength=new_size[0])
         new_image_data = expand_right_img64(self.im_data, new_size)
-        self.update(new_txt, image_data = new_image_data, update_layout = False)
+        self.update(new_txt, image_data=new_image_data, update_layout=False)
 
     def finalize(self):
         self.update_layout(self.get_text())        
         super().finalize()
 
-    def update(self, *args, update_layout = True, **kwargs):
+    def update(self, *args, update_layout=True, **kwargs):
         super().update(*args, **kwargs)
         if update_layout:
             txt = kwargs.get('text') or (len(args) > 0 and args[0])

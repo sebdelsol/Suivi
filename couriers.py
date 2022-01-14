@@ -89,7 +89,7 @@ class Courier:
 
     def update(self, idship):
         if not self.check_idship(idship):
-            _log (f'Wrong {Idship_txt} {idship} ({self.idship_check_msg})', error = True)
+            _log (f'Wrong {Idship_txt} {idship} ({self.idship_check_msg})', error=True)
         
         else:
             nb_retry = self.nb_retry
@@ -99,7 +99,7 @@ class Courier:
                     ok, r = self._get_response(idship)
 
                 except requests.exceptions.Timeout:
-                    _log (f'TIMEOUT request to {self.long_name} for {idship}', error = True)
+                    _log (f'TIMEOUT request to {self.long_name} for {idship}', error=True)
 
                 if ok or nb_retry <= 0:
                     break
@@ -114,7 +114,7 @@ class Courier:
             events = [ dict(evt_tuple) for evt_tuple in {tuple(evt.items()) for evt in events} ]
 
             # sort by date
-            events.sort(key = lambda evt : evt['date'], reverse = True)
+            events.sort(key=lambda evt : evt['date'], reverse=True)
             
             # add couriers and check for delivery & errors events
             delivered = infos.get('delivered', False)
@@ -172,7 +172,7 @@ class Scrapper(Courier):
                 return True, events
         
         except self.errors_catched as e: 
-            _log (f'scrapper FAILURE - {type(e).__name__} for {idship}', error = True)
+            _log (f'scrapper FAILURE - {type(e).__name__} for {idship}', error=True)
             return False, None
 
         finally:
@@ -239,7 +239,7 @@ class Asendia(Courier):
         return f'https://tracking.asendia.com/tracking/{idship}'
 
     def _get_response(self, idship): 
-        r = requests.post(self.url, json = {'criteria':[idship], 'shipped':False}, headers = self.headers, timeout = self.request_timeout)
+        r = requests.post(self.url, json={'criteria':[idship], 'shipped':False}, headers=self.headers, timeout=self.request_timeout)
         return r.status_code == 200, r
 
     def _update(self, r): 
@@ -278,7 +278,7 @@ class MondialRelay(Courier):
 
     def _get_response(self, idship): 
         url = self._get_url_for_browser(idship)
-        r = requests.get(url, timeout = self.request_timeout)
+        r = requests.get(url, timeout=self.request_timeout)
         return r.status_code == 200, r
 
     def _update(self, r): 
@@ -310,7 +310,7 @@ class GLS(Courier):
 
     def _get_response(self, idship): 
         url = f'https://gls-group.eu/app/service/open/rest/FR/fr/rstt001?match={idship}'
-        r = requests.get(url, timeout = self.request_timeout)
+        r = requests.get(url, timeout=self.request_timeout)
         return r.status_code == 200, r
 
     def _update(self, r): 
@@ -359,7 +359,7 @@ class DPD(Courier):
 
     def _get_response(self, idship): 
         url = self._get_url_for_browser(idship)
-        r = requests.get(url, timeout = self.request_timeout)
+        r = requests.get(url, timeout=self.request_timeout)
         return r.status_code == 200, r
 
     def _update(self, r): 
@@ -396,7 +396,7 @@ class NLPost(Courier):
         return f'https://postnl.post/tracktrace'
 
     def _get_response(self, idship): 
-        r = requests.post(self.url, data = dict(barcodes = idship), timeout = self.request_timeout)
+        r = requests.post(self.url, data=dict(barcodes = idship), timeout=self.request_timeout)
         return r.status_code == 200, r
 
     def _update(self, r): 
@@ -422,7 +422,7 @@ class FourPX(Courier):
 
     def _get_response(self, idship): 
         url = self.get_url_for_browser(idship)
-        r = requests.get(url, timeout = self.request_timeout)
+        r = requests.get(url, timeout=self.request_timeout)
         return r.status_code == 200, r
 
     def _update(self, r): 
@@ -434,7 +434,7 @@ class FourPX(Courier):
             date, hour, label = [stxt for txt in event.xpath('.//text()') if (stxt := re.sub(r'[\n\t]', '', txt).strip().replace('\xa0', '')) !='']
             status, label = label.split('/', 1) if '/' in label else ('', label)
 
-            events.append(dict(date = datetime.strptime(f'{date} {hour}', '%Y-%m-%d %H:%M').replace(tzinfo = pytz.utc),
+            events.append(dict(date = datetime.strptime(f'{date} {hour}', '%Y-%m-%d %H:%M').replace(tzinfo=pytz.utc),
                                status = status.strip(), label = label.strip() ))
             
         return events, {} 
@@ -473,7 +473,7 @@ class LaPoste(Courier):
 
     def _get_response(self, idship): 
         url = f'https://api.laposte.fr/suivi/v2/idships/{idship}?lang=fr_FR'
-        r = requests.get(url, headers = self.headers, timeout = self.request_timeout)
+        r = requests.get(url, headers = self.headers, timeout=self.request_timeout)
         return r.status_code == 200, r
 
     def _update(self, r): 
@@ -522,7 +522,7 @@ class DHL(Courier):
 
     def _get_response(self, idship): 
         url = f'https://api-eu.dhl.com/track/shipments?trackingNumber={idship}&requesterCountryCode=FR'
-        r = requests.get(url, headers = self.headers, timeout = self.request_timeout)
+        r = requests.get(url, headers = self.headers, timeout=self.request_timeout)
         return r.status_code == 200, r
 
     def _update(self, r): 

@@ -63,7 +63,7 @@ class Drivers:
                     for k, v in self.experimental_options.items():
                         options.add_experimental_option(k, v)
 
-                driver = webdriver.Chrome(options = options) 
+                driver = webdriver.Chrome(options=options) 
                 driver.set_page_load_timeout(self.driver_timeout)
 
                 self.drivers_available.put(driver)

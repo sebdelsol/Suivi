@@ -21,7 +21,7 @@ def resize_and_colorize_gif(image64, height, color):
 
     try:
         while True:
-            frame = ImageOps.colorize(ImageOps.grayscale(im), white = 'white', black = color)
+            frame = ImageOps.colorize(ImageOps.grayscale(im), white='white', black=color)
             frame = frame.convert('RGBA')
             frame.thumbnail(resize_to)
             frames.append(frame)
@@ -30,14 +30,14 @@ def resize_and_colorize_gif(image64, height, color):
     except EOFError:
         pass
 
-    return save_img64(frames[0], optimize = False, save_all = True, append_images = frames[1:], loop = 0, format = 'GIF', transparency = 0)
+    return save_img64(frames[0], optimize=False, save_all=True, append_images=frames[1:], loop=0, format='GIF', transparency=0)
 
 #-------------------------------------------------
-def resize_and_colorize_img(image, height, color, canvas_size = None):
+def resize_and_colorize_img(image, height, color, canvas_size=None):
     im = Image.open(image)
 
     alpha = im.split()[3]
-    im = ImageOps.colorize(ImageOps.grayscale(im), white = 'white', black = color) 
+    im = ImageOps.colorize(ImageOps.grayscale(im), white='white', black=color) 
     im.putalpha(alpha)
     width = round(im.size[0] * height / im.size[1])
     im.thumbnail((width, height))
@@ -48,7 +48,7 @@ def resize_and_colorize_img(image, height, color, canvas_size = None):
         new.paste(im, (padw, padh))
         im = new
 
-    return save_img64(im, format = 'PNG')
+    return save_img64(im, format='PNG')
 
 #-----------------------------------------
 def expand_right_img64(image64, new_size):
@@ -58,7 +58,7 @@ def expand_right_img64(image64, new_size):
     pad = round((new_size[1] - im.size[1]) * .5)
     new.paste(im, (pad, pad))
     
-    return save_img64(new, format = 'PNG')
+    return save_img64(new, format='PNG')
 
 #---------------------------
 def get_img64_size(image64): 

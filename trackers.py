@@ -82,7 +82,7 @@ class Tracker:
             _log (f'update START - {self.description} - {self.idship}, {" - ".join(courier_names)}')
             if (n_couriers := len(courier_names)) > 0:
                 with self.executor_ops:
-                    executor = ThreadPoolExecutor(max_workers = n_couriers)
+                    executor = ThreadPoolExecutor(max_workers=n_couriers)
                     futures = (executor.submit(self._update_courier, courier_name) for courier_name in courier_names)
                     self.executors.append(executor)
 
@@ -101,7 +101,7 @@ class Tracker:
                                 self.couriers_updating[courier_name] = False
                                 
                             msg = 'FAILED' if error else 'DONE'
-                            _log (f'update {msg} - {self.description} - {self.idship}, {courier_name}', error = error)
+                            _log (f'update {msg} - {self.description} - {self.idship}, {courier_name}', error=error)
 
                             yield self.get_consolidated_content()
                     
@@ -121,7 +121,7 @@ class Tracker:
                 return content, courier_name
         
         except:
-            _log (traceback.format_exc(), error = True)
+            _log (traceback.format_exc(), error=True)
 
     def get_consolidated_content(self):
         consolidated = {}
@@ -133,11 +133,11 @@ class Tracker:
                     contents_ok.append(copy.deepcopy(content))
 
         if len(contents_ok) > 0:
-            contents_ok.sort(key = lambda c : c['status']['date'], reverse = True)
+            contents_ok.sort(key = lambda c : c['status']['date'], reverse=True)
             consolidated = contents_ok[0]
                 
             events = sum((content['events'] for content in contents_ok), [])
-            events.sort(key = lambda evt : evt['date'], reverse = True)
+            events.sort(key=lambda evt : evt['date'], reverse=True)
 
             for event in events:
                 event['new'] = tuple(event.items()) not in self.loaded_events
@@ -203,7 +203,7 @@ class Trackers:
         saved_trackers = [SavedTracker(tracker) for tracker in trackers]
 
         self._save(saved_trackers, pickle_ext, 'wb', lambda obj, f: pickle.dump(obj, f))
-        self._save(saved_trackers, json_ext, 'w', lambda obj, f: json.dump(obj, f, default = json_encode_datetime, indent = 4))
+        self._save(saved_trackers, json_ext, 'w', lambda obj, f: json.dump(obj, f, default=json_encode_datetime, indent=4))
 
     def _load(self, ext, mode, load):
         filename = self.filename + ext
@@ -220,8 +220,8 @@ class Trackers:
             save(obj, f)
         _log(f'trackers SAVED to "{filename}"')
 
-    def sort(self, objs, get_tracker = lambda obj : obj): 
-        return sorted(objs, key = lambda obj : get_tracker(obj).creation_date, reverse = True)
+    def sort(self, objs, get_tracker=lambda obj : obj): 
+        return sorted(objs, key=lambda obj : get_tracker(obj).creation_date, reverse=True)
 
     def new(self, idship, description, used_couriers):
         tracker = Tracker(idship, description, used_couriers, self.couriers)
