@@ -188,10 +188,10 @@ class Trackers:
         self.couriers = Couriers(splash)
 
         if load_as_json:
-            trackers = self._load(json_ext, 'r', lambda f: json.load(f, object_hook = json_decode_datetime))
+            trackers = self.load_from_file(json_ext, 'r', lambda f: json.load(f, object_hook = json_decode_datetime))
         
         else:
-            trackers = self._load(pickle_ext, 'rb', lambda f: pickle.load(f))
+            trackers = self.load_from_file(pickle_ext, 'rb', lambda f: pickle.load(f))
 
         if trackers:
             trackers = [Tracker(trk['idship'], trk['description'], trk['used_couriers'], self.couriers, trk['state'], trk['contents'], trk['creation_date']) for trk in trackers]
@@ -202,10 +202,10 @@ class Trackers:
         trackers = self.sort(self.get_not_deleted())
         saved_trackers = [SavedTracker(tracker) for tracker in trackers]
 
-        self._save(saved_trackers, pickle_ext, 'wb', lambda obj, f: pickle.dump(obj, f))
-        self._save(saved_trackers, json_ext, 'w', lambda obj, f: json.dump(obj, f, default=json_encode_datetime, indent=4))
+        self.save_to_file(saved_trackers, pickle_ext, 'wb', lambda obj, f: pickle.dump(obj, f))
+        self.save_to_file(saved_trackers, json_ext, 'w', lambda obj, f: json.dump(obj, f, default=json_encode_datetime, indent=4))
 
-    def _load(self, ext, mode, load):
+    def load_from_file(self, ext, mode, load):
         filename = self.filename + ext
         if os.path.exists(filename):
             with open(filename, mode) as f:
@@ -214,7 +214,7 @@ class Trackers:
             _log(f'trackers LOADED from "{filename}"')
             return obj
 
-    def _save(self, obj, ext, mode, save):
+    def save_to_file(self, obj, ext, mode, save):
         filename = self.filename + ext
         with open(filename, mode) as f:
             save(obj, f)
@@ -235,6 +235,7 @@ class Trackers:
         return len([tracker for tracker in self.trackers if tracker.state == state])
 
     def close(self):
+        self.save()
         self.couriers.close()
         for tracker in self.trackers:
             tracker.close()

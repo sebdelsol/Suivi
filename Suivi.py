@@ -744,7 +744,6 @@ class Main_window(sg.Window):
             grey_window.close()
 
         super().close()
-        self.trackers.save()
         self.trackers.close()
 
     def trigger_event(self, evt):
