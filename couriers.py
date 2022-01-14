@@ -39,7 +39,7 @@ def get_leaf_cls(cls):
 #------------------------------------------------------------------------------
 class Couriers:
     def __init__(self, splash):
-        self.couriers = {cls.long_name: cls(splash) for cls in get_leaf_cls(Courier)}
+        self.couriers = {cls.name: cls(splash) for cls in get_leaf_cls(Courier)}
 
     def get(self, name):
         return self.couriers.get(name)
@@ -119,7 +119,7 @@ class Courier:
             # add couriers and check for delivery & errors events
             delivered = infos.get('delivered', False)
             for event in events:
-                event['courier'] = self.long_name
+                event['courier'] = self.name
                 # clean label
                 for sub in self.subs:
                     event['label'] = re.sub(sub[0], sub[1], event['label'].strip())
@@ -184,7 +184,7 @@ class Scrapper(Courier):
 
 #-------------------------------
 class Cainiao(Scrapper):
-    long_name = 'Cainiao'
+    name = 'Cainiao'
     fromto = f'CN{Courier.r_arrow}FR'
 
     timeout_elt = 30 # s
@@ -229,7 +229,7 @@ class Cainiao(Scrapper):
 
 #---------------------------
 class Asendia(Courier):
-    long_name = 'Asendia'
+    name = 'Asendia'
     fromto = f'CN{Courier.r_arrow}FR'
 
     headers = {'Content-Type': 'application/json', 'Accept-Language': 'fr'}
@@ -265,7 +265,7 @@ class Asendia(Courier):
 
 #----------------------
 class MondialRelay(Courier):
-    long_name = 'Mondial Relay'
+    name = 'Mondial Relay'
     product = 'Colis'
     fromto = f'FR{Courier.r_arrow}FR'
 
@@ -303,7 +303,7 @@ class MondialRelay(Courier):
 
 #------------------
 class GLS(Courier):
-    long_name = 'GLS'
+    name = 'GLS'
 
     def _get_url_for_browser(self, idship):
         return 'https://gls-group.eu/FR/fr/suivi-colis?' # how to add tracking number ??
@@ -352,7 +352,7 @@ class GLS(Courier):
 
 #----------------------
 class DPD(Courier):
-    long_name = 'DPD'
+    name = 'DPD'
 
     def _get_url_for_browser(self, idship):
         return f'https://trace.dpd.fr/fr/trace/{idship}'
@@ -388,7 +388,7 @@ class DPD(Courier):
 
 #----------------------
 class NLPost(Courier):
-    long_name = 'NL Post'
+    name = 'NL Post'
 
     url = 'https://postnl.post/details/'
 
@@ -413,7 +413,7 @@ class NLPost(Courier):
 
 #----------------------
 class FourPX(Courier):
-    long_name = '4PX'
+    name = '4PX'
 
     url = 'https://postnl.post/details/'
 
@@ -441,7 +441,7 @@ class FourPX(Courier):
 
 #----------------------
 class LaPoste(Courier):
-    long_name = 'La Poste'
+    name = 'La Poste'
 
     idship_check_pattern, idship_check_msg = get_simple_check(11, 15)
     headers = {'X-Okapi-Key': LaPoste_key, 'Accept': 'application/json'}
@@ -512,7 +512,7 @@ class LaPoste(Courier):
 
 #----------------------
 class DHL(Courier):
-    long_name = 'DHL'
+    name = 'DHL'
 
     idship_check_pattern, idship_check_msg = r'^\d{10}$', f'10 {Letters_txt}'
     headers = {'Accept': 'application/json', 'DHL-API-Key': dhl_key }
