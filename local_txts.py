@@ -22,7 +22,7 @@ Do_edit_txt = 'Édition'
 
 Init_txt = 'inititialisation'
 Tracker_creation_txt = 'création suivi'
-Updating_txt ='Mise à jour... '
+Updating_txt = 'Mise à jour... '
 Updated_txt = 'MàJ'
 Empty_txt = 'Vide'
 No_couriers_txt = 'Pas de Service Postaux'
@@ -43,5 +43,3 @@ Zipcode_txt = 'code postal'
 From_txt = 'de'
 To_txt = 'à'
 Or_txt = 'ou'
-
-

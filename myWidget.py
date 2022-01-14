@@ -3,22 +3,22 @@ from tkinter import font
 
 from imgtool import expand_right_img64, get_img64_size, resize_and_colorize_img
 
-#-----------------------
+
 class MyGraph(sg.Graph):
     def draw_rounded_box(self, x, y, w, h, r, color):
         w2, h2, r2 = w * .5, h * .5, r * 2
         # cross
-        self.draw_rectangle((x-w2, y+h2-r), (x+w2, y-h2+r), fill_color = color, line_color = color)
-        self.draw_rectangle((x-w2+r, y+h2), (x+w2-r, y-h2), fill_color = color, line_color = color)
+        self.draw_rectangle((x - w2, y + h2 - r), (x + w2, y - h2 + r), fill_color=color, line_color=color)
+        self.draw_rectangle((x - w2 + r, y + h2), (x + w2 - r, y - h2), fill_color=color, line_color=color)
         # corners
-        self.draw_arc((x-w2, y+h2-r2),    (x-w2+r2, y+h2),    90, 90,  fill_color = color, arc_color = color) 
-        self.draw_arc((x+w2-r2, y+h2-r2), (x+w2, y+h2),       90, 0,   fill_color = color, arc_color = color)
-        self.draw_arc((x-w2, y-h2),       (x-w2+r2, y-h2+r2), 90, 180, fill_color = color, arc_color = color) 
-        self.draw_arc((x+w2-r2, y-h2),    (x+w2, y-h2+r2),    90, 270, fill_color = color, arc_color = color)
+        self.draw_arc((x - w2, y + h2 - r2), (x - w2 + r2, y + h2), 90, 90, fill_color=color, arc_color=color)
+        self.draw_arc((x + w2 - r2, y + h2 - r2), (x + w2, y + h2), 90, 0, fill_color=color, arc_color=color)
+        self.draw_arc((x - w2, y - h2), (x - w2 + r2, y - h2 + r2), 90, 180, fill_color=color, arc_color=color)
+        self.draw_arc((x + w2 - r2, y - h2), (x + w2, y - h2 + r2), 90, 270, fill_color=color, arc_color=color)
 
-#-------------------------
+
 class MyButton(sg.Button):
-    default_colors = dict( Enter = 'grey75', Leave = 'grey95')
+    default_colors = dict(Enter='grey75', Leave='grey95')
     binds = ('<Enter>', '<Leave>')
 
     @classmethod
@@ -33,8 +33,8 @@ class MyButton(sg.Button):
         else:
             text_color, button_color = None, colors
 
-        self.colors = { 'Leave' : button_color or MyButton.default_colors['Leave'],
-                        'Enter' : mouseover_color or MyButton.default_colors['Enter'] }
+        self.colors = {'Leave': button_color or MyButton.default_colors['Leave'],
+                       'Enter': mouseover_color or MyButton.default_colors['Enter']}
 
         kwargs['button_color'] = (text_color, self.colors['Leave'])
         kwargs['border_width'] = 0
@@ -43,14 +43,14 @@ class MyButton(sg.Button):
 
     def finalize(self):
         for bind in MyButton.binds:
-            self.Widget.bind(bind, self.mouseover)            
+            self.Widget.bind(bind, self.mouseover)
 
     def mouseover(self, event):
-        self.update(button_color = self.colors.get(event.type.name))
+        self.update(button_color=self.colors.get(event.type.name))
 
-#-------------------------------------------------
+
 class MyButtonImg(MyButton):
-    def __init__(self, *args, im_margin = 0, im_height = 20, **kwargs):
+    def __init__(self, *args, im_margin=0, im_height=20, **kwargs):
         kwargs['image_data'] = resize_and_colorize_img(kwargs['image_filename'], im_height, kwargs['button_color'][0])
         kwargs['image_filename'] = None
         kwargs['auto_size_button'] = False
@@ -63,7 +63,7 @@ class MyButtonImg(MyButton):
     def update_layout(self, txt):
         # add spaces to fit text after the img
         wfont = font.Font(self.ParentForm.TKroot, self.Font)
-        new_txt = ' ' *  round((self.im_size[0] + self.im_margin * 2) / wfont.measure(' ')) + txt
+        new_txt = ' ' * round((self.im_size[0] + self.im_margin * 2) / wfont.measure(' ')) + txt
         new_size = (wfont.measure(new_txt) + self.im_margin, self.im_size[1] + self.im_margin * 2)
 
         # expand the img to the right to fill the whole button
@@ -73,7 +73,7 @@ class MyButtonImg(MyButton):
         self.update(new_txt, image_data=new_image_data, update_layout=False)
 
     def finalize(self):
-        self.update_layout(self.get_text())        
+        self.update_layout(self.get_text())
         super().finalize()
 
     def update(self, *args, update_layout=True, **kwargs):
@@ -81,4 +81,4 @@ class MyButtonImg(MyButton):
         if update_layout:
             txt = kwargs.get('text') or (len(args) > 0 and args[0])
             if txt:
-                self.update_layout(txt)        
+                self.update_layout(txt)

@@ -11,16 +11,17 @@ from jsondate import json_decode_datetime, json_encode_datetime
 from couriers import Couriers, get_local_now
 from mylog import _log
 
-#-----------------------
+
 class TrackerState:
     deleted = 'deleted'
     archived = 'archived'
     shown = 'shown'
 
+
 json_ext = '.json'
 pickle_ext = '.trck'
 
-#------------------------
+
 class SavedTracker(dict):
     def __init__(self, tracker):
         with tracker.critical:
@@ -28,14 +29,14 @@ class SavedTracker(dict):
             for attr in ('idship', 'description', 'used_couriers', 'state', 'contents', 'creation_date'):
                 self[attr] = tracker.__dict__[attr]
 
-#-------------
+
 class Tracker:
-    def __init__(self, idship, description, used_couriers, available_couriers, state = TrackerState.shown, contents = None, creation_date = None):
+    def __init__(self, idship, description, used_couriers, available_couriers, state=TrackerState.shown, contents=None, creation_date=None):
         self.set_id(idship, description, used_couriers)
         self.state = state
         self.contents = contents or {}
         self.creation_date = creation_date or get_local_now()
-        
+
         self.available_couriers = available_couriers
         self.critical = threading.Lock()
         self.couriers_error = {}
@@ -47,7 +48,7 @@ class Tracker:
         self.loaded_events = set()
         for content in self.contents.values():
             if events := content.get('events'):
-                self.loaded_events |=  { tuple(event.items()) for event in events } # can't hash dict
+                self.loaded_events |= {tuple(event.items()) for event in events}  # can't hash dict
 
     def set_id(self, idship, description, used_couriers):
         self.used_couriers = used_couriers or []
@@ -55,7 +56,7 @@ class Tracker:
         self.idship = (idship or '').strip()
 
     def _get_and_prepare_idle_couriers_names(self):
-        if self.idship: 
+        if self.idship:
             with self.critical:
                 for courier_name in self.used_couriers:
                     if not self.couriers_updating.get(courier_name):
@@ -67,7 +68,7 @@ class Tracker:
         return list(self._get_and_prepare_idle_couriers_names())
 
     def is_courier_still_updating(self):
-        if self.idship: 
+        if self.idship:
             with self.critical:
                 for courier_name in self.used_couriers:
                     if self.couriers_updating.get(courier_name):
@@ -75,11 +76,11 @@ class Tracker:
                 else:
                     return False
         else:
-            return True # as if updating, to prevent enabling refresh button 
+            return True  # as if updating, to prevent enabling refresh button
 
     def update_idle_couriers(self, courier_names):
-        if self.idship: 
-            _log (f'update START - {self.description} - {self.idship}, {" - ".join(courier_names)}')
+        if self.idship:
+            _log(f'update START - {self.description} - {self.idship}, {" - ".join(courier_names)}')
             if (n_couriers := len(courier_names)) > 0:
                 with self.executor_ops:
                     executor = ThreadPoolExecutor(max_workers=n_couriers)
@@ -99,16 +100,16 @@ class Tracker:
                                 error = not(new_content and new_content['ok'])
                                 self.couriers_error[courier_name] = error
                                 self.couriers_updating[courier_name] = False
-                                
+
                             msg = 'FAILED' if error else 'DONE'
-                            _log (f'update {msg} - {self.description} - {self.idship}, {courier_name}', error=error)
+                            _log(f'update {msg} - {self.description} - {self.idship}, {courier_name}', error=error)
 
                             yield self.get_consolidated_content()
-                    
+
                     with self.executor_ops:
                         executor.shutdown()
                         self.executors.remove(executor)
-                
+
                 # be sure to remove all updating flag
                 with self.critical:
                     for courier_name in courier_names:
@@ -119,9 +120,9 @@ class Tracker:
             if courier := self.available_couriers.get(courier_name):
                 content = courier.update(self.idship)
                 return content, courier_name
-        
+
         except:
-            _log (traceback.format_exc(), error=True)
+            _log(traceback.format_exc(), error=True)
 
     def get_consolidated_content(self):
         consolidated = {}
@@ -133,26 +134,26 @@ class Tracker:
                     contents_ok.append(copy.deepcopy(content))
 
         if len(contents_ok) > 0:
-            contents_ok.sort(key = lambda c : c['status']['date'], reverse=True)
+            contents_ok.sort(key=lambda c: c['status']['date'], reverse=True)
             consolidated = contents_ok[0]
-                
+
             events = sum((content['events'] for content in contents_ok), [])
-            events.sort(key=lambda evt : evt['date'], reverse=True)
+            events.sort(key=lambda evt: evt['date'], reverse=True)
 
             for event in events:
                 event['new'] = tuple(event.items()) not in self.loaded_events
 
-            consolidated['events'] = events 
-                
+            consolidated['events'] = events
+
             delivered = any(content['status'].get('delivered') for content in contents_ok)
             consolidated['status']['delivered'] = delivered
             consolidated['elapsed'] = events and (events[0]['date'] if delivered else get_local_now()) - events[-1]['date']
             consolidated['status']['date'] = self._no_future(consolidated['status']['date'])
-            
+
         consolidated['courier_update'] = self.get_courrier_update()
-        
+
         return consolidated
-    
+
     def get_courrier_update(self):
         with self.critical:
             couriers_update = {}
@@ -166,30 +167,30 @@ class Tracker:
         return couriers_update
 
     def _no_future(self, date):
-        if date : # not in future
+        if date:  # not in future
             return min(date, get_local_now())
 
     def get_delivered(self):
-        content = self.get_consolidated_content() 
+        content = self.get_consolidated_content()
         return content.setdefault('status', {}).get('delivered')
 
     def close(self):
         with self.executor_ops:
-            if self.executors :
+            if self.executors:
                 for executor in self.executors:
                     # https://stackoverflow.com/questions/49992329/the-workers-in-threadpoolexecutor-is-not-really-daemon
                     for thread in executor._threads:
-                        del _threads_queues[thread] 
+                        del _threads_queues[thread]
 
-#--------------
+
 class Trackers:
     def __init__(self, filename, load_as_json, splash):
         self.filename = filename
         self.couriers = Couriers(splash)
 
         if load_as_json:
-            trackers = self.load_from_file(json_ext, 'r', lambda f: json.load(f, object_hook = json_decode_datetime))
-        
+            trackers = self.load_from_file(json_ext, 'r', lambda f: json.load(f, object_hook=json_decode_datetime))
+
         else:
             trackers = self.load_from_file(pickle_ext, 'rb', lambda f: pickle.load(f))
 
@@ -210,7 +211,7 @@ class Trackers:
         if os.path.exists(filename):
             with open(filename, mode) as f:
                 obj = load(f)
-            
+
             _log(f'trackers LOADED from "{filename}"')
             return obj
 
@@ -220,8 +221,8 @@ class Trackers:
             save(obj, f)
         _log(f'trackers SAVED to "{filename}"')
 
-    def sort(self, objs, get_tracker=lambda obj : obj): 
-        return sorted(objs, key=lambda obj : get_tracker(obj).creation_date, reverse=True)
+    def sort(self, objs, get_tracker=lambda obj: obj):
+        return sorted(objs, key=lambda obj: get_tracker(obj).creation_date, reverse=True)
 
     def new(self, idship, description, used_couriers):
         tracker = Tracker(idship, description, used_couriers, self.couriers)
@@ -230,7 +231,7 @@ class Trackers:
 
     def get_not_deleted(self):
         return [tracker for tracker in self.trackers if tracker.state != TrackerState.deleted]
-    
+
     def count_state(self, state):
         return len([tracker for tracker in self.trackers if tracker.state == state])
 

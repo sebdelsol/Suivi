@@ -2,22 +2,23 @@ import re
 import queue
 import PySimpleGUI as sg
 import sys
-is_debugger = sys.gettrace()
 
 from myWidget import MyButton
 from theme import FixFont, FixFontBold, VarFont, Get_window_params
 from local_txts import *
 
-#----------------------
+is_debugger = sys.gettrace()
+
+
 class MyLog(sg.Window):
     link_txt = '\n'.join('❱❱❱❱❱')
     unlink_txt = '\n'.join('❰❰❰❰❰')
     close_txt = '\n'.join(Close_txt.upper())
 
     log_event = '-UPDATE LOG-'
-    listen_step = 20 # ms
+    listen_step = 20  # ms
     select_bg_color = '#C0C0C0'
-   
+
     def __init__(self, no_border):
         self.prints = queue.Queue()
         self.linked = True
@@ -25,12 +26,12 @@ class MyLog(sg.Window):
         self.visible = False
 
         log_f_size = 8
-        log_font, self.log_font_bold, button_font=(FixFont, log_f_size), (FixFontBold, log_f_size),  (VarFont, 12)
+        log_font, self.log_font_bold, button_font = (FixFont, log_f_size), (FixFontBold, log_f_size), (VarFont, 12)
         self.output = sg.MLine('', p=0, font=log_font, s=(80, 40), auto_refresh=True, autoscroll=True, disabled=True, border_width=0, expand_x=True, expand_y=True, background_color='grey90')
         self.link_button = MyButton(self.link_txt, p=0, font=button_font, button_color=('grey60', 'grey90'), mouseover_color='grey80', expand_x=True, expand_y=True, k='Link')
 
-        layout = [ [ self.output, sg.Col( [ [self.link_button], [ sg.Sizegrip() ] ], p=0, expand_x=True, expand_y=True) ] ]
-        
+        layout = [[self.output, sg.Col([[self.link_button], [sg.Sizegrip()]], p=0, expand_x=True, expand_y=True)]]
+
         args, kwargs = Get_window_params(layout, alpha_channel=0, resizable=True)
         super().__init__(*args, **kwargs)
 
@@ -42,7 +43,7 @@ class MyLog(sg.Window):
 
     def link_to(self, main_window):
         self.main_window = main_window
-        
+
         self.TKroot.bind('<Configure>', self.resize)
         self.main_window.TKroot.bind('<Configure>', lambda evt: self.stick_to_main(), add='+')
 
@@ -60,16 +61,16 @@ class MyLog(sg.Window):
                 self.TKroot.after(self.listen_step, self.listen)
 
     def resize(self, event):
-        if self.linked and ((event.x == 0 and event.y == 0) or self.current_location()!=self.wanted_pos):
+        if self.linked and ((event.x == 0 and event.y == 0) or self.current_location() != self.wanted_pos):
             self.stick_to_main()
 
     def event_handler(self, event):
-        if event in (None, 'l'): 
+        if event in (None, 'l'):
             self.toggle()
 
         elif event == 'Link':
-            self.linked =  not self.linked
-            if self.linked :
+            self.linked = not self.linked
+            if self.linked:
                 self.output.Widget.tag_remove('sel', '1.0', 'end')
                 self.output.Widget.configure(selectbackground=self.select_bg_color)
 
@@ -77,7 +78,7 @@ class MyLog(sg.Window):
                 self.output.grab_anywhere_exclude()
                 self.link_button.update(self.link_txt)
                 self.stick_to_main()
-            
+
             else:
                 # invisible selection
                 self.output.Widget.configure(selectbackground=self.output.Widget.cget('bg'))
@@ -92,12 +93,12 @@ class MyLog(sg.Window):
             w, h = self.size
             W, H = self.main_window.size
             x, y = self.main_window.current_location()
-            self.wanted_pos = int(x - w - gap) + 1, int(y + (H - h) *.5) 
+            self.wanted_pos = int(x - w - gap) + 1, int(y + (H - h) * .5)
             self.move(*self.wanted_pos)
-    
+
     def toggle(self):
         self.visible = not self.visible
-        if self.visible: 
+        if self.visible:
             self.reappear()
             self.enable()
             self.stick_to_main()
@@ -110,8 +111,8 @@ class MyLog(sg.Window):
         self.prints.put((args, error, kwargs))
 
     def close(self):
-        if self.visible: 
-            self.log ('<< HIT a key to CLOSE >>', error=True)
+        if self.visible:
+            self.log('<< HIT a key to CLOSE >>', error=True)
             self.link_button.update(self.close_txt, button_color=('red', 'grey85'))
             self.force_focus()
             self.TKroot.unbind('<Configure>')
@@ -121,11 +122,11 @@ class MyLog(sg.Window):
 
                 if event in (None, 'Link') or len(event) == 1 or re.match(r'\w+\:\d+', event):
                     break
-        
+
         self.listen(exiting=True)
 
         super().close()
 
-#-----------------------------
+
 mylog = MyLog(not is_debugger)
 _log = mylog.log
