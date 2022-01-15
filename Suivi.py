@@ -61,7 +61,6 @@ class TrackerWidget:
         self.width_events = 0
         self.height_events = 0
         self.expand_events = False
-        self.min_width = 0
 
     def create_layout(self, new):
         bg_color_h = widget_background_title_color
@@ -75,6 +74,7 @@ class TrackerWidget:
         archive_button = MyButton('', image_data=self.archive_img, p=(0, b_p), **b_colors, k=self.archive_or_delete)
 
         self.buttons = [edit_button, self.refresh_button, archive_button]
+        buttons = sg.Col([[button] for button in self.buttons], p=(10, 0), background_color=bg_color_h, expand_x=False)
 
         self.courier_fsize = widget_courier_font_size
         self.events_f = (FixFont, widget_event_font_size)
@@ -83,39 +83,48 @@ class TrackerWidget:
         self.days_size = widget_elapsed_days_box_size
         self.days_font = (FixFontBold, widget_elapsed_days_font_size)
         self.days_widget = MyGraph(canvas_size=(self.days_size, self.days_size), graph_bottom_left=(0, 0), graph_top_right=(self.days_size, self.days_size), p=(10, 0), background_color=bg_color_h)
-        self.desc_widget = sg.T('', p=0, font=(VarFont, widget_description_font_size), text_color=widget_descrition_text_color, background_color=bg_color_h, expand_x=False, justification='l')
+
+        desc_font = (VarFont, widget_description_font_size)
+        self.desc_widget = sg.T('', p=0, font=desc_font, text_color=widget_descrition_text_color, background_color=bg_color_h, expand_x=False, justification='l')
 
         self.updating_widget = sg.Image(data=self.updating_gif, p=((10, 0), (0, 0)), visible=False, background_color=bg_color_h, k=lambda w: self.toggle_expand(w))
         updating_widget_pin = sg.pin(self.updating_widget)
         updating_widget_pin.BackgroundColor = bg_color_h
+
         to_expand = sg.T('', p=0, background_color=bg_color_h, expand_x=True)
 
-        self.id_widget = sg.MLine('', p=0, font=(FixFont, widget_idship_font_size), disabled=True, border_width=0, no_scrollbar=True, background_color=bg_color_h, expand_x=True, justification='r')
-        self.couriers_widget = sg.MLine('', p=0, font=(FixFont, self.courier_fsize), disabled=True, border_width=0, no_scrollbar=True, background_color=bg_color_h, expand_x=True, justification='r')
+        id_font = (FixFont, widget_idship_font_size)
+        self.id_widget = sg.MLine('', p=0, font=id_font, disabled=True, border_width=0, no_scrollbar=True, background_color=bg_color_h, expand_x=True, justification='r')
+
+        couriers_font = (FixFont, self.courier_fsize)
+        self.couriers_widget = sg.MLine('', p=0, font=couriers_font, disabled=True, border_width=0, no_scrollbar=True, background_color=bg_color_h, expand_x=True, justification='r')
+
         id_couriers_widget = sg.Col([[self.id_widget], [self.couriers_widget]], p=((5, 0), (b_p, b_p)), background_color=bg_color_h, expand_x=True, vertical_alignment='top')
-        buttons = sg.Col([[button] for button in self.buttons], p=(10, 0), background_color=bg_color_h, expand_x=False)
 
-        self.ago_widget = sg.T('', p=0, font=(VarFont, widget_status_font_size), expand_x=False, background_color=bg_color, text_color='grey50', k=lambda w: self.toggle_expand(w))
-        self.status_widget = sg.T('', p=0, font=(VarFont, widget_status_font_size), expand_x=False, background_color=bg_color, k=lambda w: self.toggle_expand(w))
-        self.expand_button = MyButton('▼', p=(4, 0), font=(VarFont, widget_expand_font_size), button_color=('grey70', bg_color), mouseover_color='grey95', k=lambda w: self.toggle_expand(w))
+        ago_font = (VarFont, widget_status_font_size)
+        self.ago_widget = sg.T('', p=0, font=ago_font, expand_x=False, background_color=bg_color, text_color='grey50', k=lambda w: self.toggle_expand(w))
 
-        self.events_widget = sg.MLine('', p=((5, 5), (0, 5)), font=self.events_f, visible=False, disabled=True, border_width=0, background_color=bg_color,
-                                      no_scrollbar=True, s=(None, self.min_events_shown), expand_x=True, k=self.toggle_expand)
-        events_widget_pin = sg.pin(sg.Col([[self.events_widget]], p=(10, 0), background_color=bg_color, expand_x=True), expand_x=True)
+        status_font = (VarFont, widget_status_font_size)
+        self.status_widget = sg.T('', p=0, font=status_font, expand_x=True, background_color=bg_color, k=lambda w: self.toggle_expand(w))
+
+        expand_font = (VarFont, widget_expand_font_size)
+        self.expand_button = MyButton('▼', p=(4, 0), font=expand_font, button_color=('grey70', bg_color), mouseover_color='grey95', k=lambda w: self.toggle_expand(w))
+
+        self.events_widget = sg.MLine('', p=((5, 5), (0, 5)), font=self.events_f, visible=False, disabled=True, border_width=0, background_color=bg_color, no_scrollbar=True, s=(None, self.min_events_shown), expand_x=True, k=self.toggle_expand)
+        events_widget_col = sg.Col([[self.events_widget]], p=(10, 0), background_color=bg_color, expand_x=True)
+        events_widget_pin = sg.pin(events_widget_col, expand_x=True)  # collapse when hidden
         events_widget_pin.BackgroundColor = bg_color
 
-        self.title_col = sg.Col([[self.days_widget, self.desc_widget, updating_widget_pin, to_expand, id_couriers_widget, buttons]], p=0, background_color=bg_color_h, expand_x=True)
-        self.status_col = sg.Col([[self.ago_widget, self.status_widget, self.expand_button]], p=(10, 0), background_color=bg_color, expand_x=True)
-
         vs = sg.Col([[]], s=(None, 1), background_color=widget_separator_color, p=0, expand_x=True)
-        layout = [[vs],
-                  [self.title_col],
-                  [self.status_col],
-                  [events_widget_pin]]
+        title_col = sg.Col([[self.days_widget, self.desc_widget, updating_widget_pin, to_expand, id_couriers_widget, buttons]], p=0, background_color=bg_color_h, expand_x=True)
+        status_col = sg.Col([[self.ago_widget, self.status_widget, self.expand_button]], p=(10, 0), background_color=bg_color, expand_x=True)
 
+        layout = [[vs], [title_col], [status_col], [events_widget_pin]]
         self.layout = sg.Col(layout, expand_x=True, p=0, visible=self.tracker.state == TrackerState.shown, background_color=bg_color)
+
         self.pin = sg.pin(self.layout, expand_x=True)  # collapse when hidden
         self.pin.BackgroundColor = bg_color_h if new else bg_color
+
         return [[self.pin]]
 
     def finalize(self, window):
@@ -150,62 +159,22 @@ class TrackerWidget:
     def is_events_visible(self):
         return self.height_events > 0
 
-    def set_min_width(self, width):
-        self.min_width = width
-
     def get_pixel_width(self):
-        return max(self.min_width, self.layout.Widget.winfo_reqwidth())
-        # max_w = 0
-        # if self.layout.visible:
-        #     rows = (self.title_col, self.status_col, self.events_widget)
-        #     for row in rows:
-        #         w = row.Widget.winfo_reqwidth()
-        #         padx = row.Pad[0]
-        #         w += sum(padx) if isinstance(padx, tuple) else (padx * 2)
-        #         max_w = max(w, max_w)
-
-        # print ('W', self.tracker.description, max_w, self.layout.Widget.winfo_reqwidth())
-        # return max(self.min_width, max_w)
-        # # return max(self.min_width, self.layout.Widget.winfo_reqwidth())
+        return self.layout.Widget.winfo_reqwidth()
 
     def get_pixel_height(self):
-        return self.pin.Widget.winfo_height()  # get_size()[1]
-        # return self.layout.Widget.winfo_reqheight()
-
-        # if self.layout.visible:
-        #     rows = (self.title_col, self.status_col, self.events_widget)
-        #     h = 0
-        #     for row in rows:
-        #         if row.visible:           
-        #             h += row.Widget.winfo_reqheight()
-        #             pady = row.Pad[1]
-        #             h += sum(pady) if isinstance(pady, tuple) else (pady * 2)
-
-        #     print ('H', self.tracker.description, h, self.layout.Widget.winfo_reqheight())
-        #     # return self.layout.Widget.winfo_reqheight()
-        #     return h
-        # else:
-        #     return 1
+        return self.pin.Widget.winfo_height()
 
     def update_size(self, w):
         nb_events_shown = float('inf') if self.expand_events else self.min_events_shown
         h = min(nb_events_shown, self.height_events)
         self.events_widget.set_size((w, h))
 
-        self.update_couriers_id_size()
+        self.update_couriers_height()
 
-        # print ('UPDATE SIZE', self.tracker.description, w, h)
-
-        # tell frame not to let its children control its size
-        # self.layout.Widget.pack_propagate(0) # size not controlled by its children
-        # self.layout.set_size((self.get_pixel_width(), self.get_pixel_height()))
-
-    def update_couriers_id_size(self):
-        txts = [t for t in self.couriers_widget.get().split('\n')]
-        self.couriers_widget.set_size((max(len(t) + 1 for t in txts), len(txts)))
-
-        txt = self.id_widget.get()
-        self.id_widget.set_size((len(txt), 1))
+    def update_couriers_height(self):
+        txts = self.couriers_widget.get().split('\n')
+        self.couriers_widget.set_size((None, len(txts)))
 
     def show_current_content(self, window):
         self.show(self.tracker.get_consolidated_content(), window)
@@ -213,7 +182,7 @@ class TrackerWidget:
     def show_current_courier_widget(self):
         couriers_update = self.tracker.get_courrier_update()
         self.show_couriers(couriers_update)
-        self.update_couriers_id_size()
+        self.update_couriers_height()
 
     def update(self, window):
         if self.tracker.state == TrackerState.shown:
@@ -395,7 +364,7 @@ class TrackerWidget:
 
             prt = self.couriers_widget.print
             for updating, ago, ago_color, name, name_color, name_font in txts:
-                maj_txt = Updating_txt if updating else ' ' * len(Updating_txt)
+                maj_txt = Updating_txt if updating else ' ' * len(Updating_txt)  # keep same size to prevent window jiggling
                 prt(maj_txt, autoscroll=False, font=(FixFontBold, self.courier_fsize), t=Refresh_color, end='')
                 prt(name.rjust(width_name), autoscroll=False, t=name_color, font=(name_font, self.courier_fsize), end='')
                 prt(f', {Updated_txt} ', autoscroll=False, t='grey60', end='')
@@ -579,16 +548,11 @@ class TrackerWidgets:
         for widget in self.get_widgets_with_state(TrackerState.shown):
             widget.animate(animation_step)
 
-    def set_min_width(self, width):
-        for widget in self.get_widgets_with_state(TrackerState.shown):
-            widget.set_min_width(width)
-
     def update_size(self, window):
         shown = self.get_widgets_with_state(TrackerState.shown)
 
         menu_w = self.widget_menu.Widget.winfo_reqwidth()
         menu_h = self.widget_menu.Widget.winfo_reqheight()
-        self.set_min_width(menu_w)
 
         # resize all widgets with the max width & and change pin color
         max_width_shown = max(widget.width_events for widget in shown) if shown else 0
@@ -597,9 +561,8 @@ class TrackerWidgets:
 
         self.its_empty.update(visible=False if shown else True)
 
-        window.visibility_changed()
+        window.refresh()  # or visibility_changed() that produce more visible glitches ??!
         self.widgets_frame.contents_changed()
-        # window.refresh() # needed to get correct req width & height after MLines.setsize....
 
         # wanted size
         if shown:
