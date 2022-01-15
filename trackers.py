@@ -58,7 +58,7 @@ class Tracker:
         if self.idship:
             with self.critical:
                 for courier_name in self.used_couriers:
-                    # chekc it's not already updating
+                    # check it's not already updating
                     if not self.couriers_updating.get(courier_name):
                         # check it's a valid id_ship for this courier
                         if courier := self.available_couriers.get(courier_name):
@@ -79,44 +79,46 @@ class Tracker:
                 else:
                     return False
         else:
-            return True  # as if updating, to prevent enabling refresh button
+            return True  # as if it's updating, to prevent enabling refresh button
 
     def update_idle_couriers(self, courier_names):
-        if self.idship:
+        if self.idship and courier_names:
             _log(f'update START - {self.description} - {self.idship}, {" - ".join(courier_names)}')
-            if (n_couriers := len(courier_names)) > 0:
-                with self.executor_ops:
-                    executor = ThreadPoolExecutor(max_workers=n_couriers)
-                    futures = (executor.submit(self._update_courier, courier_name) for courier_name in courier_names)
-                    self.executors.append(executor)
 
-                if executor:
-                    for future in as_completed(futures):
-                        if result := future.result():
-                            new_content, courier_name = result
-                            with self.critical:
-                                if new_content is not None:
-                                    if new_content['ok'] or courier_name not in self.contents:
-                                        new_content['courier_name'] = courier_name
-                                        self.contents[courier_name] = new_content
+            # create threads with executor
+            with self.executor_ops:
+                executor = ThreadPoolExecutor(max_workers=len(courier_names))
+                futures = (executor.submit(self._update_courier, courier_name) for courier_name in courier_names)
+                self.executors.append(executor)
 
-                                error = not(new_content and new_content['ok'])
-                                self.couriers_error[courier_name] = error
-                                self.couriers_updating[courier_name] = False
+            # handle threads
+            for future in as_completed(futures):
+                if result := future.result():
+                    new_content, courier_name = result
+                    with self.critical:
+                        if new_content is not None:
+                            if new_content['ok'] or courier_name not in self.contents:
+                                new_content['courier_name'] = courier_name
+                                self.contents[courier_name] = new_content
 
-                            msg = 'FAILED' if error else 'DONE'
-                            _log(f'update {msg} - {self.description} - {self.idship}, {courier_name}', error=error)
-
-                            yield self.get_consolidated_content()
-
-                    with self.executor_ops:
-                        executor.shutdown()
-                        self.executors.remove(executor)
-
-                # be sure to remove all updating flag
-                with self.critical:
-                    for courier_name in courier_names:
+                        error = not(new_content and new_content['ok'])
+                        self.couriers_error[courier_name] = error
                         self.couriers_updating[courier_name] = False
+
+                    msg = 'FAILED' if error else 'DONE'
+                    _log(f'update {msg} - {self.description} - {self.idship}, {courier_name}', error=error)
+
+                    yield self.get_consolidated_content()
+
+            # dispose executor
+            with self.executor_ops:
+                executor.shutdown()
+                self.executors.remove(executor)
+
+            # remove all updating flag
+            with self.critical:
+                for courier_name in courier_names:
+                    self.couriers_updating[courier_name] = False
 
     def _update_courier(self, courier_name):
         try:

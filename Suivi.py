@@ -807,7 +807,7 @@ if __name__ == "__main__":
     needed_version = SpecifierSet(Python_version)
     version = '.'.join(str(v) for v in sys.version_info[:3])
     print(f'Python {version} running')
-    
+
     if version not in needed_version:
         needs = ' and '.join(need for need in str(needed_version).split(','))
         print(f"Unfortunatly this app needs Python {needs}")
