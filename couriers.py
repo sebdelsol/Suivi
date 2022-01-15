@@ -16,7 +16,7 @@ import urllib3
 from mylog import _log
 from drivers import Drivers
 from config import LaPoste_key, dhl_key
-from local_txts import *
+import local_txts as TXT
 
 
 def get_sentence(txt, nb=-1):
@@ -56,12 +56,12 @@ class Couriers:
 
 
 def get_simple_validation(_min, _max):
-    return fr'^\w{{{_min},{_max}}}$', f'{From_txt} {_min} {To_txt} {_max} {Letters_txt} {Or_txt} {Digits_txt}'
+    return fr'^\w{{{_min},{_max}}}$', f'{TXT.from_} {_min} {TXT.to_} {_max} {TXT.letters} {TXT.or_} {TXT.digits}'
 
 
 class Courier:
     r_arrow = '→'
-    product = Default_product_txt
+    product = TXT.default_product
     fromto = ''
 
     request_timeout = 5  # sec
@@ -94,7 +94,7 @@ class Courier:
 
     def update(self, idship):
         if not self.check_idship(idship):
-            _log(f'Wrong {Idship_txt} {idship} ({self.idship_validation_msg})', error=True)
+            _log(f'Wrong {TXT.idship} {idship} ({self.idship_validation_msg})', error=True)
 
         else:
             nb_retry = self.nb_retry
@@ -143,7 +143,7 @@ class Courier:
 
             status = dict(date=status_date,
                           ok_date=status_date if ok else None,
-                          label=infos.get('status_label', events[0]['label'] if events else Status_Error_txt),
+                          label=infos.get('status_label', events[0]['label'] if events else TXT.status_error),
                           warn=infos.get('status_warn', False if events else True),
                           delivered=delivered)
 
@@ -275,7 +275,7 @@ class MondialRelay(Courier):
     fromto = f'FR{Courier.r_arrow}FR'
 
     idship_validation = r'^\d{8}(\d{2})?(\d{2})?\-\d{5}$'
-    idship_validation_msg = f'8, 10 {Or_txt} 12 {Digits_txt}-{Zipcode_txt}'
+    idship_validation_msg = f'8, 10 {TXT.or_} 12 {TXT.digits}-{TXT.zipcode}'
 
     def _get_url_for_browser(self, idship):
         number, zip_code = idship.split('-')
@@ -525,7 +525,7 @@ class LaPoste(Courier):
 class DHL(Courier):
     name = 'DHL'
 
-    idship_validation, idship_validation_msg = r'^\d{10}$', f'10 {Letters_txt}'
+    idship_validation, idship_validation_msg = r'^\d{10}$', f'10 {TXT.letters}'
     headers = {'Accept': 'application/json', 'DHL-API-Key': dhl_key}
 
     def _get_url_for_browser(self, idship):

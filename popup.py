@@ -5,7 +5,7 @@ import webbrowser
 from myWidget import MyButton
 from couriers import Courier
 from theme import FixFont, FixFontBold, VarFont, VarFontBold, Get_window_params
-from local_txts import *
+import local_txts as TXT
 
 
 class MyPopup(sg.Window):
@@ -17,8 +17,8 @@ class MyPopup(sg.Window):
                   [sg.HorizontalSeparator()]]
         layout.extend(body_layout)
         layout.append([sg.HorizontalSeparator()])
-        layout.append([MyButton(OK_txt, font=(VarFont, 12), button_color='grey80', mouseover_color='grey95', bind_return_key=True),
-                       MyButton(Cancel_txt, font=(VarFont, 12), button_color='grey80', mouseover_color='grey95')])
+        layout.append([MyButton(TXT.ok, font=(VarFont, 12), button_color='grey80', mouseover_color='grey95', bind_return_key=True),
+                       MyButton(TXT.cancel, font=(VarFont, 12), button_color='grey80', mouseover_color='grey95')])
         layout = [[sg.Col(layout, p=10)]]
 
         args, kwargs = Get_window_params(layout)
@@ -33,10 +33,10 @@ class MyPopup(sg.Window):
                 return exit
 
     def event_handler(self, event):
-        if event in (None, Cancel_txt, 'Escape:27'):
+        if event in (None, TXT.cancel, 'Escape:27'):
             return False
 
-        elif event == OK_txt:
+        elif event == TXT.ok:
             return True
 
     def close(self):
@@ -48,8 +48,8 @@ class edit(MyPopup):
     def __init__(self, title, idship, description, used_couriers, couriers, main_window):
         self.couriers_names = couriers.get_names()
         self.couriers_names.sort()
-        layout = [[sg.T(description_txt, font=(FixFont, 10)), sg.Input(description, font=(FixFont, 10), border_width=0, key='description')],
-                  [sg.T(Idship_txt, font=(FixFont, 10)), sg.Input(idship, font=(FixFont, 10), border_width=0, enable_events=True, key='idship')]]
+        layout = [[sg.T(TXT.description, font=(FixFont, 10)), sg.Input(description, font=(FixFont, 10), border_width=0, key='description')],
+                  [sg.T(TXT.idship, font=(FixFont, 10)), sg.Input(idship, font=(FixFont, 10), border_width=0, enable_events=True, key='idship')]]
 
         self.check_colors = {True: 'black', False: 'grey60'}
         self.msg_font = {True: (FixFontBold, 8), False: (FixFont, 8)}
@@ -124,7 +124,7 @@ class choices(MyPopup):
             layout = [[col]]
 
         else:
-            layout = [[sg.T(Empty_txt, expand_x=True, font=self.selected_font, text_color='red', justification='center')]]
+            layout = [[sg.T(TXT.empty, expand_x=True, font=self.selected_font, text_color='red', justification='center')]]
 
         self.choices = choices
         super().__init__(title, layout, main_window)

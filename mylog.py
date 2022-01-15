@@ -5,7 +5,7 @@ import sys
 
 from myWidget import MyButton
 from theme import FixFont, FixFontBold, VarFont, Get_window_params
-from local_txts import *
+import local_txts as TXT
 
 is_debugger = sys.gettrace()
 
@@ -13,7 +13,7 @@ is_debugger = sys.gettrace()
 class MyLog(sg.Window):
     link_txt = '\n'.join('❱❱❱❱❱')
     unlink_txt = '\n'.join('❰❰❰❰❰')
-    close_txt = '\n'.join(Close_txt.upper())
+    close_txt = '\n'.join(TXT.close.upper())
 
     log_event = '-UPDATE LOG-'
     listen_step = 20  # ms

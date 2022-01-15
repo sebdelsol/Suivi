@@ -1,6 +1,6 @@
 import PySimpleGUI as sg
 from packaging.specifiers import SpecifierSet
-from local_txts import *
+import local_txts as TXT
 from theme import *
 
 Python_version = '>=3.8, <3.9'
@@ -246,7 +246,7 @@ class TrackerWidget:
             else:
                 self.width_events = 0
                 self.height_events = 0
-                self.status_widget.update(Unkown_status_txt, text_color='red')
+                self.status_widget.update(TXT.unknown_status, text_color='red')
                 self.desc_widget.update(text_color='grey70')
 
             self.show_id(content)
@@ -282,7 +282,7 @@ class TrackerWidget:
         self.height_events = 0
 
         if events:
-            event_dates = [f"{evt['date']:{Long_date_format}}".replace('.', '').split(',') for evt in events]
+            event_dates = [f"{evt['date']:{TXT.Long_date_format}}".replace('.', '').split(',') for evt in events]
             date_w = max(len(date) for date in event_dates)
             courier_w = max(len(evt['courier']) for evt in events)
             previous_day = None
@@ -340,7 +340,7 @@ class TrackerWidget:
     def show_id(self, content):
         self.id_widget.update('')
 
-        product = content.get('product', Default_product_txt)
+        product = content.get('product', TXT.default_product)
         fromto = content.get('fromto')
         fromto = f' {fromto.lower()} ' if fromto else ' '
 
@@ -360,12 +360,12 @@ class TrackerWidget:
             txts = []
             for name in couriers_update_names:
                 date, error, updating, valid_idship = couriers_update[name]
-                ago_color, ago = ('green', f"{timeago.format(date, get_local_now(), 'fr').replace(Ago_txt, '').strip()}") if date else ('red', Never_txt)
+                ago_color, ago = ('green', f"{timeago.format(date, get_local_now(), 'fr').replace(TXT.ago, '').strip()}") if date else ('red', TXT.never)
                 name_color, name_font = ('red', FixFontBold) if error else ('green', FixFont)
                 valid = ''
                 if not valid_idship:
                     empty_idship, _ = self.get_idship(check_empty=True)
-                    valid = f'{No_idship_txt if empty_idship else Invalid_idship_txt}, '
+                    valid = f'{TXT.no_idship if empty_idship else TXT.invalid_idship}, '
                 txts.append((updating, ago, ago_color, name, name_color, name_font, valid))
 
             width_name = max(len(txt[3]) for txt in txts)
@@ -373,22 +373,22 @@ class TrackerWidget:
 
             prt = self.couriers_widget.print
             for updating, ago, ago_color, name, name_color, name_font, valid in txts:
-                maj_txt = Updating_txt if updating else ' ' * len(Updating_txt)  # keep same size to prevent window jiggling
+                maj_txt = TXT.updating if updating else ' ' * len(TXT.updating)  # keep same size to prevent window jiggling
                 prt(maj_txt, autoscroll=False, font=(FixFontBold, self.courier_fsize), t=Refresh_color, end='')
                 prt(valid, autoscroll=False, font=(FixFontBold, self.courier_fsize), t='red', end='')
                 prt(name.rjust(width_name), autoscroll=False, t=name_color, font=(name_font, self.courier_fsize), end='')
-                prt(f', {Updated_txt} ', autoscroll=False, t='grey60', end='')
+                prt(f', {TXT.updated} ', autoscroll=False, t='grey60', end='')
                 prt(ago.ljust(width_ago), autoscroll=False, t=ago_color)
 
         else:
-            self.couriers_widget.update(No_couriers_txt, text_color='red')
+            self.couriers_widget.update(TXT.no_couriers, text_color='red')
 
     def disable_buttons(self, disabled):
         for button in self.buttons:
             button.update(disabled=disabled)
 
     def edit(self, window):
-        popup_edit = popup.edit(Do_edit_txt, self.tracker.idship, self.tracker.description, self.tracker.used_couriers, self.tracker.available_couriers, window)
+        popup_edit = popup.edit(TXT.do_edit, self.tracker.idship, self.tracker.description, self.tracker.used_couriers, self.tracker.available_couriers, window)
         ok, idship, description, used_couriers = popup_edit.loop()
 
         if ok:
@@ -402,8 +402,8 @@ class TrackerWidget:
     def archive_or_delete(self, window):
         self.disable_buttons(True)
 
-        choices = {Do_archive_txt: self.archive, Do_delete_txt: self.delete}
-        choices_colors = {Do_archive_txt: 'green', Do_delete_txt: 'red', False: 'grey75'}
+        choices = {TXT.do_archive: self.archive, TXT.do_delete: self.delete}
+        choices_colors = {TXT.do_archive: 'green', TXT.do_delete: 'red', False: 'grey75'}
 
         popup_one_choice = popup.one_choice(choices.keys(), choices_colors, f'{self.get_description()} - {self.get_idship()}', window)
         choice = popup_one_choice.loop()
@@ -432,7 +432,7 @@ class TrackerWidget:
                 self.update(window)
 
     def delete(self, window):
-        self.set_state(TrackerState.deleted, window, Do_delete_txt, Trash_updated_event)
+        self.set_state(TrackerState.deleted, window, TXT.do_delete, Trash_updated_event)
 
     def undelete(self, window):
         self.set_state(TrackerState.shown, window, False, Trash_updated_event, True)
@@ -444,18 +444,18 @@ class TrackerWidget:
         self.set_state(TrackerState.shown, window, False, Archives_updated_event, True)
 
     def get_creation_date(self):
-        return f'{self.tracker.creation_date:{Short_date_format}}'.replace('.', '')
+        return f'{self.tracker.creation_date:{TXT.Short_date_format}}'.replace('.', '')
 
     def get_idship(self, check_empty=False):
         idship = self.tracker.idship.strip()
         if check_empty:
-            return (False, idship) if idship else (True, No_idship_txt)
+            return (False, idship) if idship else (True, TXT.no_idship)
 
         else:
-            return idship or No_idship_txt
+            return idship or TXT.no_idship
 
     def get_description(self):
-        return self.tracker.description.strip().title() or No_description_txt
+        return self.tracker.description.strip().title() or TXT.no_description
 
     def get_delivered(self):
         return self.tracker.get_delivered()
@@ -480,7 +480,7 @@ class TrackerWidgets:
 
         n_trackers = len(trackers.trackers)
         for i, tracker in enumerate(trackers.trackers):
-            splash.update(f'{Tracker_creation_txt} {i + 1}/{n_trackers}')
+            splash.update(f'{TXT.tracker_creation} {i + 1}/{n_trackers}')
             self.create_widget(window, tracker, new=False)
 
         self.update_size(window)
@@ -496,7 +496,7 @@ class TrackerWidgets:
         widget.update(window)
 
     def new(self, window):
-        popup_edit = popup.edit(New_txt, '', New_txt, [], self.trackers.couriers, window)
+        popup_edit = popup.edit(TXT.new, '', TXT.new, [], self.trackers.couriers, window)
         ok, *tracker_params = popup_edit.loop()
 
         if ok:
@@ -507,13 +507,13 @@ class TrackerWidgets:
         return [widget for widget in self.widgets if widget.tracker.state == state]
 
     def show_archives(self, window):
-        widgets = self.choose(window, Do_unarchive_txt, TrackerState.archived)
+        widgets = self.choose(window, TXT.do_unarchive, TrackerState.archived)
 
         for widget in widgets:
             widget.unarchive(window)
 
     def show_deleted(self, window):
-        widgets = self.choose(window, Do_restore_txt, TrackerState.deleted)
+        widgets = self.choose(window, TXT.do_restore, TrackerState.deleted)
 
         for widget in widgets:
             widget.undelete(window)
@@ -537,11 +537,11 @@ class TrackerWidgets:
 
     def archives_updated(self):
         n_archives = self.trackers.count_state(TrackerState.archived)
-        self.archives_button.update(f'{Archives_txt}({n_archives})')
+        self.archives_button.update(f'{TXT.archives}({n_archives})')
 
     def deleted_updated(self):
         n_deleted = self.trackers.count_state(TrackerState.deleted)
-        self.deleted_button.update(f'{Trash_txt}({n_deleted})')
+        self.deleted_button.update(f'{TXT.trash}({n_deleted})')
 
     def update(self, window):
         for widget in self.get_widgets_with_state(TrackerState.shown):
@@ -617,7 +617,7 @@ class TrackerWidgets:
             # add spaces in its_empty to fit w
             wfont = font.Font(self.its_empty.ParentForm.TKroot, self.its_empty.Font)
             n_spaces = round(menu_w / wfont.measure(' '))
-            self.its_empty.update(Empty_txt.center(n_spaces))
+            self.its_empty.update(TXT.empty.center(n_spaces))
 
     def recenter(self, window, force=False):
         W, H = window.get_screen_size()
@@ -688,15 +688,15 @@ class Main_window(sg.Window):
         fs = menu_button_font_size
         b_kwargs = dict(im_height=menu_button_height, im_margin=menu_button_img_margin, font=(VarFontBold, fs), mouseover_color='grey90')
 
-        log_b = MyButtonImg(Log_txt, p=p, image_filename=Log_img, button_color=(Log_color, menu_color), k=Log_event, **b_kwargs)
-        new_b = MyButtonImg(New_txt, p=(0, p), image_filename=Edit_img, button_color=(Edit_color, menu_color), k=New_event, **b_kwargs)
-        refresh_b = MyButtonImg(Refresh_Txt, p=p, image_filename=Refresh_img, button_color=(Refresh_color, menu_color), k=Refresh_event, **b_kwargs)
-        archives_b = MyButtonImg(Archives_txt, p=(0, p), image_filename=Archives_img, button_color=(Archives_color, menu_color), k=Archives_event, **b_kwargs)
-        trash_b = MyButtonImg(Trash_txt, p=p, image_filename=Trash_img, button_color=(Trash_color, menu_color), k=Trash_event, **b_kwargs)
+        log_b = MyButtonImg(TXT.log, p=p, image_filename=Log_img, button_color=(Log_color, menu_color), k=Log_event, **b_kwargs)
+        new_b = MyButtonImg(TXT.new, p=(0, p), image_filename=Edit_img, button_color=(Edit_color, menu_color), k=New_event, **b_kwargs)
+        refresh_b = MyButtonImg(TXT.refresh, p=p, image_filename=Refresh_img, button_color=(Refresh_color, menu_color), k=Refresh_event, **b_kwargs)
+        archives_b = MyButtonImg(TXT.archives, p=(0, p), image_filename=Archives_img, button_color=(Archives_color, menu_color), k=Archives_event, **b_kwargs)
+        trash_b = MyButtonImg(TXT.trash, p=p, image_filename=Trash_img, button_color=(Trash_color, menu_color), k=Trash_event, **b_kwargs)
         recenter_widget = sg.T('', background_color=menu_color, p=0, expand_x=True, expand_y=True, k=Recenter_event)
-        exit_b = MyButton(Exit_txt, p=p, font=(VarFontBold, fs), button_color=menu_color, mouseover_color='red', focus=True, k=Exit_event)
+        exit_b = MyButton(TXT.exit, p=p, font=(VarFontBold, fs), button_color=menu_color, mouseover_color='red', focus=True, k=Exit_event)
 
-        its_empty = sg.T(Empty_txt, p=(0, 15), expand_x=True, expand_y=True, font=(VarFontBold, empty_font_size), text_color='grey', background_color=empty_color, k=Its_empty_key)
+        its_empty = sg.T(TXT.empty, p=(0, 15), expand_x=True, expand_y=True, font=(VarFontBold, empty_font_size), text_color='grey', background_color=empty_color, k=Its_empty_key)
         pin_empty = sg.pin(its_empty, expand_x=True)
         pin_empty.BackgroundColor = empty_color
 
@@ -816,7 +816,7 @@ if __name__ == "__main__":
 
         # create splash before importing to reduce startup time
         splash = Splash()
-        splash.update(Init_txt)
+        splash.update(TXT.init)
 
         # import after splash has been created
         import threading
@@ -825,7 +825,7 @@ if __name__ == "__main__":
         import textwrap
         from tkinter import font
         import locale
-        locale.setlocale(locale.LC_ALL, Locale_setting)  # date in correct language
+        locale.setlocale(locale.LC_ALL, TXT.Locale_setting)  # date in correct language
 
         from trackers import Trackers, TrackerState
         from imgtool import resize_and_colorize_gif, resize_and_colorize_img
