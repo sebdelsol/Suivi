@@ -64,8 +64,8 @@ class TrackerWidget:
         self.height_events = 0
         self.expand_events = False
 
-    def set_min_width(self, w):
-        self.horizontal_line.Widget.canvas.config(width=w)
+    def set_min_width(self, min_width):
+        self.horizontal_line.Widget.canvas.config(width=min_width)
 
     def create_layout(self, new):
         # self.new = new  # for pincoloring
@@ -566,9 +566,9 @@ class TrackerWidgets:
         for widget in self.get_widgets_with_state(TrackerState.shown):
             widget.animate(animation_step)
 
-    def set_min_width(self, w):
+    def set_min_width(self, min_width):
         for widget in self.get_widgets_with_state(TrackerState.shown):
-            widget.set_min_width(w)
+            widget.set_min_width(min_width)
 
     def update_size(self, window):
         # color = TH.menu_color
