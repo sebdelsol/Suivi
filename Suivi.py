@@ -173,11 +173,14 @@ class TrackerWidget:
         h = min(nb_events_shown, self.height_events)
         self.events_widget.set_size((w, h))
 
-        self.update_couriers_height()
+        self.update_couriers_id_size()
 
-    def update_couriers_height(self):
-        txts = self.couriers_widget.get().split('\n')
-        self.couriers_widget.set_size((None, len(txts)))
+    def update_couriers_id_size(self):
+        txts = [t for t in self.couriers_widget.get().split('\n')]
+        self.couriers_widget.set_size((max(len(t) + 1 for t in txts), len(txts)))
+
+        txt = self.id_widget.get()
+        self.id_widget.set_size((len(txt), 1))
 
     def show_current_content(self, window):
         self.show(self.tracker.get_consolidated_content(), window)
@@ -185,7 +188,7 @@ class TrackerWidget:
     def show_current_courier_widget(self):
         couriers_update = self.tracker.get_courrier_update()
         self.show_couriers(couriers_update)
-        self.update_couriers_height()
+        self.update_couriers_id_size()
 
     def update(self, window):
         if self.tracker.state == TrackerState.shown:
