@@ -11,15 +11,14 @@ from jsondate import json_decode_datetime, json_encode_datetime
 from couriers import Couriers, get_local_now
 from mylog import _log
 
+json_ext = '.json'
+pickle_ext = '.trck'
+
 
 class TrackerState:
     deleted = 'deleted'
     archived = 'archived'
     shown = 'shown'
-
-
-json_ext = '.json'
-pickle_ext = '.trck'
 
 
 class SavedTracker(dict):

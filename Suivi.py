@@ -3,7 +3,6 @@ from packaging.specifiers import SpecifierSet
 import local_txts as TXT
 import theme as TH
 
-
 Python_version = '>=3.8, <3.9'
 TrackersFile = 'Trackers'
 LOAD_AS_JSON = True
@@ -672,9 +671,10 @@ class Grey_window:
             self.window.set_alpha(0)
 
     def followed_window_changed(self):
-        w, h = self.followed_window.size
-        x, y = self.followed_window.current_location()
-        self.window.TKroot.geometry(f'{w}x{h}+{x}+{y}')
+        if self.window.TKroot:
+            w, h = self.followed_window.size
+            x, y = self.followed_window.current_location()
+            self.window.TKroot.geometry(f'{w}x{h}+{x}+{y}')
 
     def close(self):
         self.enable(False)
