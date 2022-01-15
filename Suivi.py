@@ -804,16 +804,16 @@ class Main_window(sg.Window):
 if __name__ == "__main__":
 
     import sys
-    needs = SpecifierSet(Python_version)
+    
+    needed_version = SpecifierSet(Python_version)
     version = '.'.join(str(v) for v in sys.version_info[:3])
-
-    if version not in needs:
-        needs = ' and '.join(need for need in str(needs).split(','))
-        print(f"Running Python version {version}, it needs Python {needs}")
+    print(f'Python {version} running')
+    
+    if version not in needed_version:
+        needs = ' and '.join(need for need in str(needed_version).split(','))
+        print(f"Unfortunatly this app needs Python {needs}")
 
     else:
-        print(f'Python {version} running')
-
         sg.theme(TH.main_theme)
 
         # create splash before importing to reduce startup time
