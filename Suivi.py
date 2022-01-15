@@ -1,4 +1,5 @@
 import PySimpleGUI as sg
+import sys
 from packaging.specifiers import SpecifierSet
 import local_txts as TXT
 import theme as TH
@@ -803,8 +804,6 @@ class Main_window(sg.Window):
 
 if __name__ == "__main__":
 
-    import sys
-    
     needed_version = SpecifierSet(Python_version)
     version = '.'.join(str(v) for v in sys.version_info[:3])
     print(f'Python {version} running')
