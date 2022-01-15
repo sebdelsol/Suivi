@@ -65,7 +65,7 @@ class TrackerWidget:
         self.expand_events = False
 
     def set_min_width(self, w):
-        self.min_sizer.Widget.config(padx=round(w // 2))
+        self.min_sizer.Widget.config(padx=round(w / 2))
 
     def create_layout(self, new):
         # self.new = new  # for pincoloring
