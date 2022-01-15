@@ -50,7 +50,7 @@ class TrackerWidget:
 
         # faster startup
         if not TrackerWidget.updating_gif:
-            TrackerWidget.updating_gif = resize_and_colorize_gif(sg.DEFAULT_BASE64_LOADING_GIF, widget_updating_gif_height, widget_updating_color)
+            TrackerWidget.updating_gif = resize_and_colorize_gif(sg.DEFAULT_BASE64_LOADING_GIF, widget_updating_gif_height, Refresh_color)
 
             height = widget_button_size - widget_button_img_margin * 2
             size = (widget_button_size, widget_button_size)
@@ -87,13 +87,11 @@ class TrackerWidget:
         self.days_widget = MyGraph(canvas_size=(self.days_size, self.days_size), graph_bottom_left=(0, 0), graph_top_right=(self.days_size, self.days_size), p=(10, 0), background_color=bg_color_h)
 
         desc_font = (VarFont, widget_description_font_size)
-        self.desc_widget = sg.T('', p=0, font=desc_font, text_color=widget_descrition_text_color, background_color=bg_color_h, expand_x=False, justification='l')
+        self.desc_widget = sg.T('', p=0, font=desc_font, text_color=widget_descrition_text_color, background_color=bg_color_h, expand_x=True, justification='l')
 
-        self.updating_widget = sg.Image(data=self.updating_gif, p=((10, 0), (0, 0)), visible=False, background_color=bg_color_h, k=lambda w: self.toggle_expand(w))
+        self.updating_widget = sg.Image(data=self.updating_gif, p=((10, 0), (0, 0)), visible=False, background_color=bg_color, k=lambda w: self.toggle_expand(w))
         updating_widget_pin = sg.pin(self.updating_widget)
-        updating_widget_pin.BackgroundColor = bg_color_h
-
-        to_expand = sg.T('', p=0, background_color=bg_color_h, expand_x=True)
+        updating_widget_pin.BackgroundColor = bg_color
 
         id_font = (FixFont, widget_idship_font_size)
         self.id_widget = sg.MLine('', p=0, font=id_font, background_color=bg_color_h, justification='r', **mline_kwargs)
@@ -112,15 +110,14 @@ class TrackerWidget:
         expand_font = (VarFont, widget_expand_font_size)
         self.expand_button = MyButton('▼', p=(4, 0), font=expand_font, button_color=('grey70', bg_color), mouseover_color='grey95', k=lambda w: self.toggle_expand(w))
 
-        # self.events_widget = sg.MLine('', p=((5, 5), (0, 5)), font=self.events_f, visible=False, background_color=bg_color, s=(None, self.min_events_shown), k=self.toggle_expand, **mline_kwargs)
         self.events_widget = sg.MLine('', p=((5, 5), (0, 5)), font=self.events_f, visible=False, background_color=bg_color, k=self.toggle_expand, **mline_kwargs)
         events_widget_col = sg.Col([[self.events_widget]], p=(10, 0), background_color=bg_color, expand_x=True)
         events_widget_pin = sg.pin(events_widget_col, expand_x=True)  # collapse when hidden
         events_widget_pin.BackgroundColor = bg_color
 
         vs = sg.Col([[]], s=(None, 1), background_color=widget_separator_color, p=0, expand_x=True)
-        title_col = sg.Col([[self.days_widget, self.desc_widget, updating_widget_pin, to_expand, id_couriers_widget, buttons]], p=0, background_color=bg_color_h, expand_x=True)
-        status_col = sg.Col([[self.ago_widget, self.status_widget, self.expand_button]], p=(10, 0), background_color=bg_color, expand_x=True)
+        title_col = sg.Col([[self.days_widget, self.desc_widget, id_couriers_widget, buttons]], p=0, background_color=bg_color_h, expand_x=True)
+        status_col = sg.Col([[self.expand_button, self.ago_widget, self.status_widget, updating_widget_pin]], p=(10, 0), background_color=bg_color, expand_x=True)
 
         layout = [[vs], [title_col], [status_col], [events_widget_pin]]
         self.layout = sg.Col(layout, expand_x=True, p=0, visible=self.tracker.state == TrackerState.shown, background_color=bg_color)
@@ -168,6 +165,7 @@ class TrackerWidget:
     def get_pixel_height(self):
         return self.pin.Widget.winfo_height()
 
+    # https://stackoverflow.com/questions/11544187/tkinter-resize-text-to-contents/11545159
     def update_size(self, w):
         nb_events_shown = float('inf') if self.expand_events else self.min_events_shown
         h = min(nb_events_shown, self.height_events)
