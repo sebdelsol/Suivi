@@ -53,16 +53,20 @@ class Tracker:
     def set_id(self, idship, description, used_couriers):
         self.used_couriers = used_couriers or []
         self.description = (description or '').strip().title()
-        self.idship = (idship or '').strip()
+        self.idship = (idship.upper() or '').strip()
 
     def _get_and_prepare_idle_couriers_names(self):
         if self.idship:
             with self.critical:
                 for courier_name in self.used_couriers:
+                    # chekc it's not already updating
                     if not self.couriers_updating.get(courier_name):
-                        self.couriers_error[courier_name] = True
-                        self.couriers_updating[courier_name] = True
-                        yield courier_name
+                        # check it's a valid id_ship for this courier
+                        if courier := self.available_couriers.get(courier_name):
+                            if courier.check_idship(self.idship):
+                                self.couriers_error[courier_name] = True
+                                self.couriers_updating[courier_name] = True
+                                yield courier_name
 
     def get_idle_couriers(self):
         return list(self._get_and_prepare_idle_couriers_names())
@@ -150,11 +154,11 @@ class Tracker:
             consolidated['elapsed'] = events and (events[0]['date'] if delivered else get_local_now()) - events[-1]['date']
             consolidated['status']['date'] = self._no_future(consolidated['status']['date'])
 
-        consolidated['courier_update'] = self.get_courrier_update()
+        consolidated['couriers_update'] = self.get_couriers_update()
 
         return consolidated
 
-    def get_courrier_update(self):
+    def get_couriers_update(self):
         with self.critical:
             couriers_update = {}
             for courier_name in self.used_couriers:
@@ -162,7 +166,9 @@ class Tracker:
                 ok_date = self._no_future(content and content.setdefault('status', {}).get('ok_date'))
                 error = self.couriers_error.get(courier_name, True)
                 updating = self.couriers_updating.get(courier_name, False)
-                couriers_update[courier_name] = (ok_date, error, updating)
+                courier = self.available_couriers.get(courier_name)
+                valid_idship = courier and self.idship and courier.check_idship(self.idship)
+                couriers_update[courier_name] = (ok_date, error, updating, valid_idship)
 
         return couriers_update
 

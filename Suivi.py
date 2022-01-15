@@ -184,7 +184,7 @@ class TrackerWidget:
         self.show(self.tracker.get_consolidated_content(), window)
 
     def show_current_courier_widget(self):
-        couriers_update = self.tracker.get_courrier_update()
+        couriers_update = self.tracker.get_couriers_update()
         self.show_couriers(couriers_update)
         self.update_couriers_id_size()
 
@@ -251,7 +251,7 @@ class TrackerWidget:
 
             self.show_id(content)
 
-            couriers_update = content.get('courier_update')
+            couriers_update = content.get('couriers_update')
             self.show_couriers(couriers_update)
 
             elapsed = content.get('elapsed')
@@ -347,7 +347,8 @@ class TrackerWidget:
         prt = self.id_widget.print
         prt(f'{product}', autoscroll=False, t='grey50', end='')
         prt(fromto, autoscroll=False, t='grey70', end='')
-        prt(self.get_idship(), autoscroll=False, t='blue', end='')
+        empty, idship = self.get_idship(check_empty=True)
+        prt(idship, autoscroll=False, t='red' if empty else 'blue', end='')
 
     def show_couriers(self, couriers_update):
         if couriers_update:
@@ -358,18 +359,23 @@ class TrackerWidget:
 
             txts = []
             for name in couriers_update_names:
-                date, error, updating = couriers_update[name]
+                date, error, updating, valid_idship = couriers_update[name]
                 ago_color, ago = ('green', f"{timeago.format(date, get_local_now(), 'fr').replace(Ago_txt, '').strip()}") if date else ('red', Never_txt)
                 name_color, name_font = ('red', FixFontBold) if error else ('green', FixFont)
-                txts.append((updating, ago, ago_color, name, name_color, name_font))
+                valid = ''
+                if not valid_idship:
+                    empty_idship, _ = self.get_idship(check_empty=True)
+                    valid = f'{No_idship_txt if empty_idship else Invalid_idship_txt}, '
+                txts.append((updating, ago, ago_color, name, name_color, name_font, valid))
 
             width_name = max(len(txt[3]) for txt in txts)
             width_ago = max(len(txt[1]) for txt in txts)
 
             prt = self.couriers_widget.print
-            for updating, ago, ago_color, name, name_color, name_font in txts:
+            for updating, ago, ago_color, name, name_color, name_font, valid in txts:
                 maj_txt = Updating_txt if updating else ' ' * len(Updating_txt)  # keep same size to prevent window jiggling
                 prt(maj_txt, autoscroll=False, font=(FixFontBold, self.courier_fsize), t=Refresh_color, end='')
+                prt(valid, autoscroll=False, font=(FixFontBold, self.courier_fsize), t='red', end='')
                 prt(name.rjust(width_name), autoscroll=False, t=name_color, font=(name_font, self.courier_fsize), end='')
                 prt(f', {Updated_txt} ', autoscroll=False, t='grey60', end='')
                 prt(ago.ljust(width_ago), autoscroll=False, t=ago_color)
@@ -440,11 +446,16 @@ class TrackerWidget:
     def get_creation_date(self):
         return f'{self.tracker.creation_date:{Short_date_format}}'.replace('.', '')
 
-    def get_idship(self):
-        return self.tracker.idship.strip() or No_idship_txt
+    def get_idship(self, check_empty=False):
+        idship = self.tracker.idship.strip()
+        if check_empty:
+            return (False, idship) if idship else (True, No_idship_txt)
+
+        else:
+            return idship or No_idship_txt
 
     def get_description(self):
-        return self.tracker.description.strip().title() or No_idship_txt
+        return self.tracker.description.strip().title() or No_description_txt
 
     def get_delivered(self):
         return self.tracker.get_delivered()

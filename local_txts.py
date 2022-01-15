@@ -27,6 +27,8 @@ Updated_txt = 'MàJ'
 Empty_txt = 'Vide'
 No_couriers_txt = 'Pas de Service Postaux'
 No_idship_txt = 'N° indéfini'
+Invalid_idship_txt = 'N° mal formé'
+No_description_txt = 'Pas de description'
 Never_txt = 'jamais'
 Ago_txt = 'il y a'
 

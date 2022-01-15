@@ -51,13 +51,16 @@ class edit(MyPopup):
         layout = [[sg.T(description_txt, font=(FixFont, 10)), sg.Input(description, font=(FixFont, 10), border_width=0, key='description')],
                   [sg.T(Idship_txt, font=(FixFont, 10)), sg.Input(idship, font=(FixFont, 10), border_width=0, enable_events=True, key='idship')]]
 
+        self.check_colors = {True: 'black', False: 'grey60'}
+        self.msg_font = {True: (FixFontBold, 8), False: (FixFont, 8)}
+
         self.idship_widgets = []
         for name in self.couriers_names:
             courier = couriers.get(name)
 
             is_checked = name in used_couriers
-            cb = sg.CB(f' {name}', default=is_checked, text_color='black' if is_checked else 'grey60', font=(FixFont, 12), enable_events=True, k=name)
-            msg = sg.T(f'({courier.idship_validation_msg})', font=(FixFont, 8), expand_x=True, justification='r')
+            cb = sg.CB(f' {name}', default=is_checked, text_color=self.check_colors[is_checked], font=(FixFont, 12), enable_events=True, k=name)
+            msg = sg.T(f'({courier.idship_validation_msg})', font=self.msg_font[is_checked], expand_x=True, justification='r', k=f'{name}msg')
             button = MyButton('voir', font=(FixFont, 8), button_color='grey90', k=courier)
 
             self.idship_widgets.append((msg, button))
@@ -84,7 +87,9 @@ class edit(MyPopup):
             webbrowser.open(url)
 
         elif event in self.couriers_names:
-            self[event].update(text_color='black' if self[event].get() else 'grey60')
+            is_checked = self[event].get()
+            self[event].update(text_color=self.check_colors[is_checked])
+            self[f'{event}msg'].update(font=self.msg_font[is_checked])
 
         else:
             return super().event_handler(event)
