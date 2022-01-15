@@ -4,8 +4,8 @@ import webbrowser
 
 from myWidget import MyButton
 from couriers import Courier
-from theme import FixFont, FixFontBold, VarFont, VarFontBold, Get_window_params
 import local_txts as TXT
+import theme as TH
 
 
 class MyPopup(sg.Window):
@@ -13,15 +13,15 @@ class MyPopup(sg.Window):
         self.main_window = main_window
         self.main_window.grey_all(True)
 
-        layout = [[sg.T(title, font=(FixFontBold, 20), justification='center', expand_x=True)],
+        layout = [[sg.T(title, font=(TH.fix_font_bold, 20), justification='center', expand_x=True)],
                   [sg.HorizontalSeparator()]]
         layout.extend(body_layout)
         layout.append([sg.HorizontalSeparator()])
-        layout.append([MyButton(TXT.ok, font=(VarFont, 12), button_color='grey80', mouseover_color='grey95', bind_return_key=True),
-                       MyButton(TXT.cancel, font=(VarFont, 12), button_color='grey80', mouseover_color='grey95')])
+        layout.append([MyButton(TXT.ok, font=(TH.var_font, 12), button_color='grey80', mouseover_color='grey95', bind_return_key=True),
+                       MyButton(TXT.cancel, font=(TH.var_font, 12), button_color='grey80', mouseover_color='grey95')])
         layout = [[sg.Col(layout, p=10)]]
 
-        args, kwargs = Get_window_params(layout)
+        args, kwargs = TH.get_window_params(layout)
         super().__init__(*args, **kwargs)
         MyButton.finalize_all(self)
 
@@ -48,20 +48,20 @@ class edit(MyPopup):
     def __init__(self, title, idship, description, used_couriers, couriers, main_window):
         self.couriers_names = couriers.get_names()
         self.couriers_names.sort()
-        layout = [[sg.T(TXT.description, font=(FixFont, 10)), sg.Input(description, font=(FixFont, 10), border_width=0, key='description')],
-                  [sg.T(TXT.idship, font=(FixFont, 10)), sg.Input(idship, font=(FixFont, 10), border_width=0, enable_events=True, key='idship')]]
+        layout = [[sg.T(TXT.description, font=(TH.fix_font, 10)), sg.Input(description, font=(TH.fix_font, 10), border_width=0, key='description')],
+                  [sg.T(TXT.idship, font=(TH.fix_font, 10)), sg.Input(idship, font=(TH.fix_font, 10), border_width=0, enable_events=True, key='idship')]]
 
         self.check_colors = {True: 'black', False: 'grey60'}
-        self.msg_font = {True: (FixFontBold, 8), False: (FixFont, 8)}
+        self.msg_font = {True: (TH.fix_font_bold, 8), False: (TH.fix_font, 8)}
 
         self.idship_widgets = []
         for name in self.couriers_names:
             courier = couriers.get(name)
 
             is_checked = name in used_couriers
-            cb = sg.CB(f' {name}', default=is_checked, text_color=self.check_colors[is_checked], font=(FixFont, 12), enable_events=True, k=name)
+            cb = sg.CB(f' {name}', default=is_checked, text_color=self.check_colors[is_checked], font=(TH.fix_font, 12), enable_events=True, k=name)
             msg = sg.T(f'({courier.idship_validation_msg})', font=self.msg_font[is_checked], expand_x=True, justification='r', k=f'{name}msg')
-            button = MyButton('voir', font=(FixFont, 8), button_color='grey90', k=courier)
+            button = MyButton('voir', font=(TH.fix_font, 8), button_color='grey90', k=courier)
 
             self.idship_widgets.append((msg, button))
             layout.append([cb, msg, sg.vcenter(button)])
@@ -109,7 +109,7 @@ class edit(MyPopup):
 
 class choices(MyPopup):
     max_lines = 15
-    selected_font, unselected_font = (FixFontBold, 9), (FixFont, 9)
+    selected_font, unselected_font = (TH.fix_font_bold, 9), (TH.fix_font, 9)
 
     def __init__(self, choices, title, main_window):
         row = namedtuple('row', 'cb txt')
@@ -168,7 +168,7 @@ class one_choice(MyPopup):
         layout = []
         for i, choice in enumerate(choices):
             color = choice_colors[choice if i == default else False]
-            radio = sg.Radio(choice, group_id='choices', text_color=color, font=(VarFontBold, 20), enable_events=True, default=i == 0, k=choice)
+            radio = sg.Radio(choice, group_id='choices', text_color=color, font=(TH.var_font_bold, 20), enable_events=True, default=i == 0, k=choice)
             layout.append([radio])
 
         self.choice_colors = choice_colors
@@ -197,7 +197,7 @@ class one_choice(MyPopup):
 
 class warning(MyPopup):
     def __init__(self, title, text, main_window):
-        layout = [[sg.Image(filename='icon/warn.png'), sg.T(text, font=(VarFont, 15))]]
+        layout = [[sg.Image(filename='icon/warn.png'), sg.T(text, font=(TH.var_font, 15))]]
         super().__init__(title, layout, main_window)
 
     def loop(self):

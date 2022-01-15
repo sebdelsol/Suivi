@@ -1,7 +1,8 @@
 import PySimpleGUI as sg
 from packaging.specifiers import SpecifierSet
 import local_txts as TXT
-from theme import *
+import theme as TH
+
 
 Python_version = '>=3.8, <3.9'
 TrackersFile = 'Trackers'
@@ -32,13 +33,13 @@ Log_shorcut = 'l'
 
 
 class TrackerWidget:
-    min_events_shown = widget_min_events_shown
-    days_intervals = widget_elpapse_days_intervals
-    days_colors = widget_elpased_days_colors
+    min_events_shown = TH.widget_min_events_shown
+    days_intervals = TH.widget_elapsed_days_intervals
+    days_colors = TH.widget_elapsed_days_colors
 
-    max_event_width = widget_event_max_width  # chars
+    max_event_width = TH.widget_event_max_width  # chars
 
-    button_size = (widget_button_size, widget_button_size)
+    button_size = (TH.widget_button_size, TH.widget_button_size)
     updating_gif, refresh_img, edit_img, archive_img = None, None, None, None
 
     def __init__(self, tracker):
@@ -50,13 +51,13 @@ class TrackerWidget:
 
         # faster startup
         if not TrackerWidget.updating_gif:
-            TrackerWidget.updating_gif = resize_and_colorize_gif(sg.DEFAULT_BASE64_LOADING_GIF, widget_updating_gif_height, Refresh_color)
+            TrackerWidget.updating_gif = resize_and_colorize_gif(sg.DEFAULT_BASE64_LOADING_GIF, TH.widget_updating_gif_height, TH.refresh_color)
 
-            height = widget_button_size - widget_button_img_margin * 2
-            size = (widget_button_size, widget_button_size)
-            TrackerWidget.refresh_img = resize_and_colorize_img(Refresh_img, height, Refresh_color, size)
-            TrackerWidget.edit_img = resize_and_colorize_img(Edit_img, height, Edit_color, size)
-            TrackerWidget.archive_img = resize_and_colorize_img(Archives_img, height, Archives_color, size)
+            height = TH.widget_button_size - TH.widget_button_img_margin * 2
+            size = (TH.widget_button_size, TH.widget_button_size)
+            TrackerWidget.refresh_img = resize_and_colorize_img(TH.refresh_img, height, TH.refresh_color, size)
+            TrackerWidget.edit_img = resize_and_colorize_img(TH.edit_img, height, TH.edit_color, size)
+            TrackerWidget.archive_img = resize_and_colorize_img(TH.archives_img, height, TH.archives_color, size)
 
     def reset_size(self):
         self.width_events = 0
@@ -65,11 +66,11 @@ class TrackerWidget:
 
     def create_layout(self, new):
         # self.new = new  # for pincoloring
-        bg_color_h = widget_background_title_color
-        bg_color = widget_background_event_color
+        bg_color_h = TH.widget_background_title_color
+        bg_color = TH.widget_background_event_color
         mline_kwargs = dict(write_only=True, border_width=0, no_scrollbar=True, expand_x=True, disabled=True)
 
-        b_p = widget_button_pad
+        b_p = TH.widget_button_pad
         b_colors = dict(button_color=bg_color_h, mouseover_color='grey95')
         edit_button = MyButton('', image_data=self.edit_img, p=(0, b_p), **b_colors, k=self.edit)
         self.refresh_button = MyButton('', image_data=self.refresh_img, p=0, **b_colors, k=self.update)
@@ -78,36 +79,36 @@ class TrackerWidget:
         self.buttons = [edit_button, self.refresh_button, archive_button]
         buttons = sg.Col([[button] for button in self.buttons], p=(10, 0), background_color=bg_color_h, expand_x=False)
 
-        self.courier_fsize = widget_courier_font_size
-        self.events_f = (FixFont, widget_event_font_size)
-        self.events_fb = (FixFontBold, widget_event_font_size)
+        self.courier_fsize = TH.widget_courier_font_size
+        self.events_f = (TH.fix_font, TH.widget_event_font_size)
+        self.events_fb = (TH.fix_font_bold, TH.widget_event_font_size)
 
-        self.days_size = widget_elapsed_days_box_size
-        self.days_font = (FixFontBold, widget_elapsed_days_font_size)
+        self.days_size = TH.widget_elapsed_days_box_size
+        self.days_font = (TH.fix_font_bold, TH.widget_elapsed_days_font_size)
         self.days_widget = MyGraph(canvas_size=(self.days_size, self.days_size), graph_bottom_left=(0, 0), graph_top_right=(self.days_size, self.days_size), p=(10, 0), background_color=bg_color_h)
 
-        desc_font = (VarFont, widget_description_font_size)
-        self.desc_widget = sg.T('', p=0, font=desc_font, text_color=widget_descrition_text_color, background_color=bg_color_h, expand_x=True, justification='l')
+        desc_font = (TH.var_font, TH.widget_description_font_size)
+        self.desc_widget = sg.T('', p=0, font=desc_font, text_color=TH.widget_descrition_text_color, background_color=bg_color_h, expand_x=True, justification='l')
 
         self.updating_widget = sg.Image(data=self.updating_gif, p=((10, 0), (0, 0)), visible=False, background_color=bg_color, k=lambda w: self.toggle_expand(w))
         updating_widget_pin = sg.pin(self.updating_widget)
         updating_widget_pin.BackgroundColor = bg_color
 
-        id_font = (FixFont, widget_idship_font_size)
+        id_font = (TH.fix_font, TH.widget_idship_font_size)
         self.id_widget = sg.MLine('', p=0, font=id_font, background_color=bg_color_h, justification='r', **mline_kwargs)
 
-        couriers_font = (FixFont, self.courier_fsize)
+        couriers_font = (TH.fix_font, self.courier_fsize)
         self.couriers_widget = sg.MLine('', p=0, font=couriers_font, background_color=bg_color_h, justification='r', **mline_kwargs)
 
         id_couriers_widget = sg.Col([[self.id_widget], [self.couriers_widget]], p=((5, 0), (b_p, b_p)), background_color=bg_color_h, expand_x=True, vertical_alignment='top')
 
-        ago_font = (VarFont, widget_status_font_size)
+        ago_font = (TH.var_font, TH.widget_status_font_size)
         self.ago_widget = sg.T('', p=0, font=ago_font, expand_x=False, background_color=bg_color, text_color='grey50', k=lambda w: self.toggle_expand(w))
 
-        status_font = (VarFont, widget_status_font_size)
+        status_font = (TH.var_font, TH.widget_status_font_size)
         self.status_widget = sg.T('', p=0, font=status_font, expand_x=True, background_color=bg_color, k=lambda w: self.toggle_expand(w))
 
-        expand_font = (VarFont, widget_expand_font_size)
+        expand_font = (TH.var_font, TH.widget_expand_font_size)
         self.expand_button = MyButton('▼', p=(4, 0), font=expand_font, button_color=('grey70', bg_color), mouseover_color='grey95', k=lambda w: self.toggle_expand(w))
 
         self.events_widget = sg.MLine('', p=((5, 5), (0, 5)), font=self.events_f, visible=False, background_color=bg_color, k=self.toggle_expand, **mline_kwargs)
@@ -115,7 +116,7 @@ class TrackerWidget:
         events_widget_pin = sg.pin(events_widget_col, expand_x=True)  # collapse when hidden
         events_widget_pin.BackgroundColor = bg_color
 
-        vs = sg.Col([[]], s=(None, 1), background_color=widget_separator_color, p=0, expand_x=True)
+        vs = sg.Col([[]], s=(None, 1), background_color=TH.widget_separator_color, p=0, expand_x=True)
         title_col = sg.Col([[self.days_widget, self.desc_widget, id_couriers_widget, buttons]], p=0, background_color=bg_color_h, expand_x=True)
         status_col = sg.Col([[self.expand_button, self.ago_widget, self.status_widget, updating_widget_pin]], p=(10, 0), background_color=bg_color, expand_x=True)
 
@@ -128,7 +129,7 @@ class TrackerWidget:
         return [[self.pin]]
 
     def finalize(self, window):
-        size = (widget_button_size, widget_button_size)
+        size = (TH.widget_button_size, TH.widget_button_size)
         for button in self.buttons:
             button.set_size(size)
             button.finalize()
@@ -361,7 +362,7 @@ class TrackerWidget:
             for name in couriers_update_names:
                 date, error, updating, valid_idship = couriers_update[name]
                 ago_color, ago = ('green', f"{timeago.format(date, get_local_now(), 'fr').replace(TXT.ago, '').strip()}") if date else ('red', TXT.never)
-                name_color, name_font = ('red', FixFontBold) if error else ('green', FixFont)
+                name_color, name_font = ('red', TH.fix_font_bold) if error else ('green', TH.fix_font)
                 valid = ''
                 if not valid_idship:
                     empty_idship, _ = self.get_idship(check_empty=True)
@@ -374,8 +375,8 @@ class TrackerWidget:
             prt = self.couriers_widget.print
             for updating, ago, ago_color, name, name_color, name_font, valid in txts:
                 maj_txt = TXT.updating if updating else ' ' * len(TXT.updating)  # keep same size to prevent window jiggling
-                prt(maj_txt, autoscroll=False, font=(FixFontBold, self.courier_fsize), t=Refresh_color, end='')
-                prt(valid, autoscroll=False, font=(FixFontBold, self.courier_fsize), t='red', end='')
+                prt(maj_txt, autoscroll=False, font=(TH.fix_font_bold, self.courier_fsize), t=TH.refresh_color, end='')
+                prt(valid, autoscroll=False, font=(TH.fix_font_bold, self.courier_fsize), t='red', end='')
                 prt(name.rjust(width_name), autoscroll=False, t=name_color, font=(name_font, self.courier_fsize), end='')
                 prt(f', {TXT.updated} ', autoscroll=False, t='grey60', end='')
                 prt(ago.ljust(width_ago), autoscroll=False, t=ago_color)
@@ -563,11 +564,11 @@ class TrackerWidgets:
             widget.animate(animation_step)
 
     def update_size(self, window):
-        # color = menu_color
+        # color = TH.menu_color
         # widgets_new = (widget for widget in self.widgets[::-1] if widget.new)
         # for widget in widgets_new:
         #     if widget.tracker.state == TrackerState.shown:
-        #         color = widget_background_event_color
+        #         color = TH.widget_background_event_color
         #     widget.pin.BackgroundColor = color
         #     print('change color', color, widget.get_description())
 
@@ -633,9 +634,9 @@ class TrackerWidgets:
 
 class Splash:
     def __init__(self):
-        self.log = sg.T('', font=(VarFont, 10))
-        layout = [[sg.Image(filename=Mail_img)], [self.log]]
-        args, kwargs = Get_window_params(layout, grab_anywhere=False)
+        self.log = sg.T('', font=(TH.var_font, 10))
+        layout = [[sg.Image(filename=TH.mail_img)], [self.log]]
+        args, kwargs = TH.get_window_params(layout, grab_anywhere=False)
         self.window = sg.Window(*args, **kwargs)
 
     def update(self, txt):
@@ -652,7 +653,7 @@ class Grey_window:
     def __init__(self, window):
         self.followed_window = window
 
-        is_debugger = Is_debugger()
+        is_debugger = TH.is_debugger()
         kwargs = dict(keep_on_top=not is_debugger, no_titlebar=not is_debugger, margins=(0, 0), debugger_enabled=False, background_color='black', alpha_channel=0, finalize=True)
         self.window = sg.Window('', [[]], size=(0, 0), location=(0, 0), **kwargs)
         self.window.disable()
@@ -684,30 +685,30 @@ class Main_window(sg.Window):
     animation_step = 100
 
     def __init__(self):
-        p = menu_button_pad
-        fs = menu_button_font_size
-        b_kwargs = dict(im_height=menu_button_height, im_margin=menu_button_img_margin, font=(VarFontBold, fs), mouseover_color='grey90')
+        p = TH.menu_button_pad
+        fs = TH.menu_button_font_size
+        b_kwargs = dict(im_height=TH.menu_button_height, im_margin=TH.menu_button_img_margin, font=(TH.var_font_bold, fs), mouseover_color='grey90')
 
-        log_b = MyButtonImg(TXT.log, p=p, image_filename=Log_img, button_color=(Log_color, menu_color), k=Log_event, **b_kwargs)
-        new_b = MyButtonImg(TXT.new, p=(0, p), image_filename=Edit_img, button_color=(Edit_color, menu_color), k=New_event, **b_kwargs)
-        refresh_b = MyButtonImg(TXT.refresh, p=p, image_filename=Refresh_img, button_color=(Refresh_color, menu_color), k=Refresh_event, **b_kwargs)
-        archives_b = MyButtonImg(TXT.archives, p=(0, p), image_filename=Archives_img, button_color=(Archives_color, menu_color), k=Archives_event, **b_kwargs)
-        trash_b = MyButtonImg(TXT.trash, p=p, image_filename=Trash_img, button_color=(Trash_color, menu_color), k=Trash_event, **b_kwargs)
-        recenter_widget = sg.T('', background_color=menu_color, p=0, expand_x=True, expand_y=True, k=Recenter_event)
-        exit_b = MyButton(TXT.exit, p=p, font=(VarFontBold, fs), button_color=menu_color, mouseover_color='red', focus=True, k=Exit_event)
+        log_b = MyButtonImg(TXT.log, p=p, image_filename=TH.log_img, button_color=(TH.log_color, TH.menu_color), k=Log_event, **b_kwargs)
+        new_b = MyButtonImg(TXT.new, p=(0, p), image_filename=TH.edit_img, button_color=(TH.edit_color, TH.menu_color), k=New_event, **b_kwargs)
+        refresh_b = MyButtonImg(TXT.refresh, p=p, image_filename=TH.refresh_img, button_color=(TH.refresh_color, TH.menu_color), k=Refresh_event, **b_kwargs)
+        archives_b = MyButtonImg(TXT.archives, p=(0, p), image_filename=TH.archives_img, button_color=(TH.archives_color, TH.menu_color), k=Archives_event, **b_kwargs)
+        trash_b = MyButtonImg(TXT.trash, p=p, image_filename=TH.trash_img, button_color=(TH.trash_color, TH.menu_color), k=Trash_event, **b_kwargs)
+        recenter_widget = sg.T('', background_color=TH.menu_color, p=0, expand_x=True, expand_y=True, k=Recenter_event)
+        exit_b = MyButton(TXT.exit, p=p, font=(TH.var_font_bold, fs), button_color=TH.menu_color, mouseover_color='red', focus=True, k=Exit_event)
 
-        its_empty = sg.T(TXT.empty, p=(0, 15), expand_x=True, expand_y=True, font=(VarFontBold, empty_font_size), text_color='grey', background_color=empty_color, k=Its_empty_key)
+        its_empty = sg.T(TXT.empty, p=(0, 15), expand_x=True, expand_y=True, font=(TH.var_font_bold, TH.empty_font_size), text_color='grey', background_color=TH.empty_color, k=Its_empty_key)
         pin_empty = sg.pin(its_empty, expand_x=True)
-        pin_empty.BackgroundColor = empty_color
+        pin_empty.BackgroundColor = TH.empty_color
 
-        menu = sg.Col([[log_b, new_b, refresh_b, archives_b, trash_b, recenter_widget, exit_b]], p=0, background_color=menu_color, expand_x=True, k=Menu_key)
-        col_kwargs = dict(p=0, expand_x=True, expand_y=True, background_color=menu_color)
+        menu = sg.Col([[log_b, new_b, refresh_b, archives_b, trash_b, recenter_widget, exit_b]], p=0, background_color=TH.menu_color, expand_x=True, k=Menu_key)
+        col_kwargs = dict(p=0, expand_x=True, expand_y=True, background_color=TH.menu_color)
         new_trakers = sg.Col([[]], k=New_Tracker_widgets_key, **col_kwargs)
         old_trakers = sg.Col([[]], k=Old_Tracker_widgets_key, **col_kwargs)
         all_trackers = sg.Col([[new_trakers], [old_trakers]], scrollable=True, vertical_scroll_only=True, k=All_Tracker_widgets_key, **col_kwargs)
         layout = [[menu], [all_trackers], [pin_empty]]
 
-        args, kwargs = Get_window_params(layout, alpha_channel=0)  # , resizable=True)
+        args, kwargs = TH.get_window_params(layout, alpha_channel=0)  # , resizable=True)
         super().__init__(*args, **kwargs)
 
         MyButton.finalize_all(self)
@@ -802,6 +803,7 @@ class Main_window(sg.Window):
 
 if __name__ == "__main__":
 
+    import sys
     needs = SpecifierSet(Python_version)
     version = '.'.join(str(v) for v in sys.version_info[:3])
 
@@ -812,7 +814,7 @@ if __name__ == "__main__":
     else:
         print(f'Python {version} running')
 
-        sg.theme(Main_theme)
+        sg.theme(TH.main_theme)
 
         # create splash before importing to reduce startup time
         splash = Splash()

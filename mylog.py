@@ -4,7 +4,7 @@ import PySimpleGUI as sg
 import sys
 
 from myWidget import MyButton
-from theme import FixFont, FixFontBold, VarFont, Get_window_params
+import theme as TH
 import local_txts as TXT
 
 is_debugger = sys.gettrace()
@@ -26,13 +26,13 @@ class MyLog(sg.Window):
         self.visible = False
 
         log_f_size = 8
-        log_font, self.log_font_bold, button_font = (FixFont, log_f_size), (FixFontBold, log_f_size), (VarFont, 12)
+        log_font, self.log_font_bold, button_font = (TH.fix_font, log_f_size), (TH.fix_font_bold, log_f_size), (TH.var_font, 12)
         self.output = sg.MLine('', p=0, font=log_font, s=(80, 40), auto_refresh=True, autoscroll=True, disabled=True, border_width=0, expand_x=True, expand_y=True, background_color='grey90')
         self.link_button = MyButton(self.link_txt, p=0, font=button_font, button_color=('grey60', 'grey90'), mouseover_color='grey80', expand_x=True, expand_y=True, k='Link')
 
         layout = [[self.output, sg.Col([[self.link_button], [sg.Sizegrip()]], p=0, expand_x=True, expand_y=True)]]
 
-        args, kwargs = Get_window_params(layout, alpha_channel=0, resizable=True)
+        args, kwargs = TH.get_window_params(layout, alpha_channel=0, resizable=True)
         super().__init__(*args, **kwargs)
 
         self.TKroot.resizable(width=False, height=True)
