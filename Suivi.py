@@ -65,10 +65,10 @@ class TrackerWidget:
     def create_layout(self, new):
         bg_color_h = widget_background_title_color
         bg_color = widget_background_event_color
+        mline_kwargs = dict(write_only=True, border_width=0, no_scrollbar=True, expand_x=True, disabled=True)
 
         b_p = widget_button_pad
         b_colors = dict(button_color=bg_color_h, mouseover_color='grey95')
-
         edit_button = MyButton('', image_data=self.edit_img, p=(0, b_p), **b_colors, k=self.edit)
         self.refresh_button = MyButton('', image_data=self.refresh_img, p=0, **b_colors, k=self.update)
         archive_button = MyButton('', image_data=self.archive_img, p=(0, b_p), **b_colors, k=self.archive_or_delete)
@@ -94,10 +94,10 @@ class TrackerWidget:
         to_expand = sg.T('', p=0, background_color=bg_color_h, expand_x=True)
 
         id_font = (FixFont, widget_idship_font_size)
-        self.id_widget = sg.MLine('', p=0, font=id_font, disabled=True, border_width=0, no_scrollbar=True, background_color=bg_color_h, expand_x=True, justification='r')
+        self.id_widget = sg.MLine('', p=0, font=id_font, background_color=bg_color_h, justification='r', **mline_kwargs)
 
         couriers_font = (FixFont, self.courier_fsize)
-        self.couriers_widget = sg.MLine('', p=0, font=couriers_font, disabled=True, border_width=0, no_scrollbar=True, background_color=bg_color_h, expand_x=True, justification='r')
+        self.couriers_widget = sg.MLine('', p=0, font=couriers_font, background_color=bg_color_h, justification='r', **mline_kwargs)
 
         id_couriers_widget = sg.Col([[self.id_widget], [self.couriers_widget]], p=((5, 0), (b_p, b_p)), background_color=bg_color_h, expand_x=True, vertical_alignment='top')
 
@@ -110,7 +110,8 @@ class TrackerWidget:
         expand_font = (VarFont, widget_expand_font_size)
         self.expand_button = MyButton('▼', p=(4, 0), font=expand_font, button_color=('grey70', bg_color), mouseover_color='grey95', k=lambda w: self.toggle_expand(w))
 
-        self.events_widget = sg.MLine('', p=((5, 5), (0, 5)), font=self.events_f, visible=False, disabled=True, border_width=0, background_color=bg_color, no_scrollbar=True, s=(None, self.min_events_shown), expand_x=True, k=self.toggle_expand)
+        # self.events_widget = sg.MLine('', p=((5, 5), (0, 5)), font=self.events_f, visible=False, background_color=bg_color, s=(None, self.min_events_shown), k=self.toggle_expand, **mline_kwargs)
+        self.events_widget = sg.MLine('', p=((5, 5), (0, 5)), font=self.events_f, visible=False, background_color=bg_color, k=self.toggle_expand, **mline_kwargs)
         events_widget_col = sg.Col([[self.events_widget]], p=(10, 0), background_color=bg_color, expand_x=True)
         events_widget_pin = sg.pin(events_widget_col, expand_x=True)  # collapse when hidden
         events_widget_pin.BackgroundColor = bg_color
@@ -562,6 +563,7 @@ class TrackerWidgets:
         self.its_empty.update(visible=False if shown else True)
 
         window.refresh()  # or visibility_changed() that produce more visible glitches ??!
+        # window.visibility_changed()
         self.widgets_frame.contents_changed()
 
         # wanted size
@@ -684,7 +686,7 @@ class Main_window(sg.Window):
         all_trackers = sg.Col([[new_trakers], [old_trakers]], p=0, scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color=menu_color, k=All_Tracker_widgets_key)
         layout = [[menu], [all_trackers]]
 
-        args, kwargs = Get_window_params(layout, alpha_channel=0, resizable=True)
+        args, kwargs = Get_window_params(layout, alpha_channel=0)  # , resizable=True)
         super().__init__(*args, **kwargs)
 
         MyButton.finalize_all(self)
