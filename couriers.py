@@ -104,7 +104,7 @@ class Courier:
                     ok, r = self._get_response(idship)
 
                 except requests.exceptions.Timeout:
-                    _log(f'TIMEOUT request to {self.long_name} for {idship}', error=True)
+                    _log(f'TIMEOUT request to {self.name} for {idship}', error=True)
 
                 if ok or nb_retry <= 0:
                     break
