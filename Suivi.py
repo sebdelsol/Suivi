@@ -64,6 +64,9 @@ class TrackerWidget:
         self.height_events = 0
         self.expand_events = False
 
+    def set_min_width(self, w):
+        self.min_sizer.Widget.config(padx=round(w // 2))
+
     def create_layout(self, new):
         # self.new = new  # for pincoloring
         bg_color_h = TH.widget_background_title_color
@@ -116,11 +119,13 @@ class TrackerWidget:
         events_widget_pin = sg.pin(events_widget_col, expand_x=True)  # collapse when hidden
         events_widget_pin.BackgroundColor = bg_color
 
+        self.min_sizer = sg.Sizer(h_pixels=0, v_pixels=0)
+        self.min_sizer.BackgroundColor = bg_color_h
         vs = sg.Col([[]], s=(None, 1), background_color=TH.widget_separator_color, p=0, expand_x=True)
         title_col = sg.Col([[self.days_widget, self.desc_widget, id_couriers_widget, buttons]], p=0, background_color=bg_color_h, expand_x=True)
         status_col = sg.Col([[self.expand_button, self.ago_widget, self.status_widget, updating_widget_pin]], p=(10, 0), background_color=bg_color, expand_x=True)
 
-        layout = [[vs], [title_col], [status_col], [events_widget_pin]]
+        layout = [[vs], [self.min_sizer], [title_col], [status_col], [events_widget_pin]]
         self.layout = sg.Col(layout, expand_x=True, p=0, visible=self.tracker.state == TrackerState.shown, background_color=bg_color)
 
         self.pin = sg.pin(self.layout, expand_x=True)  # collapse when hidden
@@ -563,6 +568,10 @@ class TrackerWidgets:
         for widget in self.get_widgets_with_state(TrackerState.shown):
             widget.animate(animation_step)
 
+    def set_min_width(self, w):
+        for widget in self.get_widgets_with_state(TrackerState.shown):
+            widget.set_min_width(w)
+
     def update_size(self, window):
         # color = TH.menu_color
         # widgets_new = (widget for widget in self.widgets[::-1] if widget.new)
@@ -576,6 +585,7 @@ class TrackerWidgets:
 
         menu_w = self.widget_menu.Widget.winfo_reqwidth()
         menu_h = self.widget_menu.Widget.winfo_reqheight()
+        self.set_min_width(menu_w)
 
         # resize all widgets with the max width & and change pin color
         max_width_shown = max(widget.width_events for widget in shown) if shown else 0
