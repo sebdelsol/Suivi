@@ -65,7 +65,7 @@ class TrackerWidget:
         self.expand_events = False
 
     def set_min_width(self, w):
-        self.min_sizer.Widget.config(padx=round(w / 2))
+        self.horizontal_line.Widget.canvas.config(width=w)
 
     def create_layout(self, new):
         # self.new = new  # for pincoloring
@@ -119,13 +119,11 @@ class TrackerWidget:
         events_widget_pin = sg.pin(events_widget_col, expand_x=True)  # collapse when hidden
         events_widget_pin.BackgroundColor = bg_color
 
-        self.min_sizer = sg.Sizer(h_pixels=0, v_pixels=0)
-        self.min_sizer.BackgroundColor = bg_color_h
-        vs = sg.Col([[]], s=(None, 1), background_color=TH.widget_separator_color, p=0, expand_x=True)
+        self.horizontal_line = sg.Col([[]], s=(None, 1), background_color=TH.widget_separator_color, p=0, expand_x=True)
         title_col = sg.Col([[self.days_widget, self.desc_widget, id_couriers_widget, buttons]], p=0, background_color=bg_color_h, expand_x=True)
         status_col = sg.Col([[self.expand_button, self.ago_widget, self.status_widget, updating_widget_pin]], p=(10, 0), background_color=bg_color, expand_x=True)
 
-        layout = [[vs], [self.min_sizer], [title_col], [status_col], [events_widget_pin]]
+        layout = [[self.horizontal_line], [title_col], [status_col], [events_widget_pin]]
         self.layout = sg.Col(layout, expand_x=True, p=0, visible=self.tracker.state == TrackerState.shown, background_color=bg_color)
 
         self.pin = sg.pin(self.layout, expand_x=True)  # collapse when hidden
