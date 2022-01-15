@@ -590,7 +590,7 @@ class TrackerWidgets:
         # wanted size
         if shown:
             w = max(widget.get_pixel_width() for widget in shown)
-            h = sum(widget.get_pixel_height() for widget in self.widgets) + menu_h + 4
+            h = sum(widget.get_pixel_height() for widget in self.widgets) + menu_h + 5
 
             # need scrollbar ?
             screen_w, screen_h = window.get_screen_size()
