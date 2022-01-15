@@ -46,6 +46,7 @@ class TrackerWidget:
         self.min_events_shown = self.min_events_shown
         self.reset_size()
         self.free_to_update = True
+        # self.new = False
 
         # faster startup
         if not TrackerWidget.updating_gif:
@@ -63,6 +64,7 @@ class TrackerWidget:
         self.expand_events = False
 
     def create_layout(self, new):
+        # self.new = new  # for pincoloring
         bg_color_h = widget_background_title_color
         bg_color = widget_background_event_color
         mline_kwargs = dict(write_only=True, border_width=0, no_scrollbar=True, expand_x=True, disabled=True)
@@ -124,7 +126,7 @@ class TrackerWidget:
         self.layout = sg.Col(layout, expand_x=True, p=0, visible=self.tracker.state == TrackerState.shown, background_color=bg_color)
 
         self.pin = sg.pin(self.layout, expand_x=True)  # collapse when hidden
-        self.pin.BackgroundColor = bg_color_h if new else bg_color
+        self.pin.BackgroundColor = bg_color
 
         return [[self.pin]]
 
@@ -161,7 +163,7 @@ class TrackerWidget:
         return self.height_events > 0
 
     def get_pixel_width(self):
-        return self.layout.Widget.winfo_reqwidth()
+        return self.pin.Widget.winfo_reqwidth()
 
     def get_pixel_height(self):
         return self.pin.Widget.winfo_height()
@@ -478,7 +480,6 @@ class TrackerWidgets:
         where = self.new_trackers if new else self.old_trackers
         window.extend_layout(where, widget.create_layout(new))
         self.widgets.append(widget)
-
         widget.finalize(window)
         widget.update(window)
 
@@ -550,6 +551,14 @@ class TrackerWidgets:
             widget.animate(animation_step)
 
     def update_size(self, window):
+        # color = menu_color
+        # widgets_new = (widget for widget in self.widgets[::-1] if widget.new)
+        # for widget in widgets_new:
+        #     if widget.tracker.state == TrackerState.shown:
+        #         color = widget_background_event_color
+        #     widget.pin.BackgroundColor = color
+        #     print('change color', color, widget.get_description())
+
         shown = self.get_widgets_with_state(TrackerState.shown)
 
         menu_w = self.widget_menu.Widget.winfo_reqwidth()
@@ -680,11 +689,11 @@ class Main_window(sg.Window):
         pin_empty.BackgroundColor = empty_color
 
         menu = sg.Col([[log_b, new_b, refresh_b, archives_b, trash_b, recenter_widget, exit_b]], p=0, background_color=menu_color, expand_x=True, k=Menu_key)
-        new_trakers = sg.Col([[]], p=0, expand_x=True, expand_y=True, background_color=menu_color, k=New_Tracker_widgets_key)
-        old_trakers = sg.Col([[pin_empty]], p=0, expand_x=True, expand_y=True, background_color=menu_color, k=Old_Tracker_widgets_key)
-
-        all_trackers = sg.Col([[new_trakers], [old_trakers]], p=0, scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color=menu_color, k=All_Tracker_widgets_key)
-        layout = [[menu], [all_trackers]]
+        col_kwargs = dict(p=0, expand_x=True, expand_y=True, background_color=menu_color)
+        new_trakers = sg.Col([[]], k=New_Tracker_widgets_key, **col_kwargs)
+        old_trakers = sg.Col([[]], k=Old_Tracker_widgets_key, **col_kwargs)
+        all_trackers = sg.Col([[new_trakers], [old_trakers]], scrollable=True, vertical_scroll_only=True, k=All_Tracker_widgets_key, **col_kwargs)
+        layout = [[menu], [all_trackers], [pin_empty]]
 
         args, kwargs = Get_window_params(layout, alpha_channel=0)  # , resizable=True)
         super().__init__(*args, **kwargs)
