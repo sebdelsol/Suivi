@@ -203,6 +203,7 @@ class TrackerWidget:
                 self.updating_widget.update(visible=True)
 
                 threading.Thread(target=self.update_idle_couriers, args=(window, couriers), daemon=True).start()
+   
             else:
                 self.refresh_button.update(disabled=True)
                 self.show_current_content(window)
