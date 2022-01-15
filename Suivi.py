@@ -195,6 +195,7 @@ class TrackerWidget:
     def update(self, window):
         if self.tracker.state == TrackerState.shown:
             self.free_to_update = False
+
             if couriers := self.tracker.get_idle_couriers():
                 self.disable_buttons(True)
                 window.trigger_event(Updating_event)
@@ -203,7 +204,7 @@ class TrackerWidget:
                 self.updating_widget.update(visible=True)
 
                 threading.Thread(target=self.update_idle_couriers, args=(window, couriers), daemon=True).start()
-   
+
             else:
                 self.refresh_button.update(disabled=True)
                 self.show_current_content(window)
