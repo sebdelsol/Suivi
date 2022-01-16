@@ -88,12 +88,13 @@ class Tracker:
             # create threads with executor
             with self.executor_ops:
                 executor = ThreadPoolExecutor(max_workers=len(courier_names))
-                futures = (executor.submit(self._update_courier, courier_name) for courier_name in courier_names)
+                futures = {executor.submit(self._update_courier, courier_name): courier_name for courier_name in courier_names}
                 self.executors.append(executor)
 
             # handle threads
             for future in as_completed(futures):
-                new_content, courier_name = future.result()
+                new_content = future.result()
+                courier_name = futures[future]
                 with self.critical:
                     if new_content is not None:
                         if new_content['ok'] or courier_name not in self.contents:
@@ -115,16 +116,12 @@ class Tracker:
                 self.executors.remove(executor)
 
     def _update_courier(self, courier_name):
-        content = None
         try:
             if courier := self.available_couriers.get(courier_name):
-                content = courier.update(self.idship)
+                return courier.update(self.idship)
 
         except:
             log(traceback.format_exc(), error=True)
-
-        finally:
-            return content, courier_name
 
     def get_consolidated_content(self):
         consolidated = {}
