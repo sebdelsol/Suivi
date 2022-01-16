@@ -185,7 +185,8 @@ class TrackerWidget:
         self.id_widget.set_size((len(txt), 1))
 
     def show_current_content(self, window):
-        self.show(self.tracker.get_consolidated_content(), window)
+        if self.tracker.state == TrackerState.shown:
+            self.show(self.tracker.get_consolidated_content(), window)
 
     def show_current_courier_widget(self):
         couriers_update = self.tracker.get_couriers_update()
@@ -442,15 +443,16 @@ class TrackerWidget:
 
         if do_it:
             self.tracker.state = state
+
             if reappear:
+                self.reset_size()
                 self.fit_description()
+                self.show_current_content(window)
+                self.update(window)
 
             self.update_visiblity()
-            self.reset_size()
             window.trigger_event(Update_widgets_size_event)
             window.trigger_event(event)
-            if reappear:
-                self.update(window)
 
     def delete(self, window):
         self.set_state(TrackerState.deleted, window, TXT.do_delete, Trash_updated_event)
