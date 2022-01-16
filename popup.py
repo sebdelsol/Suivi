@@ -108,7 +108,7 @@ class edit(MyPopup):
 
 
 class choices(MyPopup):
-    max_lines = 15
+    max_lines = TH.popup_max_choices
     selected_font, unselected_font = (TH.fix_font_bold, 9), (TH.fix_font, 9)
 
     def __init__(self, choices, title, main_window):

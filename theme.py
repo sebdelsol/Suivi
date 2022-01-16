@@ -66,3 +66,5 @@ widget_event_max_width = 90
 widget_min_events_shown = 1
 widget_elapsed_days_intervals = [10, 20, 30]
 widget_elapsed_days_colors = ['lime green', 'dark orange', 'red', 'black']
+
+popup_max_choices = 20
