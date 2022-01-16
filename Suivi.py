@@ -488,7 +488,9 @@ class TrackerWidgets:
     def create_widget(self, window, tracker, new=False):
         widget = TrackerWidget(tracker)
         where = self.new_trackers if new else self.old_trackers
+        
         window.extend_layout(where, widget.create_layout(new))
+        
         self.widgets.append(widget)
         widget.finalize(window)
         widget.update(window)
