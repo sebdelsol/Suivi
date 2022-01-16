@@ -529,7 +529,6 @@ class TrackerWidgets:
 
         popup_choices = popup.choices(choices, title, window)
         chosen = popup_choices.loop()
-
         return [widgets[i] for i in chosen]
 
     def archives_updated(self):
