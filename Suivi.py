@@ -78,10 +78,6 @@ class TrackerWidget:
         self.buttons = [edit_button, self.refresh_button, archive_button]
         buttons = sg.Col([[button] for button in self.buttons], p=(10, 0), background_color=bg_color_h)
 
-        self.courier_fsize = TH.widget_courier_font_size
-        self.events_f = (TH.fix_font, TH.widget_event_font_size)
-        self.events_fb = (TH.fix_font_bold, TH.widget_event_font_size)
-
         self.days_size = TH.widget_elapsed_days_box_size
         self.days_font = (TH.fix_font_bold, TH.widget_elapsed_days_font_size)
         self.days_widget = MyGraph(canvas_size=(self.days_size, self.days_size), graph_bottom_left=(0, 0), graph_top_right=(self.days_size, self.days_size), p=(10, 0), background_color=bg_color_h)
@@ -96,8 +92,9 @@ class TrackerWidget:
         id_font = (TH.fix_font, TH.widget_idship_font_size)
         self.id_widget = sg.MLine('', p=0, font=id_font, background_color=bg_color_h, expand_x=True, justification='r', **mline_kwargs)
 
-        couriers_font = (TH.fix_font, self.courier_fsize)
-        self.couriers_widget = sg.MLine('', p=0, font=couriers_font, background_color=bg_color_h, expand_x=True, justification='r', **mline_kwargs)
+        self.couriers_font = (TH.fix_font, TH.widget_courier_font_size)
+        self.couriers_font_bold = (TH.fix_font_bold, TH.widget_courier_font_size)
+        self.couriers_widget = sg.MLine('', p=0, font=self.couriers_font, background_color=bg_color_h, expand_x=True, justification='r', **mline_kwargs)
 
         id_couriers_widget = sg.Col([[self.id_widget], [self.couriers_widget]], p=((20, 0), (b_p, b_p)), background_color=bg_color_h, expand_x=True, vertical_alignment='top')
 
@@ -110,7 +107,9 @@ class TrackerWidget:
         expand_font = (TH.var_font, TH.widget_expand_font_size)
         self.expand_button = MyButton('', p=(4, 0), font=expand_font, button_color=('grey70', bg_color), mouseover_color='grey95', k=lambda w: self.toggle_expand(w))
 
-        self.events_widget = sg.MLine('', p=0, font=self.events_f, visible=False, background_color=bg_color, k=self.toggle_expand, **mline_kwargs)
+        self.events_font = (TH.fix_font, TH.widget_event_font_size)
+        self.events_font_bold = (TH.fix_font_bold, TH.widget_event_font_size)
+        self.events_widget = sg.MLine('', p=0, font=self.events_font, visible=False, background_color=bg_color, k=self.toggle_expand, **mline_kwargs)
         events_widget_col = sg.Col([[self.events_widget]], p=(20, 0), background_color=bg_color, expand_x=True)
         events_widget_pin = sg.pin(events_widget_col, expand_x=True)  # collapse when hidden
         events_widget_pin.BackgroundColor = bg_color
@@ -323,7 +322,7 @@ class TrackerWidget:
                 event_warn = event.get('warn')
                 event_delivered = event.get('delivered')
                 event_color = 'red' if event_warn else ('green' if event_delivered else None)
-                event_new, f = ('(new) ', self.events_fb) if event.get('new') else ('', self.events_f)
+                event_new, f = ('(new) ', self.events_font_bold) if event.get('new') else ('', self.events_font)
 
                 width = sum(len(txt) for txt in (event_courier, event_date, event_new))
 
@@ -336,7 +335,7 @@ class TrackerWidget:
                 prt(event_date, font=f, autoscroll=False, t='grey', end='')
                 prt(event_courier, font=f, autoscroll=False, t='grey70', end='')
                 prt(event_new, font=f, autoscroll=False, t='black', end='')
-                prt(event_status, font=self.events_fb if event_warn or event_delivered else f, autoscroll=False, t=event_color or 'black', end='')
+                prt(event_status, font=self.events_font_bold if event_warn or event_delivered else f, autoscroll=False, t=event_color or 'black', end='')
                 for event_label in event_labels:
                     prt(event_label, font=f, autoscroll=False, t=event_color or 'grey50')
 
@@ -368,7 +367,7 @@ class TrackerWidget:
             for name in couriers_update_names:
                 date, error, updating, valid_idship = couriers_update[name]
                 ago_color, ago = ('green', f"{timeago.format(date, get_local_now(), 'fr').replace(TXT.ago, '').strip()}") if date else ('red', TXT.never)
-                name_color, name_font = ('red', TH.fix_font_bold) if error else ('green', TH.fix_font)
+                name_color, name_font = ('red', self.couriers_font_bold) if error else ('green', self.couriers_font)
                 valid_msg = ''
                 if not valid_idship:
                     empty_idship, _ = self.get_idship(check_empty=True)
@@ -384,9 +383,9 @@ class TrackerWidget:
                     maj_txt = TXT.updating if updating else ' ' * len(TXT.updating)  # keep same size to prevent window jiggling
                 else:
                     maj_txt = ''
-                prt(maj_txt, autoscroll=False, font=(TH.fix_font_bold, self.courier_fsize), t=TH.refresh_color, end='')
-                prt(valid_msg, autoscroll=False, font=(TH.fix_font_bold, self.courier_fsize), t='red', end='')
-                prt(name.rjust(width_name), autoscroll=False, t=name_color, font=(name_font, self.courier_fsize), end='')
+                prt(maj_txt, autoscroll=False, font=self.couriers_font_bold, t=TH.refresh_color, end='')
+                prt(valid_msg, autoscroll=False, font=self.couriers_font_bold, t='red', end='')
+                prt(name.rjust(width_name), autoscroll=False, t=name_color, font=name_font, end='')
                 prt(f', {TXT.updated} ', autoscroll=False, t='grey60', end='')
                 prt(ago.ljust(width_ago), autoscroll=False, t=ago_color)
 
