@@ -51,20 +51,28 @@ class MyButton(sg.Button):
 
 class MyButtonImg(MyButton):
     def __init__(self, *args, im_margin=0, im_height=20, **kwargs):
-        kwargs['image_data'] = resize_and_colorize_img(kwargs['image_filename'], im_height, kwargs['button_color'][0])
-        kwargs['image_filename'] = None
-        kwargs['auto_size_button'] = False
         self.im_margin = im_margin
-        self.im_data = kwargs['image_data']
-        self.im_size = get_img64_size(kwargs['image_data'])[0], im_height
+        self.im_height = im_height
+        self.image_filename = kwargs['image_filename']
 
+        del kwargs['image_filename']
+        kwargs['image_data'] = self.get_image_data(kwargs)
+
+        kwargs['auto_size_button'] = False
         super().__init__(*args, **kwargs)
+
+    def get_image_data(self, kwargs):
+        # colorize the img with the text color
+        txt_color = kwargs.get('button_color')[0]
+        self.im_data = resize_and_colorize_img(self.image_filename, self.im_height, txt_color)
+        self.im_width = get_img64_size(self.im_data)[0]
+        return self.im_data
 
     def update_layout(self, txt):
         # add spaces to fit text after the img
         wfont = tk_font.Font(self.ParentForm.TKroot, self.Font)
-        new_txt = ' ' * round((self.im_size[0] + self.im_margin * 2) / wfont.measure(' ')) + txt
-        new_size = (wfont.measure(new_txt) + self.im_margin, self.im_size[1] + self.im_margin * 2)
+        new_txt = ' ' * round((self.im_width + self.im_margin * 2) / wfont.measure(' ')) + txt
+        new_size = (wfont.measure(new_txt) + self.im_margin, self.im_height + self.im_margin * 2)
 
         # expand the img to the right to fill the whole button
         self.set_size(new_size)
@@ -77,6 +85,11 @@ class MyButtonImg(MyButton):
         super().finalize()
 
     def update(self, *args, update_layout=True, **kwargs):
+        if color := kwargs.get('button_color'):
+            if isinstance(color, tuple):
+                if color[0] != self.ButtonColor[0]:
+                    kwargs['image_data'] = self.get_image_data(kwargs)
+
         super().update(*args, **kwargs)
         if update_layout:
             txt = kwargs.get('text') or (len(args) > 0 and args[0])

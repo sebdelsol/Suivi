@@ -406,17 +406,18 @@ class TrackerWidget:
             self.update(window)
 
     def fit_description(self):
-        name, size = self.desc_widget.Font[0], TH.widget_description_font_size
-        while True:
-            font = name, size
-            wfont = tk_font.Font(self.desc_widget.ParentForm.TKroot, font)
-            extend = wfont.measure(self.get_description())
-            if size > 2 and extend > TH.widget_description_max_width:
-                size -= 1
-            else:
-                self.desc_widget.update(font=font)
-                log(f'set font {size=} for {self.get_description()}')
-                break
+        if self.tracker.state == TrackerState.shown:
+            name, size = self.desc_widget.Font[0], TH.widget_description_font_size
+            while True:
+                font = name, size
+                wfont = tk_font.Font(self.desc_widget.ParentForm.TKroot, font)
+                extend = wfont.measure(self.get_description())
+                if size > 2 and extend > TH.widget_description_max_width:
+                    size -= 1
+                else:
+                    self.desc_widget.update(font=font)
+                    log(f'set font {size=} for {self.get_description()}')
+                    break
 
     def update_visiblity(self):
         self.layout.update(visible=self.tracker.state == TrackerState.shown)
@@ -432,7 +433,7 @@ class TrackerWidget:
 
         self.disable_buttons(False)
 
-    def set_state(self, state, window, ask, event, do_update=False):
+    def set_state(self, state, window, ask, event, reappear=False):
         do_it = True
         if ask:
             popup_warning = popup.warning(ask.capitalize(), f'{self.get_description()} - {self.get_idship()}', window)
@@ -440,25 +441,27 @@ class TrackerWidget:
 
         if do_it:
             self.tracker.state = state
+            if reappear:
+                self.fit_description()
+
             self.update_visiblity()
             self.reset_size()
             window.trigger_event(Update_widgets_size_event)
             window.trigger_event(event)
-
-            if do_update:
+            if reappear:
                 self.update(window)
 
     def delete(self, window):
         self.set_state(TrackerState.deleted, window, TXT.do_delete, Trash_updated_event)
 
     def undelete(self, window):
-        self.set_state(TrackerState.shown, window, False, Trash_updated_event, True)
+        self.set_state(TrackerState.shown, window, False, Trash_updated_event, reappear=True)
 
     def archive(self, window):
         self.set_state(TrackerState.archived, window, False, Archives_updated_event)
 
     def unarchive(self, window):
-        self.set_state(TrackerState.shown, window, False, Archives_updated_event, True)
+        self.set_state(TrackerState.shown, window, False, Archives_updated_event, reappear=True)
 
     def get_creation_date(self):
         return f'{self.tracker.creation_date:{TXT.Short_date_format}}'.replace('.', '')
@@ -552,11 +555,13 @@ class TrackerWidgets:
 
     def archives_updated(self):
         n_archives = self.trackers.count_state(TrackerState.archived)
-        self.archives_button.update(f'{TXT.archives}({n_archives})')
+        color = TH.archives_color if n_archives else TH.archives_color_empty
+        self.archives_button.update(f'{TXT.archives}({n_archives})', button_color=(color, None))
 
     def deleted_updated(self):
         n_deleted = self.trackers.count_state(TrackerState.deleted)
-        self.deleted_button.update(f'{TXT.trash}({n_deleted})')
+        color = TH.trash_color if n_deleted else TH.trash_color_empty
+        self.deleted_button.update(f'{TXT.trash}({n_deleted})', button_color=(color, None))
 
     def update(self, window):
         for widget in self.get_widgets_with_state(TrackerState.shown):
@@ -710,8 +715,8 @@ class Main_window(sg.Window):
         log_b = MyButtonImg(TXT.log, p=p, image_filename=TH.log_img, button_color=(TH.log_color, TH.menu_color), k=Log_event, **b_kwargs)
         new_b = MyButtonImg(TXT.new, p=(0, p), image_filename=TH.edit_img, button_color=(TH.edit_color, TH.menu_color), k=New_event, **b_kwargs)
         refresh_b = MyButtonImg(TXT.refresh, p=p, image_filename=TH.refresh_img, button_color=(TH.refresh_color, TH.menu_color), k=Refresh_event, **b_kwargs)
-        archives_b = MyButtonImg(TXT.archives, p=(0, p), image_filename=TH.archives_img, button_color=(TH.archives_color, TH.menu_color), k=Archives_event, **b_kwargs)
-        trash_b = MyButtonImg(TXT.trash, p=p, image_filename=TH.trash_img, button_color=(TH.trash_color, TH.menu_color), k=Trash_event, **b_kwargs)
+        archives_b = MyButtonImg(TXT.archives, p=(0, p), image_filename=TH.archives_img, button_color=(TH.archives_color_empty, TH.menu_color), k=Archives_event, **b_kwargs)
+        trash_b = MyButtonImg(TXT.trash, p=p, image_filename=TH.trash_img, button_color=(TH.trash_color_empty, TH.menu_color), k=Trash_event, **b_kwargs)
         recenter_widget = sg.T('', background_color=TH.menu_color, p=0, expand_x=True, expand_y=True, k=Recenter_event)
         exit_b = MyButton(TXT.exit, p=p, font=(TH.var_font_bold, fs), button_color=TH.menu_color, mouseover_color='red', focus=True, k=Exit_event)
 

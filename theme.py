@@ -27,8 +27,10 @@ var_font_bold = 'Roboto Bold'
 
 refresh_color = '#408040'
 archives_color = '#B2560D'
+archives_color_empty = '#909090'
 edit_color = '#6060FF'
-trash_color = '#909090'
+trash_color = '#000000'
+trash_color_empty = '#909090'
 log_color = 'grey'
 
 log_img = 'icons/log.png'
