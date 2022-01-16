@@ -71,16 +71,17 @@ class TrackerWidget:
 
         b_p = TH.widget_button_pad
         b_colors = dict(button_color=bg_color_h, mouseover_color='grey95')
-        edit_button = MyButton('', image_data=self.edit_img, p=(0, b_p), **b_colors, k=self.edit)
-        self.refresh_button = MyButton('', image_data=self.refresh_img, p=0, **b_colors, k=self.update)
-        archive_button = MyButton('', image_data=self.archive_img, p=(0, b_p), **b_colors, k=self.archive_or_delete)
+        edit_button = ButtonMouseOver('', image_data=self.edit_img, p=(0, b_p), **b_colors, k=self.edit)
+        self.refresh_button = ButtonMouseOver('', image_data=self.refresh_img, p=0, **b_colors, k=self.update)
+        archive_button = ButtonMouseOver('', image_data=self.archive_img, p=(0, b_p), **b_colors, k=self.archive_or_delete)
 
         self.buttons = [edit_button, self.refresh_button, archive_button]
         buttons = sg.Col([[button] for button in self.buttons], p=(10, 0), background_color=bg_color_h)
 
         self.days_size = TH.widget_elapsed_days_box_size
         self.days_font = (TH.fix_font_bold, TH.widget_elapsed_days_font_size)
-        self.days_widget = MyGraph(canvas_size=(self.days_size, self.days_size), graph_bottom_left=(0, 0), graph_top_right=(self.days_size, self.days_size), p=(10, 0), background_color=bg_color_h)
+        graph_size = (self.days_size, self.days_size)
+        self.days_widget = GraphRounded(canvas_size=graph_size, graph_bottom_left=(0, 0), graph_top_right=graph_size, p=(10, 0), background_color=bg_color_h)
 
         desc_font = (TH.var_font, TH.widget_description_font_size)
         self.desc_widget = sg.T('', p=0, font=desc_font, text_color=TH.widget_descrition_text_color, background_color=bg_color_h, expand_x=True, justification='l')
@@ -105,7 +106,7 @@ class TrackerWidget:
         self.status_widget = sg.T('', p=0, font=status_font, expand_x=True, background_color=bg_color, k=lambda w: self.toggle_expand(w))
 
         expand_font = (TH.var_font, TH.widget_expand_font_size)
-        self.expand_button = MyButton('', p=(4, 0), font=expand_font, button_color=('grey70', bg_color), mouseover_color='grey95', k=lambda w: self.toggle_expand(w))
+        self.expand_button = ButtonMouseOver('', p=(4, 0), font=expand_font, button_color=('grey70', bg_color), mouseover_color='grey95', k=lambda w: self.toggle_expand(w))
 
         self.events_font = (TH.fix_font, TH.widget_event_font_size)
         self.events_font_bold = (TH.fix_font_bold, TH.widget_event_font_size)
@@ -712,13 +713,13 @@ class Main_window(sg.Window):
         fs = TH.menu_button_font_size
         b_kwargs = dict(im_height=TH.menu_button_height, im_margin=TH.menu_button_img_margin, font=(TH.var_font_bold, fs), mouseover_color='grey90')
 
-        log_b = MyButtonImg(TXT.log, p=p, image_filename=TH.log_img, button_color=(TH.log_color, TH.menu_color), k=Log_event, **b_kwargs)
-        new_b = MyButtonImg(TXT.new, p=(0, p), image_filename=TH.edit_img, button_color=(TH.edit_color, TH.menu_color), k=New_event, **b_kwargs)
-        refresh_b = MyButtonImg(TXT.refresh, p=p, image_filename=TH.refresh_img, button_color=(TH.refresh_color, TH.menu_color), k=Refresh_event, **b_kwargs)
-        archives_b = MyButtonImg(TXT.archives, p=(0, p), image_filename=TH.archives_img, button_color=(TH.archives_color_empty, TH.menu_color), k=Archives_event, **b_kwargs)
-        trash_b = MyButtonImg(TXT.trash, p=p, image_filename=TH.trash_img, button_color=(TH.trash_color_empty, TH.menu_color), k=Trash_event, **b_kwargs)
+        log_b = ButtonTxtAndImg(TXT.log, p=p, image_filename=TH.log_img, button_color=(TH.log_color, TH.menu_color), k=Log_event, **b_kwargs)
+        new_b = ButtonTxtAndImg(TXT.new, p=(0, p), image_filename=TH.edit_img, button_color=(TH.edit_color, TH.menu_color), k=New_event, **b_kwargs)
+        refresh_b = ButtonTxtAndImg(TXT.refresh, p=p, image_filename=TH.refresh_img, button_color=(TH.refresh_color, TH.menu_color), k=Refresh_event, **b_kwargs)
+        archives_b = ButtonTxtAndImg(TXT.archives, p=(0, p), image_filename=TH.archives_img, button_color=(TH.archives_color_empty, TH.menu_color), k=Archives_event, **b_kwargs)
+        trash_b = ButtonTxtAndImg(TXT.trash, p=p, image_filename=TH.trash_img, button_color=(TH.trash_color_empty, TH.menu_color), k=Trash_event, **b_kwargs)
         recenter_widget = sg.T('', background_color=TH.menu_color, p=0, expand_x=True, expand_y=True, k=Recenter_event)
-        exit_b = MyButton(TXT.exit, p=p, font=(TH.var_font_bold, fs), button_color=TH.menu_color, mouseover_color='red', focus=True, k=Exit_event)
+        exit_b = ButtonMouseOver(TXT.exit, p=p, font=(TH.var_font_bold, fs), button_color=TH.menu_color, mouseover_color='red', focus=True, k=Exit_event)
 
         its_empty = sg.T(TXT.empty, p=(0, 15), expand_x=True, expand_y=True, font=(TH.var_font_bold, TH.empty_font_size), text_color='grey', background_color=TH.empty_color, k=Its_empty_key)
         pin_empty = sg.pin(its_empty, expand_x=True)
@@ -734,7 +735,7 @@ class Main_window(sg.Window):
         args, kwargs = TH.get_window_params(layout, alpha_channel=0)  # , resizable=True)
         super().__init__(*args, **kwargs)
 
-        MyButton.finalize_all(self)
+        ButtonMouseOver.finalize_all(self)
         recenter_widget.bind('<Double-Button-1>', '')
 
         self.trackers = Trackers(TrackersFile, LOAD_AS_JSON, splash)
@@ -854,7 +855,7 @@ if __name__ == "__main__":
         from trackers import Trackers, TrackerState
         from imgtool import resize_and_colorize_gif, resize_and_colorize_img
         from couriers import get_local_now
-        from widget import MyButton, MyButtonImg, MyGraph
+        from widget import ButtonMouseOver, ButtonTxtAndImg, GraphRounded
         from log import mylog, log
         import popup
 

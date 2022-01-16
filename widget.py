@@ -4,7 +4,7 @@ from tkinter import font as tk_font
 from imgtool import expand_right_img64, get_img64_size, resize_and_colorize_img
 
 
-class MyGraph(sg.Graph):
+class GraphRounded(sg.Graph):
     def draw_rounded_box(self, x, y, w, h, r, color):
         w2, h2, r2 = w * .5, h * .5, r * 2
         # cross
@@ -17,7 +17,7 @@ class MyGraph(sg.Graph):
         self.draw_arc((x + w2 - r2, y - h2), (x + w2, y - h2 + r2), 90, 270, fill_color=color, arc_color=color)
 
 
-class MyButton(sg.Button):
+class ButtonMouseOver(sg.Button):
     default_colors = dict(Enter='grey75', Leave='grey95')
     binds = ('<Enter>', '<Leave>')
 
@@ -33,8 +33,8 @@ class MyButton(sg.Button):
         else:
             text_color, button_color = None, colors
 
-        self.colors = {'Leave': button_color or MyButton.default_colors['Leave'],
-                       'Enter': mouseover_color or MyButton.default_colors['Enter']}
+        self.colors = {'Leave': button_color or ButtonMouseOver.default_colors['Leave'],
+                       'Enter': mouseover_color or ButtonMouseOver.default_colors['Enter']}
 
         kwargs['button_color'] = (text_color, self.colors['Leave'])
         kwargs['border_width'] = 0
@@ -42,14 +42,14 @@ class MyButton(sg.Button):
         super().__init__(*args, **kwargs)
 
     def finalize(self):
-        for bind in MyButton.binds:
+        for bind in ButtonMouseOver.binds:
             self.Widget.bind(bind, self.mouseover)
 
     def mouseover(self, event):
         self.update(button_color=self.colors.get(event.type.name))
 
 
-class MyButtonImg(MyButton):
+class ButtonTxtAndImg(ButtonMouseOver):
     def __init__(self, *args, im_margin=0, im_height=20, **kwargs):
         self.im_margin = im_margin
         self.im_height = im_height

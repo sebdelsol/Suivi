@@ -2,7 +2,7 @@ import PySimpleGUI as sg
 from collections import namedtuple
 import webbrowser
 
-from widget import MyButton
+from widget import ButtonMouseOver
 from couriers import Courier
 import localization as TXT
 import theme as TH
@@ -17,13 +17,13 @@ class MyPopup(sg.Window):
                   [sg.HorizontalSeparator()]]
         layout.extend(body_layout)
         layout.append([sg.HorizontalSeparator()])
-        layout.append([MyButton(TXT.ok, font=(TH.var_font, 12), button_color='grey80', mouseover_color='grey95', bind_return_key=True),
-                       MyButton(TXT.cancel, font=(TH.var_font, 12), button_color='grey80', mouseover_color='grey95')])
+        layout.append([ButtonMouseOver(TXT.ok, font=(TH.var_font, 12), button_color='grey80', mouseover_color='grey95', bind_return_key=True),
+                       ButtonMouseOver(TXT.cancel, font=(TH.var_font, 12), button_color='grey80', mouseover_color='grey95')])
         layout = [[sg.Col(layout, p=5)]]
 
         args, kwargs = TH.get_window_params(layout)
         super().__init__(*args, modal=True, **kwargs)
-        MyButton.finalize_all(self)
+        ButtonMouseOver.finalize_all(self)
 
     def loop(self):
         while True:
@@ -61,7 +61,7 @@ class edit(MyPopup):
             is_checked = name in used_couriers
             cb = sg.CB(f' {name}', default=is_checked, text_color=self.check_colors[is_checked], font=(TH.fix_font, 12), enable_events=True, k=name)
             msg = sg.T(f'({courier.idship_validation_msg})', font=self.msg_font[is_checked], expand_x=True, justification='r', k=f'{name}msg')
-            button = MyButton('voir', font=(TH.fix_font, 8), button_color='grey90', k=courier)
+            button = ButtonMouseOver('voir', font=(TH.fix_font, 8), button_color='grey90', k=courier)
 
             self.idship_widgets.append((msg, button))
             layout.append([cb, msg, sg.vcenter(button)])
