@@ -2,7 +2,7 @@ import PySimpleGUI as sg
 from collections import namedtuple
 import webbrowser
 
-from myWidget import MyButton
+from widget import MyButton
 from couriers import Courier
 import localization as TXT
 import theme as TH

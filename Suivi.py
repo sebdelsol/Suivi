@@ -841,8 +841,8 @@ if __name__ == "__main__":
         from trackers import Trackers, TrackerState
         from imgtool import resize_and_colorize_gif, resize_and_colorize_img
         from couriers import get_local_now
-        from myWidget import MyButton, MyButtonImg, MyGraph
-        from mylog import mylog, _log
+        from widget import MyButton, MyButtonImg, MyGraph
+        from log import mylog, _log
         import popup
 
         # create main_window

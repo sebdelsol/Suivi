@@ -13,7 +13,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 import urllib3
 
-from mylog import _log
+from log import _log
 from drivers import Drivers
 from config import LaPoste_key, dhl_key
 import localization as TXT

@@ -9,7 +9,7 @@ from concurrent.futures.thread import _threads_queues
 
 from jsondate import json_decode_datetime, json_encode_datetime
 from couriers import Couriers, get_local_now
-from mylog import _log
+from log import _log
 
 json_ext = '.json'
 pickle_ext = '.trck'

@@ -1,6 +1,6 @@
 import threading
 import queue
-from mylog import _log
+from log import _log
 from config import chrome_exe
 
 USE_UC_V2 = True

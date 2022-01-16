@@ -3,7 +3,7 @@ import queue
 import PySimpleGUI as sg
 import sys
 
-from myWidget import MyButton
+from widget import MyButton
 import theme as TH
 import localization as TXT
 
