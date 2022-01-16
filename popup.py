@@ -22,7 +22,7 @@ class MyPopup(sg.Window):
         layout = [[sg.Col(layout, p=10)]]
 
         args, kwargs = TH.get_window_params(layout)
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, modal=True, **kwargs)
         MyButton.finalize_all(self)
 
     def loop(self):

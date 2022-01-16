@@ -1,14 +1,14 @@
 import sys
 import PySimpleGUI as sg
 
-is_debugger = sys.gettrace()
+_is_debugger = sys.gettrace()
 
 frame_kwargs = dict(p=0, border_width=1, relief=sg.RELIEF_SOLID, expand_x=True, expand_y=True)
-window_kwargs = dict(keep_on_top=not is_debugger, no_titlebar=not is_debugger, return_keyboard_events=True, grab_anywhere=True, margins=(0, 0), debugger_enabled=False, finalize=True)
+window_kwargs = dict(keep_on_top=not _is_debugger, no_titlebar=not _is_debugger, return_keyboard_events=True, grab_anywhere=True, margins=(0, 0), debugger_enabled=False, finalize=True)
 
 
 def is_debugger():
-    return is_debugger
+    return _is_debugger
 
 
 def get_window_params(layout, **new_kwargs):
@@ -41,8 +41,8 @@ mail_img = 'icon/mail.png'
 menu_color = 'grey75'
 empty_color = 'grey90'
 empty_font_size = 20
-menu_button_pad = 5
-menu_button_font_size = 12
+menu_button_pad = 7
+menu_button_font_size = 13
 menu_button_height = 20
 menu_button_img_margin = 5
 
