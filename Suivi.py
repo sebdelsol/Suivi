@@ -488,9 +488,9 @@ class TrackerWidgets:
     def create_widget(self, window, tracker, new=False):
         widget = TrackerWidget(tracker)
         where = self.new_trackers if new else self.old_trackers
-        
+
         window.extend_layout(where, widget.create_layout(new))
-        
+
         self.widgets.append(widget)
         widget.finalize(window)
         widget.update(window)
@@ -519,7 +519,7 @@ class TrackerWidgets:
         widgets = self.get_sorted(self.get_widgets_with_state(state))
         w_desc = max(len(widget.get_description()) for widget in widgets) if widgets else 0
         w_date = max(len(widget.get_creation_date()) for widget in widgets) if widgets else 0
-        
+
         choices = []
         for widget in widgets:
             color = 'green' if widget.get_delivered() else 'red'
@@ -749,6 +749,7 @@ class Main_window(sg.Window):
             if self.event_handler():
                 break
 
+    # return True when exit
     def event_handler(self):
         window, event, values = sg.read_all_windows()
 
