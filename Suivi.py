@@ -20,6 +20,7 @@ Archives_event = '-Archives-'
 Trash_event = '-Trash-'
 Log_event = '-Log-'
 Exit_event = '-Exit-'
+
 Menu_key = '-Menu-'
 Its_empty_key = '-Empty-'
 All_Tracker_widgets_key = '-Tracks-'
