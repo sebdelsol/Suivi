@@ -13,7 +13,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 import urllib3
 
-from log import _log
+from log import log
 from drivers import Drivers
 from config import LaPoste_key, dhl_key
 import localization as TXT
@@ -94,7 +94,7 @@ class Courier:
 
     def update(self, idship):
         if not self.check_idship(idship):
-            _log(f'Wrong {TXT.idship} {idship} ({self.idship_validation_msg})', error=True)
+            log(f'Wrong {TXT.idship} {idship} ({self.idship_validation_msg})', error=True)
 
         else:
             nb_retry = self.nb_retry
@@ -104,7 +104,7 @@ class Courier:
                     ok, r = self._get_response(idship)
 
                 except requests.exceptions.Timeout:
-                    _log(f'TIMEOUT request to {self.name} for {idship}', error=True)
+                    log(f'TIMEOUT request to {self.name} for {idship}', error=True)
 
                 if ok or nb_retry <= 0:
                     break
@@ -170,14 +170,14 @@ class Scrapper(Courier):
             driver = self.drivers.get()
 
             if driver:
-                _log(f'scrapper LOAD - {idship}')
+                log(f'scrapper LOAD - {idship}')
                 driver.get(self._get_url_for_browser(idship))
 
                 events = self._scrape(driver, idship)
                 return True, events
 
         except self.errors_catched as e:
-            _log(f'scrapper FAILURE - {type(e).__name__} for {idship}', error=True)
+            log(f'scrapper FAILURE - {type(e).__name__} for {idship}', error=True)
             return False, None
 
         finally:
@@ -208,7 +208,7 @@ class Cainiao(Scrapper):
             timeline = None
 
         if not timeline:
-            _log(f'scrapper WAIT slider - {idship}')
+            log(f'scrapper WAIT slider - {idship}')
             slider_locator = (By.XPATH, '//span[@class="nc_iconfont btn_slide"]')
             slider = WebDriverWait(driver, self.timeout_elt).until(EC.element_to_be_clickable(slider_locator))
 
@@ -216,7 +216,7 @@ class Cainiao(Scrapper):
             action = ActionChains(driver)
             action.drag_and_drop_by_offset(slider, slide.size['width'], 0).perform()
 
-            _log(f'scrapper WAIT datas - {idship}')
+            log(f'scrapper WAIT datas - {idship}')
             data_locator = (By.XPATH, f'//p[@class="waybill-num"][contains(text(),"{idship}")]')
             WebDriverWait(driver, self.timeout_elt).until(EC.visibility_of_element_located(data_locator))
             timeline = self.get_timeline(driver)

@@ -129,4 +129,4 @@ class MyLog(sg.Window):
 
 
 mylog = MyLog(not is_debugger)
-_log = mylog.log
+log = mylog.log

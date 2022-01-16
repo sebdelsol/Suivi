@@ -9,7 +9,7 @@ from concurrent.futures.thread import _threads_queues
 
 from jsondate import json_decode_datetime, json_encode_datetime
 from couriers import Couriers, get_local_now
-from log import _log
+from log import log
 
 json_ext = '.json'
 pickle_ext = '.trck'
@@ -83,7 +83,7 @@ class Tracker:
 
     def update_idle_couriers(self, courier_names):
         if self.idship and courier_names:
-            _log(f'update START - {self.description} - {self.idship}, {" - ".join(courier_names)}')
+            log(f'update START - {self.description} - {self.idship}, {" - ".join(courier_names)}')
 
             # create threads with executor
             with self.executor_ops:
@@ -106,7 +106,7 @@ class Tracker:
                         self.couriers_updating[courier_name] = False
 
                     msg = 'FAILED' if error else 'DONE'
-                    _log(f'update {msg} - {self.description} - {self.idship}, {courier_name}', error=error)
+                    log(f'update {msg} - {self.description} - {self.idship}, {courier_name}', error=error)
 
                     yield self.get_consolidated_content()
 
@@ -127,7 +127,7 @@ class Tracker:
                 return content, courier_name
 
         except:
-            _log(traceback.format_exc(), error=True)
+            log(traceback.format_exc(), error=True)
 
     def get_consolidated_content(self):
         consolidated = {}
@@ -218,14 +218,14 @@ class Trackers:
         if os.path.exists(filename):
             with open(filename, mode) as f:
                 obj = load(f)
-            _log(f'trackers LOADED from "{filename}"')
+            log(f'trackers LOADED from "{filename}"')
             return obj
 
     def save_to_file(self, obj, ext, mode, save):
         filename = self.filename + ext
         with open(filename, mode) as f:
             save(obj, f)
-        _log(f'trackers SAVED to "{filename}"')
+        log(f'trackers SAVED to "{filename}"')
 
     def sort(self, objs, get_tracker=lambda obj: obj):
         return sorted(objs, key=lambda obj: get_tracker(obj).creation_date, reverse=True)

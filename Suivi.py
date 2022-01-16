@@ -732,7 +732,7 @@ class Main_window(sg.Window):
         self.animate()
         self.reappear()
 
-    def add_log(self, log):
+    def addlog(self, log):
         self.log = log
         log.link_to(self)
         self.grey_windows.append(Grey_window(log))
@@ -765,7 +765,7 @@ class Main_window(sg.Window):
         window, event, values = sg.read_all_windows()
 
         if SHOW_EVENTS and isinstance(event, str) and 'MouseWheel' not in event:
-            _log(f'{event = }' + (f', {value = }' if (value := values and values.get(event)) else ''))
+            log(f'{event = }' + (f', {value = }' if (value := values and values.get(event)) else ''))
 
         if callable(event):
             event(window)
@@ -842,12 +842,12 @@ if __name__ == "__main__":
         from imgtool import resize_and_colorize_gif, resize_and_colorize_img
         from couriers import get_local_now
         from widget import MyButton, MyButtonImg, MyGraph
-        from log import mylog, _log
+        from log import mylog, log
         import popup
 
         # create main_window
         main_window = Main_window()
-        main_window.add_log(mylog)
+        main_window.addlog(mylog)
         splash.close()
 
         main_window.loop()

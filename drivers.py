@@ -1,6 +1,6 @@
 import threading
 import queue
-from log import _log
+from log import log
 from config import chrome_exe
 
 USE_UC_V2 = True
@@ -50,7 +50,7 @@ class Drivers:
         with self.driver_creation:
             if len(self.drivers) < self.n_drivers:
 
-                _log(f'driver ({len(self.drivers) + 1}/{self.n_drivers}) CREATION')
+                log(f'driver ({len(self.drivers) + 1}/{self.n_drivers}) CREATION')
                 options = webdriver.ChromeOptions()
                 options.headless = True
                 options.binary_location = chrome_exe
@@ -67,7 +67,7 @@ class Drivers:
 
                 self.drivers_available.put(driver)
                 self.drivers.append(driver)
-                _log(f'driver ({len(self.drivers)}/{self.n_drivers}) CREATED')
+                log(f'driver ({len(self.drivers)}/{self.n_drivers}) CREATED')
 
     def get(self):
         self.create_driver_if_needed()
@@ -79,5 +79,5 @@ class Drivers:
     def close(self):
         # remaining driver in creation is handled by undetected_chromedriver @ exit
         for i, driver in enumerate(self.drivers):
-            _log(f'QUIT driver {i + 1}/{len(self.drivers)}')
+            log(f'QUIT driver {i + 1}/{len(self.drivers)}')
             driver.quit()
