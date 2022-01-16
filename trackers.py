@@ -114,11 +114,6 @@ class Tracker:
                 executor.shutdown()
                 self.executors.remove(executor)
 
-            # remove all updating flag
-            with self.critical:
-                for courier_name in courier_names:
-                    self.couriers_updating[courier_name] = False
-
     def _update_courier(self, courier_name):
         content = None
         try:
