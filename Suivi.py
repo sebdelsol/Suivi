@@ -396,7 +396,6 @@ class TrackerWidget:
     def edit(self, window):
         popup_edit = popup.edit(TXT.do_edit, self.tracker.idship, self.tracker.description, self.tracker.used_couriers, self.tracker.available_couriers, window)
         ok, idship, description, used_couriers = popup_edit.loop()
-
         if ok:
             self.tracker.set_id(idship, description, used_couriers)
             self.reset_size()
@@ -407,13 +406,10 @@ class TrackerWidget:
 
     def archive_or_delete(self, window):
         self.disable_buttons(True)
-
         choices = {TXT.do_archive: self.archive, TXT.do_delete: self.delete}
         choices_colors = {TXT.do_archive: 'green', TXT.do_delete: 'red', False: 'grey75'}
-
         popup_one_choice = popup.one_choice(choices.keys(), choices_colors, f'{self.get_description()} - {self.get_idship()}', window)
         choice = popup_one_choice.loop()
-
         if choice:
             choices[choice](window)
 
@@ -492,7 +488,6 @@ class TrackerWidgets:
 
     def create_widget(self, window, tracker, new=False):
         widget = TrackerWidget(tracker)
-
         where = self.new_trackers if new else self.old_trackers
         window.extend_layout(where, widget.create_layout(new))
         self.widgets.append(widget)
@@ -502,7 +497,6 @@ class TrackerWidgets:
     def new(self, window):
         popup_edit = popup.edit(TXT.new, '', TXT.new, [], self.trackers.couriers, window)
         ok, *tracker_params = popup_edit.loop()
-
         if ok:
             tracker = self.trackers.new(*tracker_params)
             self.create_widget(window, tracker, new=True)
@@ -512,19 +506,16 @@ class TrackerWidgets:
 
     def show_archives(self, window):
         widgets = self.choose(window, TXT.do_unarchive, TrackerState.archived)
-
         for widget in widgets:
             widget.unarchive(window)
 
     def show_deleted(self, window):
         widgets = self.choose(window, TXT.do_restore, TrackerState.deleted)
-
         for widget in widgets:
             widget.undelete(window)
 
     def choose(self, window, title, state):
         widgets = self.get_sorted(self.get_widgets_with_state(state))
-
         w_desc = max(len(widget.get_description()) for widget in widgets) if widgets else 0
         w_date = max(len(widget.get_creation_date()) for widget in widgets) if widgets else 0
         choices = []
