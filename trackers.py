@@ -96,12 +96,12 @@ class Tracker:
                 new_content = future.result()
                 courier_name = futures[future]
                 with self.critical:
-                    if new_content is not None:
-                        if new_content['ok'] or courier_name not in self.contents:
-                            new_content['courier_name'] = courier_name
-                            self.contents[courier_name] = new_content
+                    is_ok = new_content and new_content['ok']
+                    if is_ok or courier_name not in self.contents:
+                        new_content['courier_name'] = courier_name
+                        self.contents[courier_name] = new_content
 
-                    error = not(new_content and new_content['ok'])
+                    error = not is_ok
                     self.couriers_error[courier_name] = error
                     self.couriers_updating[courier_name] = False
 
