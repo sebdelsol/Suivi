@@ -578,14 +578,14 @@ class TrackerWidgets:
         menu_h = self.widget_menu.Widget.winfo_reqheight()
         self.set_min_width(menu_w)
 
-        # resize all widgets with the max width & and change pin color
+        # resize all widgets to the max width
         max_width_shown = max(widget.width_events for widget in shown) if shown else 0
         for widget in shown:
             widget.update_size(max_width_shown)
 
         self.its_empty.update(visible=False if shown else True)
 
-        window.refresh()  # or visibility_changed() that produce more visible glitches ??!
+        window.refresh()  # or visibility_changed() that produces more glitches ??!
         self.widgets_frame.contents_changed()
 
         # wanted size
@@ -593,7 +593,7 @@ class TrackerWidgets:
             w = max(widget.get_pixel_width() for widget in shown)
             h = sum(widget.get_pixel_height() for widget in self.widgets) + menu_h + 5
 
-            # need scrollbar ?
+            # need a scrollbar ?
             screen_w, screen_h = window.get_screen_size()
             h_screen_margin = 0
             max_h = screen_h - h_screen_margin
@@ -605,13 +605,13 @@ class TrackerWidgets:
             else:
                 self.widgets_frame.Widget.vscrollbar.pack_forget()
 
-            window.size = max(menu_w, min(w, screen_w)), min(h, max_h)
+            window.size = min(w, screen_w), min(h, max_h)
             self.recenter(window)
 
         else:
             self.widgets_frame.Widget.vscrollbar.pack_forget()
 
-            # need to set height because the scrollbar missing prevents the right height computation in pySimpleGUI
+            # needed to set height because the scrollbar missing prevents the right height computation in pySimpleGUI
             window.size = menu_w, menu_h + self.its_empty.Widget.winfo_reqheight() + self.its_empty.Pad[1] * 2
 
             # add spaces in its_empty to fit w
