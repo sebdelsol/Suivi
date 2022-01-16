@@ -197,7 +197,7 @@ class one_choice(MyPopup):
 
 class warning(MyPopup):
     def __init__(self, title, text, main_window):
-        layout = [[sg.Image(filename='icon/warn.png'), sg.T(text, font=(TH.var_font, 15))]]
+        layout = [[sg.Image(filename=TH.warning_img), sg.T(text, font=(TH.var_font, 15))]]
         super().__init__(title, layout, main_window)
 
     def loop(self):
