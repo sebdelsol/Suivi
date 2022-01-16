@@ -120,15 +120,16 @@ class Tracker:
                     self.couriers_updating[courier_name] = False
 
     def _update_courier(self, courier_name):
+        content = None
         try:
             if courier := self.available_couriers.get(courier_name):
                 content = courier.update(self.idship)
-                return content, courier_name
 
         except:
             log(traceback.format_exc(), error=True)
 
-        return None, courier_name
+        finally:
+            return content, courier_name
 
     def get_consolidated_content(self):
         consolidated = {}
