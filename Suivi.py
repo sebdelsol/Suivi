@@ -427,10 +427,8 @@ class TrackerWidget:
 
         if do_it:
             self.tracker.state = state
-
             self.update_visiblity()
             self.reset_size()
-
             window.trigger_event(Update_widgets_size_event)
             window.trigger_event(event)
 
@@ -595,7 +593,6 @@ class TrackerWidgets:
         self.its_empty.update(visible=False if shown else True)
 
         window.refresh()  # or visibility_changed() that produce more visible glitches ??!
-        # window.visibility_changed()
         self.widgets_frame.contents_changed()
 
         # wanted size
@@ -616,7 +613,6 @@ class TrackerWidgets:
                 self.widgets_frame.Widget.vscrollbar.pack_forget()
 
             window.size = max(menu_w, min(w, screen_w)), min(h, max_h)
-
             self.recenter(window)
 
         else:
