@@ -63,11 +63,11 @@ class TrackerWidget:
         self.height_events = 0
         self.expand_events = False
 
-    def create_layout(self, new):
+    def create_layout(self):  # , new):
         # self.new = new  # for pincoloring
         bg_color_h = TH.widget_background_title_color
         bg_color = TH.widget_background_event_color
-        mline_kwargs = dict(write_only=True, border_width=0, no_scrollbar=True, expand_x=True, disabled=True)
+        mline_kwargs = dict(write_only=True, border_width=0, no_scrollbar=True, disabled=True)
 
         b_p = TH.widget_button_pad
         b_colors = dict(button_color=bg_color_h, mouseover_color='grey95')
@@ -76,7 +76,7 @@ class TrackerWidget:
         archive_button = MyButton('', image_data=self.archive_img, p=(0, b_p), **b_colors, k=self.archive_or_delete)
 
         self.buttons = [edit_button, self.refresh_button, archive_button]
-        buttons = sg.Col([[button] for button in self.buttons], p=(10, 0), background_color=bg_color_h, expand_x=False)
+        buttons = sg.Col([[button] for button in self.buttons], p=(10, 0), background_color=bg_color_h)
 
         self.courier_fsize = TH.widget_courier_font_size
         self.events_f = (TH.fix_font, TH.widget_event_font_size)
@@ -94,15 +94,15 @@ class TrackerWidget:
         updating_widget_pin.BackgroundColor = bg_color
 
         id_font = (TH.fix_font, TH.widget_idship_font_size)
-        self.id_widget = sg.MLine('', p=0, font=id_font, background_color=bg_color_h, justification='r', **mline_kwargs)
+        self.id_widget = sg.MLine('', p=0, font=id_font, background_color=bg_color_h, expand_x=True, justification='r', **mline_kwargs)
 
         couriers_font = (TH.fix_font, self.courier_fsize)
-        self.couriers_widget = sg.MLine('', p=0, font=couriers_font, background_color=bg_color_h, justification='r', **mline_kwargs)
+        self.couriers_widget = sg.MLine('', p=0, font=couriers_font, background_color=bg_color_h, expand_x=True, justification='r', **mline_kwargs)
 
-        id_couriers_widget = sg.Col([[self.id_widget], [self.couriers_widget]], p=((5, 0), (b_p, b_p)), background_color=bg_color_h, expand_x=True, vertical_alignment='top')
+        id_couriers_widget = sg.Col([[self.id_widget], [self.couriers_widget]], p=((20, 0), (b_p, b_p)), background_color=bg_color_h, expand_x=True, vertical_alignment='top')
 
         ago_font = (TH.var_font, TH.widget_status_font_size)
-        self.ago_widget = sg.T('', p=0, font=ago_font, expand_x=False, background_color=bg_color, text_color='grey50', k=lambda w: self.toggle_expand(w))
+        self.ago_widget = sg.T('', p=0, font=ago_font, background_color=bg_color, text_color='grey50', k=lambda w: self.toggle_expand(w))
 
         status_font = (TH.var_font, TH.widget_status_font_size)
         self.status_widget = sg.T('', p=0, font=status_font, expand_x=True, background_color=bg_color, k=lambda w: self.toggle_expand(w))
@@ -110,8 +110,8 @@ class TrackerWidget:
         expand_font = (TH.var_font, TH.widget_expand_font_size)
         self.expand_button = MyButton('', p=(4, 0), font=expand_font, button_color=('grey70', bg_color), mouseover_color='grey95', k=lambda w: self.toggle_expand(w))
 
-        self.events_widget = sg.MLine('', p=((5, 5), (0, 5)), font=self.events_f, visible=False, background_color=bg_color, k=self.toggle_expand, **mline_kwargs)
-        events_widget_col = sg.Col([[self.events_widget]], p=(10, 0), background_color=bg_color, expand_x=True)
+        self.events_widget = sg.MLine('', p=0, font=self.events_f, visible=False, background_color=bg_color, k=self.toggle_expand, **mline_kwargs)
+        events_widget_col = sg.Col([[self.events_widget]], p=(20, 0), background_color=bg_color, expand_x=True)
         events_widget_pin = sg.pin(events_widget_col, expand_x=True)  # collapse when hidden
         events_widget_pin.BackgroundColor = bg_color
 
@@ -144,6 +144,7 @@ class TrackerWidget:
         for widget in (self.events_widget, self.status_widget, self.ago_widget, self.updating_widget):
             widget.bind('<Button-1>', '')
 
+        self.fit_description()
         self.show_current_content(window)
 
     def toggle_expand(self, window):
@@ -178,7 +179,7 @@ class TrackerWidget:
 
     def update_couriers_id_size(self):
         txts = [t for t in self.couriers_widget.get().split('\n')]
-        self.couriers_widget.set_size((max(len(t) + 1 for t in txts), len(txts)))
+        self.couriers_widget.set_size((max(len(t) for t in txts), len(txts)))
 
         txt = self.id_widget.get()
         self.id_widget.set_size((len(txt), 1))
@@ -368,20 +369,23 @@ class TrackerWidget:
                 date, error, updating, valid_idship = couriers_update[name]
                 ago_color, ago = ('green', f"{timeago.format(date, get_local_now(), 'fr').replace(TXT.ago, '').strip()}") if date else ('red', TXT.never)
                 name_color, name_font = ('red', TH.fix_font_bold) if error else ('green', TH.fix_font)
-                valid = ''
+                valid_msg = ''
                 if not valid_idship:
                     empty_idship, _ = self.get_idship(check_empty=True)
-                    valid = f'{TXT.no_idship if empty_idship else TXT.invalid_idship}, '
-                txts.append((updating, ago, ago_color, name, name_color, name_font, valid))
+                    valid_msg = f'{TXT.no_idship if empty_idship else TXT.invalid_idship}, '
+                txts.append((updating, ago, ago_color, name, name_color, name_font, valid_msg))
 
             width_name = max(len(txt[3]) for txt in txts)
             width_ago = max(len(txt[1]) for txt in txts)
 
             prt = self.couriers_widget.print
-            for updating, ago, ago_color, name, name_color, name_font, valid in txts:
-                maj_txt = TXT.updating if updating else ' ' * len(TXT.updating)  # keep same size to prevent window jiggling
+            for updating, ago, ago_color, name, name_color, name_font, valid_msg in txts:
+                if not valid_msg:
+                    maj_txt = TXT.updating if updating else ' ' * len(TXT.updating)  # keep same size to prevent window jiggling
+                else:
+                    maj_txt = ''
                 prt(maj_txt, autoscroll=False, font=(TH.fix_font_bold, self.courier_fsize), t=TH.refresh_color, end='')
-                prt(valid, autoscroll=False, font=(TH.fix_font_bold, self.courier_fsize), t='red', end='')
+                prt(valid_msg, autoscroll=False, font=(TH.fix_font_bold, self.courier_fsize), t='red', end='')
                 prt(name.rjust(width_name), autoscroll=False, t=name_color, font=(name_font, self.courier_fsize), end='')
                 prt(f', {TXT.updated} ', autoscroll=False, t='grey60', end='')
                 prt(ago.ljust(width_ago), autoscroll=False, t=ago_color)
@@ -398,8 +402,22 @@ class TrackerWidget:
         ok, idship, description, used_couriers = popup_edit.loop()
         if ok:
             self.tracker.set_id(idship, description, used_couriers)
+            self.fit_description()
             self.reset_size()
             self.update(window)
+
+    def fit_description(self):
+        name, size = self.desc_widget.Font[0], TH.widget_description_font_size
+        while True:
+            font = name, size
+            wfont = tk_font.Font(self.desc_widget.ParentForm.TKroot, font)
+            extend = wfont.measure(self.get_description())
+            if size > 2 and extend > TH.widget_description_max_width:
+                size -= 1
+            else:
+                self.desc_widget.update(font=font)
+                log(f'set font {size=} for {self.get_description()}')
+                break
 
     def update_visiblity(self):
         self.layout.update(visible=self.tracker.state == TrackerState.shown)
@@ -490,7 +508,8 @@ class TrackerWidgets:
         widget = TrackerWidget(tracker)
         where = self.new_trackers if new else self.old_trackers
 
-        window.extend_layout(where, widget.create_layout(new))
+        # window.extend_layout(where, widget.create_layout(new))
+        window.extend_layout(where, widget.create_layout())
 
         self.widgets.append(widget)
         widget.finalize(window)
@@ -615,7 +634,7 @@ class TrackerWidgets:
             window.size = menu_w, menu_h + self.its_empty.Widget.winfo_reqheight() + self.its_empty.Pad[1] * 2
 
             # add spaces in its_empty to fit w
-            wfont = font.Font(self.its_empty.ParentForm.TKroot, self.its_empty.Font)
+            wfont = tk_font.Font(self.its_empty.ParentForm.TKroot, self.its_empty.Font)
             n_spaces = round(menu_w / wfont.measure(' '))
             self.its_empty.update(TXT.empty.center(n_spaces))
 
@@ -824,7 +843,7 @@ if __name__ == "__main__":
         import timeago
         from bisect import bisect
         import textwrap
-        from tkinter import font
+        from tkinter import font as tk_font
         import locale
         locale.setlocale(locale.LC_ALL, TXT.Locale_setting)  # date in correct language
 

@@ -56,6 +56,7 @@ widget_event_font_size = 8
 widget_elapsed_days_box_size = 50
 widget_elapsed_days_font_size = 15
 widget_description_font_size = 40
+widget_description_max_width = 400
 widget_idship_font_size = 10
 widget_status_font_size = 15
 widget_expand_font_size = 10

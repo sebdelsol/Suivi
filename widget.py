@@ -1,5 +1,5 @@
 import PySimpleGUI as sg
-from tkinter import font
+from tkinter import font as tk_font
 
 from imgtool import expand_right_img64, get_img64_size, resize_and_colorize_img
 
@@ -62,7 +62,7 @@ class MyButtonImg(MyButton):
 
     def update_layout(self, txt):
         # add spaces to fit text after the img
-        wfont = font.Font(self.ParentForm.TKroot, self.Font)
+        wfont = tk_font.Font(self.ParentForm.TKroot, self.Font)
         new_txt = ' ' * round((self.im_size[0] + self.im_margin * 2) / wfont.measure(' ')) + txt
         new_size = (wfont.measure(new_txt) + self.im_margin, self.im_size[1] + self.im_margin * 2)
 
