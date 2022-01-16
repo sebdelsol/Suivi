@@ -5,7 +5,7 @@ import sys
 
 from myWidget import MyButton
 import theme as TH
-import local_txts as TXT
+import localization as TXT
 
 is_debugger = sys.gettrace()
 

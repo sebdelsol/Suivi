@@ -16,7 +16,7 @@ import urllib3
 from mylog import _log
 from drivers import Drivers
 from config import LaPoste_key, dhl_key
-import local_txts as TXT
+import localization as TXT
 
 
 def get_sentence(txt, nb=-1):

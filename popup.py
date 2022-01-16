@@ -4,7 +4,7 @@ import webbrowser
 
 from myWidget import MyButton
 from couriers import Courier
-import local_txts as TXT
+import localization as TXT
 import theme as TH
 
 
@@ -13,13 +13,13 @@ class MyPopup(sg.Window):
         self.main_window = main_window
         self.main_window.grey_all(True)
 
-        layout = [[sg.T(title, font=(TH.fix_font_bold, 20), justification='center', expand_x=True)],
+        layout = [[sg.T(title, p=0, font=(TH.fix_font_bold, 20), justification='center', expand_x=True)],
                   [sg.HorizontalSeparator()]]
         layout.extend(body_layout)
         layout.append([sg.HorizontalSeparator()])
         layout.append([MyButton(TXT.ok, font=(TH.var_font, 12), button_color='grey80', mouseover_color='grey95', bind_return_key=True),
                        MyButton(TXT.cancel, font=(TH.var_font, 12), button_color='grey80', mouseover_color='grey95')])
-        layout = [[sg.Col(layout, p=10)]]
+        layout = [[sg.Col(layout, p=5)]]
 
         args, kwargs = TH.get_window_params(layout)
         super().__init__(*args, modal=True, **kwargs)

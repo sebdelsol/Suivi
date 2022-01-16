@@ -1,7 +1,7 @@
 import PySimpleGUI as sg
 import sys
 from packaging.specifiers import SpecifierSet
-import local_txts as TXT
+import localization as TXT
 import theme as TH
 
 Python_version = '>=3.8, <3.9'
