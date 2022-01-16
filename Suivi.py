@@ -519,6 +519,7 @@ class TrackerWidgets:
         widgets = self.get_sorted(self.get_widgets_with_state(state))
         w_desc = max(len(widget.get_description()) for widget in widgets) if widgets else 0
         w_date = max(len(widget.get_creation_date()) for widget in widgets) if widgets else 0
+        
         choices = []
         for widget in widgets:
             color = 'green' if widget.get_delivered() else 'red'
