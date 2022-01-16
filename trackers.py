@@ -93,22 +93,21 @@ class Tracker:
 
             # handle threads
             for future in as_completed(futures):
-                if result := future.result():
-                    new_content, courier_name = result
-                    with self.critical:
-                        if new_content is not None:
-                            if new_content['ok'] or courier_name not in self.contents:
-                                new_content['courier_name'] = courier_name
-                                self.contents[courier_name] = new_content
+                new_content, courier_name = future.result()
+                with self.critical:
+                    if new_content is not None:
+                        if new_content['ok'] or courier_name not in self.contents:
+                            new_content['courier_name'] = courier_name
+                            self.contents[courier_name] = new_content
 
-                        error = not(new_content and new_content['ok'])
-                        self.couriers_error[courier_name] = error
-                        self.couriers_updating[courier_name] = False
+                    error = not(new_content and new_content['ok'])
+                    self.couriers_error[courier_name] = error
+                    self.couriers_updating[courier_name] = False
 
-                    msg = 'FAILED' if error else 'DONE'
-                    log(f'update {msg} - {self.description} - {self.idship}, {courier_name}', error=error)
+                msg = 'FAILED' if error else 'DONE'
+                log(f'update {msg} - {self.description} - {self.idship}, {courier_name}', error=error)
 
-                    yield self.get_consolidated_content()
+                yield self.get_consolidated_content()
 
             # dispose executor
             with self.executor_ops:
@@ -128,6 +127,8 @@ class Tracker:
 
         except:
             log(traceback.format_exc(), error=True)
+
+        return None, courier_name
 
     def get_consolidated_content(self):
         consolidated = {}
