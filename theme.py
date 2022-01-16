@@ -37,7 +37,7 @@ refresh_img = 'icons/refresh.png'
 archives_img = 'icons/archive.png'
 trash_img = 'icons/trash.png'
 mail_img = 'icons/mail.png'
-warning_img = 'icons/warning.png'
+warn_img = 'icons/warn.png'
 
 menu_color = 'grey75'
 empty_color = 'grey90'
