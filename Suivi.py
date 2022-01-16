@@ -202,6 +202,7 @@ class TrackerWidget:
                 self.show_current_courier_widget()
                 self.updating_widget.update(visible=True)
 
+                # daemon therads that'll be killed when exiting
                 threading.Thread(target=self.update_idle_couriers, args=(window, couriers), daemon=True).start()
 
             else:

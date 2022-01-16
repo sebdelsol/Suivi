@@ -185,7 +185,7 @@ class Tracker:
         with self.executor_ops:
             if self.executors:
                 for executor in self.executors:
-                    # https://stackoverflow.com/questions/49992329/the-workers-in-threadpoolexecutor-is-not-really-daemon
+                    # kill the upadting threads https://stackoverflow.com/questions/49992329/the-workers-in-threadpoolexecutor-is-not-really-daemon
                     for thread in executor._threads:
                         del _threads_queues[thread]
 
