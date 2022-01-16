@@ -108,7 +108,7 @@ class TrackerWidget:
         self.status_widget = sg.T('', p=0, font=status_font, expand_x=True, background_color=bg_color, k=lambda w: self.toggle_expand(w))
 
         expand_font = (TH.var_font, TH.widget_expand_font_size)
-        self.expand_button = MyButton('▼', p=(4, 0), font=expand_font, button_color=('grey70', bg_color), mouseover_color='grey95', k=lambda w: self.toggle_expand(w))
+        self.expand_button = MyButton('', p=(4, 0), font=expand_font, button_color=('grey70', bg_color), mouseover_color='grey95', k=lambda w: self.toggle_expand(w))
 
         self.events_widget = sg.MLine('', p=((5, 5), (0, 5)), font=self.events_f, visible=False, background_color=bg_color, k=self.toggle_expand, **mline_kwargs)
         events_widget_col = sg.Col([[self.events_widget]], p=(10, 0), background_color=bg_color, expand_x=True)
