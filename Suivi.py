@@ -58,12 +58,10 @@ class TrackerWidget:
 
     def create_layout(self):
         shown = self.tracker.state == TrackerState.shown
-        bg_color = TH.widget_background_event_color
 
         self.horizontal_line = sg.Col([[]], p=0, s=(None, 1), background_color=TH.widget_separator_color, expand_x=True)
-        self.layout = sg.Col([[self.horizontal_line]], p=0, expand_x=True, visible=shown, background_color=bg_color)
+        self.layout = sg.Col([[self.horizontal_line]], p=0, expand_x=True, visible=shown)
         self.pin = sg.pin(self.layout, expand_x=True)  # collapse when hidden
-        self.pin.BackgroundColor = bg_color
 
         # return minimum layout to be extended in finalize()
         return [[self.pin]]
@@ -72,58 +70,56 @@ class TrackerWidget:
         if not self.finalized:
             self.finalized = True
 
-            bg_color_h = TH.widget_background_title_color
-            bg_color = TH.widget_background_event_color
+            title_color = TH.widget_background_title_color
+            event_color = TH.widget_background_event_color
             mline_kwargs = dict(write_only=True, no_scrollbar=True, disabled=True)
 
             b_p = TH.widget_button_pad
-            b_colors = dict(button_color=bg_color_h, mouseover_color='grey95')
+            b_colors = dict(button_color=title_color, mouseover_color='grey95')
             edit_button = ButtonMouseOver('', image_data=self.edit_img, p=(0, b_p), **b_colors, k=self.edit)
             self.refresh_button = ButtonMouseOver('', image_data=self.refresh_img, p=0, **b_colors, k=self.update)
             archive_button = ButtonMouseOver('', image_data=self.archive_img, p=(0, b_p), **b_colors, k=self.archive_or_delete)
 
             self.buttons = [edit_button, self.refresh_button, archive_button]
-            buttons = sg.Col([[button] for button in self.buttons], p=(10, 0), background_color=bg_color_h)
+            buttons = sg.Col([[button] for button in self.buttons], p=(10, 0), background_color=title_color)
 
             self.days_size = TH.widget_elapsed_days_box_size
             self.days_font = (TH.fix_font_bold, TH.widget_elapsed_days_font_size)
             graph_size = (self.days_size, self.days_size)
-            self.days_widget = GraphRounded(canvas_size=graph_size, graph_bottom_left=(0, 0), graph_top_right=graph_size, p=(10, 0), background_color=bg_color_h)
+            self.days_widget = GraphRounded(canvas_size=graph_size, graph_bottom_left=(0, 0), graph_top_right=graph_size, p=(10, 0), background_color=title_color)
 
             desc_font = (TH.var_font, TH.widget_description_font_size)
-            self.desc_widget = sg.T('', p=0, font=desc_font, text_color=TH.widget_descrition_text_color, background_color=bg_color_h, expand_x=True, justification='l')
-
-            self.updating_widget = sg.Image(data=self.updating_gif, p=(10, 0), visible=False, background_color=bg_color, k=lambda w: self.toggle_expand(w))
-            updating_widget_pin = sg.pin(self.updating_widget)
-            updating_widget_pin.BackgroundColor = bg_color
+            self.desc_widget = sg.T('', p=0, font=desc_font, text_color=TH.widget_descrition_text_color, background_color=title_color, expand_x=True, justification='l')
 
             id_font = (TH.fix_font, TH.widget_idship_font_size)
-            self.id_widget = sg.MLine('', p=0, font=id_font, background_color=bg_color_h, expand_x=True, justification='r', **mline_kwargs)
+            self.id_widget = sg.MLine('', p=0, font=id_font, background_color=title_color, expand_x=True, justification='r', **mline_kwargs)
 
             self.couriers_font = (TH.fix_font, TH.widget_courier_font_size)
             self.couriers_font_bold = (TH.fix_font_bold, TH.widget_courier_font_size)
-            self.couriers_widget = sg.MLine('', p=0, font=self.couriers_font, background_color=bg_color_h, expand_x=True, justification='r', **mline_kwargs)
+            self.couriers_widget = sg.MLine('', p=0, font=self.couriers_font, background_color=title_color, expand_x=True, justification='r', **mline_kwargs)
 
-            id_couriers_widget = sg.Col([[self.id_widget], [self.couriers_widget]], p=((20, 0), (b_p, b_p)), background_color=bg_color_h, expand_x=True, vertical_alignment='top')
+            id_couriers_widget = sg.Col([[self.id_widget], [self.couriers_widget]], p=((20, 0), (b_p, b_p)), background_color=title_color, expand_x=True, vertical_alignment='top')
+
+            self.updating_widget = sg.Image(data=self.updating_gif, p=(10, 0), visible=False, k=lambda w: self.toggle_expand(w))
+            updating_widget_pin = sg.pin(self.updating_widget)
 
             ago_font = (TH.var_font, TH.widget_status_font_size)
-            self.ago_widget = sg.T('', p=0, font=ago_font, background_color=bg_color, text_color='grey50', k=lambda w: self.toggle_expand(w))
+            self.ago_widget = sg.T('', p=0, font=ago_font, text_color='grey50', k=lambda w: self.toggle_expand(w))
 
             status_font = (TH.var_font, TH.widget_status_font_size)
-            self.status_widget = sg.T('', p=0, font=status_font, expand_x=True, background_color=bg_color, k=lambda w: self.toggle_expand(w))
+            self.status_widget = sg.T('', p=0, font=status_font, text_color=TH.widget_status_text_color, expand_x=True, k=lambda w: self.toggle_expand(w))
 
             expand_font = (TH.var_font, TH.widget_expand_font_size)
-            self.expand_button = ButtonMouseOver('', p=((10, 5), (0, 0)), font=expand_font, button_color=('grey70', bg_color), mouseover_color='grey95', k=lambda w: self.toggle_expand(w))
+            self.expand_button = ButtonMouseOver('', p=((10, 5), (0, 0)), font=expand_font, button_color=('grey70', event_color), mouseover_color='grey95', k=lambda w: self.toggle_expand(w))
 
             self.events_font = (TH.fix_font, TH.widget_event_font_size)
             self.events_font_bold = (TH.fix_font_bold, TH.widget_event_font_size)
-            self.events_widget = sg.MLine('', p=0, font=self.events_font, visible=False, background_color=bg_color, k=self.toggle_expand, **mline_kwargs)
-            events_widget_col = sg.Col([[self.events_widget]], p=(20, 0), background_color=bg_color, expand_x=True)
+            self.events_widget = sg.MLine('', p=0, font=self.events_font, background_color=event_color, visible=False, k=self.toggle_expand, **mline_kwargs)
+            events_widget_col = sg.Col([[self.events_widget]], p=(20, 0), expand_x=True)
             events_widget_pin = sg.pin(events_widget_col, expand_x=True)  # collapse when hidden
-            events_widget_pin.BackgroundColor = bg_color
 
-            title_col = sg.Col([[self.days_widget, self.desc_widget, id_couriers_widget, buttons]], p=0, background_color=bg_color_h, expand_x=True)
-            status_col = sg.Col([[self.expand_button, self.ago_widget, self.status_widget, updating_widget_pin]], p=0, background_color=bg_color, expand_x=True)
+            title_col = sg.Col([[self.days_widget, self.desc_widget, id_couriers_widget, buttons]], p=0, background_color=title_color, expand_x=True)
+            status_col = sg.Col([[self.expand_button, self.ago_widget, self.status_widget, updating_widget_pin]], p=0, expand_x=True)
 
             # extend the layout & finalize
             window.extend_layout(self.layout, [[title_col], [status_col], [events_widget_pin]])
@@ -248,14 +244,14 @@ class TrackerWidget:
                 status_delivered = content['status'].get('delivered', False)
                 status_label = content['status']['label'].replace('.', '')
                 color = 'red' if status_warn else ('green' if status_delivered else None)
-                self.status_widget.update(status_label, text_color=color)
-                self.desc_widget.update(text_color=color)
+                self.status_widget.update(status_label, text_color=color or TH.widget_status_text_color)
+                self.desc_widget.update(text_color=color or TH.widget_descrition_text_color)
 
             else:
                 self.width_events = 0
                 self.height_events = 0
                 self.status_widget.update(TXT.unknown_status, text_color='red')
-                self.desc_widget.update(text_color='grey70')
+                self.desc_widget.update(text_color=TH.widget_descrition_error_text_color)
 
             self.show_id(content)
 
