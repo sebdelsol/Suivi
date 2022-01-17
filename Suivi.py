@@ -31,6 +31,27 @@ Exit_shorcuts = ('Escape:27', )
 Log_shorcut = 'l'
 
 
+def color_to_rgb(color, tkinter_widget):
+    r, g, b = tkinter_widget.winfo_rgb(color)
+    return r / 256, g / 256, b / 256
+
+
+def blend_rgb_colors(color1, color2, t):
+    r1, g1, b1 = color1
+    r2, g2, b2 = color2
+    return r1 * (1 - t) + r2 * t, g1 * (1 - t) + g2 * t, b1 * (1 - t) + b2 * t
+
+
+def get_one_period_colors(color_start, color_end, array_size):
+    colors = []
+    for x in range(array_size):
+        t = math.cos((2 * math.pi * (x % array_size)) / array_size)
+        r, g, b = blend_rgb_colors(color_start, color_end, (t + 1) * .5)
+        color = f'#{round(r):02x}{round(g):02x}{round(b):02x}'
+        colors.append(color)
+    return colors
+
+
 class TrackerWidget:
     button_size = (TH.widget_button_size, TH.widget_button_size)
     updating_gif, refresh_img, edit_img, archive_img = None, None, None, None
@@ -144,6 +165,7 @@ class TrackerWidget:
             for widget in (self.events_widget, self.status_widget, self.ago_widget, self.updating_widget):
                 widget.bind('<Button-1>', '')
 
+            self.init_flashing()
             self.fit_description()
             self.show_current_content(window)
 
@@ -219,6 +241,8 @@ class TrackerWidget:
             self.free_to_update = False
 
             if couriers := self.tracker.get_idle_couriers():
+                self.start_flashing(window, couriers)
+
                 self.disable_buttons(True)
                 window.trigger_event(Updating_event)
 
@@ -380,6 +404,8 @@ class TrackerWidget:
         prt(idship, autoscroll=False, t='red' if empty else 'blue', end='')
 
     def show_couriers(self, couriers_update):
+        self.couriers_widget.Widget.tag_remove(self.flashing_tag, '1.0', 'end')
+
         if couriers_update:
             couriers_update_names = list(couriers_update.keys())
             couriers_update_names.sort()
@@ -394,36 +420,84 @@ class TrackerWidget:
 
                 if updating:
                     error_msg = ''
-                    maj_msg = f'{TXT.updating} '
+                    update_msg = f'{TXT.updating} '
 
                 elif not valid_idship:
                     empty_idship, _ = self.get_idship(check_empty=True)
                     error_msg = f'{TXT.no_idship if empty_idship else TXT.invalid_idship}, '
-                    maj_msg = ''
+                    update_msg = ''
 
                 elif error:
                     error_msg = f'{TXT.error_courier_update}, '
-                    maj_msg = ''
+                    update_msg = ''
 
                 else:
                     error_msg = ''
-                    maj_msg = ''
+                    update_msg = ''
 
-                txts.append((ago, ago_color, name, name_color, name_font, maj_msg, error_msg))
+                txts.append((ago, ago_color, name, name_color, name_font, update_msg, error_msg))
 
             width_name = max(len(txt[2]) for txt in txts)
             width_ago = max(len(txt[0]) for txt in txts)
-
             prt = self.couriers_widget.print
-            for ago, ago_color, name, name_color, name_font, maj_msg, error_msg in txts:
-                prt(maj_msg, autoscroll=False, font=self.couriers_font, t=TH.refresh_color, end='')
+            tags = []
+
+            for i, (ago, ago_color, name, name_color, name_font, update_msg, error_msg) in enumerate(txts):
+                if update_msg:
+                    courier, start, end = name, f'{i + 1}.0', f'{i + 1}.{len(update_msg)}'
+                    tags.append((courier, start, end))
+
+                prt(update_msg, autoscroll=False, font=self.couriers_font_bold, end='')
                 prt(error_msg, autoscroll=False, font=self.couriers_font, t='red', end='')
                 prt(name.rjust(width_name), autoscroll=False, t=name_color, font=name_font, end='')
                 prt(f', {TXT.updated} ', autoscroll=False, t='grey60', end='')
                 prt(ago.ljust(width_ago), autoscroll=False, t=ago_color)
 
+            for courier, start, end in tags:  # for flashing
+                self.couriers_widget.Widget.tag_add(f'{self.flashing_tag}{courier}', start, end)
+
         else:
             self.couriers_widget.update(TXT.no_couriers, text_color='red')
+
+    def init_flashing(self):
+        self.is_flashing = False
+        self.flashing_index = 0
+        self.flashing_tag = f'flashing{id(self)}'
+        self.flashing_array_size = 32  # size of colors array
+        self.flashing_step = 50  # ms
+        self.frequency = 1.5
+        self.flashing_courier = {}
+
+        # class attribute, initialized after startup
+        if not hasattr(self, 'flashing_colors'):
+            tkinter_widget = self.pin.Widget
+            color_end = color_to_rgb(TH.refresh_color, tkinter_widget)
+            color_start = color_to_rgb(TH.widget_title_bg_color, tkinter_widget)
+            color_start = blend_rgb_colors(color_start, color_end, .25)
+            TrackerWidget.flashing_colors = get_one_period_colors(color_start, color_end, self.flashing_array_size)
+
+    def start_flashing(self, window, couriers):
+        for courier in couriers:
+            self.flashing_courier[courier] = (0, time.time())
+
+        if not self.is_flashing:
+            self.is_flashing = True
+            self.do_flashing(window)
+
+    def stop_flashing(self):
+        self.flashing_courier = {}
+        self.is_flashing = False
+
+    def do_flashing(self, window):
+        if self.is_flashing:
+            new_t = time.time()
+            for courier, (index, t) in self.flashing_courier.items():
+                color = self.flashing_colors[round(index) % self.flashing_array_size]
+                index += self.frequency * self.flashing_array_size * (new_t - t)
+                self.flashing_courier[courier] = index, new_t
+                self.couriers_widget.Widget.tag_configure(f'{self.flashing_tag}{courier}', foreground=color)
+
+            window.TKroot.after(self.flashing_step, lambda window=window: self.do_flashing(window))
 
     def edit(self, window):
         popup_edit = popup.edit(TXT.do_edit, self.tracker.idship, self.tracker.description, self.tracker.used_couriers, self.tracker.available_couriers, window)
@@ -852,6 +926,8 @@ if __name__ == "__main__":
         # import after splash has been created
         import threading
         import timeago
+        import math
+        import time
         from bisect import bisect
         import textwrap
         from tkinter import font as tk_font
