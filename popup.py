@@ -14,11 +14,13 @@ class MyPopup(sg.Window):
         self.main_window.grey_all(True)
 
         layout = [[sg.T(title, p=0, font=(TH.fix_font_bold, 20), justification='center', expand_x=True)],
-                  [sg.HorizontalSeparator()]]
+                  [TH.horizontal_line(p=5)]]
         layout.extend(body_layout)
-        layout.append([sg.HorizontalSeparator()])
-        layout.append([ButtonMouseOver(TXT.ok, font=(TH.var_font, 12), button_color='grey80', mouseover_color='grey95', bind_return_key=True),
-                       ButtonMouseOver(TXT.cancel, font=(TH.var_font, 12), button_color='grey80', mouseover_color='grey95')])
+        layout.append([TH.horizontal_line(p=5)])
+
+        b_colors = dict(button_color=TH.button_color, mouseover_color=TH.popup_background_color)
+        layout.append([ButtonMouseOver(TXT.ok, font=(TH.var_font, 12), bind_return_key=True, **b_colors),
+                       ButtonMouseOver(TXT.cancel, font=(TH.var_font, 12), **b_colors)])
         layout = [[sg.Col(layout, p=5)]]
 
         args, kwargs = TH.get_window_params(layout)
@@ -48,8 +50,8 @@ class edit(MyPopup):
     def __init__(self, title, idship, description, used_couriers, couriers, main_window):
         self.couriers_names = couriers.get_names()
         self.couriers_names.sort()
-        layout = [[sg.T(TXT.description, font=(TH.fix_font, 10)), sg.Input(description, font=(TH.fix_font, 10), border_width=0, key='description')],
-                  [sg.T(TXT.idship, font=(TH.fix_font, 10)), sg.Input(idship, font=(TH.fix_font, 10), border_width=0, enable_events=True, key='idship')]]
+        layout = [[sg.T(TXT.description, font=(TH.fix_font, 10)), sg.Input(description, font=(TH.fix_font, 10), key='description')],
+                  [sg.T(TXT.idship, font=(TH.fix_font, 10)), sg.Input(idship, font=(TH.fix_font, 10), enable_events=True, key='idship')]]
 
         self.check_colors = {True: 'black', False: 'grey60'}
         self.msg_font = {True: (TH.fix_font_bold, 8), False: (TH.fix_font, 8)}

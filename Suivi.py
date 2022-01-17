@@ -32,12 +32,6 @@ Log_shorcut = 'l'
 
 
 class TrackerWidget:
-    min_events_shown = TH.widget_min_events_shown
-    days_intervals = TH.widget_elapsed_days_intervals
-    days_colors = TH.widget_elapsed_days_colors
-
-    max_event_width = TH.widget_event_max_width  # chars
-
     button_size = (TH.widget_button_size, TH.widget_button_size)
     updating_gif, refresh_img, edit_img, archive_img = None, None, None, None
 
@@ -80,7 +74,7 @@ class TrackerWidget:
 
             bg_color_h = TH.widget_background_title_color
             bg_color = TH.widget_background_event_color
-            mline_kwargs = dict(write_only=True, border_width=0, no_scrollbar=True, disabled=True)
+            mline_kwargs = dict(write_only=True, no_scrollbar=True, disabled=True)
 
             b_p = TH.widget_button_pad
             b_colors = dict(button_color=bg_color_h, mouseover_color='grey95')
@@ -160,7 +154,7 @@ class TrackerWidget:
         window.trigger_event(Update_widgets_size_event)
 
     def update_expand_button(self):
-        is_visible = self.is_events_visible() and self.height_events > self.min_events_shown
+        is_visible = self.is_events_visible() and self.height_events > TH.widget_min_events_shown
         self.expand_button.update(('▲' if self.expand_events else '▼') if is_visible else '', disabled=not is_visible)
 
     def is_events_visible(self):
@@ -177,7 +171,7 @@ class TrackerWidget:
 
     # https://stackoverflow.com/questions/11544187/tkinter-resize-text-to-contents/11545159
     def update_size(self, w):
-        nb_events_shown = float('inf') if self.expand_events else self.min_events_shown
+        nb_events_shown = float('inf') if self.expand_events else TH.widget_min_events_shown
         h = min(nb_events_shown, self.height_events)
         self.events_widget.set_size((w, h))
 
@@ -271,7 +265,7 @@ class TrackerWidget:
             elapsed = content.get('elapsed')
             if elapsed:
                 round_elapsed_days = elapsed.days + (1 if elapsed.seconds >= 43200 else 0)  # half a day in sec
-                elapsed_color = self.days_colors[bisect(self.days_intervals, round_elapsed_days)]
+                elapsed_color = TH.widget_elapsed_days_colors[bisect(TH.widget_elapsed_days_intervals, round_elapsed_days)]
                 elapsed_txt = f"{round_elapsed_days}{'j' if round_elapsed_days <= 100 else ''}"
             else:
                 elapsed_color = 'grey70'
@@ -334,9 +328,9 @@ class TrackerWidget:
 
                 width = sum(len(txt) for txt in (event_courier, event_date, event_new))
 
-                event_labels = textwrap.wrap(event_label, self.max_event_width - len(event_status), drop_whitespace=False) or ['']
+                event_labels = textwrap.wrap(event_label, TH.widget_event_max_width - len(event_status), drop_whitespace=False) or ['']
                 if len(event_labels) > 1:
-                    next_labels = textwrap.wrap(''.join(event_labels[1:]), self.max_event_width)
+                    next_labels = textwrap.wrap(''.join(event_labels[1:]), TH.widget_event_max_width)
                     event_labels[1:] = [f"{' '* width}{label.strip()}" for label in next_labels]
                 event_labels[0] = event_labels[0].strip()
 
@@ -404,15 +398,6 @@ class TrackerWidget:
         for button in self.buttons:
             button.update(disabled=disabled)
 
-    def edit(self, window):
-        popup_edit = popup.edit(TXT.do_edit, self.tracker.idship, self.tracker.description, self.tracker.used_couriers, self.tracker.available_couriers, window)
-        ok, idship, description, used_couriers = popup_edit.loop()
-        if ok:
-            self.tracker.set_id(idship, description, used_couriers)
-            self.fit_description()
-            self.reset_size()
-            self.update(window)
-
     def fit_description(self):
         if self.tracker.state == TrackerState.shown:
             name, size = self.desc_widget.Font[0], TH.widget_description_font_size
@@ -429,6 +414,15 @@ class TrackerWidget:
 
     def update_visiblity(self):
         self.layout.update(visible=self.tracker.state == TrackerState.shown)
+
+    def edit(self, window):
+        popup_edit = popup.edit(TXT.do_edit, self.tracker.idship, self.tracker.description, self.tracker.used_couriers, self.tracker.available_couriers, window)
+        ok, idship, description, used_couriers = popup_edit.loop()
+        if ok:
+            self.tracker.set_id(idship, description, used_couriers)
+            self.fit_description()
+            self.reset_size()
+            self.update(window)
 
     def archive_or_delete(self, window):
         self.disable_buttons(True)
@@ -839,7 +833,7 @@ if __name__ == "__main__":
         print(f"Unfortunatly this app needs Python {needs}")
 
     else:
-        sg.theme(TH.main_theme)
+        sg.theme(TH.theme)
 
         # create splash before importing to reduce startup time
         splash = Splash()

@@ -37,7 +37,6 @@ class ButtonMouseOver(sg.Button):
                        'Enter': mouseover_color or ButtonMouseOver.default_colors['Enter']}
 
         kwargs['button_color'] = (text_color, self.colors['Leave'])
-        kwargs['border_width'] = 0
 
         super().__init__(*args, **kwargs)
 

@@ -18,8 +18,6 @@ def get_window_params(layout, **new_kwargs):
     return args, kwargs
 
 
-main_theme = 'GrayGrayGray'
-
 fix_font = 'Roboto Mono Light'
 fix_font_bold = 'Roboto Mono Bold'
 var_font = 'Roboto Light'
@@ -40,6 +38,10 @@ archives_img = 'icons/archive.png'
 trash_img = 'icons/trash.png'
 mail_img = 'icons/mail.png'
 warn_img = 'icons/warn.png'
+
+popup_background_color = 'grey90'
+button_color = 'grey75'
+separator_color = 'grey50'
 
 menu_color = 'grey75'
 empty_color = 'grey90'
@@ -72,3 +74,19 @@ widget_elapsed_days_intervals = [10, 20, 30]
 widget_elapsed_days_colors = ['lime green', 'dark orange', 'red', 'black']
 
 popup_max_choices = 20
+
+_theme = {'BACKGROUND': widget_background_event_color,
+          'TEXT': 'black',
+          'INPUT': widget_background_title_color,
+          'TEXT_INPUT': 'black',
+          'SCROLL': widget_background_event_color,
+          'BUTTON': ('black', 'grey60'),
+          'PROGRESS': (widget_background_event_color, widget_background_title_color),
+          'BORDER': 0, 'SLIDER_DEPTH': 0, 'PROGRESS_DEPTH': 0}
+
+theme = 'custom theme'
+sg.theme_add_new(theme, _theme)
+
+
+def horizontal_line(p, color=separator_color):
+    return sg.Col([[]], p=p, s=(None, 1), background_color=color, expand_x=True)
