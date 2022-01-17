@@ -492,7 +492,10 @@ class LaPoste(Courier):
             product = shipment.get('product').capitalize()
 
             ctx = shipment.get('contextData')
-            fromto = f"{ctx['originCountry']}{Courier.r_arrow}{ctx['arrivalCountry']}"
+            if ctx:
+                fromto = f"{ctx['originCountry']}{Courier.r_arrow}{ctx['arrivalCountry']}"
+            else:
+                fromto = None
 
             timeline = list(filter(lambda t: t['status'], shipment.get('timeline')))
             status_label = timeline[-1]['shortLabel']
