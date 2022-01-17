@@ -18,7 +18,7 @@ class MyPopup(sg.Window):
         layout.extend(body_layout)
         layout.append([TH.horizontal_line(p=5)])
 
-        b_colors = dict(button_color=TH.button_color, mouseover_color=TH.popup_background_color)
+        b_colors = dict(button_color=TH.button_color, mouseover_color=TH.popup_bg_color)
         layout.append([ButtonMouseOver(TXT.ok, font=(TH.var_font, 12), bind_return_key=True, **b_colors),
                        ButtonMouseOver(TXT.cancel, font=(TH.var_font, 12), **b_colors)])
         layout = [[sg.Col(layout, p=5)]]

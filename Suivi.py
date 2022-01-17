@@ -70,38 +70,42 @@ class TrackerWidget:
         if not self.finalized:
             self.finalized = True
 
-            title_color = TH.widget_background_title_color
-            event_color = TH.widget_background_event_color
+            title_color = TH.widget_title_bg_color
+            event_color = TH.widget_event_bg_color
             mline_kwargs = dict(write_only=True, no_scrollbar=True, disabled=True)
+            padx = TH.widget_padx
+            b_pad = TH.widget_button_pad
 
-            b_p = TH.widget_button_pad
             b_colors = dict(button_color=title_color, mouseover_color='grey95')
-            edit_button = ButtonMouseOver('', image_data=self.edit_img, p=(0, b_p), **b_colors, k=self.edit)
+            edit_button = ButtonMouseOver('', image_data=self.edit_img, p=(0, b_pad), **b_colors, k=self.edit)
             self.refresh_button = ButtonMouseOver('', image_data=self.refresh_img, p=0, **b_colors, k=self.update)
-            archive_button = ButtonMouseOver('', image_data=self.archive_img, p=(0, b_p), **b_colors, k=self.archive_or_delete)
+            archive_button = ButtonMouseOver('', image_data=self.archive_img, p=(0, b_pad), **b_colors, k=self.archive_or_delete)
 
             self.buttons = [edit_button, self.refresh_button, archive_button]
-            buttons = sg.Col([[button] for button in self.buttons], p=(10, 0), background_color=title_color)
+            buttons = sg.Col([[button] for button in self.buttons], p=(padx, 0), background_color=title_color)
 
             self.days_size = TH.widget_elapsed_days_box_size
             self.days_font = (TH.fix_font_bold, TH.widget_elapsed_days_font_size)
             graph_size = (self.days_size, self.days_size)
-            self.days_widget = GraphRounded(canvas_size=graph_size, graph_bottom_left=(0, 0), graph_top_right=graph_size, p=(10, 0), background_color=title_color)
+            self.days_widget = GraphRounded(canvas_size=graph_size, graph_bottom_left=(0, 0), graph_top_right=graph_size, p=(padx, 0), background_color=title_color)
 
             desc_font = (TH.var_font, TH.widget_description_font_size)
             self.desc_widget = sg.T('', p=0, font=desc_font, text_color=TH.widget_descrition_text_color, background_color=title_color, expand_x=True, justification='l')
 
             id_font = (TH.fix_font, TH.widget_idship_font_size)
-            self.id_widget = sg.MLine('', p=0, font=id_font, background_color=title_color, expand_x=True, justification='r', **mline_kwargs)
+            self.id_widget = sg.MLine('', p=0, font=id_font, background_color=title_color, justification='r', **mline_kwargs)
 
             self.couriers_font = (TH.fix_font, TH.widget_courier_font_size)
             self.couriers_font_bold = (TH.fix_font_bold, TH.widget_courier_font_size)
             self.couriers_widget = sg.MLine('', p=0, font=self.couriers_font, background_color=title_color, expand_x=True, justification='r', **mline_kwargs)
 
-            id_couriers_widget = sg.Col([[self.id_widget], [self.couriers_widget]], p=((20, 0), (b_p, b_p)), background_color=title_color, expand_x=True, vertical_alignment='top')
-
-            self.updating_widget = sg.Image(data=self.updating_gif, p=0, visible=False, k=lambda w: self.toggle_expand(w))
+            self.updating_widget = sg.Image(data=self.updating_gif, p=0, background_color=title_color, visible=False, k=lambda w: self.toggle_expand(w))
             updating_widget_pin = sg.pin(self.updating_widget)
+            updating_widget_pin.BackgroundColor = title_color
+            push = sg.Push(background_color=title_color)
+
+            id_couriers_widget_layout = [[push, updating_widget_pin, self.id_widget], [self.couriers_widget]]
+            id_couriers_widget = sg.Col(id_couriers_widget_layout, p=((padx * 2, 0), (b_pad, b_pad)), expand_x=True, background_color=title_color, vertical_alignment='top')
 
             ago_font = (TH.var_font, TH.widget_status_font_size)
             self.ago_widget = sg.T('', p=0, font=ago_font, text_color='grey50', k=lambda w: self.toggle_expand(w))
@@ -118,8 +122,8 @@ class TrackerWidget:
             events_widget_pin = sg.pin(self.events_widget, expand_x=True)  # collapse when hidden
 
             title_col = sg.Col([[self.days_widget, self.desc_widget, id_couriers_widget, buttons]], p=0, background_color=title_color, expand_x=True)
-            status_col = sg.Col([[self.ago_widget, self.status_widget, updating_widget_pin, self.expand_button]], p=0, expand_x=True)
-            event_col = sg.Col([[status_col], [events_widget_pin]], p=(10, 3), expand_x=True)
+            status_col = sg.Col([[self.ago_widget, self.status_widget, self.expand_button]], p=0, expand_x=True)
+            event_col = sg.Col([[status_col], [events_widget_pin]], p=(padx, TH.widget_event_pady), expand_x=True)
 
             # extend the layout & finalize
             window.extend_layout(self.layout, [[title_col], [event_col]])
@@ -199,7 +203,7 @@ class TrackerWidget:
         self.couriers_widget.set_size((max(len(t) for t in txts), len(txts)))
 
         txt = self.id_widget.get()
-        self.id_widget.set_size((len(txt), 1))
+        self.id_widget.set_size((len(txt) + 1, 1))  # arrow character is not fixed size, so add 1
 
     def show_current_content(self, window):
         if self.tracker.state == TrackerState.shown:

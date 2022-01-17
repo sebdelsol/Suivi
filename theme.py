@@ -39,7 +39,7 @@ trash_img = 'icons/trash.png'
 mail_img = 'icons/mail.png'
 warn_img = 'icons/warn.png'
 
-popup_background_color = 'grey90'
+popup_bg_color = 'grey90'
 button_color = 'grey75'
 separator_color = 'grey50'
 
@@ -51,8 +51,10 @@ menu_button_font_size = 13
 menu_button_height = 20
 menu_button_img_margin = 5
 
-widget_background_title_color = 'grey85'
-widget_background_event_color = 'grey90'
+widget_padx = 10
+widget_title_bg_color = 'grey85'
+widget_event_bg_color = 'grey90'
+widget_event_pady = 5
 widget_separator_color = 'grey70'
 widget_descrition_text_color = 'grey40'
 widget_descrition_error_text_color = 'grey70'
@@ -70,7 +72,7 @@ widget_expand_color = 'grey50'
 widget_button_pad = 4
 widget_button_size = 22
 widget_button_img_margin = 5
-widget_updating_gif_height = 22
+widget_updating_gif_height = 20
 widget_event_max_width = 90
 widget_min_events_shown = 1
 widget_elapsed_days_intervals = [10, 20, 30]
@@ -78,13 +80,13 @@ widget_elapsed_days_colors = ['lime green', 'dark orange', 'red', 'black']
 
 popup_max_choices = 20
 
-_theme = {'BACKGROUND': widget_background_event_color,
+_theme = {'BACKGROUND': widget_event_bg_color,
           'TEXT': 'black',
-          'INPUT': widget_background_title_color,
+          'INPUT': widget_title_bg_color,
           'TEXT_INPUT': 'black',
-          'SCROLL': widget_background_event_color,
+          'SCROLL': widget_event_bg_color,
           'BUTTON': ('black', 'grey60'),
-          'PROGRESS': (widget_background_event_color, widget_background_title_color),
+          'PROGRESS': (widget_event_bg_color, widget_title_bg_color),
           'BORDER': 0, 'SLIDER_DEPTH': 0, 'PROGRESS_DEPTH': 0}
 
 theme = 'custom theme'
