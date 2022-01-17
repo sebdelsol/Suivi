@@ -60,7 +60,7 @@ class TrackerWidget:
         shown = self.tracker.state == TrackerState.shown
 
         self.horizontal_line = sg.Col([[]], p=0, s=(None, 1), background_color=TH.widget_separator_color, expand_x=True)
-        self.layout = sg.Col([[self.horizontal_line]], p=0, expand_x=True, visible=shown)
+        self.layout = sg.Col([[self.horizontal_line]], p=0, expand_x=True, visible=shown)  # to be extended see finalize
         self.pin = sg.pin(self.layout, expand_x=True)  # collapse when hidden
 
         # return minimum layout to be extended in finalize()
@@ -100,7 +100,7 @@ class TrackerWidget:
 
             id_couriers_widget = sg.Col([[self.id_widget], [self.couriers_widget]], p=((20, 0), (b_p, b_p)), background_color=title_color, expand_x=True, vertical_alignment='top')
 
-            self.updating_widget = sg.Image(data=self.updating_gif, p=(10, 0), visible=False, k=lambda w: self.toggle_expand(w))
+            self.updating_widget = sg.Image(data=self.updating_gif, p=0, visible=False, k=lambda w: self.toggle_expand(w))
             updating_widget_pin = sg.pin(self.updating_widget)
 
             ago_font = (TH.var_font, TH.widget_status_font_size)
@@ -109,20 +109,20 @@ class TrackerWidget:
             status_font = (TH.var_font, TH.widget_status_font_size)
             self.status_widget = sg.T('', p=0, font=status_font, text_color=TH.widget_status_text_color, expand_x=True, k=lambda w: self.toggle_expand(w))
 
-            expand_font = (TH.var_font, TH.widget_expand_font_size)
-            self.expand_button = ButtonMouseOver('', p=((10, 5), (0, 0)), font=expand_font, button_color=('grey70', event_color), mouseover_color='grey95', k=lambda w: self.toggle_expand(w))
+            expand_font = (TH.fix_font, TH.widget_expand_font_size)
+            self.expand_button = ButtonMouseOver('', p=0, font=expand_font, button_color=(TH.widget_expand_color, event_color), mouseover_color='grey95', k=lambda w: self.toggle_expand(w))
 
             self.events_font = (TH.fix_font, TH.widget_event_font_size)
             self.events_font_bold = (TH.fix_font_bold, TH.widget_event_font_size)
             self.events_widget = sg.MLine('', p=0, font=self.events_font, background_color=event_color, visible=False, k=self.toggle_expand, **mline_kwargs)
-            events_widget_col = sg.Col([[self.events_widget]], p=(20, 0), expand_x=True)
-            events_widget_pin = sg.pin(events_widget_col, expand_x=True)  # collapse when hidden
+            events_widget_pin = sg.pin(self.events_widget, expand_x=True)  # collapse when hidden
 
             title_col = sg.Col([[self.days_widget, self.desc_widget, id_couriers_widget, buttons]], p=0, background_color=title_color, expand_x=True)
-            status_col = sg.Col([[self.expand_button, self.ago_widget, self.status_widget, updating_widget_pin]], p=0, expand_x=True)
+            status_col = sg.Col([[self.ago_widget, self.status_widget, updating_widget_pin, self.expand_button]], p=0, expand_x=True)
+            event_col = sg.Col([[status_col], [events_widget_pin]], p=(10, 3), expand_x=True)
 
             # extend the layout & finalize
-            window.extend_layout(self.layout, [[title_col], [status_col], [events_widget_pin]])
+            window.extend_layout(self.layout, [[title_col], [event_col]])
 
             size = (TH.widget_button_size, TH.widget_button_size)
             for button in self.buttons:
@@ -150,8 +150,8 @@ class TrackerWidget:
         window.trigger_event(Update_widgets_size_event)
 
     def update_expand_button(self):
-        is_visible = self.is_events_visible() and self.height_events > TH.widget_min_events_shown
-        self.expand_button.update(('▲' if self.expand_events else '▼') if is_visible else '', disabled=not is_visible)
+        visible = self.is_events_visible() and self.height_events > TH.widget_min_events_shown
+        self.expand_button.update('▲' if self.expand_events else '▼', visible=visible)
 
     def is_events_visible(self):
         return self.height_events > 0
@@ -164,6 +164,27 @@ class TrackerWidget:
 
     def get_pixel_height(self):
         return self.pin.Widget.winfo_height()
+
+    def disable_buttons(self, disabled):
+        for button in self.buttons:
+            button.update(disabled=disabled)
+
+    def fit_description(self):
+        if self.tracker.state == TrackerState.shown:
+            name, size = self.desc_widget.Font[0], TH.widget_description_font_size
+            while True:
+                font = name, size
+                wfont = tk_font.Font(self.desc_widget.ParentForm.TKroot, font)
+                extend = wfont.measure(self.get_description())
+                if size > 2 and extend > TH.widget_description_max_width:
+                    size -= 1
+                else:
+                    self.desc_widget.update(font=font)
+                    log(f'set font {size=} for {self.get_description()}')
+                    break
+
+    def update_visiblity(self):
+        self.layout.update(visible=self.tracker.state == TrackerState.shown)
 
     # https://stackoverflow.com/questions/11544187/tkinter-resize-text-to-contents/11545159
     def update_size(self, w):
@@ -389,27 +410,6 @@ class TrackerWidget:
 
         else:
             self.couriers_widget.update(TXT.no_couriers, text_color='red')
-
-    def disable_buttons(self, disabled):
-        for button in self.buttons:
-            button.update(disabled=disabled)
-
-    def fit_description(self):
-        if self.tracker.state == TrackerState.shown:
-            name, size = self.desc_widget.Font[0], TH.widget_description_font_size
-            while True:
-                font = name, size
-                wfont = tk_font.Font(self.desc_widget.ParentForm.TKroot, font)
-                extend = wfont.measure(self.get_description())
-                if size > 2 and extend > TH.widget_description_max_width:
-                    size -= 1
-                else:
-                    self.desc_widget.update(font=font)
-                    log(f'set font {size=} for {self.get_description()}')
-                    break
-
-    def update_visiblity(self):
-        self.layout.update(visible=self.tracker.state == TrackerState.shown)
 
     def edit(self, window):
         popup_edit = popup.edit(TXT.do_edit, self.tracker.idship, self.tracker.description, self.tracker.used_couriers, self.tracker.available_couriers, window)
