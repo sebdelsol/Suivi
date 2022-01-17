@@ -391,23 +391,33 @@ class TrackerWidget:
                 date, error, updating, valid_idship = couriers_update[name]
                 ago_color, ago = ('green', f"{timeago.format(date, get_local_now(), 'fr').replace(TXT.ago, '').strip()}") if date else ('red', TXT.never)
                 name_color, name_font = ('red', self.couriers_font_bold) if error else ('green', self.couriers_font)
-                valid_msg = ''
-                if not valid_idship:
-                    empty_idship, _ = self.get_idship(check_empty=True)
-                    valid_msg = f'{TXT.no_idship if empty_idship else TXT.invalid_idship}, '
-                txts.append((updating, ago, ago_color, name, name_color, name_font, valid_msg))
 
-            width_name = max(len(txt[3]) for txt in txts)
-            width_ago = max(len(txt[1]) for txt in txts)
+                if updating:
+                    error_msg = ''
+                    maj_msg = f'{TXT.updating} '
+
+                elif not valid_idship:
+                    empty_idship, _ = self.get_idship(check_empty=True)
+                    error_msg = f'{TXT.no_idship if empty_idship else TXT.invalid_idship}, '
+                    maj_msg = ''
+
+                elif error:
+                    error_msg = f'{TXT.error_courier_update}, '
+                    maj_msg = ''
+
+                else:
+                    error_msg = ''
+                    maj_msg = ''
+
+                txts.append((ago, ago_color, name, name_color, name_font, maj_msg, error_msg))
+
+            width_name = max(len(txt[2]) for txt in txts)
+            width_ago = max(len(txt[0]) for txt in txts)
 
             prt = self.couriers_widget.print
-            for updating, ago, ago_color, name, name_color, name_font, valid_msg in txts:
-                if not valid_msg:
-                    maj_txt = TXT.updating if updating else ' ' * len(TXT.updating)  # keep same size to prevent window jiggling
-                else:
-                    maj_txt = ''
-                prt(maj_txt, autoscroll=False, font=self.couriers_font_bold, t=TH.refresh_color, end='')
-                prt(valid_msg, autoscroll=False, font=self.couriers_font_bold, t='red', end='')
+            for ago, ago_color, name, name_color, name_font, maj_msg, error_msg in txts:
+                prt(maj_msg, autoscroll=False, font=self.couriers_font, t=TH.refresh_color, end='')
+                prt(error_msg, autoscroll=False, font=self.couriers_font, t='red', end='')
                 prt(name.rjust(width_name), autoscroll=False, t=name_color, font=name_font, end='')
                 prt(f', {TXT.updated} ', autoscroll=False, t='grey60', end='')
                 prt(ago.ljust(width_ago), autoscroll=False, t=ago_color)
