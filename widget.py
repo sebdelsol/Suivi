@@ -143,13 +143,13 @@ class MlinePulsing(sg.MLine):
 
         if not self.is_pulsing:
             self.is_pulsing = True
-            self.do_pulsing(window)
+            self.do_pulse(window)
 
     def stop_pulsing(self):
         self.pulsing_tags = {}
         self.is_pulsing = False
 
-    def do_pulsing(self, window):
+    def do_pulse(self, window):
         if self.is_pulsing:
             new_t = time.time()
             for tag, (index, t) in self.pulsing_tags.items():
