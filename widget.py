@@ -99,6 +99,27 @@ class ButtonTxtAndImg(ButtonMouseOver):
 
 
 class MlinePulsing(sg.MLine):
+
+    @staticmethod
+    def blend_rgb_colors(color1, color2, t):
+        r1, g1, b1 = color1
+        r2, g2, b2 = color2
+        return r1 * (1 - t) + r2 * t, g1 * (1 - t) + g2 * t, b1 * (1 - t) + b2 * t
+
+    @staticmethod
+    def get_one_period_colors(color_start, color_end, array_size):
+        colors = []
+        for x in range(array_size):
+            t = math.sin((2 * math.pi * (x % array_size)) / array_size)
+            r, g, b = MlinePulsing.blend_rgb_colors(color_start, color_end, (t + 1) * .5)
+            color = f'#{round(r):02x}{round(g):02x}{round(b):02x}'
+            colors.append(color)
+        return colors
+
+    def color_to_rgb(self, color):
+        r, g, b = self.Widget.winfo_rgb(color)  # works even with any tkinter defined color like 'red'
+        return r / 256, g / 256, b / 256
+
     def init_pulsing(self, color_start, color_end, percent_to_end_color, frequency=1.5):
         self.is_pulsing = False
         self.pulsing_tag = f'pulsing{id(self)}'
@@ -113,24 +134,6 @@ class MlinePulsing(sg.MLine):
             color_end = self.color_to_rgb(color_end)
             color_end = self.blend_rgb_colors(color_start, color_end, percent_to_end_color)
             MlinePulsing.pulsing_colors = self.get_one_period_colors(color_start, color_end, self.pulsing_array_size)
-
-    def color_to_rgb(self, color):
-        r, g, b = self.Widget.winfo_rgb(color)
-        return r / 256, g / 256, b / 256
-
-    def blend_rgb_colors(self, color1, color2, t):
-        r1, g1, b1 = color1
-        r2, g2, b2 = color2
-        return r1 * (1 - t) + r2 * t, g1 * (1 - t) + g2 * t, b1 * (1 - t) + b2 * t
-
-    def get_one_period_colors(self, color_start, color_end, array_size):
-        colors = []
-        for x in range(array_size):
-            t = math.sin((2 * math.pi * (x % array_size)) / array_size)
-            r, g, b = self.blend_rgb_colors(color_start, color_end, (t + 1) * .5)
-            color = f'#{round(r):02x}{round(g):02x}{round(b):02x}'
-            colors.append(color)
-        return colors
 
     def add_tag(self, key, start, end):
         self.Widget.tag_add(f'{self.pulsing_tag}{key}', start, end)
