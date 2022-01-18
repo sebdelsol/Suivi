@@ -246,7 +246,7 @@ class Cainiao(Scrapper):
             data_locator = (By.XPATH, f'//p[@class="waybill-num"][contains(text(),"{idship}")]')
             WebDriverWait(driver, self.timeout_elt).until(EC.visibility_of_element_located(data_locator))
             timeline = list(self.get_timeline(driver))  # resolve the generator before the driver is disposed
-        
+
         return timeline
 
     # do not use any selenium objects there, the driver has been disposed
