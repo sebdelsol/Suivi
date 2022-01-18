@@ -95,7 +95,3 @@ _theme = {'BACKGROUND': widget_event_bg_color,
 
 theme = 'custom theme'
 sg.theme_add_new(theme, _theme)
-
-
-def horizontal_line(p, color=separator_color):
-    return sg.Col([[]], p=p, s=(None, 1), background_color=color, expand_x=True)
