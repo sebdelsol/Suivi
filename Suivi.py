@@ -211,7 +211,7 @@ class TrackerWidget:
             self.free_to_update = False
 
             if couriers := self.tracker.get_idle_couriers():
-                self.couriers_widget.start_pulsing(window, couriers)
+                self.couriers_widget.start_pulsing(couriers)
 
                 self.disable_buttons(True)
                 window.trigger_event(Updating_event)

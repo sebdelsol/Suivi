@@ -152,19 +152,19 @@ class MlinePulsing(sg.MLine):
     def add_tag(self, key, start, end):
         self.Widget.tag_add(f'{self.pulsing_tag}{key}', start, end)
 
-    def start_pulsing(self, window, keys):
+    def start_pulsing(self, keys):
         for key in keys:
             self.pulsing_tags[f'{self.pulsing_tag}{key}'] = (0, time.time())
 
         if not self.is_pulsing:
             self.is_pulsing = True
-            self.pulse(window)
+            self.pulse()
 
     def stop_pulsing(self):
         self.pulsing_tags = {}
         self.is_pulsing = False
 
-    def pulse(self, window):
+    def pulse(self):
         if self.is_pulsing:
             new_t = time.time()
             for tag, (index, t) in self.pulsing_tags.items():
@@ -174,4 +174,5 @@ class MlinePulsing(sg.MLine):
                 index += self.pulsing_frequency * self.pulsing_array_size * (new_t - t)
                 self.pulsing_tags[tag] = index, new_t
 
-            window.TKroot.after(self.pulsing_time_step, lambda window=window: self.pulse(window))
+            window = self.ParentForm
+            window.TKroot.after(self.pulsing_time_step, self.pulse)
