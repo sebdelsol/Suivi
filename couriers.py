@@ -207,7 +207,7 @@ class Scrapper(Courier):
         return False, None
 
     def close(self):
-        if hasattr(Scrapper, 'drivers'):
+        if Scrapper.drivers:
             Scrapper.drivers.close()
             Scrapper.drivers = None
 
@@ -228,9 +228,12 @@ class Cainiao(Scrapper):
     #  the driver is disposed after this call
     def _scrape(self, driver, idship):
         try:
-            return list(self.get_timeline(driver))  # resolve the generator before the driver is disposed
+            timeline = list(self.get_timeline(driver))  # resolve the generator before the driver is disposed
 
         except NoSuchElementException:
+            timeline = None
+
+        if not timeline:
             self.log(f'scrapper WAIT slider - {idship}')
             slider_locator = (By.XPATH, '//span[@class="nc_iconfont btn_slide"]')
             slider = WebDriverWait(driver, self.timeout_elt).until(EC.element_to_be_clickable(slider_locator))
@@ -242,7 +245,9 @@ class Cainiao(Scrapper):
             self.log(f'scrapper WAIT datas - {idship}')
             data_locator = (By.XPATH, f'//p[@class="waybill-num"][contains(text(),"{idship}")]')
             WebDriverWait(driver, self.timeout_elt).until(EC.visibility_of_element_located(data_locator))
-            return list(self.get_timeline(driver))  # resolve the generator before the driver is disposed
+            timeline = list(self.get_timeline(driver))  # resolve the generator before the driver is disposed
+        
+        return timeline
 
     # do not use any selenium objects there, the driver has been disposed
     def _update(self, timeline):
