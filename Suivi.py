@@ -436,7 +436,7 @@ class TrackerWidget:
             self.couriers_widget.update(TXT.no_couriers, text_color='red')
 
     def edit(self, window):
-        popup_edit = popup.edit(TXT.do_edit, self.tracker.idship, self.tracker.description, self.tracker.used_couriers, self.tracker.available_couriers, window)
+        popup_edit = popup.edit(TXT.edit, self.tracker.idship, self.tracker.description, self.tracker.used_couriers, self.tracker.available_couriers, window)
         ok, idship, description, used_couriers = popup_edit.loop()
         if ok:
             self.tracker.set_id(idship, description, used_couriers)
@@ -446,8 +446,8 @@ class TrackerWidget:
 
     def archive_or_delete(self, window):
         self.disable_buttons(True)
-        choices = {TXT.do_archive: self.archive, TXT.do_delete: self.delete}
-        choices_colors = {TXT.do_archive: 'green', TXT.do_delete: 'red', False: 'grey75'}
+        choices = {TXT.archive: self.archive, TXT.delete: self.delete}
+        choices_colors = {TXT.archive: 'green', TXT.delete: 'red', False: 'grey75'}
         popup_one_choice = popup.one_choice(choices.keys(), choices_colors, f'{self.get_description()} - {self.get_idship()}', window)
         choice = popup_one_choice.loop()
         if choice:
@@ -476,7 +476,7 @@ class TrackerWidget:
             window.trigger_event(event)
 
     def delete(self, window):
-        self.set_state(TrackerState.deleted, window, TXT.do_delete, Trash_updated_event)
+        self.set_state(TrackerState.deleted, window, TXT.delete, Trash_updated_event)
 
     def undelete(self, window):
         self.set_state(TrackerState.shown, window, False, Trash_updated_event, reappear=True)
@@ -553,12 +553,12 @@ class TrackerWidgets:
         return [widget for widget in self.widgets if widget.tracker.state == state]
 
     def show_archives(self, window):
-        widgets = self.choose(window, TXT.do_unarchive, TrackerState.archived)
+        widgets = self.choose(window, TXT.unarchive, TrackerState.archived)
         for widget in widgets:
             widget.unarchive(window)
 
     def show_deleted(self, window):
-        widgets = self.choose(window, TXT.do_restore, TrackerState.deleted)
+        widgets = self.choose(window, TXT.restore, TrackerState.deleted)
         for widget in widgets:
             widget.undelete(window)
 

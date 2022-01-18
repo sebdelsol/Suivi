@@ -143,13 +143,13 @@ class MlinePulsing(sg.MLine):
 
         if not self.is_pulsing:
             self.is_pulsing = True
-            self.do_pulse(window)
+            self.pulse(window)
 
     def stop_pulsing(self):
         self.pulsing_tags = {}
         self.is_pulsing = False
 
-    def do_pulse(self, window):
+    def pulse(self, window):
         if self.is_pulsing:
             new_t = time.time()
             for tag, (index, t) in self.pulsing_tags.items():
@@ -159,4 +159,4 @@ class MlinePulsing(sg.MLine):
                 index += self.pulsing_frequency * self.pulsing_array_size * (new_t - t)
                 self.pulsing_tags[tag] = index, new_t
 
-            window.TKroot.after(self.pulsing_time_step, lambda window=window: self.do_pulsing(window))
+            window.TKroot.after(self.pulsing_time_step, lambda window=window: self.pulse(window))
