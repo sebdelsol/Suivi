@@ -179,7 +179,7 @@ class Scrapper(Courier):
 
     def _get_response(self, idship):
         try:
-            driver = self.drivers.get()
+            driver = Scrapper.drivers.get()
 
             if driver:
                 self.log(f'scrapper LOAD - {idship}')
@@ -201,13 +201,15 @@ class Scrapper(Courier):
 
         finally:
             if 'driver' in locals() and driver:
-                self.drivers.dispose(driver)
+                Scrapper.drivers.dispose(driver)
 
         self.log(f'scrapper FAILURE - {error} for {idship}', error=True)
         return False, None
 
     def close(self):
-        self.drivers.close()
+        if hasattr(Scrapper, 'drivers'):
+            Scrapper.drivers.close()
+            Scrapper.drivers = None
 
 
 class Cainiao(Scrapper):
