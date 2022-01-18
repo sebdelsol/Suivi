@@ -43,6 +43,7 @@ class Tracker:
 
         self.executor_ops = threading.Lock()
         self.executors = []
+        self.closing = False
 
         self.loaded_events = set()
         for content in self.contents.values():
@@ -87,33 +88,35 @@ class Tracker:
 
             # create threads with executor
             with self.executor_ops:
-                executor = ThreadPoolExecutor(max_workers=len(courier_names))
-                futures = {executor.submit(self._update_courier, courier_name): courier_name for courier_name in courier_names}
-                self.executors.append(executor)
+                if not self.closing:
+                    executor = ThreadPoolExecutor(max_workers=len(courier_names))
+                    futures = {executor.submit(self._update_courier, courier_name): courier_name for courier_name in courier_names}
+                    self.executors.append(executor)
 
             # handle threads
-            for future in as_completed(futures):
-                new_content = future.result()
-                courier_name = futures[future]
-                with self.critical:
-                    if new_content is not None:
-                        if new_content['ok'] or courier_name not in self.contents:
-                            new_content['courier_name'] = courier_name
-                            self.contents[courier_name] = new_content
+            if executor:
+                for future in as_completed(futures):
+                    new_content = future.result()
+                    courier_name = futures[future]
+                    with self.critical:
+                        if new_content is not None:
+                            if new_content['ok'] or courier_name not in self.contents:
+                                new_content['courier_name'] = courier_name
+                                self.contents[courier_name] = new_content
 
-                    error = not(new_content and new_content['ok'])
-                    self.couriers_error[courier_name] = error
-                    self.couriers_updating[courier_name] = False
+                        error = not(new_content and new_content['ok'])
+                        self.couriers_error[courier_name] = error
+                        self.couriers_updating[courier_name] = False
 
-                msg = 'FAILED' if error else 'DONE'
-                log(f'update {msg} - {self.description} - {self.idship}, {courier_name}', error=error)
+                    msg = 'FAILED' if error else 'DONE'
+                    log(f'update {msg} - {self.description} - {self.idship}, {courier_name}', error=error)
 
-                yield self.get_consolidated_content()
+                    yield self.get_consolidated_content()
 
-            # dispose executor
-            with self.executor_ops:
-                executor.shutdown()
-                self.executors.remove(executor)
+                # dispose executor
+                with self.executor_ops:
+                    executor.shutdown()
+                    self.executors.remove(executor)
 
     def _update_courier(self, courier_name):
         try:
@@ -177,6 +180,7 @@ class Tracker:
 
     def close(self):
         with self.executor_ops:
+            self.closing = True
             if self.executors:
                 for executor in self.executors:
                     # kill the updating threads https://stackoverflow.com/questions/49992329/the-workers-in-threadpoolexecutor-is-not-really-daemon
