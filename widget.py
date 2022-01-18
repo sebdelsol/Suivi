@@ -99,7 +99,6 @@ class ButtonTxtAndImg(ButtonMouseOver):
 
 
 class MlinePulsing(sg.MLine):
-
     @staticmethod
     def blend_rgb_colors(color1, color2, t):
         r1, g1, b1 = color1
