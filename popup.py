@@ -2,7 +2,7 @@ import PySimpleGUI as sg
 from collections import namedtuple
 import webbrowser
 
-from widget import ButtonMouseOver
+from widget import ButtonMouseOver, HLine
 from couriers import Courier
 import localization as TXT
 import theme as TH
@@ -13,10 +13,11 @@ class MyPopup(sg.Window):
         self.main_window = main_window
         self.main_window.grey_all(True)
 
-        layout = [[sg.T(title, p=0, font=(TH.fix_font_bold, 20), justification='center', expand_x=True)],
-                  [TH.horizontal_line(p=5)]]
+        title_font = (TH.fix_font_bold, TH.popup_title_font_size)
+        layout = [[sg.T(title, p=0, font=title_font, text_color=TH.popup_title_color, justification='center', expand_x=True)],
+                  [HLine(p=5, color=TH.popup_sep_color)]]
         layout.extend(body_layout)
-        layout.append([TH.horizontal_line(p=5)])
+        layout.append([HLine(p=5, color=TH.popup_sep_color)])
 
         b_colors = dict(button_color=TH.button_color, mouseover_color=TH.popup_bg_color)
         layout.append([ButtonMouseOver(TXT.ok, font=(TH.var_font, 12), bind_return_key=True, **b_colors),

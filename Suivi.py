@@ -59,8 +59,8 @@ class TrackerWidget:
     def create_layout(self):
         shown = self.tracker.state == TrackerState.shown
 
-        self.horizontal_line = sg.Col([[]], p=0, s=(None, 1), background_color=TH.widget_separator_color, expand_x=True)
-        self.layout = sg.Col([[self.horizontal_line]], p=0, expand_x=True, visible=shown)  # to be extended see finalize
+        self.hline = HLine(color=TH.widget_separator_color)
+        self.layout = sg.Col([[self.hline]], p=0, expand_x=True, visible=shown)  # to be extended see finalize
         self.pin = sg.pin(self.layout, expand_x=True)  # collapse when hidden
 
         # return minimum layout to be extended in finalize()
@@ -162,7 +162,7 @@ class TrackerWidget:
         return self.height_events > 0
 
     def set_min_width(self, min_width):
-        self.horizontal_line.Widget.canvas.config(width=min_width)
+        self.hline.set_width(width=min_width)
 
     def get_pixel_width(self):
         return self.pin.Widget.winfo_reqwidth()
@@ -379,7 +379,7 @@ class TrackerWidget:
         prt(idship, autoscroll=False, t='red' if empty else 'blue')
 
         end = len(self.id_widget.get())
-        self.id_widget.add_tag('', f'1.{end - len(idship)}', 'end')
+        self.id_widget.add_pulsing_tag('', f'1.{end - len(idship)}', 'end')
 
     def show_couriers(self, couriers_update):
         if couriers_update:
@@ -431,7 +431,7 @@ class TrackerWidget:
 
                 if update_msg:
                     # https://stackoverflow.com/questions/14786507/how-to-change-the-color-of-certain-words-in-the-tkinter-text-widget/30339009
-                    self.couriers_widget.add_tag(name, f'{i + 1}.0', f'{i + 1}.{len(update_msg) + len(name_txt)}')
+                    self.couriers_widget.add_pulsing_tag(name, f'{i + 1}.0', f'{i + 1}.{len(update_msg) + len(name_txt)}')
 
         else:
             self.couriers_widget.update(TXT.no_couriers, text_color='red')
@@ -872,7 +872,7 @@ if __name__ == "__main__":
         from trackers import Trackers, TrackerState
         from imgtool import resize_and_colorize_gif, resize_and_colorize_img
         from couriers import get_local_now
-        from widget import ButtonMouseOver, ButtonTxtAndImg, GraphRounded, MlinePulsing, TextFit
+        from widget import ButtonMouseOver, ButtonTxtAndImg, GraphRounded, MlinePulsing, TextFit, HLine
         from log import mylog, log
         import popup
 

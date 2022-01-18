@@ -153,7 +153,7 @@ class MlinePulsing(sg.MLine):
         if self.colors_key not in MlinePulsing.colors:
             MlinePulsing.colors[self.colors_key] = self.get_one_period_colors(color_start, color_end, self.pulsing_array_size)
 
-    def add_tag(self, key, start, end):
+    def add_pulsing_tag(self, key, start, end):
         self.Widget.tag_add(f'{self.pulsing_tag}{key}', start, end)
 
     def start_pulsing(self, keys=None):
@@ -183,3 +183,11 @@ class MlinePulsing(sg.MLine):
 
             window = self.ParentForm
             window.TKroot.after(self.pulsing_time_step, self.pulse)
+
+
+class HLine(sg.Col):
+    def __init__(self, p=0, color='black'):
+        super().__init__([[]], p=p, s=(None, 1), background_color=color, expand_x=True)
+
+    def set_width(self, width):
+        self.Widget.canvas.config(width=width)

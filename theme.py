@@ -40,6 +40,10 @@ mail_img = 'icons/mail.png'
 warn_img = 'icons/warn.png'
 
 popup_bg_color = 'grey90'
+popup_title_color = 'grey40'
+popup_sep_color = 'grey20'
+popup_title_font_size =25
+
 button_color = 'grey75'
 separator_color = 'grey50'
 
