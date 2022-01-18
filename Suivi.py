@@ -90,7 +90,7 @@ class TrackerWidget:
             self.days_widget = GraphRounded(canvas_size=graph_size, graph_bottom_left=(0, 0), graph_top_right=graph_size, p=(padx, 0), background_color=title_color)
 
             desc_font = (TH.var_font, TH.widget_description_font_size)
-            self.desc_widget = sg.T('', p=0, font=desc_font, text_color=TH.widget_descrition_text_color, background_color=title_color, expand_x=True, justification='l')
+            self.desc_widget = TextFit('', p=0, font=desc_font, text_color=TH.widget_descrition_text_color, background_color=title_color, expand_x=True, justification='l')
 
             id_font = (TH.fix_font, TH.widget_idship_font_size)
             self.id_widget = sg.MLine('', p=0, font=id_font, background_color=title_color, justification='r', **mline_kwargs)
@@ -176,17 +176,8 @@ class TrackerWidget:
 
     def fit_description(self):
         if self.tracker.state == TrackerState.shown:
-            name, size = self.desc_widget.Font[0], TH.widget_description_font_size
-            while True:
-                font = name, size
-                wfont = tk_font.Font(self.desc_widget.ParentForm.TKroot, font)
-                extend = wfont.measure(self.get_description())
-                if size > 2 and extend > TH.widget_description_max_width:
-                    size -= 1
-                else:
-                    self.desc_widget.update(font=font)
-                    log(f'set font {size=} for {self.get_description()}')
-                    break
+            size = self.desc_widget.font_fit_to_txt(self.get_description(), TH.widget_description_max_width, TH.widget_description_font_size, 7)
+            log(f'set font {size=} for {self.get_description()}')
 
     def update_visiblity(self):
         self.layout.update(visible=self.tracker.state == TrackerState.shown)
@@ -871,7 +862,7 @@ if __name__ == "__main__":
         from trackers import Trackers, TrackerState
         from imgtool import resize_and_colorize_gif, resize_and_colorize_img
         from couriers import get_local_now
-        from widget import ButtonMouseOver, ButtonTxtAndImg, GraphRounded, MlinePulsing
+        from widget import ButtonMouseOver, ButtonTxtAndImg, GraphRounded, MlinePulsing, TextFit
         from log import mylog, log
         import popup
 

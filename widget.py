@@ -98,6 +98,21 @@ class ButtonTxtAndImg(ButtonMouseOver):
                 self.update_layout(txt)
 
 
+class TextFit(sg.Text):
+    def font_fit_to_txt(self, txt, max_width, font_wanted_size, min_font_size):
+        name, size = self.Font[0], font_wanted_size
+        while True:
+            font = name, size
+            wfont = tk_font.Font(self.ParentForm.TKroot, font)
+            extend = wfont.measure(txt)
+            if size > min_font_size and extend > max_width:
+                size -= 1
+            else:
+                self.update(font=font)
+                break
+        return size
+
+
 class MlinePulsing(sg.MLine):
     @staticmethod
     def blend_rgb_colors(color1, color2, t):
