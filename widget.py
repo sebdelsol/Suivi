@@ -124,8 +124,8 @@ class MlinePulsing(sg.MLine):
     def get_one_period_colors(color_start, color_end, array_size):
         colors = []
         for x in range(array_size):
-            t = math.sin((2 * math.pi * (x % array_size)) / array_size)
-            r, g, b = MlinePulsing.blend_rgb_colors(color_start, color_end, (t + 1) * .5)
+            t = (math.cos((2 * math.pi * (x % array_size)) / array_size) + 1) * .5
+            r, g, b = MlinePulsing.blend_rgb_colors(color_start, color_end, 1 - t)
             color = f'#{round(r):02x}{round(g):02x}{round(b):02x}'
             colors.append(color)
         return colors
