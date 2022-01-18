@@ -424,7 +424,7 @@ class TrackerWidget:
             for i, (ago, ago_color, name, name_color, name_font, update_msg, error_msg) in enumerate(txts):
                 prt(update_msg, autoscroll=False, font=self.couriers_font_bold, end='')
                 prt(error_msg, autoscroll=False, font=self.couriers_font, t='red', end='')
-                name_txt = name.ljust(width_name)
+                name_txt = name.center(width_name)
                 prt(name_txt, autoscroll=False, t=name_color, font=name_font, end='')
                 prt(f' {TXT.updated} ', autoscroll=False, t='grey60', end='')
                 prt(ago.ljust(width_ago), autoscroll=False, t=ago_color)
