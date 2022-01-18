@@ -70,7 +70,7 @@ class Courier:
 
     idship_validation, idship_validation_msg = get_simple_validation(8, 20)
 
-    delivered_searchs = (r'(?<!be )delivered', r'final delivery', r'(?<!être )livré', r'(?<!être )distribué')
+    delivered_searchs = (r'(?<!be )delivered', r'final delivery', r'(?<!être )livré', r'(?<!être )distribué', r'mis à disposition')
     error_words = ('error', 'erreur')
 
     subs = ((r'\.$', ''),               # remove ending .
@@ -161,6 +161,8 @@ class Courier:
 
 
 class Scrapper(Courier):
+    timeout_elt = 30  # s
+
     errors_catched = (WebDriverException, TimeoutException,
                       urllib3.exceptions.ProtocolError,
                       urllib3.exceptions.NewConnectionError,
@@ -168,7 +170,10 @@ class Scrapper(Courier):
 
     def __init__(self, splash):
         super().__init__(splash)
-        self.drivers = Drivers(splash)
+
+        # class attribute initialized after startup
+        if not hasattr(Scrapper, 'drivers'):
+            Scrapper.drivers = Drivers(splash)
 
     def _get_response(self, idship):
         try:
@@ -176,18 +181,28 @@ class Scrapper(Courier):
 
             if driver:
                 self.log(f'scrapper LOAD - {idship}')
-                driver.get(self._get_url_for_browser(idship))
+                url = self._get_url_for_browser(idship)
+                if url:
+                    driver.get(self._get_url_for_browser(idship))
 
-                events = self._scrape(driver, idship)
-                return True, events
+                    events = self._scrape(driver, idship)
+                    return True, events
+
+                else:
+                    error = "can't find url"
+
+            else:
+                error = 'no driver available'
 
         except self.errors_catched as e:
-            self.log(f'scrapper FAILURE - {type(e).__name__} for {idship}', error=True)
-            return False, None
+            error = type(e).__name__
 
         finally:
             if 'driver' in locals() and driver:
                 self.drivers.dispose(driver)
+
+        self.log(f'scrapper FAILURE - {error} for {idship}', error=True)
+        return False, None
 
     def close(self):
         self.drivers.close()
@@ -197,22 +212,21 @@ class Cainiao(Scrapper):
     name = 'Cainiao'
     fromto = f'CN{Courier.r_arrow}FR'
 
-    timeout_elt = 30  # s
-
     def _get_url_for_browser(self, idship):
         return f'https://global.cainiao.com/detail.htm?mailNoList={idship}&lang=zh'
 
     def get_timeline(self, driver):
-        return driver.find_elements(By.XPATH, '//ol[@class="waybill-path"]/li/p')
+        timeline = driver.find_elements(By.XPATH, '//ol[@class="waybill-path"]/li')
+        for li in timeline:
+            p = li.find_elements(By.XPATH, './p')
+            yield (p[0].text, p[1].text)
 
+    #  the driver is disposed after this call
     def _scrape(self, driver, idship):
         try:
-            timeline = self.get_timeline(driver)
+            return list(self.get_timeline(driver))  # resolve the generator before the driver is disposed
 
         except NoSuchElementException:
-            timeline = None
-
-        if not timeline:
             self.log(f'scrapper WAIT slider - {idship}')
             slider_locator = (By.XPATH, '//span[@class="nc_iconfont btn_slide"]')
             slider = WebDriverWait(driver, self.timeout_elt).until(EC.element_to_be_clickable(slider_locator))
@@ -224,15 +238,13 @@ class Cainiao(Scrapper):
             self.log(f'scrapper WAIT datas - {idship}')
             data_locator = (By.XPATH, f'//p[@class="waybill-num"][contains(text(),"{idship}")]')
             WebDriverWait(driver, self.timeout_elt).until(EC.visibility_of_element_located(data_locator))
-            timeline = self.get_timeline(driver)
+            return list(self.get_timeline(driver))  # resolve the generator before the driver is disposed
 
-        return [p.text for p in timeline]
-
+    # do not use any selenium objects there, the driver has been disposed
     def _update(self, timeline):
         events = []
 
-        for i in range(0, len(timeline), 2):
-            label, date = timeline[i], timeline[i + 1]
+        for label, date in timeline:
             events.append(dict(date=parse(date).replace(tzinfo=pytz.utc), label=label))
 
         return events, {}
@@ -533,11 +545,10 @@ class LaPoste(Courier):
 class Chronopost(Scrapper):
     name = 'Chronopost'
 
-    timeout_elt = 30  # s
-
     idship_validation, idship_validation_msg = get_simple_validation(11, 15)
     headers = {'X-Okapi-Key': LaPoste_key, 'Accept': 'application/json'}
 
+    # use La Poste API to find out the url
     def _get_url_for_browser(self, idship):
         url = f'https://api.laposte.fr/suivi/v2/idships/{idship}?lang=fr_FR'
         r = requests.get(url, headers=self.headers, timeout=self.request_timeout)
@@ -547,18 +558,26 @@ class Chronopost(Scrapper):
             if shipment:
                 return shipment.get('urlDetail')
 
+    #  the driver is disposed after this call
     def _scrape(self, driver, idship):
         self.log(f'scrapper WAIT timeline - {idship}')
-        timeline_locator = (By.XPATH, '//tr[@class="toggleElmt show"]/td')
-        return WebDriverWait(driver, self.timeout_elt).until(EC.presence_of_all_elements_located(timeline_locator))
 
+        timeline = []
+        timeline_locator = (By.XPATH, '//tr[@class="toggleElmt show"]')
+        for tr in WebDriverWait(driver, self.timeout_elt).until(EC.presence_of_all_elements_located(timeline_locator)):
+            td = tr.find_elements(By.XPATH, './td')
+            timeline.append((td[0].accessible_name, td[1].text))
+
+        return timeline
+
+    # do not use any selenium objects there, the driver has been disposed
     def _update(self, timeline):
         events = []
 
-        for i in range(0, len(timeline), 3):
-            date_txt = timeline[i].accessible_name.split(' ', 1)[1]  # remove full day name
+        for date_txt, label_txt in timeline:
+            date_txt = date_txt.split(' ', 1)[1]  # remove full day name
             date = datetime.strptime(date_txt, '%d/%m/%Y %H:%M').replace(tzinfo=get_localzone())
-            status, label = timeline[i + 1].text.split('\n')
+            status, label = label_txt.split('\n')
             status = status.replace('...', '').strip()
             events.append(dict(date=date, status=status, label=label))
 
