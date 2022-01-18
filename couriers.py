@@ -31,18 +31,20 @@ def get_local_now():
     return datetime.now().astimezone(get_localzone())
 
 
-def get_leaf_cls(cls):
-    subs = cls.__subclasses__()
-    for sub in subs:
-        for leaf in get_leaf_cls(sub):
-            yield leaf
-    if not subs:
-        yield cls
+def get_all_subclasses(cls):
+    all_subclasses = set()
+
+    for subclass in cls.__subclasses__():
+        all_subclasses.add(subclass)
+        all_subclasses |= get_all_subclasses(subclass)
+
+    return all_subclasses
 
 
 class Couriers:
     def __init__(self, splash):
-        self.couriers = {cls.name: cls(splash) for cls in get_leaf_cls(Courier)}
+        self.couriers = {cls.name: cls(splash) for cls in get_all_subclasses(Courier) if hasattr(cls, 'name')}
+        log(f"Init Couriers {', '.join(self.couriers.keys())}")
 
     def get(self, name):
         return self.couriers.get(name)
@@ -499,11 +501,19 @@ class LaPoste(Courier):
         r = requests.get(url, headers=self.headers, timeout=self.request_timeout)
         return r.status_code == 200, r
 
-    def _update(self, r):
-        events = []
-
+    def _get_shipment(self, r):
         json = r.json()
         shipment = json.get('shipment')
+
+        if shipment:
+            return shipment, None
+
+        else:
+            return None, json.get('returnMessage', 'Erreur')
+
+    def _update(self, r):
+        events = []
+        shipment, error = self._get_shipment(r)
 
         if shipment:
             product = shipment.get('product').capitalize()
@@ -537,24 +547,18 @@ class LaPoste(Courier):
                                 )
 
         else:
-            return_msg = json.get('returnMessage', 'Erreur')
-            status_label = get_sentence(return_msg, 1)
+            status_label = get_sentence(error, 1)
             return events, dict(status_warn=True, status_label=status_label.replace('.', ''))
 
 
-class Chronopost(Scrapper):
+class Chronopost(Scrapper, LaPoste):
     name = 'Chronopost'
-
-    idship_validation, idship_validation_msg = get_simple_validation(11, 15)
-    headers = {'X-Okapi-Key': LaPoste_key, 'Accept': 'application/json'}
 
     # use La Poste API to find out the url
     def _get_url_for_browser(self, idship):
-        url = f'https://api.laposte.fr/suivi/v2/idships/{idship}?lang=fr_FR'
-        r = requests.get(url, headers=self.headers, timeout=self.request_timeout)
-        if r.status_code == 200:
-            json = r.json()
-            shipment = json.get('shipment')
+        ok, r = LaPoste._get_response(self, idship)
+        if ok:
+            shipment, _ = LaPoste._get_shipment(self, r)
             if shipment:
                 return shipment.get('urlDetail')
 
