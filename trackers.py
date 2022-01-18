@@ -59,14 +59,16 @@ class Tracker:
         if self.idship:
             with self.critical:
                 for courier_name in self.used_couriers:
-                    # check it's not already updating
-                    if not self.couriers_updating.get(courier_name):
-                        # check it's a valid id_ship for this courier
-                        if courier := self.available_couriers.get(courier_name):
-                            if courier.check_idship(self.idship):
-                                self.couriers_error[courier_name] = True
-                                self.couriers_updating[courier_name] = True
-                                yield courier_name
+                    # check the courier exists
+                    if self.available_couriers.get(courier_name):
+                        # check it's not already updating
+                        if not self.couriers_updating.get(courier_name):
+                            # check it's a valid id_ship for this courier
+                            if courier := self.available_couriers.get(courier_name):
+                                if courier.check_idship(self.idship):
+                                    self.couriers_error[courier_name] = True
+                                    self.couriers_updating[courier_name] = True
+                                    yield courier_name
 
     def get_idle_couriers(self):
         return list(self._get_and_prepare_idle_couriers_names())
@@ -120,8 +122,8 @@ class Tracker:
 
     def _update_courier(self, courier_name):
         try:
-            if courier := self.available_couriers.get(courier_name):
-                return courier.update(self.idship)
+            courier = self.available_couriers.get(courier_name)
+            return courier.update(self.idship)
 
         except:
             log(traceback.format_exc(), error=True)
@@ -160,13 +162,14 @@ class Tracker:
         with self.critical:
             couriers_update = {}
             for courier_name in self.used_couriers:
+                exists = True if self.available_couriers.get(courier_name) else False
                 content = self.contents.get(courier_name)
                 ok_date = self._no_future(content and content.setdefault('status', {}).get('ok_date'))
                 error = self.couriers_error.get(courier_name, True)
                 updating = self.couriers_updating.get(courier_name, False)
                 courier = self.available_couriers.get(courier_name)
                 valid_idship = courier and self.idship and courier.check_idship(self.idship)
-                couriers_update[courier_name] = (ok_date, error, updating, valid_idship)
+                couriers_update[courier_name] = (ok_date, error, updating, valid_idship, exists)
 
         return couriers_update
 

@@ -385,11 +385,15 @@ class TrackerWidget:
 
             txts = []
             for name in couriers_update_names:
-                date, error, updating, valid_idship = couriers_update[name]
+                date, error, updating, valid_idship, exists = couriers_update[name]
                 ago_color, ago = ('green', f"{timeago.format(date, get_local_now(), 'fr').replace(TXT.ago, '').strip()}") if date else ('red', TXT.never)
                 name_color, name_font = ('red', self.couriers_font_bold) if error else ('green', self.couriers_font)
 
-                if updating:
+                if not exists:
+                    error_msg = f'{TXT.courier_doesnt_exist}, '
+                    update_msg = ''
+
+                elif updating:
                     error_msg = ''
                     update_msg = f'{TXT.updating} '
 

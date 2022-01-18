@@ -31,6 +31,7 @@ no_idship = 'N° indéfini'
 invalid_idship = 'N° mal formé'
 no_description = 'Pas de description'
 error_courier_update = 'Erreur de MàJ'
+courier_doesnt_exist = 'Service Postal inconnu'
 never = 'jamais'
 ago = 'il y a'
 
