@@ -390,7 +390,7 @@ class TrackerWidget:
                 name_color, name_font = ('red', self.couriers_font_bold) if error else ('green', self.couriers_font)
 
                 if not exists:
-                    error_msg = f'{TXT.courier_doesnt_exist}, '
+                    error_msg = f'{TXT.courier_doesnt_exist}: '
                     update_msg = ''
 
                 elif updating:
@@ -399,11 +399,11 @@ class TrackerWidget:
 
                 elif not valid_idship:
                     empty_idship, _ = self.get_idship(check_empty=True)
-                    error_msg = f'{TXT.no_idship if empty_idship else TXT.invalid_idship}, '
+                    error_msg = f'{TXT.no_idship if empty_idship else TXT.invalid_idship}: '
                     update_msg = ''
 
                 elif error:
-                    error_msg = f'{TXT.error_courier_update}, '
+                    error_msg = f'{TXT.error_courier_update}: '
                     update_msg = ''
 
                 else:
@@ -419,13 +419,14 @@ class TrackerWidget:
             for i, (ago, ago_color, name, name_color, name_font, update_msg, error_msg) in enumerate(txts):
                 prt(update_msg, autoscroll=False, font=self.couriers_font_bold, end='')
                 prt(error_msg, autoscroll=False, font=self.couriers_font, t='red', end='')
-                prt(name.rjust(width_name), autoscroll=False, t=name_color, font=name_font, end='')
-                prt(f', {TXT.updated} ', autoscroll=False, t='grey60', end='')
+                name_txt = name.ljust(width_name)
+                prt(name_txt, autoscroll=False, t=name_color, font=name_font, end='')
+                prt(f' {TXT.updated} ', autoscroll=False, t='grey60', end='')
                 prt(ago.ljust(width_ago), autoscroll=False, t=ago_color)
 
                 if update_msg:
                     # https://stackoverflow.com/questions/14786507/how-to-change-the-color-of-certain-words-in-the-tkinter-text-widget/30339009
-                    self.couriers_widget.add_tag(name, f'{i + 1}.0', f'{i + 1}.{len(update_msg)}')
+                    self.couriers_widget.add_tag(name, f'{i + 1}.0', f'{i + 1}.{len(update_msg) + len(name_txt)}')
 
         else:
             self.couriers_widget.update(TXT.no_couriers, text_color='red')
