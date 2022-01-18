@@ -114,6 +114,8 @@ class TextFit(sg.Text):
 
 
 class MlinePulsing(sg.MLine):
+    colors = {}
+
     @staticmethod
     def blend_rgb_colors(color1, color2, t):
         r1, g1, b1 = color1
@@ -132,9 +134,9 @@ class MlinePulsing(sg.MLine):
 
     def color_to_rgb(self, color):
         r, g, b = self.Widget.winfo_rgb(color)  # works even with any tkinter defined color like 'red'
-        return r / 256, g / 256, b / 256
+        return int(r / 256), int(g / 256), int(b / 256)
 
-    def init_pulsing(self, color_start, color_end, percent_to_end_color, frequency=1.5):
+    def init_pulsing(self, color_start, color_end, percent_to_end_color=.75, frequency=1.5):
         self.is_pulsing = False
         self.pulsing_tag = f'pulsing{id(self)}'
         self.pulsing_array_size = 32  # size of colors array
@@ -142,18 +144,20 @@ class MlinePulsing(sg.MLine):
         self.pulsing_frequency = frequency
         self.pulsing_tags = {}
 
-        # class attribute, initialized after startup
-        if not hasattr(self, 'pulsing_colors'):
-            color_start = self.color_to_rgb(color_start)
-            color_end = self.color_to_rgb(color_end)
-            color_end = self.blend_rgb_colors(color_start, color_end, percent_to_end_color)
-            MlinePulsing.pulsing_colors = self.get_one_period_colors(color_start, color_end, self.pulsing_array_size)
+        color_start = self.color_to_rgb(color_start)
+        color_end = self.color_to_rgb(color_end)
+        color_end = self.blend_rgb_colors(color_start, color_end, percent_to_end_color)
+        self.colors_key = (color_start, color_end)
+
+        # initialized after startup as a class attribute
+        if self.colors_key not in MlinePulsing.colors:
+            MlinePulsing.colors[self.colors_key] = self.get_one_period_colors(color_start, color_end, self.pulsing_array_size)
 
     def add_tag(self, key, start, end):
         self.Widget.tag_add(f'{self.pulsing_tag}{key}', start, end)
 
-    def start_pulsing(self, keys):
-        for key in keys:
+    def start_pulsing(self, keys=None):
+        for key in keys or ['']:
             self.pulsing_tags[f'{self.pulsing_tag}{key}'] = (0, time.time())
 
         if not self.is_pulsing:
@@ -161,14 +165,17 @@ class MlinePulsing(sg.MLine):
             self.pulse()
 
     def stop_pulsing(self):
+        for tag in self.pulsing_tags.keys():
+            self.Widget.tag_delete(tag)
         self.pulsing_tags = {}
         self.is_pulsing = False
 
     def pulse(self):
         if self.is_pulsing:
             new_t = time.time()
+            colors = MlinePulsing.colors[self.colors_key]
             for tag, (index, t) in self.pulsing_tags.items():
-                color = self.pulsing_colors[round(index) % self.pulsing_array_size]
+                color = colors[round(index) % self.pulsing_array_size]
                 self.Widget.tag_configure(tag, foreground=color)
 
                 index += self.pulsing_frequency * self.pulsing_array_size * (new_t - t)

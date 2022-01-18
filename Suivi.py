@@ -93,18 +93,17 @@ class TrackerWidget:
             self.desc_widget = TextFit('', p=0, font=desc_font, text_color=TH.widget_descrition_text_color, background_color=title_color, expand_x=True, justification='l')
 
             id_font = (TH.fix_font, TH.widget_idship_font_size)
-            self.id_widget = sg.MLine('', p=0, font=id_font, background_color=title_color, justification='r', **mline_kwargs)
+            self.id_widget = MlinePulsing('', p=0, font=id_font, background_color=title_color, justification='r', **mline_kwargs)
 
             self.couriers_font = (TH.fix_font, TH.widget_courier_font_size)
             self.couriers_font_bold = (TH.fix_font_bold, TH.widget_courier_font_size)
             self.couriers_widget = MlinePulsing('', p=0, font=self.couriers_font, background_color=title_color, expand_x=True, justification='r', **mline_kwargs)
 
-            self.updating_widget = sg.Image(data=self.updating_gif, p=0, background_color=title_color, visible=False, k=lambda w: self.toggle_expand(w))
-            updating_widget_pin = sg.pin(self.updating_widget)
-            updating_widget_pin.BackgroundColor = title_color
+            self.updating_widget = sg.Image(data=self.updating_gif, p=0, background_color=title_color, visible=False)
+            updating_widget_col = sg.Col([[self.updating_widget]], p=0, background_color=title_color, vertical_alignment='center')
             push = sg.Push(background_color=title_color)
 
-            id_couriers_widget_layout = [[push, updating_widget_pin, self.id_widget], [self.couriers_widget]]
+            id_couriers_widget_layout = [[push, updating_widget_col, self.id_widget], [self.couriers_widget]]
             id_couriers_widget = sg.Col(id_couriers_widget_layout, p=((padx * 2, 0), (b_pad, b_pad)), expand_x=True, background_color=title_color, vertical_alignment='top')
 
             ago_font = (TH.var_font, TH.widget_status_font_size)
@@ -141,10 +140,11 @@ class TrackerWidget:
                 widget.Widget.bindtags((str(widget.Widget), str(window.TKroot), 'all'))
 
             # toggle expand
-            for widget in (self.events_widget, self.status_widget, self.ago_widget, self.updating_widget):
+            for widget in (self.events_widget, self.status_widget, self.ago_widget):
                 widget.bind('<Button-1>', '')
 
-            self.couriers_widget.init_pulsing(TH.refresh_color, TH.widget_title_bg_color, percent_to_end_color=.75, frequency=1.5)
+            self.couriers_widget.init_pulsing(TH.refresh_color, TH.widget_title_bg_color)
+            self.id_widget.init_pulsing('blue', TH.widget_title_bg_color)
             self.fit_description()
             self.show_current_content(window)
 
@@ -212,6 +212,7 @@ class TrackerWidget:
 
             if couriers := self.tracker.get_idle_couriers():
                 self.couriers_widget.start_pulsing(couriers)
+                self.id_widget.start_pulsing()
 
                 self.disable_buttons(True)
                 window.trigger_event(Updating_event)
@@ -242,6 +243,7 @@ class TrackerWidget:
 
     def update_done(self, window):
         if not self.tracker.is_courier_still_updating():
+            self.id_widget.stop_pulsing()
             self.couriers_widget.stop_pulsing()
             self.disable_buttons(False)
             self.updating_widget.update(visible=False)
@@ -371,10 +373,13 @@ class TrackerWidget:
         fromto = f' {fromto.lower()} ' if fromto else ' '
 
         prt = self.id_widget.print
-        prt(f'{product}', autoscroll=False, t='grey50', end='')
+        prt(product, autoscroll=False, t='grey50', end='')
         prt(fromto, autoscroll=False, t='grey70', end='')
         empty, idship = self.get_idship(check_empty=True)
-        prt(idship, autoscroll=False, t='red' if empty else 'blue', end='')
+        prt(idship, autoscroll=False, t='red' if empty else 'blue')
+
+        end = len(self.id_widget.get())
+        self.id_widget.add_tag('', f'1.{end - len(idship)}', 'end')
 
     def show_couriers(self, couriers_update):
         if couriers_update:
