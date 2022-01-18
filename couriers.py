@@ -85,6 +85,11 @@ class Courier:
     def close(self):
         pass
 
+    def log(self, *args, **kwargs):
+        args = list(args)
+        args[0] = f'{args[0]}, {self.name}'
+        log(*args, **kwargs)
+
     def check_idship(self, idship):
         return self.idship_validation(idship)
 
@@ -94,7 +99,7 @@ class Courier:
 
     def update(self, idship):
         if not self.check_idship(idship):
-            log(f'Wrong {TXT.idship} {idship} ({self.idship_validation_msg})', error=True)
+            self.log(f'Wrong {TXT.idship} {idship} ({self.idship_validation_msg})', error=True)
 
         else:
             nb_retry = self.nb_retry
@@ -104,7 +109,7 @@ class Courier:
                     ok, r = self._get_response(idship)
 
                 except requests.exceptions.Timeout:
-                    log(f'TIMEOUT request to {self.name} for {idship}', error=True)
+                    self.log(f'TIMEOUT request to {self.name} for {idship}', error=True)
 
                 if ok or nb_retry <= 0:
                     break
@@ -170,14 +175,14 @@ class Scrapper(Courier):
             driver = self.drivers.get()
 
             if driver:
-                log(f'scrapper LOAD - {idship}')
+                self.log(f'scrapper LOAD - {idship}')
                 driver.get(self._get_url_for_browser(idship))
 
                 events = self._scrape(driver, idship)
                 return True, events
 
         except self.errors_catched as e:
-            log(f'scrapper FAILURE - {type(e).__name__} for {idship}', error=True)
+            self.log(f'scrapper FAILURE - {type(e).__name__} for {idship}', error=True)
             return False, None
 
         finally:
@@ -208,7 +213,7 @@ class Cainiao(Scrapper):
             timeline = None
 
         if not timeline:
-            log(f'scrapper WAIT slider - {idship}')
+            self.log(f'scrapper WAIT slider - {idship}')
             slider_locator = (By.XPATH, '//span[@class="nc_iconfont btn_slide"]')
             slider = WebDriverWait(driver, self.timeout_elt).until(EC.element_to_be_clickable(slider_locator))
 
@@ -216,7 +221,7 @@ class Cainiao(Scrapper):
             action = ActionChains(driver)
             action.drag_and_drop_by_offset(slider, slide.size['width'], 0).perform()
 
-            log(f'scrapper WAIT datas - {idship}')
+            self.log(f'scrapper WAIT datas - {idship}')
             data_locator = (By.XPATH, f'//p[@class="waybill-num"][contains(text(),"{idship}")]')
             WebDriverWait(driver, self.timeout_elt).until(EC.visibility_of_element_located(data_locator))
             timeline = self.get_timeline(driver)
@@ -226,8 +231,8 @@ class Cainiao(Scrapper):
     def _update(self, timeline):
         events = []
 
-        pairwise = zip(timeline[::2], timeline[1::2])
-        for label, date in pairwise:
+        for i in range(0, len(timeline), 2):
+            label, date = timeline[i], timeline[i + 1]
             events.append(dict(date=parse(date).replace(tzinfo=pytz.utc), label=label))
 
         return events, {}
@@ -523,6 +528,41 @@ class LaPoste(Courier):
             return_msg = json.get('returnMessage', 'Erreur')
             status_label = get_sentence(return_msg, 1)
             return events, dict(status_warn=True, status_label=status_label.replace('.', ''))
+
+
+class Chronopost(Scrapper):
+    name = 'Chronopost'
+
+    timeout_elt = 30  # s
+
+    idship_validation, idship_validation_msg = get_simple_validation(11, 15)
+    headers = {'X-Okapi-Key': LaPoste_key, 'Accept': 'application/json'}
+
+    def _get_url_for_browser(self, idship):
+        url = f'https://api.laposte.fr/suivi/v2/idships/{idship}?lang=fr_FR'
+        r = requests.get(url, headers=self.headers, timeout=self.request_timeout)
+        if r.status_code == 200:
+            json = r.json()
+            shipment = json.get('shipment')
+            if shipment:
+                return shipment.get('urlDetail')
+
+    def _scrape(self, driver, idship):
+        self.log(f'scrapper WAIT timeline - {idship}')
+        timeline_locator = (By.XPATH, '//tr[@class="toggleElmt show"]/td')
+        return WebDriverWait(driver, self.timeout_elt).until(EC.presence_of_all_elements_located(timeline_locator))
+
+    def _update(self, timeline):
+        events = []
+
+        for i in range(0, len(timeline), 3):
+            date_txt = timeline[i].accessible_name.split(' ', 1)[1]  # remove full day name
+            date = datetime.strptime(date_txt, '%d/%m/%Y %H:%M').replace(tzinfo=get_localzone())
+            status, label = timeline[i + 1].text.split('\n')
+            status = status.replace('...', '').strip()
+            events.append(dict(date=date, status=status, label=label))
+
+        return events, {}
 
 
 class DHL(Courier):
