@@ -310,18 +310,18 @@ class TrackerWidget:
         self.height_events = 0
 
         if events:
-            event_dates = [f"{evt['date']:{TXT.Long_date_format}}".replace('.', '').split(',') for evt in events]
-            date_w = max(len(date) for date in event_dates)
-            courier_w = max(len(evt['courier']) for evt in events)
+            events_date = [f"{evt['date']:{TXT.Long_date_format}}".replace('.', '').split(',') for evt in events]
+            date_w = max(len(date) for date in events_date)
+            events_courier = [f"{evt['courier']}, " for evt in events]
+            courier_w = max(len(courier) for courier in events_courier)
             previous_day = None
             previous_hour = None
 
             prt = self.events_widget.print
             for i, event in enumerate(events):
-                event_courier = f"{event['courier'].rjust(courier_w)}, "
+                event_courier = events_courier[i].center(courier_w)
 
-                day, hour = event_dates[i]
-
+                day, hour = events_date[i]
                 hour = hour.strip()
                 same_day, previous_day = day == previous_day, day
                 same_hour, previous_hour = hour == previous_hour, hour
