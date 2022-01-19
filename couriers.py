@@ -93,8 +93,10 @@ class Courier:
             (r'(\w):(\w)', r'\1: \2'))  # add space after :
 
     def __init__(self):
+        # compile re
         self.idship_validation = re.compile(self.idship_validation).match
         self.delivered_searchs = [re.compile(pattern).search for pattern in self.delivered_searchs]
+        self.subs = [(re.compile(pattern).sub, replace) for (pattern, replace) in self.subs]
 
     def log(self, *args, **kwargs):
         args = list(args)
@@ -143,8 +145,8 @@ class Courier:
             for event in events:
                 event['courier'] = self.name
                 # clean label
-                for sub in self.subs:
-                    event['label'] = re.sub(sub[0], sub[1], event['label'].strip())
+                for sub, replace in self.subs:
+                    event['label'] = sub(replace, event['label'].strip())
 
                 event['delivered'] = event.get('delivered', False) or any(search(event['label'].lower()) for search in self.delivered_searchs)
                 if event['delivered']:
