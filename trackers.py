@@ -65,7 +65,7 @@ class Tracker:
                         if not self.couriers_updating.get(courier_name):
                             # check it's a valid id_ship for this courier
                             if courier := self.available_couriers.get(courier_name):
-                                if courier.check_idship(self.idship):
+                                if courier.validate_idship(self.idship):
                                     self.couriers_error[courier_name] = True
                                     self.couriers_updating[courier_name] = True
                                     yield courier_name
@@ -168,7 +168,7 @@ class Tracker:
                 error = self.couriers_error.get(courier_name, True)
                 updating = self.couriers_updating.get(courier_name, False)
                 courier = self.available_couriers.get(courier_name)
-                valid_idship = courier and self.idship and courier.check_idship(self.idship)
+                valid_idship = courier and self.idship and courier.validate_idship(self.idship)
                 couriers_update[courier_name] = (ok_date, error, updating, valid_idship, exists)
 
         return couriers_update

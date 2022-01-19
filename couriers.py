@@ -45,7 +45,7 @@ class Couriers:
     drivers = None
 
     def __init__(self, splash=None):
-        self.couriers = {cls.name: cls() for cls in get_all_subclasses(Courier) if hasattr(cls, 'name')}
+        self.couriers = {cls.name: cls() for cls in get_all_subclasses(Courier)}
         log(f"Init Couriers {', '.join(self.couriers.keys())}")
 
         # create and give drivers if needed
@@ -97,15 +97,15 @@ class Courier:
         args[0] = f'{args[0]}, {self.name}'
         log(*args, **kwargs)
 
-    def check_idship(self, idship):
+    def validate_idship(self, idship):
         return self.idship_validation(idship)
 
-    def get_url_for_browser(self, idship):
-        if idship and self.check_idship(idship):
-            return self._get_url_for_browser(idship)
+    def get_valid_url_for_browser(self, idship):
+        if idship and self.validate_idship(idship):
+            return self.get_url_for_browser(idship)
 
     def update(self, idship):
-        if not self.check_idship(idship):
+        if not self.validate_idship(idship):
             self.log(f'Wrong {TXT.idship} {idship} ({self.idship_validation_msg})', error=True)
 
         else:
@@ -185,7 +185,7 @@ def Scrapper(timeout=30):
 
                 if driver:
                     self.log(f'scrapper LOAD - {idship}')
-                    url = self._get_url_for_browser(idship)
+                    url = self.get_url_for_browser(idship)
                     if url:
                         driver.get(url)
                         return self.inner_get_content(driver, idship)
@@ -219,7 +219,7 @@ class Cainiao(Courier):
     name = 'Cainiao'
     fromto = f'CN{Courier.r_arrow}FR'
 
-    def _get_url_for_browser(self, idship):
+    def get_url_for_browser(self, idship):
         return f'https://global.cainiao.com/detail.htm?mailNoList={idship}&lang=zh'
 
     #  do not return any selenium objects, the driver is disposed after
@@ -266,7 +266,7 @@ class Asendia(Courier):
     headers = {'Content-Type': 'application/json', 'Accept-Language': 'fr'}
     url = 'https://tracking.asendia.com/alliot/items/references'
 
-    def _get_url_for_browser(self, idship):
+    def get_url_for_browser(self, idship):
         return f'https://tracking.asendia.com/tracking/{idship}'
 
     def get_content(self, idship):
@@ -304,12 +304,12 @@ class MondialRelay(Courier):
     idship_validation = r'^\d{8}(\d{2})?(\d{2})?\-\d{5}$'
     idship_validation_msg = f'8, 10 {TXT.or_} 12 {TXT.digits}-{TXT.zipcode}'
 
-    def _get_url_for_browser(self, idship):
+    def get_url_for_browser(self, idship):
         number, zip_code = idship.split('-')
         return f'https://www.mondialrelay.fr/suivi-de-colis?numeroExpedition={number}&codePostal={zip_code}'
 
     def get_content(self, idship):
-        url = self._get_url_for_browser(idship)
+        url = self.get_url_for_browser(idship)
         r = requests.get(url, timeout=self.request_timeout)
         if r.status_code == 200:
             return lxml.html.fromstring(r.content)
@@ -336,7 +336,7 @@ class MondialRelay(Courier):
 class GLS(Courier):
     name = 'GLS'
 
-    def _get_url_for_browser(self, idship):
+    def get_url_for_browser(self, idship):
         return f'https://gls-group.eu/FR/fr/suivi-colis.html?match={idship}'
 
     def get_content(self, idship):
@@ -385,11 +385,11 @@ class GLS(Courier):
 class DPD(Courier):
     name = 'DPD'
 
-    def _get_url_for_browser(self, idship):
+    def get_url_for_browser(self, idship):
         return f'https://trace.dpd.fr/fr/trace/{idship}'
 
     def get_content(self, idship):
-        url = self._get_url_for_browser(idship)
+        url = self.get_url_for_browser(idship)
         r = requests.get(url, timeout=self.request_timeout)
         if r.status_code == 200:
             return lxml.html.fromstring(r.content)
@@ -420,11 +420,11 @@ class DPD(Courier):
 class NLPost(Courier):
     name = 'NL Post'
 
-    def _get_url_for_browser(self, idship):
+    def get_url_for_browser(self, idship):
         return f'https://postnl.post/Details?barcode={idship}'
 
     def get_content(self, idship):
-        url = self._get_url_for_browser(idship)
+        url = self.get_url_for_browser(idship)
         r = requests.get(url, timeout=self.request_timeout)
         if r.status_code == 200:
             return lxml.html.fromstring(r.content)
@@ -444,7 +444,7 @@ class NLPost(Courier):
 class FourPX(Courier):
     name = '4PX'
 
-    def _get_url_for_browser(self, idship):
+    def get_url_for_browser(self, idship):
         return f'http://track.4px.com/query/{idship}?'
 
     def get_content(self, idship):
@@ -495,7 +495,7 @@ class LaPoste(Courier):
         DI2=("Distribué à l'expéditeur", True)
     )
 
-    def _get_url_for_browser(self, idship):
+    def get_url_for_browser(self, idship):
         return f'https://www.laposte.fr/outils/suivre-vos-envois?code={idship}'
 
     def get_content(self, idship):
@@ -560,7 +560,7 @@ class Chronopost(LaPoste):
     timeline_xpath = '//tr[@class="toggleElmt show"]'
 
     # use La Poste API to find out the url
-    def _get_url_for_browser(self, idship):
+    def get_url_for_browser(self, idship):
         json = super().get_content(idship)
         if json:
             shipment, _ = super()._get_shipment(json)
@@ -595,7 +595,7 @@ class DHL(Courier):
     idship_validation, idship_validation_msg = r'^\d{10}$', f'10 {TXT.letters}'
     headers = {'Accept': 'application/json', 'DHL-API-Key': dhl_key}
 
-    def _get_url_for_browser(self, idship):
+    def get_url_for_browser(self, idship):
         return f'https://www.dhl.com/fr-en/home/our-divisions/parcel/private-customers/tracking-parcel.html?tracking-id={idship}'
 
     def get_content(self, idship):
@@ -618,7 +618,6 @@ class DHL(Courier):
 
 
 if __name__ == "__main__":
-    # import pprint
     from config import couriers_tests
     from log import mylog
 
@@ -630,6 +629,7 @@ if __name__ == "__main__":
         ok = True if result and result['ok'] else False
         print(f'{name} {idship} {ok=}')
         # if ok:
+        #     import pprint
         #     pprint.pprint(result, indent=4)
 
     mylog.close()

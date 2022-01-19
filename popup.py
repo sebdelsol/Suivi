@@ -76,7 +76,7 @@ class edit(MyPopup):
     def idship_updated(self, idship):
         for msg, button in self.idship_widgets:
             courier = button.Key
-            disabled = not courier.get_url_for_browser(idship)
+            disabled = not courier.get_valid_url_for_browser(idship)
             button.update(disabled=disabled, visible=not disabled)
             msg.update(text_color='red' if disabled else 'green')
 
