@@ -69,33 +69,6 @@ def get_simple_validation(_min, _max):
     return fr'^\w{{{_min},{_max}}}$', f'{TXT.from_} {_min} {TXT.to_} {_max} {TXT.letters} {TXT.or_} {TXT.digits}'
 
 
-# def retry(max_retry=0):
-#     def decorator(courier):
-#         def wrapped_get_response(self, idship):
-#             n_retry = max_retry
-#             while True:
-#                 try:
-#                     result = self.inner_get_response(idship)
-
-#                 except requests.exceptions.Timeout:
-#                     self.log(f'TIMEOUT request to {self.name} for {idship}', error=True)
-#                     result = False
-
-#                 if result or n_retry <= 0:
-#                     break
-
-#                 n_retry -= 1
-#                 time.sleep(self.time_between_retry)
-
-#             return result
-
-#         courier.inner_get_response = courier._get_response
-#         courier._get_response = wrapped_get_response
-#         return courier
-
-#     return decorator
-#     # func = (decorator(nb_retry=...))(func)
-
 class Courier:
     r_arrow = '→'
     product = TXT.default_product
@@ -138,20 +111,21 @@ class Courier:
         else:
             nb_retry = self.nb_retry
             while True:
-                ok = False
                 try:
-                    ok, r = self._get_response(idship)
+                    content = self.get_content(idship)
 
                 except requests.exceptions.Timeout:
                     self.log(f'TIMEOUT request to {self.name} for {idship}', error=True)
+                    content = None
 
-                if ok or nb_retry <= 0:
+                if nb_retry <= 0 or content is not None:
                     break
 
                 nb_retry -= 1
                 time.sleep(self.time_between_retry)
 
-            events, infos = self._update(r) if ok else ([], {})
+            ok = True if content is not None else False
+            events, infos = self.parse_content(content) if ok else ([], {})
 
             # remove duplicate events
             # https://stackoverflow.com/questions/9427163/remove-duplicate-dict-in-list-in-python
@@ -205,7 +179,7 @@ def Scrapper(timeout=30):
         def set_drivers(self, drivers):
             self.drivers = drivers
 
-        def wrapped_get_response(self, idship):
+        def wrapped_get_content(self, idship):
             try:
                 driver = self.drivers.get()
 
@@ -214,9 +188,7 @@ def Scrapper(timeout=30):
                     url = self._get_url_for_browser(idship)
                     if url:
                         driver.get(url)
-
-                        events = self.inner_get_response(driver, idship)
-                        return True, events
+                        return self.inner_get_content(driver, idship)
 
                     else:
                         error = "can't find url"
@@ -232,11 +204,10 @@ def Scrapper(timeout=30):
                     self.drivers.dispose(driver)
 
             self.log(f'scrapper FAILURE - {error} for {idship}', error=True)
-            return False, None
 
         courier.timeout_elt = timeout  # s
-        courier.inner_get_response = courier._get_response
-        courier._get_response = wrapped_get_response
+        courier.inner_get_content = courier.get_content
+        courier.get_content = wrapped_get_content
         courier.set_drivers = set_drivers
         return courier
 
@@ -258,7 +229,7 @@ class Cainiao(Courier):
             yield (p[0].text, p[1].text)
 
     #  the driver is disposed after this call
-    def _get_response(self, driver, idship):
+    def get_content(self, driver, idship):
         try:
             timeline = list(self.get_timeline(driver))  # resolve the generator before the driver is disposed
 
@@ -282,7 +253,7 @@ class Cainiao(Courier):
         return timeline
 
     # do not use any selenium objects there, the driver has been disposed
-    def _update(self, timeline):
+    def parse_content(self, timeline):
         events = []
 
         for label, date in timeline:
@@ -301,11 +272,12 @@ class Asendia(Courier):
     def _get_url_for_browser(self, idship):
         return f'https://tracking.asendia.com/tracking/{idship}'
 
-    def _get_response(self, idship):
+    def get_content(self, idship):
         r = requests.post(self.url, json={'criteria': [idship], 'shipped': False}, headers=self.headers, timeout=self.request_timeout)
-        return r.status_code == 200, r.json()
+        if r.status_code == 200:
+            return r.json()
 
-    def _update(self, json):
+    def parse_content(self, json):
         events = []
 
         timeline = json[0]['events']
@@ -339,12 +311,13 @@ class MondialRelay(Courier):
         number, zip_code = idship.split('-')
         return f'https://www.mondialrelay.fr/suivi-de-colis?numeroExpedition={number}&codePostal={zip_code}'
 
-    def _get_response(self, idship):
+    def get_content(self, idship):
         url = self._get_url_for_browser(idship)
         r = requests.get(url, timeout=self.request_timeout)
-        return r.status_code == 200, lxml.html.fromstring(r.content)
+        if r.status_code == 200:
+            return lxml.html.fromstring(r.content)
 
-    def _update(self, tree):
+    def parse_content(self, tree):
         events = []
 
         timeline = tree.xpath('//div[@class="infos-account"]')
@@ -369,12 +342,13 @@ class GLS(Courier):
     def _get_url_for_browser(self, idship):
         return f'https://gls-group.eu/FR/fr/suivi-colis.html?match={idship}'
 
-    def _get_response(self, idship):
+    def get_content(self, idship):
         url = f'https://gls-group.eu/app/service/open/rest/FR/fr/rstt001?match={idship}'
         r = requests.get(url, timeout=self.request_timeout)
-        return r.status_code == 200, r.json()
+        if r.status_code == 200:
+            return r.json()
 
-    def _update(self, json):
+    def parse_content(self, json):
         events = []
         product = None
         fromto = None
@@ -417,12 +391,13 @@ class DPD(Courier):
     def _get_url_for_browser(self, idship):
         return f'https://trace.dpd.fr/fr/trace/{idship}'
 
-    def _get_response(self, idship):
+    def get_content(self, idship):
         url = self._get_url_for_browser(idship)
         r = requests.get(url, timeout=self.request_timeout)
-        return r.status_code == 200, lxml.html.fromstring(r.content)
+        if r.status_code == 200:
+            return lxml.html.fromstring(r.content)
 
-    def _update(self, tree):
+    def parse_content(self, tree):
         events = []
 
         infos = tree.xpath('//ul[@class="tableInfosAR"]//text()')
@@ -451,12 +426,13 @@ class NLPost(Courier):
     def _get_url_for_browser(self, idship):
         return f'https://postnl.post/Details?barcode={idship}'
 
-    def _get_response(self, idship):
+    def get_content(self, idship):
         url = self._get_url_for_browser(idship)
         r = requests.get(url, timeout=self.request_timeout)
-        return r.status_code == 200, lxml.html.fromstring(r.content)
+        if r.status_code == 200:
+            return lxml.html.fromstring(r.content)
 
-    def _update(self, tree):
+    def parse_content(self, tree):
         events = []
 
         timeline = tree.xpath('//tr[@class="first detail"]') + tree.xpath('//tr[@class="detail"]')
@@ -474,12 +450,13 @@ class FourPX(Courier):
     def _get_url_for_browser(self, idship):
         return f'http://track.4px.com/query/{idship}?'
 
-    def _get_response(self, idship):
+    def get_content(self, idship):
         url = self.get_url_for_browser(idship)
         r = requests.get(url, timeout=self.request_timeout)
-        return r.status_code == 200, lxml.html.fromstring(r.content)
+        if r.status_code == 200:
+            return lxml.html.fromstring(r.content)
 
-    def _update(self, tree):
+    def parse_content(self, tree):
         events = []
 
         timeline = tree.xpath('//div[@class="track-container"]//li')
@@ -524,10 +501,11 @@ class LaPoste(Courier):
     def _get_url_for_browser(self, idship):
         return f'https://www.laposte.fr/outils/suivre-vos-envois?code={idship}'
 
-    def _get_response(self, idship):
+    def get_content(self, idship):
         url = f'https://api.laposte.fr/suivi/v2/idships/{idship}?lang=fr_FR'
         r = requests.get(url, headers=self.headers, timeout=self.request_timeout)
-        return r.status_code == 200, r.json()
+        if r.status_code == 200:
+            return r.json()
 
     def _get_shipment(self, json):
         shipment = json.get('shipment')
@@ -538,7 +516,7 @@ class LaPoste(Courier):
         else:
             return None, json.get('returnMessage', 'Erreur')
 
-    def _update(self, json):
+    def parse_content(self, json):
         events = []
 
         shipment, error = self._get_shipment(json)
@@ -584,14 +562,14 @@ class Chronopost(LaPoste):
 
     # use La Poste API to find out the url
     def _get_url_for_browser(self, idship):
-        ok, json = super()._get_response(idship)
-        if ok:
+        json = super().get_content(idship)
+        if json:
             shipment, _ = super()._get_shipment(json)
             if shipment:
                 return shipment.get('urlDetail')
 
     #  the driver is disposed after this call
-    def _get_response(self, driver, idship):
+    def get_content(self, driver, idship):
         self.log(f'scrapper WAIT timeline - {idship}')
 
         timeline = []
@@ -603,7 +581,7 @@ class Chronopost(LaPoste):
         return timeline
 
     # do not use any selenium objects there, the driver has been disposed
-    def _update(self, timeline):
+    def parse_content(self, timeline):
         events = []
 
         for date_txt, label_txt in timeline:
@@ -625,12 +603,12 @@ class DHL(Courier):
     def _get_url_for_browser(self, idship):
         return f'https://www.dhl.com/fr-en/home/our-divisions/parcel/private-customers/tracking-parcel.html?tracking-id={idship}'
 
-    def _get_response(self, idship):
+    def get_content(self, idship):
         url = f'https://api-eu.dhl.com/track/shipments?trackingNumber={idship}&requesterCountryCode=FR'
         r = requests.get(url, headers=self.headers, timeout=self.request_timeout)
         return r.status_code == 200, r.json()
 
-    def _update(self, json):
+    def parse_content(self, json):
         events = []
 
         shipments = json.get('shipments')
