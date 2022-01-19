@@ -271,12 +271,12 @@ class Asendia(Courier):
 
     def _get_response(self, idship):
         r = requests.post(self.url, json={'criteria': [idship], 'shipped': False}, headers=self.headers, timeout=self.request_timeout)
-        return r.status_code == 200, r
+        return r.status_code == 200, r.json()
 
-    def _update(self, r):
+    def _update(self, json):
         events = []
 
-        timeline = r.json()[0]['events']
+        timeline = json[0]['events']
         for event in timeline:
             label = event['translatedLabelBC']
             location = event['location']['name']
@@ -310,21 +310,19 @@ class MondialRelay(Courier):
     def _get_response(self, idship):
         url = self._get_url_for_browser(idship)
         r = requests.get(url, timeout=self.request_timeout)
-        return r.status_code == 200, r
+        return r.status_code == 200, lxml.html.fromstring(r.content)
 
-    def _update(self, r):
+    def _update(self, tree):
         events = []
 
-        tree = lxml.html.fromstring(r.content)
-        event_by_days = tree.xpath('//div[@class="infos-account"]')
-
-        for event_this_day in event_by_days:
-            elts = event_this_day.xpath('./div')
+        timeline = tree.xpath('//div[@class="infos-account"]')
+        for events_by_days in timeline:
+            elts = events_by_days.xpath('./div')
             date_text = elts[0].xpath('.//p//text()')[0]
-            event_by_hours = elts[1].xpath('./div')
+            events_by_hours = elts[1].xpath('./div')
 
-            for event_this_hour in event_by_hours:
-                elts = event_this_hour.xpath('./div/p//text()')
+            for event in events_by_hours:
+                elts = event.xpath('./div/p//text()')
                 hour_text, label = elts[:2]
                 date = datetime.strptime(f'{date_text} {hour_text}', '%d/%m/%Y %H:%M').replace(tzinfo=get_localzone())
 
@@ -342,14 +340,12 @@ class GLS(Courier):
     def _get_response(self, idship):
         url = f'https://gls-group.eu/app/service/open/rest/FR/fr/rstt001?match={idship}'
         r = requests.get(url, timeout=self.request_timeout)
-        return r.status_code == 200, r
+        return r.status_code == 200, r.json()
 
-    def _update(self, r):
+    def _update(self, json):
         events = []
         product = None
         fromto = None
-
-        json = r.json()
 
         if shipments := json.get('tuStatus'):
             if len(shipments) > 0:
@@ -392,12 +388,10 @@ class DPD(Courier):
     def _get_response(self, idship):
         url = self._get_url_for_browser(idship)
         r = requests.get(url, timeout=self.request_timeout)
-        return r.status_code == 200, r
+        return r.status_code == 200, lxml.html.fromstring(r.content)
 
-    def _update(self, r):
+    def _update(self, tree):
         events = []
-
-        tree = lxml.html.fromstring(r.content)
 
         infos = tree.xpath('//ul[@class="tableInfosAR"]//text()')
         infos = [info for info in infos if (sinfo := info.replace('\n', '').strip()) != '']
@@ -428,12 +422,11 @@ class NLPost(Courier):
     def _get_response(self, idship):
         url = self._get_url_for_browser(idship)
         r = requests.get(url, timeout=self.request_timeout)
-        return r.status_code == 200, r
+        return r.status_code == 200, lxml.html.fromstring(r.content)
 
-    def _update(self, r):
+    def _update(self, tree):
         events = []
 
-        tree = lxml.html.fromstring(r.content)
         timeline = tree.xpath('//tr[@class="first detail"]') + tree.xpath('//tr[@class="detail"]')
         for event in timeline:
             date, label = event.xpath('./td/text()')[:2]
@@ -452,12 +445,11 @@ class FourPX(Courier):
     def _get_response(self, idship):
         url = self.get_url_for_browser(idship)
         r = requests.get(url, timeout=self.request_timeout)
-        return r.status_code == 200, r
+        return r.status_code == 200, lxml.html.fromstring(r.content)
 
-    def _update(self, r):
+    def _update(self, tree):
         events = []
 
-        tree = lxml.html.fromstring(r.content)
         timeline = tree.xpath('//div[@class="track-container"]//li')
         for event in timeline:
             date, hour, label = [stxt for txt in event.xpath('.//text()') if (stxt := re.sub(r'[\n\t]', '', txt).strip().replace('\xa0', '')) != '']
@@ -503,10 +495,9 @@ class LaPoste(Courier):
     def _get_response(self, idship):
         url = f'https://api.laposte.fr/suivi/v2/idships/{idship}?lang=fr_FR'
         r = requests.get(url, headers=self.headers, timeout=self.request_timeout)
-        return r.status_code == 200, r
+        return r.status_code == 200, r.json()
 
-    def _get_shipment(self, r):
-        json = r.json()
+    def _get_shipment(self, json):
         shipment = json.get('shipment')
 
         if shipment:
@@ -515,10 +506,10 @@ class LaPoste(Courier):
         else:
             return None, json.get('returnMessage', 'Erreur')
 
-    def _update(self, r):
+    def _update(self, json):
         events = []
-        shipment, error = self._get_shipment(r)
 
+        shipment, error = self._get_shipment(json)
         if shipment:
             product = shipment.get('product').capitalize()
 
@@ -560,9 +551,9 @@ class Chronopost(Scrapper, LaPoste):
 
     # use La Poste API to find out the url
     def _get_url_for_browser(self, idship):
-        ok, r = LaPoste._get_response(self, idship)
+        ok, json = LaPoste._get_response(self, idship)
         if ok:
-            shipment, _ = LaPoste._get_shipment(self, r)
+            shipment, _ = LaPoste._get_shipment(self, json)
             if shipment:
                 return shipment.get('urlDetail')
 
@@ -604,14 +595,12 @@ class DHL(Courier):
     def _get_response(self, idship):
         url = f'https://api-eu.dhl.com/track/shipments?trackingNumber={idship}&requesterCountryCode=FR'
         r = requests.get(url, headers=self.headers, timeout=self.request_timeout)
-        return r.status_code == 200, r
+        return r.status_code == 200, r.json()
 
-    def _update(self, r):
+    def _update(self, json):
         events = []
 
-        json = r.json()
         shipments = json.get('shipments')
-
         if shipments:
             shipment = shipments[0]
             product = f"DHL {shipment['service']}"
