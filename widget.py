@@ -186,8 +186,8 @@ class MlinePulsing(sg.MLine):
 
 
 class HLine(sg.Col):
-    def __init__(self, p=0, color='black'):
-        super().__init__([[]], p=p, s=(None, 1), background_color=color, expand_x=True)
+    def __init__(self, p=0, color='black', thickness=1):
+        super().__init__([[]], p=p, s=(None, thickness), background_color=color, expand_x=True)
 
     def set_width(self, width):
         self.Widget.canvas.config(width=width)
