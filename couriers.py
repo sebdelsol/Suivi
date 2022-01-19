@@ -42,9 +42,17 @@ def get_all_subclasses(cls):
 
 
 class Couriers:
+    drivers = None
+
     def __init__(self, splash):
-        self.couriers = {cls.name: cls(splash) for cls in get_all_subclasses(Courier) if hasattr(cls, 'name')}
+        self.couriers = {cls.name: cls() for cls in get_all_subclasses(Courier) if hasattr(cls, 'name')}
         log(f"Init Couriers {', '.join(self.couriers.keys())}")
+
+        # create an give  drivers if needed
+        if in_need := [courier for courier in self.couriers.values() if hasattr(courier, 'set_drivers')]:
+            self.drivers = Drivers(splash)
+            for courier in in_need:
+                courier.set_drivers(self.drivers)
 
     def get(self, name):
         return self.couriers.get(name)
@@ -53,13 +61,40 @@ class Couriers:
         return list(self.couriers.keys())
 
     def close(self):
-        for courier in self.couriers.values():
-            courier.close()
+        if self.drivers:
+            self.drivers.close()
 
 
 def get_simple_validation(_min, _max):
     return fr'^\w{{{_min},{_max}}}$', f'{TXT.from_} {_min} {TXT.to_} {_max} {TXT.letters} {TXT.or_} {TXT.digits}'
 
+
+# def retry(max_retry=0):
+#     def decorator(courier):
+#         def wrapped_get_response(self, idship):
+#             n_retry = max_retry
+#             while True:
+#                 try:
+#                     result = self.inner_get_response(idship)
+
+#                 except requests.exceptions.Timeout:
+#                     self.log(f'TIMEOUT request to {self.name} for {idship}', error=True)
+#                     result = False
+
+#                 if result or n_retry <= 0:
+#                     break
+
+#                 n_retry -= 1
+#                 time.sleep(self.time_between_retry)
+
+#             return result
+
+#         courier.inner_get_response = courier._get_response
+#         courier._get_response = wrapped_get_response
+#         return courier
+
+#     return decorator
+#     # func = (decorator(nb_retry=...))(func)
 
 class Courier:
     r_arrow = '→'
@@ -80,12 +115,9 @@ class Courier:
             (r'^\W', ''),               # remove leading non alphanumeric char
             (r'(\w):(\w)', r'\1: \2'))  # add space after :
 
-    def __init__(self, splash):
+    def __init__(self):
         self.idship_validation = re.compile(self.idship_validation).match
         self.delivered_searchs = [re.compile(pattern).search for pattern in self.delivered_searchs]
-
-    def close(self):
-        pass
 
     def log(self, *args, **kwargs):
         args = list(args)
@@ -162,57 +194,57 @@ class Courier:
                         events=events)
 
 
-class Scrapper(Courier):
-    timeout_elt = 30  # s
+# class decorator
+def Scrapper(timeout=30):
+    def decorator(courier):
+        errors_catched = (WebDriverException, TimeoutException,
+                          urllib3.exceptions.ProtocolError,
+                          urllib3.exceptions.NewConnectionError,
+                          urllib3.exceptions.MaxRetryError)
 
-    errors_catched = (WebDriverException, TimeoutException,
-                      urllib3.exceptions.ProtocolError,
-                      urllib3.exceptions.NewConnectionError,
-                      urllib3.exceptions.MaxRetryError)
+        def set_drivers(self, drivers):
+            self.drivers = drivers
 
-    def __init__(self, splash):
-        super().__init__(splash)
+        def wrapped_get_response(self, idship):
+            try:
+                driver = self.drivers.get()
 
-        # class attribute initialized after startup
-        if not hasattr(Scrapper, 'drivers'):
-            Scrapper.drivers = Drivers(splash)
+                if driver:
+                    self.log(f'scrapper LOAD - {idship}')
+                    url = self._get_url_for_browser(idship)
+                    if url:
+                        driver.get(url)
 
-    def _get_response(self, idship):
-        try:
-            driver = Scrapper.drivers.get()
+                        events = self.inner_get_response(driver, idship)
+                        return True, events
 
-            if driver:
-                self.log(f'scrapper LOAD - {idship}')
-                url = self._get_url_for_browser(idship)
-                if url:
-                    driver.get(url)
-
-                    events = self._scrape(driver, idship)
-                    return True, events
+                    else:
+                        error = "can't find url"
 
                 else:
-                    error = "can't find url"
+                    error = 'no driver available'
 
-            else:
-                error = 'no driver available'
+            except errors_catched as e:
+                error = type(e).__name__
 
-        except self.errors_catched as e:
-            error = type(e).__name__
+            finally:
+                if 'driver' in locals() and driver:
+                    self.drivers.dispose(driver)
 
-        finally:
-            if 'driver' in locals() and driver:
-                Scrapper.drivers.dispose(driver)
+            self.log(f'scrapper FAILURE - {error} for {idship}', error=True)
+            return False, None
 
-        self.log(f'scrapper FAILURE - {error} for {idship}', error=True)
-        return False, None
+        courier.timeout_elt = timeout  # s
+        courier.inner_get_response = courier._get_response
+        courier._get_response = wrapped_get_response
+        courier.set_drivers = set_drivers
+        return courier
 
-    def close(self):
-        if Scrapper.drivers:
-            Scrapper.drivers.close()
-            Scrapper.drivers = None
+    return decorator
 
 
-class Cainiao(Scrapper):
+@Scrapper(timeout=30)
+class Cainiao(Courier):
     name = 'Cainiao'
     fromto = f'CN{Courier.r_arrow}FR'
 
@@ -226,7 +258,7 @@ class Cainiao(Scrapper):
             yield (p[0].text, p[1].text)
 
     #  the driver is disposed after this call
-    def _scrape(self, driver, idship):
+    def _get_response(self, driver, idship):
         try:
             timeline = list(self.get_timeline(driver))  # resolve the generator before the driver is disposed
 
@@ -546,19 +578,20 @@ class LaPoste(Courier):
             return events, dict(status_warn=True, status_label=status_label.replace('.', ''))
 
 
-class Chronopost(Scrapper, LaPoste):
+@Scrapper(timeout=10)
+class Chronopost(LaPoste):
     name = 'Chronopost'
 
     # use La Poste API to find out the url
     def _get_url_for_browser(self, idship):
-        ok, json = LaPoste._get_response(self, idship)
+        ok, json = super()._get_response(idship)
         if ok:
-            shipment, _ = LaPoste._get_shipment(self, json)
+            shipment, _ = super()._get_shipment(json)
             if shipment:
                 return shipment.get('urlDetail')
 
     #  the driver is disposed after this call
-    def _scrape(self, driver, idship):
+    def _get_response(self, driver, idship):
         self.log(f'scrapper WAIT timeline - {idship}')
 
         timeline = []
