@@ -613,19 +613,19 @@ class DHL(Courier):
             return events, dict(product=product)
 
 
+# test couriers
 if __name__ == '__main__':
     from config import couriers_tests
     from log import mylog
 
-    mylog.print_only()
+    mylog.print_only_error()
+    mylog.close()
 
     couriers = Couriers()
     for name, idship in couriers_tests:
         result = couriers.get(name).update(idship)
         ok = True if result and result['ok'] else False
-        print(f'{name} {idship} {ok=}')
+        print(f'test {"PASS" if  ok else "FAILED"} - {name}')
         # if ok:
         #     import pprint
         #     pprint.pprint(result, indent=4)
-
-    mylog.close()
