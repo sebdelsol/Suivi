@@ -65,8 +65,12 @@ class Couriers:
             self.driver_handler.close()
 
 
-def get_simple_validation(_min, _max):
-    return fr'^\w{{{_min},{_max}}}$', f'{TXT.from_} {_min} {TXT.to_} {_max} {TXT.letters} {TXT.or_} {TXT.digits}'
+def get_simple_validation(_min, _max=None):
+    if _max is None:
+        return fr'^\w{{{_min}}}$', f'{_min} {TXT.letters} {TXT.or_} {TXT.digits}'
+
+    else:
+        return fr'^\w{{{_min},{_max}}}$', f'{TXT.from_} {_min} {TXT.to_} {_max} {TXT.letters} {TXT.or_} {TXT.digits}'
 
 
 class Courier:
@@ -582,7 +586,7 @@ class Chronopost(LaPoste):
 class DHL(Courier):
     name = 'DHL'
 
-    idship_validation, idship_validation_msg = r'^\d{10}$', f'10 {TXT.letters}'
+    idship_validation, idship_validation_msg = get_simple_validation(10)
     headers = {'Accept': 'application/json', 'DHL-API-Key': dhl_key}
 
     def get_url_for_browser(self, idship):
