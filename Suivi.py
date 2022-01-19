@@ -1,5 +1,5 @@
-import PySimpleGUI as sg
 import sys
+import PySimpleGUI as sg
 from packaging.specifiers import SpecifierSet
 import localization as TXT
 import theme as TH

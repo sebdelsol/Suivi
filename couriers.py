@@ -32,7 +32,7 @@ def get_local_now():
 
 
 def get_all_subclasses(cls):
-    all_subclasses = set()
+    all_subclasses = set()  # in case of weird multiple inheritance
 
     for subclass in cls.__subclasses__():
         all_subclasses.add(subclass)

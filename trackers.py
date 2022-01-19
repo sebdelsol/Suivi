@@ -60,15 +60,14 @@ class Tracker:
             with self.critical:
                 for courier_name in self.used_couriers:
                     # check the courier exists
-                    if self.available_couriers.get(courier_name):
+                    if courier := self.available_couriers.get(courier_name):
                         # check it's not already updating
                         if not self.couriers_updating.get(courier_name):
                             # check it's a valid id_ship for this courier
-                            if courier := self.available_couriers.get(courier_name):
-                                if courier.validate_idship(self.idship):
-                                    self.couriers_error[courier_name] = True
-                                    self.couriers_updating[courier_name] = True
-                                    yield courier_name
+                            if courier.validate_idship(self.idship):
+                                self.couriers_error[courier_name] = True
+                                self.couriers_updating[courier_name] = True
+                                yield courier_name
 
     def get_idle_couriers(self):
         return list(self._get_and_prepare_idle_couriers_names())
@@ -194,7 +193,7 @@ class Tracker:
             self.closing = True
             if self.executors:
                 for executor in self.executors:
-                    # kill the updating threads https://stackoverflow.com/questions/49992329/the-workers-in-threadpoolexecutor-is-not-really-daemon
+                    # https://stackoverflow.com/questions/49992329/the-workers-in-threadpoolexecutor-is-not-really-daemon
                     for thread in executor._threads:
                         del _threads_queues[thread]
 
