@@ -687,14 +687,13 @@ class Splash:
         self.window.close()
 
 
-class Grey_window:
+class GreyWindow:
     alpha_grey = .4
 
     def __init__(self, window):
         self.followed_window = window
 
-        is_debugger = TH.is_debugger()
-        kwargs = dict(keep_on_top=not is_debugger, no_titlebar=not is_debugger, margins=(0, 0), debugger_enabled=False, background_color='black', alpha_channel=0, finalize=True)
+        kwargs = dict(**TH.no_frame_kwargs, margins=(0, 0), debugger_enabled=False, background_color='black', alpha_channel=0, finalize=True)
         self.window = sg.Window('', [[]], size=(0, 0), location=(0, 0), **kwargs)
         self.window.disable()
         self.followed_window.TKroot.bind('<Configure>', lambda evt: self.followed_window_changed(), add='+')
@@ -758,14 +757,14 @@ class Main_window(sg.Window):
         self.trackers = Trackers(TrackersFile, LOAD_AS_JSON, splash)
         self.widgets = TrackerWidgets(self, self.trackers, splash)
 
-        self.grey_windows = [Grey_window(self)]
+        self.grey_windows = [GreyWindow(self)]
         self.animate()
         self.reappear()
 
     def addlog(self, log):
         self.log = log
         log.link_to(self)
-        self.grey_windows.append(Grey_window(log))
+        self.grey_windows.append(GreyWindow(log))
 
     def close(self):
         for grey_window in self.grey_windows:
