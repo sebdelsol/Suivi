@@ -2,9 +2,10 @@ import sys
 import PySimpleGUI as sg
 
 _is_debugger = sys.gettrace()
+no_frame_kwargs = dict(keep_on_top=not _is_debugger, no_titlebar=not _is_debugger)
 
 frame_kwargs = dict(p=0, border_width=1, relief=sg.RELIEF_SOLID, expand_x=True, expand_y=True)
-window_kwargs = dict(keep_on_top=not _is_debugger, no_titlebar=not _is_debugger, return_keyboard_events=True, grab_anywhere=True, margins=(0, 0), debugger_enabled=False, finalize=True)
+window_kwargs = dict(**no_frame_kwargs, return_keyboard_events=True, grab_anywhere=True, margins=(0, 0), debugger_enabled=False, finalize=True)
 
 
 def is_debugger():
