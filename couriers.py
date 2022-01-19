@@ -80,7 +80,7 @@ class Courier:
 
     idship_validation, idship_validation_msg = get_simple_validation(8, 20)
 
-    delivered_searchs = (r'(?<!be )delivered', r'final delivery', r'(?<!être )livré', r'(?<!être )distribué', r'mis à disposition')
+    delivered_searchs = (r'(?<!be )delivered', r'final delivery', r'(?<!être )livré', r'(?<!être )distribué', r'mis à disposition', r'livraison effectuée')
     error_words = ('error', 'erreur')
 
     subs = ((r'\.$', ''),               # remove ending .
