@@ -337,7 +337,7 @@ class GLS(Courier):
     name = 'GLS'
 
     def _get_url_for_browser(self, idship):
-        return 'https://gls-group.eu/FR/fr/suivi-colis?'  # how to add tracking number ??
+        return f'https://gls-group.eu/FR/fr/suivi-colis.html?match={idship}'
 
     def _get_response(self, idship):
         url = f'https://gls-group.eu/app/service/open/rest/FR/fr/rstt001?match={idship}'
@@ -422,13 +422,12 @@ class DPD(Courier):
 class NLPost(Courier):
     name = 'NL Post'
 
-    url = 'https://postnl.post/details/'
-
     def _get_url_for_browser(self, idship):
-        return 'https://postnl.post/tracktrace'
+        return f'https://postnl.post/Details?barcode={idship}'
 
     def _get_response(self, idship):
-        r = requests.post(self.url, data=dict(barcodes=idship), timeout=self.request_timeout)
+        url = self._get_url_for_browser(idship)
+        r = requests.get(url, timeout=self.request_timeout)
         return r.status_code == 200, r
 
     def _update(self, r):
@@ -446,8 +445,6 @@ class NLPost(Courier):
 
 class FourPX(Courier):
     name = '4PX'
-
-    url = 'https://postnl.post/details/'
 
     def _get_url_for_browser(self, idship):
         return f'http://track.4px.com/query/{idship}?'
