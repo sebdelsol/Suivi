@@ -185,7 +185,7 @@ class Scrapper(Courier):
                 self.log(f'scrapper LOAD - {idship}')
                 url = self._get_url_for_browser(idship)
                 if url:
-                    driver.get(self._get_url_for_browser(idship))
+                    driver.get(url)
 
                     events = self._scrape(driver, idship)
                     return True, events
