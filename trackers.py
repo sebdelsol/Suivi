@@ -162,13 +162,13 @@ class Tracker:
         with self.critical:
             couriers_update = {}
             for courier_name in self.used_couriers:
-                exists = True if self.available_couriers.get(courier_name) else False
                 content = self.contents.get(courier_name)
                 ok_date = self._no_future(content and content.setdefault('status', {}).get('ok_date'))
                 error = self.couriers_error.get(courier_name, True)
                 updating = self.couriers_updating.get(courier_name, False)
                 courier = self.available_couriers.get(courier_name)
                 valid_idship = courier and self.idship and courier.validate_idship(self.idship)
+                exists = True if self.available_couriers.get(courier_name) else False
                 couriers_update[courier_name] = (ok_date, error, updating, valid_idship, exists)
 
         return couriers_update
