@@ -181,6 +181,14 @@ class Tracker:
         content = self.get_consolidated_content()
         return content.setdefault('status', {}).get('delivered')
 
+    def clean(self):
+        for courier_name in self.available_couriers.get_names():
+            content = self.contents.get(courier_name)
+            if content:
+                if not content['ok']:
+                    print(f'CLEAN {self.description} - {self.idship}, {courier_name}')
+                    del self.contents[courier_name]
+
     def close(self):
         with self.executor_ops:
             self.closing = True
@@ -243,6 +251,8 @@ class Trackers:
         return len([tracker for tracker in self.trackers if tracker.state == state])
 
     def close(self):
+        for tracker in self.trackers:
+            tracker.clean()
         self.save()
         self.couriers.close()
         for tracker in self.trackers:
