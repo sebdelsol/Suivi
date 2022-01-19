@@ -1,13 +1,10 @@
 import re
 import queue
 import PySimpleGUI as sg
-import sys
 
 from widget import ButtonMouseOver
 import theme as TH
 import localization as TXT
-
-is_debugger = sys.gettrace()
 
 
 class MyLog(sg.Window):
@@ -19,7 +16,8 @@ class MyLog(sg.Window):
     listen_step = 20  # ms
     select_bg_color = '#C0C0C0'
 
-    def __init__(self, no_border):
+    def __init__(self):
+        self.is_print_only = False
         self.prints = queue.Queue()
         self.linked = True
         self.resizing = False
@@ -108,7 +106,13 @@ class MyLog(sg.Window):
             self.disable()
 
     def log(self, *args, error=False, **kwargs):
-        self.prints.put((args, error, kwargs))
+        if self.is_print_only:
+            print(*args, **kwargs)
+        else:
+            self.prints.put((args, error, kwargs))
+
+    def print_only(self):
+        self.is_print_only = True
 
     def close(self):
         if self.visible:
@@ -128,5 +132,5 @@ class MyLog(sg.Window):
         super().close()
 
 
-mylog = MyLog(not is_debugger)
+mylog = MyLog()
 log = mylog.log
