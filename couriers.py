@@ -607,7 +607,7 @@ class DHL(Courier):
             return events, dict(product=product)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     from config import couriers_tests
     from log import mylog
 

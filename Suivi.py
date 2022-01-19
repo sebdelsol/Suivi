@@ -843,7 +843,7 @@ class Main_window(sg.Window):
             return window.event_handler(event)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
 
     needed_version = SpecifierSet(Python_version)
     version = '.'.join(str(v) for v in sys.version_info[:3])
