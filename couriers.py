@@ -44,11 +44,11 @@ def get_all_subclasses(cls):
 class Couriers:
     drivers = None
 
-    def __init__(self, splash):
+    def __init__(self, splash=None):
         self.couriers = {cls.name: cls() for cls in get_all_subclasses(Courier) if hasattr(cls, 'name')}
         log(f"Init Couriers {', '.join(self.couriers.keys())}")
 
-        # create an give  drivers if needed
+        # create and give drivers if needed
         if in_need := [courier for courier in self.couriers.values() if hasattr(courier, 'set_drivers')]:
             self.drivers = Drivers(splash)
             for courier in in_need:
@@ -222,21 +222,17 @@ class Cainiao(Courier):
     def _get_url_for_browser(self, idship):
         return f'https://global.cainiao.com/detail.htm?mailNoList={idship}&lang=zh'
 
-    def get_timeline(self, driver):
-        timeline = driver.find_elements(By.XPATH, '//ol[@class="waybill-path"]/li')
-        for li in timeline:
-            p = li.find_elements(By.XPATH, './p')
-            yield (p[0].text, p[1].text)
-
-    #  the driver is disposed after this call
+    #  do not return any selenium objects, the driver is disposed after
     def get_content(self, driver, idship):
+        data_locator = (By.XPATH, f'//p[@class="waybill-num"][contains(text(),"{idship}")]')
+
         try:
-            timeline = list(self.get_timeline(driver))  # resolve the generator before the driver is disposed
+            is_data = driver.find_elements(*data_locator)
 
         except NoSuchElementException:
-            timeline = None
+            is_data = None
 
-        if not timeline:
+        if not is_data:
             self.log(f'scrapper WAIT slider - {idship}')
             slider_locator = (By.XPATH, '//span[@class="nc_iconfont btn_slide"]')
             slider = WebDriverWait(driver, self.timeout_elt).until(EC.element_to_be_clickable(slider_locator))
@@ -248,15 +244,16 @@ class Cainiao(Courier):
             self.log(f'scrapper WAIT datas - {idship}')
             data_locator = (By.XPATH, f'//p[@class="waybill-num"][contains(text(),"{idship}")]')
             WebDriverWait(driver, self.timeout_elt).until(EC.visibility_of_element_located(data_locator))
-            timeline = list(self.get_timeline(driver))  # resolve the generator before the driver is disposed
 
-        return timeline
+        return lxml.html.fromstring(driver.page_source)
 
-    # do not use any selenium objects there, the driver has been disposed
-    def parse_content(self, timeline):
+    def parse_content(self, tree):
         events = []
 
-        for label, date in timeline:
+        timeline = tree.xpath('//ol[@class="waybill-path"]/li')
+        for li in timeline:
+            txts = li.xpath('./p/text()')
+            label, date = txts[:2]
             events.append(dict(date=parse(date).replace(tzinfo=pytz.utc), label=label))
 
         return events, {}
@@ -560,6 +557,8 @@ class LaPoste(Courier):
 class Chronopost(LaPoste):
     name = 'Chronopost'
 
+    timeline_xpath = '//tr[@class="toggleElmt show"]'
+
     # use La Poste API to find out the url
     def _get_url_for_browser(self, idship):
         json = super().get_content(idship)
@@ -568,26 +567,22 @@ class Chronopost(LaPoste):
             if shipment:
                 return shipment.get('urlDetail')
 
-    #  the driver is disposed after this call
+    #  do not return any selenium objects, the driver is disposed after
     def get_content(self, driver, idship):
         self.log(f'scrapper WAIT timeline - {idship}')
+        timeline_locator = (By.XPATH, self.timeline_xpath)
+        WebDriverWait(driver, self.timeout_elt).until(EC.presence_of_all_elements_located(timeline_locator))
+        return lxml.html.fromstring(driver.page_source)
 
-        timeline = []
-        timeline_locator = (By.XPATH, '//tr[@class="toggleElmt show"]')
-        for tr in WebDriverWait(driver, self.timeout_elt).until(EC.presence_of_all_elements_located(timeline_locator)):
-            td = tr.find_elements(By.XPATH, './td')
-            timeline.append((td[0].accessible_name, td[1].text))
-
-        return timeline
-
-    # do not use any selenium objects there, the driver has been disposed
-    def parse_content(self, timeline):
+    def parse_content(self, tree):
         events = []
 
-        for date_txt, label_txt in timeline:
-            date_txt = date_txt.split(' ', 1)[1]  # remove full day name
-            date = datetime.strptime(date_txt, '%d/%m/%Y %H:%M').replace(tzinfo=get_localzone())
-            status, label = label_txt.split('\n')
+        for tr in tree.xpath(self.timeline_xpath):
+            tds = tr.xpath('./td')
+            day, hour = tds[0].xpath('./text()')
+            status, label = tds[1].xpath('./text()')
+            day = day.split(' ', 1)[1]  # remove full day name
+            date = datetime.strptime(f'{day} {hour}', '%d/%m/%Y %H:%M').replace(tzinfo=get_localzone())
             status = status.replace('...', '').strip()
             events.append(dict(date=date, status=status, label=label))
 
@@ -620,3 +615,21 @@ class DHL(Courier):
                 events.append(dict(date=get_local_time(event['date']), label=event['description']))
 
             return events, dict(product=product)
+
+
+if __name__ == "__main__":
+    # import pprint
+    from config import couriers_tests
+    from log import mylog
+
+    mylog.print_only()
+
+    couriers = Couriers()
+    for name, idship in couriers_tests:
+        result = couriers.get(name).update(idship)
+        ok = True if result and result['ok'] else False
+        print(f'{name} {idship} {ok=}')
+        # if ok:
+        #     pprint.pprint(result, indent=4)
+
+    mylog.close()
