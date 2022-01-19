@@ -12,7 +12,7 @@ else:
     import undetected_chromedriver._compat as webdriver
 
 
-class Drivers:
+class DriverHandler:
     driver_timeout = 100  # s
     driver_creation = threading.Lock()
     n_drivers = 1

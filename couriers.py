@@ -14,7 +14,7 @@ from selenium.webdriver.common.by import By
 import urllib3
 
 from log import log
-from drivers import Drivers
+from drivers import DriverHandler
 from config import LaPoste_key, dhl_key
 import localization as TXT
 
@@ -42,17 +42,17 @@ def get_all_subclasses(cls):
 
 
 class Couriers:
-    drivers = None
+    driver_handler = None
 
     def __init__(self, splash=None):
         self.couriers = {cls.name: cls() for cls in get_all_subclasses(Courier)}
         log(f"Init Couriers {', '.join(self.couriers.keys())}")
 
-        # create and give drivers if needed
-        if in_need := [courier for courier in self.couriers.values() if hasattr(courier, 'set_drivers')]:
-            self.drivers = Drivers(splash)
+        # create and give driver_handler if needed
+        if in_need := [courier for courier in self.couriers.values() if hasattr(courier, 'set_driver_handler')]:
+            self.driver_handler = DriverHandler(splash)
             for courier in in_need:
-                courier.set_drivers(self.drivers)
+                courier.set_driver_handler(self.driver_handler)
 
     def get(self, name):
         return self.couriers.get(name)
@@ -61,8 +61,8 @@ class Couriers:
         return list(self.couriers.keys())
 
     def close(self):
-        if self.drivers:
-            self.drivers.close()
+        if self.driver_handler:
+            self.driver_handler.close()
 
 
 def get_simple_validation(_min, _max):
@@ -176,12 +176,12 @@ def Scrapper(timeout=30):
                           urllib3.exceptions.NewConnectionError,
                           urllib3.exceptions.MaxRetryError)
 
-        def set_drivers(self, drivers):
-            self.drivers = drivers
+        def set_driver_handler(self, driver_handler):
+            self.driver_handler = driver_handler
 
         def wrapped_get_content(self, idship):
             try:
-                driver = self.drivers.get()
+                driver = self.driver_handler.get()
 
                 if driver:
                     self.log(f'scrapper LOAD - {idship}')
@@ -201,14 +201,14 @@ def Scrapper(timeout=30):
 
             finally:
                 if 'driver' in locals() and driver:
-                    self.drivers.dispose(driver)
+                    self.driver_handler.dispose(driver)
 
             self.log(f'scrapper FAILURE - {error} for {idship}', error=True)
 
         courier.timeout_elt = timeout  # s
         courier.inner_get_content = courier.get_content
         courier.get_content = wrapped_get_content
-        courier.set_drivers = set_drivers
+        courier.set_driver_handler = set_driver_handler
         return courier
 
     return decorator
