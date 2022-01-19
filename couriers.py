@@ -48,7 +48,7 @@ class Couriers:
         self.couriers = {cls.name: cls() for cls in get_all_subclasses(Courier)}
         log(f"Init Couriers {', '.join(self.couriers.keys())}")
 
-        # create and give driver_handler if needed
+        # create and set a driver_handler if needed
         if in_need := [courier for courier in self.couriers.values() if hasattr(courier, 'set_driver_handler')]:
             self.driver_handler = DriverHandler(splash)
             for courier in in_need:
@@ -504,19 +504,10 @@ class LaPoste(Courier):
         if r.status_code == 200:
             return r.json()
 
-    def _get_shipment(self, json):
-        shipment = json.get('shipment')
-
-        if shipment:
-            return shipment, None
-
-        else:
-            return None, json.get('returnMessage', 'Erreur')
-
     def parse_content(self, json):
         events = []
 
-        shipment, error = self._get_shipment(json)
+        shipment = json.get('shipment')
         if shipment:
             product = shipment.get('product').capitalize()
 
@@ -549,6 +540,7 @@ class LaPoste(Courier):
                                 )
 
         else:
+            error = json.get('returnMessage', 'Erreur')
             status_label = get_sentence(error, 1)
             return events, dict(status_warn=True, status_label=status_label.replace('.', ''))
 
@@ -563,9 +555,7 @@ class Chronopost(LaPoste):
     def get_url_for_browser(self, idship):
         json = super().get_content(idship)
         if json:
-            shipment, _ = super()._get_shipment(json)
-            if shipment:
-                return shipment.get('urlDetail')
+            return json.get('shipment', {}).get('urlDetail')
 
     #  do not return any selenium objects, the driver is disposed after
     def get_content(self, driver, idship):
