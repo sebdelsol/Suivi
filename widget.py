@@ -172,14 +172,14 @@ class MlinePulsing(sg.MLine):
 
     def pulse(self):
         if self.is_pulsing:
-            new_t = time.time()
+            now = time.time()
             colors = MlinePulsing.colors[self.colors_key]
             for tag, (index, t) in self.pulsing_tags.items():
                 color = colors[round(index) % self.pulsing_array_size]
                 self.Widget.tag_configure(tag, foreground=color)
 
-                index += self.pulsing_frequency * self.pulsing_array_size * (new_t - t)
-                self.pulsing_tags[tag] = index, new_t
+                index += self.pulsing_frequency * self.pulsing_array_size * (now - t)
+                self.pulsing_tags[tag] = index, now
 
             window = self.ParentForm
             window.TKroot.after(self.pulsing_time_step, self.pulse)
@@ -200,8 +200,7 @@ class AnimatedGif(sg.Image):
             del kwargs['speed']
 
         super().__init__(*args, **kwargs)
-        if self.visible:
-            self.animate()
+        self.animate(reset=True)
 
         self.durations = get_gif_durations(self.Data)
         self.index = 0
@@ -209,13 +208,25 @@ class AnimatedGif(sg.Image):
     def update(self, *args, **kwargs):
         super().update(*args, **kwargs)
         if kwargs.get('visible'):
-            self.animate()
+            self.animate(reset=True)
 
-    def animate(self):
+    def animate(self, reset=False):
         if self.visible:
-            time_step = round(self.durations[self.index % len(self.durations)] / self.speed)
-            self.index += 1
-            self.update_animation(self.Data, time_between_frames=time_step)
+            now = time.time()
+            if reset:
+                self.last_time = now
+                self.frame_index = 0
+                self.precise_index = 0
+            dt = now - self.last_time
+            self.last_time = now
 
+            duration = self.durations[self.frame_index % len(self.durations)]
+            self.precise_index += self.speed * dt * 1000 / duration
+            frame_step = int(self.precise_index - self.frame_index)
+            self.frame_index += frame_step
+            for _ in range(frame_step):
+                self.update_animation(self.Data, time_between_frames=0)
+
+            time_step = max(20, round(duration / self.speed))
             window = self.ParentForm
             window.TKroot.after(time_step, self.animate)

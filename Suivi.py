@@ -101,7 +101,7 @@ class TrackerWidget:
             self.couriers_font_bold = (TH.fix_font_bold, TH.widget_courier_font_size)
             self.couriers_widget = MlinePulsing('', p=0, font=self.couriers_font, background_color=title_color, expand_x=True, justification='r', **mline_kwargs)
 
-            self.updating_widget = AnimatedGif(data=self.updating_gif, p=0, background_color=title_color, visible=False)
+            self.updating_widget = AnimatedGif(data=self.updating_gif, p=0, background_color=title_color, visible=False, speed=1)
             updating_widget_col = sg.Col([[self.updating_widget]], p=0, background_color=title_color, vertical_alignment='center')
             push = sg.Push(background_color=title_color)
 
