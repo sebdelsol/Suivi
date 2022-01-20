@@ -3,7 +3,7 @@ import time
 import PySimpleGUI as sg
 from tkinter import font as tk_font
 
-from imgtool import expand_right_img64, get_img64_size, resize_and_colorize_img
+from imgtool import expand_right_img64, get_img64_size, resize_and_colorize_img, get_gif_durations
 
 
 class GraphRounded(sg.Graph):
@@ -195,13 +195,16 @@ class HLine(sg.Col):
 
 class AnimatedGif(sg.Image):
     def __init__(self, *args, **kwargs):
-        self.time_step = kwargs.get('time_step', 100)
-        if 'time_step' in kwargs:
-            del kwargs['time_step']
+        self.speed = kwargs.get('speed', 1)
+        if 'speed' in kwargs:
+            del kwargs['speed']
 
         super().__init__(*args, **kwargs)
         if self.visible:
             self.animate()
+
+        self.durations = get_gif_durations(self.Data)
+        self.index = 0
 
     def update(self, *args, **kwargs):
         super().update(*args, **kwargs)
@@ -210,7 +213,9 @@ class AnimatedGif(sg.Image):
 
     def animate(self):
         if self.visible:
-            self.update_animation(self.Data, time_between_frames=self.time_step)
+            time_step = round(self.durations[self.index % len(self.durations)] / self.speed)
+            self.index += 1
+            self.update_animation(self.Data, time_between_frames=time_step)
 
             window = self.ParentForm
-            window.TKroot.after(self.time_step, self.animate)
+            window.TKroot.after(time_step, self.animate)

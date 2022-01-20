@@ -34,6 +34,21 @@ def resize_and_colorize_gif(image64, height, color):
     return save_img64(frames[0], optimize=False, save_all=True, append_images=frames[1:], loop=0, format='GIF', transparency=0)
 
 
+def get_gif_durations(image64):
+    im = load_img64(image64)
+    durations = []
+
+    try:
+        while True:
+            durations.append(im.info['duration'])
+            im.seek(im.tell() + 1)
+
+    except EOFError:
+        pass
+
+    return durations
+
+
 def resize_and_colorize_img(image, height, color, canvas_size=None):
     im = Image.open(image)
 
