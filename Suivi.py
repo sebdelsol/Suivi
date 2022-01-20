@@ -114,7 +114,8 @@ class TrackerWidget:
             self.status_widget = sg.T('', p=0, font=status_font, text_color=TH.widget_status_text_color, expand_x=True, k=lambda w: self.toggle_expand(w))
 
             expand_font = (TH.fix_font, TH.widget_expand_font_size)
-            self.expand_button = ButtonMouseOver('', p=0, font=expand_font, button_color=(TH.widget_expand_color, event_color), mouseover_color='grey95', k=lambda w: self.toggle_expand(w))
+            expand_button_color = dict(button_color=(TH.widget_expand_color, event_color), mouseover_color=title_color)
+            self.expand_button = ButtonMouseOver('', p=0, font=expand_font, **expand_button_color, k=lambda w: self.toggle_expand(w))
 
             self.events_font = (TH.fix_font, TH.widget_event_font_size)
             self.events_font_bold = (TH.fix_font_bold, TH.widget_event_font_size)
