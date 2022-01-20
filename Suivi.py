@@ -78,7 +78,7 @@ class TrackerWidget:
             padx = TH.widget_padx
             b_pad = TH.widget_button_pad
 
-            b_colors = dict(button_color=title_color, mouseover_color='grey95')
+            b_colors = dict(button_color=title_color, mouseover_color=TH.widget_button_mouseover_color)
             edit_button = ButtonMouseOver('', image_data=self.edit_img, p=(0, b_pad), **b_colors, k=self.edit)
             self.refresh_button = ButtonMouseOver('', image_data=self.refresh_img, p=0, **b_colors, k=self.update)
             archive_button = ButtonMouseOver('', image_data=self.archive_img, p=(0, b_pad), **b_colors, k=self.archive_or_delete)
@@ -109,7 +109,7 @@ class TrackerWidget:
             id_couriers_widget = sg.Col(id_couriers_widget_layout, p=((padx * 2, 0), (b_pad, b_pad)), expand_x=True, background_color=title_color, vertical_alignment='top')
 
             ago_font = (TH.var_font, TH.widget_status_font_size)
-            self.ago_widget = sg.T('', p=0, font=ago_font, text_color='grey50', k=lambda w: self.toggle_expand(w))
+            self.ago_widget = sg.T('', p=0, font=ago_font, text_color=TH.widget_ago_color, k=lambda w: self.toggle_expand(w))
 
             status_font = (TH.var_font, TH.widget_status_font_size)
             self.status_widget = sg.T('', p=0, font=status_font, text_color=TH.widget_status_text_color, expand_x=True, k=lambda w: self.toggle_expand(w))
@@ -287,11 +287,11 @@ class TrackerWidget:
                 elapsed_color = TH.widget_elapsed_days_colors[bisect(TH.widget_elapsed_days_intervals, round_elapsed_days)]
                 elapsed_txt = f"{round_elapsed_days}{'j' if round_elapsed_days <= 100 else ''}"
             else:
-                elapsed_color = 'grey70'
+                elapsed_color = TH.widget_elapsed_days_default_color
                 elapsed_txt = '?'
 
             self.days_widget.erase()
-            self.days_widget.draw_rounded_box(self.days_size * .5, self.days_size * .5, self.days_size, self.days_size * .9, self.days_size * .15, 'grey90')
+            self.days_widget.draw_rounded_box(self.days_size * .5, self.days_size * .5, self.days_size, self.days_size * .9, self.days_size * .15, TH.widget_elapsed_days_bg_color)
             self.days_widget.draw_text(elapsed_txt, (self.days_size * .5, self.days_size * .5), color=elapsed_color, font=self.days_font, text_location='center')
 
             status_date = content.get('status', {}).get('date')
