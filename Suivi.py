@@ -690,7 +690,7 @@ class Splash:
 
 
 class GreyWindow:
-    alpha_grey = .4
+    alpha_grey = TH.splash_alpha
 
     def __init__(self, window):
         self.followed_window = window

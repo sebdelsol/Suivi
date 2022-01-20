@@ -24,6 +24,7 @@ var_font = 'Roboto Light'
 var_font_bold = 'Roboto Bold'
 
 splash_color = '#404060'
+splash_alpha = .25
 refresh_color = '#408040'
 archives_color = '#B2560D'
 archives_color_empty = '#909090'
