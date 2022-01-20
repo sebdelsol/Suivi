@@ -3,6 +3,7 @@ import PySimpleGUI as sg
 from packaging.specifiers import SpecifierSet
 import localization as TXT
 import theme as TH
+from imgtool import resize_and_colorize_gif, resize_and_colorize_img
 
 Python_version = '>=3.8, <3.9'
 TrackersFile = 'Trackers'
@@ -674,8 +675,9 @@ class TrackerWidgets:
 
 class Splash:
     def __init__(self):
-        self.log = sg.T('', font=(TH.var_font, 10))
-        layout = [[sg.Image(filename=TH.mail_img)], [self.log]]
+        self.log = sg.T('', font=(TH.var_font, 10), text_color=TH.splash_color)
+        img_data = resize_and_colorize_img(TH.mail_img, 200, TH.splash_color)
+        layout = [[sg.Image(data=img_data)], [self.log]]
         args, kwargs = TH.get_window_params(layout, grab_anywhere=False)
         self.window = sg.Window(*args, **kwargs)
 
@@ -869,7 +871,6 @@ if __name__ == '__main__':
         locale.setlocale(locale.LC_ALL, TXT.Locale_setting)  # date in correct language
 
         from trackers import Trackers, TrackerState
-        from imgtool import resize_and_colorize_gif, resize_and_colorize_img
         from couriers import get_local_now
         from widget import ButtonMouseOver, ButtonTxtAndImg, GraphRounded, MlinePulsing, TextFit, HLine
         from log import logger, log

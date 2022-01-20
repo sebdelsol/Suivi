@@ -23,6 +23,7 @@ fix_font_bold = 'Roboto Mono Bold'
 var_font = 'Roboto Light'
 var_font_bold = 'Roboto Bold'
 
+splash_color = '#606080'
 refresh_color = '#408040'
 archives_color = '#B2560D'
 archives_color_empty = '#909090'
