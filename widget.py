@@ -200,10 +200,9 @@ class AnimatedGif(sg.Image):
             del kwargs['speed']
 
         super().__init__(*args, **kwargs)
-        self.animate(reset=True)
 
         self.durations = get_gif_durations(self.Data)
-        self.index = 0
+        self.animate(reset=True)
 
     def update(self, *args, **kwargs):
         super().update(*args, **kwargs)
@@ -222,7 +221,7 @@ class AnimatedGif(sg.Image):
 
             duration = self.durations[self.frame_index % len(self.durations)]
             self.precise_index += self.speed * dt * 1000 / duration
-            frame_step = int(self.precise_index - self.frame_index)
+            frame_step = round(self.precise_index - self.frame_index)
             self.frame_index += frame_step
             for _ in range(frame_step):
                 self.update_animation(self.Data, time_between_frames=0)

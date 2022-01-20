@@ -36,11 +36,13 @@ def resize_and_colorize_gif(image64, height, color):
 
 def get_gif_durations(image64):
     im = load_img64(image64)
+
     durations = []
+    first_frame_duration = im.info['duration']
 
     try:
         while True:
-            durations.append(im.info['duration'])
+            durations.append(im.info.get('duration', first_frame_duration))
             im.seek(im.tell() + 1)
 
     except EOFError:
