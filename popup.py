@@ -8,7 +8,7 @@ import localization as TXT
 import theme as TH
 
 
-class MyPopup(sg.Window):
+class Popup(sg.Window):
     def __init__(self, title, body_layout, main_window):
         self.main_window = main_window
         self.main_window.grey_all(True)
@@ -47,7 +47,7 @@ class MyPopup(sg.Window):
         super().close()
 
 
-class edit(MyPopup):
+class Edit(Popup):
     def __init__(self, title, idship, description, used_couriers, couriers, main_window):
         self.couriers_names = couriers.get_names()
         self.couriers_names.sort()
@@ -110,7 +110,7 @@ class edit(MyPopup):
         return ok, idship, description, used_couriers
 
 
-class choices(MyPopup):
+class Choices(Popup):
     max_lines = TH.popup_max_choices
     selected_font, unselected_font = (TH.fix_font_bold, 9), (TH.fix_font, 9)
 
@@ -166,7 +166,7 @@ class choices(MyPopup):
         return chosen
 
 
-class one_choice(MyPopup):
+class OneChoice(Popup):
     def __init__(self, choices, choice_colors, title, main_window, default=0):
         layout = []
         for i, choice in enumerate(choices):
@@ -198,7 +198,7 @@ class one_choice(MyPopup):
         return choice
 
 
-class warning(MyPopup):
+class Warning(Popup):
     def __init__(self, title, text, main_window):
         layout = [[sg.Image(filename=TH.warn_img), sg.T(text, font=(TH.var_font, 15))]]
         super().__init__(title, layout, main_window)

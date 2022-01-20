@@ -616,10 +616,10 @@ class DHL(Courier):
 # test couriers
 if __name__ == '__main__':
     from config import couriers_tests
-    from log import mylog
+    from log import logger
 
-    mylog.print_only_error()
-    mylog.close()
+    logger.print_only_error()
+    logger.close()
 
     couriers = Couriers()
     for name, idship in couriers_tests:

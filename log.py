@@ -7,7 +7,7 @@ import theme as TH
 import localization as TXT
 
 
-class MyLog(sg.Window):
+class Logger(sg.Window):
     link_txt = '\n'.join('❱❱❱❱❱')
     unlink_txt = '\n'.join('❰❰❰❰❰')
     close_txt = '\n'.join(TXT.close.upper())
@@ -134,5 +134,5 @@ class MyLog(sg.Window):
         super().close()
 
 
-mylog = MyLog()
-log = mylog.log
+logger = Logger()
+log = logger.log

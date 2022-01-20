@@ -437,7 +437,7 @@ class TrackerWidget:
             self.couriers_widget.update(TXT.no_couriers, text_color='red')
 
     def edit(self, window):
-        popup_edit = popup.edit(TXT.edit, self.tracker.idship, self.tracker.description, self.tracker.used_couriers, self.tracker.available_couriers, window)
+        popup_edit = popup.Edit(TXT.edit, self.tracker.idship, self.tracker.description, self.tracker.used_couriers, self.tracker.available_couriers, window)
         ok, idship, description, used_couriers = popup_edit.loop()
         if ok:
             self.tracker.set_id(idship, description, used_couriers)
@@ -449,7 +449,7 @@ class TrackerWidget:
         self.disable_buttons(True)
         choices = {TXT.archive: self.archive, TXT.delete: self.delete}
         choices_colors = {TXT.archive: 'green', TXT.delete: 'red', False: 'grey75'}
-        popup_one_choice = popup.one_choice(choices.keys(), choices_colors, f'{self.get_description()} - {self.get_idship()}', window)
+        popup_one_choice = popup.OneChoice(choices.keys(), choices_colors, f'{self.get_description()} - {self.get_idship()}', window)
         choice = popup_one_choice.loop()
         if choice:
             choices[choice](window)
@@ -459,7 +459,7 @@ class TrackerWidget:
     def set_state(self, state, window, ask, event, reappear=False):
         do_it = True
         if ask:
-            popup_warning = popup.warning(ask.capitalize(), f'{self.get_description()} - {self.get_idship()}', window)
+            popup_warning = popup.Warning(ask.capitalize(), f'{self.get_description()} - {self.get_idship()}', window)
             do_it = popup_warning.loop()
 
         if do_it:
@@ -544,7 +544,7 @@ class TrackerWidgets:
             widget.update(window)
 
     def new(self, window):
-        popup_edit = popup.edit(TXT.new, '', TXT.new, [], self.trackers.couriers, window)
+        popup_edit = popup.Edit(TXT.new, '', TXT.new, [], self.trackers.couriers, window)
         ok, *tracker_params = popup_edit.loop()
         if ok:
             tracker = self.trackers.new(*tracker_params)
@@ -575,7 +575,7 @@ class TrackerWidgets:
             txt = f'{date} {widget.get_description().ljust(w_desc)} - {widget.get_idship()}'
             choices.append((txt, color))
 
-        popup_choices = popup.choices(choices, title, window)
+        popup_choices = popup.Choices(choices, title, window)
         chosen = popup_choices.loop()
         return [widgets[i] for i in chosen]
 
@@ -872,16 +872,16 @@ if __name__ == '__main__':
         from imgtool import resize_and_colorize_gif, resize_and_colorize_img
         from couriers import get_local_now
         from widget import ButtonMouseOver, ButtonTxtAndImg, GraphRounded, MlinePulsing, TextFit, HLine
-        from log import mylog, log
+        from log import logger, log
         import popup
 
         # create main_window
         main_window = Main_window()
-        main_window.addlog(mylog)
+        main_window.addlog(logger)
         splash.close()
 
         main_window.loop()
         main_window.close()
-        mylog.close()
+        logger.close()
 
     print('exiting')
