@@ -191,3 +191,26 @@ class HLine(sg.Col):
 
     def set_width(self, width):
         self.Widget.canvas.config(width=width)
+
+
+class AnimatedGif(sg.Image):
+    def __init__(self, *args, **kwargs):
+        self.time_step = kwargs.get('time_step', 100)
+        if 'time_step' in kwargs:
+            del kwargs['time_step']
+
+        super().__init__(*args, **kwargs)
+        if self.visible:
+            self.animate()
+
+    def update(self, *args, **kwargs):
+        super().update(*args, **kwargs)
+        if kwargs.get('visible'):
+            self.animate()
+
+    def animate(self):
+        if self.visible:
+            self.update_animation(self.Data, time_between_frames=self.time_step)
+
+            window = self.ParentForm
+            window.TKroot.after(self.time_step, self.animate)

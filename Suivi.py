@@ -101,7 +101,7 @@ class TrackerWidget:
             self.couriers_font_bold = (TH.fix_font_bold, TH.widget_courier_font_size)
             self.couriers_widget = MlinePulsing('', p=0, font=self.couriers_font, background_color=title_color, expand_x=True, justification='r', **mline_kwargs)
 
-            self.updating_widget = sg.Image(data=self.updating_gif, p=0, background_color=title_color, visible=False)
+            self.updating_widget = AnimatedGif(data=self.updating_gif, p=0, background_color=title_color, visible=False, time_step=100)
             updating_widget_col = sg.Col([[self.updating_widget]], p=0, background_color=title_color, vertical_alignment='center')
             push = sg.Push(background_color=title_color)
 
@@ -252,10 +252,6 @@ class TrackerWidget:
             self.updating_widget.update(visible=False)
 
         window.trigger_event(Updating_event)
-
-    def animate(self, animation_step):
-        if self.updating_widget.visible:
-            self.updating_widget.update_animation(self.updating_gif, time_between_frames=animation_step)
 
     def show(self, content, window):
         if self.tracker.state == TrackerState.shown:
@@ -607,10 +603,6 @@ class TrackerWidgets:
         n_free_to_update = self.count_free_to_update()
         self.refresh_button.update(disabled=n_free_to_update == 0)
 
-    def animate(self, animation_step):
-        for widget in self.get_widgets_with_state(TrackerState.shown):
-            widget.animate(animation_step)
-
     def set_min_width(self, min_width):
         for widget in self.get_widgets_with_state(TrackerState.shown):
             widget.set_min_width(min_width)
@@ -724,8 +716,6 @@ class GreyWindow:
 
 
 class Main_window(sg.Window):
-    animation_step = 100
-
     def __init__(self):
         p = TH.menu_button_pad
         fs = TH.menu_button_font_size
@@ -760,7 +750,6 @@ class Main_window(sg.Window):
         self.widgets = TrackerWidgets(self, self.trackers, splash)
 
         self.grey_windows = [GreyWindow(self)]
-        self.animate()
         self.reappear()
 
     def addlog(self, log):
@@ -778,10 +767,6 @@ class Main_window(sg.Window):
     def trigger_event(self, evt):
         if self.TKroot:
             self.write_event_value(evt, '')
-
-    def animate(self):
-        self.widgets.animate(self.animation_step)
-        self.TKroot.after(self.animation_step, self.animate)
 
     def grey_all(self, enable):
         for grey_window in self.grey_windows:
@@ -872,7 +857,7 @@ if __name__ == '__main__':
 
         from trackers import Trackers, TrackerState
         from couriers import get_local_now
-        from widget import ButtonMouseOver, ButtonTxtAndImg, GraphRounded, MlinePulsing, TextFit, HLine
+        from widget import ButtonMouseOver, ButtonTxtAndImg, GraphRounded, MlinePulsing, TextFit, HLine, AnimatedGif
         from log import logger, log
         import popup
 
