@@ -268,6 +268,7 @@ class Cainiao(Courier):
 class Asendia(Courier):
     name = 'Asendia'
     fromto = f'CN{Courier.r_arrow}FR'
+    nb_retry = 1
 
     headers = {'Content-Type': 'application/json', 'Accept-Language': 'fr'}
     url = 'https://tracking.asendia.com/alliot/items/references'
@@ -576,11 +577,11 @@ class Chronopost(LaPoste):
         for tr in tree.xpath(self.timeline_xpath):
             tds = tr.xpath('./td')
             day, hour = tds[0].xpath('./text()')
-            status, label = tds[1].xpath('./text()')
+            location, label = tds[1].xpath('./text()')
             day = day.split(' ', 1)[1]  # remove full day name
             date = datetime.strptime(f'{day} {hour}', '%d/%m/%Y %H:%M').replace(tzinfo=get_localzone())
-            status = status.replace('...', '').strip()
-            events.append(dict(date=date, status=status, label=label))
+            location = location.replace('...', '').strip()
+            events.append(dict(date=date, status=location, label=label))
 
         return events, {}
 
