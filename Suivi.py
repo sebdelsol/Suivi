@@ -744,7 +744,7 @@ class Main_window(sg.Window):
         pin_empty.BackgroundColor = TH.empty_color
 
         menu = sg.Col([[log_b, new_b, refresh_b, archives_b, trash_b, recenter_widget, exit_b]], p=0, background_color=TH.menu_color, expand_x=True, k=Menu_key)
-        col_kwargs = dict(p=0, expand_x=True, expand_y=True, background_color=TH.menu_color)
+        col_kwargs = dict(p=0, expand_x=True, expand_y=True, background_color=TH.widget_event_bg_color)
         new_trakers = sg.Col([[]], k=New_Tracker_widgets_key, **col_kwargs)
         old_trakers = sg.Col([[]], k=Old_Tracker_widgets_key, **col_kwargs)
         all_trackers = sg.Col([[new_trakers], [old_trakers]], scrollable=True, vertical_scroll_only=True, k=All_Tracker_widgets_key, **col_kwargs)
