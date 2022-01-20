@@ -1,3 +1,4 @@
+# the less, the better for startup time
 import sys
 import PySimpleGUI as sg
 from packaging.specifiers import SpecifierSet
@@ -691,8 +692,6 @@ class Splash:
 
 
 class GreyWindow:
-    alpha_grey = TH.splash_alpha
-
     def __init__(self, window):
         self.followed_window = window
 
@@ -708,7 +707,7 @@ class GreyWindow:
         if enable:
             if not self.is_visible(self.window) and self.is_visible(self.followed_window):
                 self.window.bring_to_front()
-                self.window.set_alpha(self.alpha_grey)
+                self.window.set_alpha(TH.splash_alpha)
 
         elif self.is_visible(self.window):
             self.window.set_alpha(0)
