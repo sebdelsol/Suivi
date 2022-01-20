@@ -1,3 +1,4 @@
+# the less, the better for startup time
 import sys
 import PySimpleGUI as sg
 from packaging.specifiers import SpecifierSet
