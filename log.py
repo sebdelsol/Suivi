@@ -17,7 +17,7 @@ class Logger(sg.Window):
     select_bg_color = '#C0C0C0'
 
     def __init__(self):
-        self.is_print_only_error = False
+        self.is_print_only = False
         self.prints = queue.Queue()
         self.linked = True
         self.resizing = False
@@ -107,14 +107,13 @@ class Logger(sg.Window):
             self.disable()
 
     def log(self, *args, error=False, **kwargs):
-        if self.is_print_only_error:
-            if error:
-                print(*args, **kwargs)
+        if self.is_print_only:
+            print(*args, **kwargs)
         else:
             self.prints.put((args, error, kwargs))
 
-    def print_only_error(self):
-        self.is_print_only_error = True
+    def print_only(self):
+        self.is_print_only = True
 
     def close(self):
         if self.visible:

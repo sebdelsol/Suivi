@@ -171,6 +171,7 @@ def WithRequests(request_timeout=5, max_retry=1, time_between_retry=1):
             n_retry = max_retry
             while True:
                 try:
+                    self.log(f'LOAD - {idship}')
                     content = self.inner_get_content_request(idship)
 
                 except requests.exceptions.Timeout:
@@ -654,14 +655,14 @@ if __name__ == '__main__':
     from config import couriers_tests
     from log import logger
 
-    logger.print_only_error()
+    logger.print_only()
     logger.close()
 
     couriers = Couriers()
     for name, idship in couriers_tests:
         result = couriers.get(name).update(idship)
         ok = True if result and result['ok'] else False
-        print(f'test {"PASS" if  ok else "FAILED"} - {name}')
+        print(f'>>>>> test {"PASS" if  ok else "FAILED"} - {name}')
         # if ok:
         #     import pprint
         #     pprint.pprint(result, indent=4)
