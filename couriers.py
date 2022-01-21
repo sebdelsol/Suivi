@@ -206,9 +206,7 @@ def WithDriver(page_load_timeout=100, wait_elt_timeout=30):
         def set_driver_handler(driver_handler):
             courier.driver_handler = driver_handler
 
-        def wait(self, driver, until, msg=None):
-            if msg:
-                self.log(f'driver WAIT {msg}')
+        def wait(self, driver, until):
             return WebDriverWait(driver, wait_elt_timeout).until(until)
 
         def wrapped_get_content(self, idship):
@@ -260,15 +258,17 @@ class Cainiao(Courier):
             is_data = None
 
         if not is_data:
+            self.log(f'driver WAIT slider - {idship}')
             slider_locator = (By.XPATH, '//span[@class="nc_iconfont btn_slide"]')
-            slider = self.wait(driver, EC.element_to_be_clickable(slider_locator), msg=f'slider - {idship}')
+            slider = self.wait(driver, EC.element_to_be_clickable(slider_locator))
 
             slide = driver.find_element(By.XPATH, '//div[@class="scale_text slidetounlock"]/span')
             action = ActionChains(driver)
             action.drag_and_drop_by_offset(slider, slide.size['width'], 0).perform()
 
+            self.log(f'driver WAIT datas - {idship}')
             data_locator = (By.XPATH, f'//p[@class="waybill-num"][contains(text(),"{idship}")]')
-            self.wait(driver, EC.visibility_of_element_located(data_locator), msg=f'datas - {idship}')
+            self.wait(driver, EC.visibility_of_element_located(data_locator))
 
         return lxml.html.fromstring(driver.page_source)
 
@@ -594,8 +594,9 @@ class Chronopost(LaPoste):
         url = self.get_url_for_browser(idship)
         if url:
             driver.get(url)
+            self.log(f'driver WAIT timeline - {idship}')
             timeline_locator = (By.XPATH, self.timeline_xpath)
-            self.wait(driver, EC.presence_of_all_elements_located(timeline_locator), msg=f'timeline - {idship}')
+            self.wait(driver, EC.presence_of_all_elements_located(timeline_locator))
             return lxml.html.fromstring(driver.page_source)
 
         else:
