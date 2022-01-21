@@ -116,9 +116,13 @@ class Courier:
             self.log(f'Wrong {TXT.idship} {idship} ({self.idship_validation_msg})', error=True)
 
         else:
+            self.log(f'LOAD - {idship}')
             content = self.get_content(idship)
             ok = True if content is not None else False
-            events, infos = self.parse_content(content) if ok else ([], {})
+            events, infos = [], {}
+            if ok:
+                self.log(f'PARSE - {idship}')
+                events, infos = self.parse_content(content)
 
             # remove duplicate events
             # https://stackoverflow.com/questions/9427163/remove-duplicate-dict-in-list-in-python
@@ -171,8 +175,7 @@ def WithRequests(request_timeout=5, max_retry=1, time_between_retry=1):
             n_retry = max_retry
             while True:
                 try:
-                    self.log(f'request LOAD - {idship}')
-                    content = self.inner_get_content_request(idship)
+                    content = courier.inner_get_content(self, idship)
 
                 except requests.exceptions.Timeout:
                     self.log(f'request TIMEOUT for {idship}', error=True)
@@ -184,9 +187,9 @@ def WithRequests(request_timeout=5, max_retry=1, time_between_retry=1):
                 n_retry -= 1
                 time.sleep(time_between_retry)
 
-        courier.inner_get_content_request = courier.get_content
-        courier.get_content = wrapped_get_content
         courier.request = request
+        courier.inner_get_content = courier.get_content
+        courier.get_content = wrapped_get_content
         return courier
 
     return decorator
@@ -214,8 +217,7 @@ def WithDriver(page_load_timeout=100, wait_elt_timeout=30):
             if driver:
                 try:
                     driver.set_page_load_timeout(page_load_timeout)
-                    self.log(f'driver LOAD - {idship}')
-                    return self.inner_get_content_driver(driver, idship)
+                    return courier.inner_get_content(self, driver, idship)
 
                 except exceptions_catched as e:
                     error = type(e).__name__
@@ -230,7 +232,7 @@ def WithDriver(page_load_timeout=100, wait_elt_timeout=30):
 
         Couriers.ask_driver_handler(set_driver_handler)
         courier.wait = wait  # s
-        courier.inner_get_content_driver = courier.get_content
+        courier.inner_get_content = courier.get_content
         courier.get_content = wrapped_get_content
         return courier
 
@@ -595,6 +597,7 @@ class Chronopost(LaPoste):
             timeline_locator = (By.XPATH, self.timeline_xpath)
             self.wait(driver, EC.presence_of_all_elements_located(timeline_locator), msg=f'timeline - {idship}')
             return lxml.html.fromstring(driver.page_source)
+
         else:
             self.log(f"FAILURE - can't find url for {idship}", error=True)
 
@@ -654,7 +657,7 @@ if __name__ == '__main__':
     for name, idship in couriers_tests:
         result = couriers.get(name).update(idship)
         ok = True if result and result['ok'] else False
-        print(f'>>>>> test {"PASS" if  ok else "FAILED"} - {name}')
+        print(f'>>>>>>>>>>>>>>>> test {"PASS" if  ok else "FAILED"} - {name}')
         # if ok:
         #     import pprint
         #     pprint.pprint(result, indent=4)
