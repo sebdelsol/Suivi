@@ -229,7 +229,7 @@ def WithDriver(page_load_timeout=100, wait_elt_timeout=30):
             self.log(f'driver FAILURE - {error} for {idship}', error=True)
 
         Couriers.ask_driver_handler(set_driver_handler)
-        courier.wait = wait  # s
+        courier.wait = wait
         courier.inner_get_content = courier.get_content
         courier.get_content = wrapped_get_content
         return courier
