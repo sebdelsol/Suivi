@@ -101,7 +101,7 @@ class Courier:
 
     def log(self, *args, **kwargs):
         args = list(args)
-        args[0] = f'{self.log_prefix}{args[0]}, {self.name}'
+        args[0] = f'{args[0]}, {self.name}'
         log(*args, **kwargs)
 
     def validate_idship(self, idship):
@@ -171,11 +171,11 @@ def WithRequests(request_timeout=5, max_retry=1, time_between_retry=1):
             n_retry = max_retry
             while True:
                 try:
-                    self.log(f'LOAD - {idship}')
+                    self.log(f'request LOAD - {idship}')
                     content = self.inner_get_content_request(idship)
 
                 except requests.exceptions.Timeout:
-                    self.log(f'TIMEOUT for {idship}', error=True)
+                    self.log(f'request TIMEOUT for {idship}', error=True)
                     content = None
 
                 if n_retry <= 0 or content is not None:
@@ -184,7 +184,6 @@ def WithRequests(request_timeout=5, max_retry=1, time_between_retry=1):
                 n_retry -= 1
                 time.sleep(time_between_retry)
 
-        courier.log_prefix = 'request '
         courier.inner_get_content_request = courier.get_content
         courier.get_content = wrapped_get_content
         courier.request = request
@@ -206,15 +205,8 @@ def WithDriver(page_load_timeout=100, wait_elt_timeout=30):
 
         def wait(self, driver, until, msg=None):
             if msg:
-                self.log(f'WAIT {msg}')
+                self.log(f'driver WAIT {msg}')
             return WebDriverWait(driver, wait_elt_timeout).until(until)
-
-        def load_page(self, driver, url):
-            if url:
-                driver.get(url)
-                return True
-            else:
-                self.log(f"FAILURE - can't find url for {idship}", error=True)
 
         def wrapped_get_content(self, idship):
             driver = self.driver_handler.get()
@@ -222,7 +214,7 @@ def WithDriver(page_load_timeout=100, wait_elt_timeout=30):
             if driver:
                 try:
                     driver.set_page_load_timeout(page_load_timeout)
-                    self.log(f'LOAD - {idship}')
+                    self.log(f'driver LOAD - {idship}')
                     return self.inner_get_content_driver(driver, idship)
 
                 except exceptions_catched as e:
@@ -234,11 +226,9 @@ def WithDriver(page_load_timeout=100, wait_elt_timeout=30):
             else:
                 error = 'no driver available'
 
-            self.log(f'FAILURE - {error} for {idship}', error=True)
+            self.log(f'driver FAILURE - {error} for {idship}', error=True)
 
         Couriers.ask_driver_handler(set_driver_handler)
-        courier.log_prefix = 'driver '
-        courier.load_page = load_page
         courier.wait = wait  # s
         courier.inner_get_content_driver = courier.get_content
         courier.get_content = wrapped_get_content
@@ -258,27 +248,27 @@ class Cainiao(Courier):
     #  do not return any selenium objects, the driver is disposed after
     def get_content(self, driver, idship):
         url = self.get_url_for_browser(idship)
-        if self.load_page(driver, url):
+        driver.get(url)
+
+        data_locator = (By.XPATH, f'//p[@class="waybill-num"][contains(text(),"{idship}")]')
+        try:
+            is_data = driver.find_elements(*data_locator)
+
+        except NoSuchElementException:
+            is_data = None
+
+        if not is_data:
+            slider_locator = (By.XPATH, '//span[@class="nc_iconfont btn_slide"]')
+            slider = self.wait(driver, EC.element_to_be_clickable(slider_locator), msg=f'slider - {idship}')
+
+            slide = driver.find_element(By.XPATH, '//div[@class="scale_text slidetounlock"]/span')
+            action = ActionChains(driver)
+            action.drag_and_drop_by_offset(slider, slide.size['width'], 0).perform()
+
             data_locator = (By.XPATH, f'//p[@class="waybill-num"][contains(text(),"{idship}")]')
+            self.wait(driver, EC.visibility_of_element_located(data_locator), msg=f'datas - {idship}')
 
-            try:
-                is_data = driver.find_elements(*data_locator)
-
-            except NoSuchElementException:
-                is_data = None
-
-            if not is_data:
-                slider_locator = (By.XPATH, '//span[@class="nc_iconfont btn_slide"]')
-                slider = self.wait(driver, EC.element_to_be_clickable(slider_locator), msg=f'slider - {idship}')
-
-                slide = driver.find_element(By.XPATH, '//div[@class="scale_text slidetounlock"]/span')
-                action = ActionChains(driver)
-                action.drag_and_drop_by_offset(slider, slide.size['width'], 0).perform()
-
-                data_locator = (By.XPATH, f'//p[@class="waybill-num"][contains(text(),"{idship}")]')
-                self.wait(driver, EC.visibility_of_element_located(data_locator), msg=f'datas - {idship}')
-
-            return lxml.html.fromstring(driver.page_source)
+        return lxml.html.fromstring(driver.page_source)
 
     def parse_content(self, tree):
         events = []
@@ -600,11 +590,13 @@ class Chronopost(LaPoste):
     #  do not return any selenium objects, the driver is disposed after
     def get_content(self, driver, idship):
         url = self.get_url_for_browser(idship)
-        if self.load_page(driver, url):
+        if url:
             driver.get(url)
             timeline_locator = (By.XPATH, self.timeline_xpath)
             self.wait(driver, EC.presence_of_all_elements_located(timeline_locator), msg=f'timeline - {idship}')
             return lxml.html.fromstring(driver.page_source)
+        else:
+            self.log(f"FAILURE - can't find url for {idship}", error=True)
 
     def parse_content(self, tree):
         events = []
