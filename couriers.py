@@ -699,10 +699,34 @@ if __name__ == '__main__':
     logger.close()
 
     couriers = Couriers()
+    couriers_tests.sort(key=lambda t: t[0])
+    passed, failed = [], []
+
     for name, idship in couriers_tests:
         result = couriers.get(name).update(idship)
         ok = True if result and result['ok'] else False
-        print(f'>>>>>>>>>>>>>>>> test {"PASS" if  ok else "FAILED"} - {name}')
         if ok:
-            import pprint
-            pprint.pprint(result, indent=4)
+            passed.append(name)
+            evt = result['events'][0]
+            print(f'PASS test - {name}', end='')
+            status = evt['status'] + ', ' if evt['status'] else ''
+            print(f" - {evt['date']:{TXT.Long_date_format}} - {status}{evt['label']}")
+
+        else:
+            failed.append(name)
+            print(f'FAIL test - {name} !!!!!!!!!!!!!!!!!!!!!!!')
+
+    def get_list_of_names(names):
+        if not names:
+            return 'NONE'
+
+        elif len(names) == len(couriers_tests):
+            return f"ALL ({', '.join(names)})"
+
+        else:
+            return ', '.join(names)
+
+    print()
+    print(f'Passed: {get_list_of_names(passed)}')
+    print(f'Failed: {get_list_of_names(failed)}')
+    print()
