@@ -720,11 +720,8 @@ if __name__ == '__main__':
         if not names:
             return 'NONE'
 
-        elif len(names) == len(couriers_tests):
-            return f"ALL ({', '.join(names)})"
-
-        else:
-            return ', '.join(names)
+        txt = 'ALL ' if len(names) == len(couriers_tests) else ''
+        return f"{txt}{len(names)} ({', '.join(names)})"
 
     print()
     print(f'Passed: {get_list_of_names(passed)}')
