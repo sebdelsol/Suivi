@@ -194,6 +194,7 @@ class Tracker:
             if self.executors:
                 for executor in self.executors:
                     # https://stackoverflow.com/questions/49992329/the-workers-in-threadpoolexecutor-is-not-really-daemon
+                    # doesn't work with Python >= 3.9 ?
                     for thread in executor._threads:
                         del _threads_queues[thread]
 
