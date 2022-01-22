@@ -119,6 +119,7 @@ class Courier:
 
     def update(self, idship):
         if not self.validate_idship(idship):
+            # should be catched way before. better safe than sorry
             self.log(f'invalid tracking number {idship}, ({self.idship_validation_msg})', error=True)
 
         else:
