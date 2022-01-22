@@ -43,7 +43,6 @@ def get_all_subclasses(cls):
 
 class Couriers:
     driver_handler = None
-    need_driver_handler = []
 
     @classmethod
     def ask_driver_handler(cls, set_driver_handler):
@@ -54,10 +53,11 @@ class Couriers:
         log(f"Init Couriers {', '.join(self.couriers.keys())}")
 
         # create and set a driver_handler if needed
-        if len(self.need_driver_handler) > 0:
+        need_driver_handler = [courier for courier in self.couriers.values() if isinstance(courier.handler, SeleniumHandler)]
+        if len(need_driver_handler) > 0:
             self.driver_handler = DriverHandler(splash)
-            for set_driver_handler in self.need_driver_handler:
-                set_driver_handler(self.driver_handler)
+            for courier in need_driver_handler:
+                courier.handler.set_driver_handler(self.driver_handler)
 
     def get(self, name):
         return self.couriers.get(name)
@@ -90,8 +90,9 @@ class Courier:
                          r'(?<!être )livré',
                          r'(?<!être )distribué',
                          r'mis à disposition',
-                         r'livraison effectuée')
-    
+                         r'livraison effectuée',
+                         r'est disponible dans')
+
     error_words = ('error', 'erreur')
 
     subs = ((r'\.$', ''),               # remove ending .
@@ -124,7 +125,7 @@ class Courier:
 
         else:
             self.log(f'LOAD - {idship}')
-            content = self.get_content(idship)
+            content = self.handler.get_content(self, idship)
             ok = True if content is not None else False
             events, infos = [], {}
             if ok:
@@ -143,25 +144,29 @@ class Courier:
             for event in events:
                 event['courier'] = self.name
                 # clean label
+                event['status'] = event.get('status') or ''
                 for sub, replace in self.subs:
                     event['label'] = sub(replace, event['label'].strip())
+                    event['status'] = sub(replace, event['status'].strip())
 
-                event['delivered'] = event.get('delivered', False) or any(search(event['label'].lower()) for search in self.delivered_searchs)
+                whole_txt = ' '.join((event['status'], event['label']))
+                event['delivered'] = event.get('delivered', False) or any(search(whole_txt.lower()) for search in self.delivered_searchs)
                 if event['delivered']:
                     delivered = True
 
-                event['warn'] = event.get('warn', False) or any(error_word in event['label'].lower() for error_word in self.error_words)
-                event['status'] = event.get('status', '')
-
-            status_date = infos.get('status_date', events[0]['date'] if events else None)
+                event['warn'] = event.get('warn', False) or any(error_word in whole_txt.lower() for error_word in self.error_words)
 
             if not (events or infos.get('status_label')):
                 ok = False
 
+            status_date = infos.get('status_date', events[0]['date'] if events else None)
+            status_label = infos.get('status_label', (events[0]['status'] or events[0]['label']) if events else TXT.status_error)
+            status_warn = infos.get('status_warn', False if events else True)
+
             status = dict(date=status_date,
                           ok_date=status_date if ok else None,
-                          label=infos.get('status_label', events[0]['label'] if events else TXT.status_error),
-                          warn=infos.get('status_warn', False if events else True),
+                          label=status_label,
+                          warn=status_warn,
                           delivered=delivered)
 
             return dict(ok=ok,
@@ -172,82 +177,72 @@ class Courier:
                         events=events)
 
 
-# class decorator
-def WithRequests(request_timeout=5, max_retry=1, time_between_retry=1):
-    def decorator(courier):
-        def request(self, method, *args, **kwargs):
-            return requests.request(method, *args, timeout=request_timeout, **kwargs)
+class RequestHandler:
+    def __init__(self, request_timeout=5, max_retry=1, time_between_retry=1):
+        self. request_timeout = request_timeout
+        self.max_retry = max_retry
+        self.time_between_retry = time_between_retry
 
-        def wrapped_get_content(self, idship):
-            n_retry = max_retry
-            while True:
-                try:
-                    content = courier.inner_get_content(self, idship)
+    def request(self, method, *args, **kwargs):
+        return requests.request(method, *args, timeout=self.request_timeout, **kwargs)
 
-                except requests.exceptions.Timeout:
-                    self.log(f'request TIMEOUT for {idship}', error=True)
-                    content = None
+    def get_content(self, courier, idship):
+        n_retry = self.max_retry
+        while True:
+            try:
+                content = courier.get_content(idship)
 
-                if n_retry <= 0 or content is not None:
-                    return content
+            except requests.exceptions.Timeout:
+                courier.log(f'request TIMEOUT for {idship}', error=True)
+                content = None
 
-                n_retry -= 1
-                time.sleep(time_between_retry)
+            if n_retry <= 0 or content is not None:
+                return content
 
-        courier.request = request
-        courier.inner_get_content = courier.get_content
-        courier.get_content = wrapped_get_content
-        return courier
-
-    return decorator
+            n_retry -= 1
+            time.sleep(self.time_between_retry)
 
 
-# class decorator
-def WithDriver(page_load_timeout=100, wait_elt_timeout=30):
-    def decorator(courier):
-        exceptions_catched = (WebDriverException, TimeoutException,
-                              urllib3.exceptions.ProtocolError,
-                              urllib3.exceptions.NewConnectionError,
-                              urllib3.exceptions.MaxRetryError)
+class SeleniumHandler:
+    exceptions_catched = (WebDriverException, TimeoutException,
+                          urllib3.exceptions.ProtocolError,
+                          urllib3.exceptions.NewConnectionError,
+                          urllib3.exceptions.MaxRetryError)
 
-        def set_driver_handler(driver_handler):
-            courier.driver_handler = driver_handler
+    def __init__(self, page_load_timeout=100, wait_elt_timeout=30):
+        self.page_load_timeout = page_load_timeout
+        self.wait_elt_timeout = wait_elt_timeout
 
-        def wait(self, driver, until):
-            return WebDriverWait(driver, wait_elt_timeout).until(until)
+    def set_driver_handler(self, driver_handler):
+        self.driver_handler = driver_handler
 
-        def wrapped_get_content(self, idship):
-            driver = self.driver_handler.get()
+    def wait(self, driver, until):
+        return WebDriverWait(driver, self.wait_elt_timeout).until(until)
 
-            if driver:
-                try:
-                    driver.set_page_load_timeout(page_load_timeout)
-                    return courier.inner_get_content(self, driver, idship)
+    def get_content(self, courier, idship):
+        driver = self.driver_handler.get()
 
-                except exceptions_catched as e:
-                    error = type(e).__name__
+        if driver:
+            try:
+                driver.set_page_load_timeout(self.page_load_timeout)
+                return courier.get_content(driver, idship)
 
-                finally:
-                    self.driver_handler.dispose(driver)
+            except self.exceptions_catched as e:
+                error = type(e).__name__
 
-            else:
-                error = 'no driver available'
+            finally:
+                self.driver_handler.dispose(driver)
 
-            self.log(f'driver FAILURE - {error} for {idship}', error=True)
+        else:
+            error = 'no driver available'
 
-        Couriers.ask_driver_handler(set_driver_handler)
-        courier.wait = wait
-        courier.inner_get_content = courier.get_content
-        courier.get_content = wrapped_get_content
-        return courier
-
-    return decorator
+        courier.log(f'driver FAILURE - {error} for {idship}', error=True)
 
 
-@WithDriver(wait_elt_timeout=30)
 class Cainiao(Courier):
     name = 'Cainiao'
     fromto = f'CN{Courier.r_arrow}FR'
+    handler = SeleniumHandler(wait_elt_timeout=30)
 
     def get_url_for_browser(self, idship):
         return f'https://global.cainiao.com/detail.htm?mailNoList={idship}&lang=zh'
@@ -267,7 +262,7 @@ class Cainiao(Courier):
         if not is_data:
             self.log(f'driver WAIT slider - {idship}')
             slider_locator = (By.XPATH, '//span[@class="nc_iconfont btn_slide"]')
-            slider = self.wait(driver, EC.element_to_be_clickable(slider_locator))
+            slider = self.handler.wait(driver, EC.element_to_be_clickable(slider_locator))
 
             slide = driver.find_element(By.XPATH, '//div[@class="scale_text slidetounlock"]/span')
             action = ActionChains(driver)
@@ -275,7 +270,7 @@ class Cainiao(Courier):
 
             self.log(f'driver WAIT datas - {idship}')
             data_locator = (By.XPATH, f'//p[@class="waybill-num"][contains(text(),"{idship}")]')
-            self.wait(driver, EC.visibility_of_element_located(data_locator))
+            self.handler.wait(driver, EC.visibility_of_element_located(data_locator))
 
         return lxml.html.fromstring(driver.page_source)
 
@@ -291,11 +286,10 @@ class Cainiao(Courier):
         return events, {}
 
 
-@WithRequests(max_retry=1)
 class Asendia(Courier):
     name = 'Asendia'
+    handler = RequestHandler(max_retry=1)
     fromto = f'CN{Courier.r_arrow}FR'
-
     headers = {'Content-Type': 'application/json', 'Accept-Language': 'fr'}
     url = 'https://tracking.asendia.com/alliot/items/references'
 
@@ -303,7 +297,7 @@ class Asendia(Courier):
         return f'https://tracking.asendia.com/tracking/{idship}'
 
     def get_content(self, idship):
-        r = self.request('POST', self.url, json={'criteria': [idship], 'shipped': False}, headers=self.headers)
+        r = self.handler.request('POST', self.url, json={'criteria': [idship], 'shipped': False}, headers=self.headers)
         if r.status_code == 200:
             return r.json()
 
@@ -329,12 +323,11 @@ class Asendia(Courier):
         return events, {}
 
 
-@WithRequests()
 class MondialRelay(Courier):
     name = 'Mondial Relay'
+    handler = RequestHandler()
     product = 'Colis'
     fromto = f'FR{Courier.r_arrow}FR'
-
     idship_validation = r'^\d{8}(\d{2})?(\d{2})?\-\d{5}$'
     idship_validation_msg = f'8, 10 {TXT.or_} 12 {TXT.digits}-{TXT.zipcode}'
 
@@ -344,7 +337,7 @@ class MondialRelay(Courier):
 
     def get_content(self, idship):
         url = self.get_url_for_browser(idship)
-        r = self.request('GET', url)
+        r = self.handler.request('GET', url)
         if r.status_code == 200:
             return lxml.html.fromstring(r.content)
 
@@ -367,16 +360,63 @@ class MondialRelay(Courier):
         return events, {}
 
 
-@WithRequests()
+class RelaisColis(Courier):
+    name = 'Relais Colis'
+    handler = RequestHandler()
+    product = 'Colis'
+    fromto = f'FR{Courier.r_arrow}FR'
+    idship_validation, idship_validation_msg = get_simple_validation(10, 16)
+    url = 'https://www.relaiscolis.com/suivi-de-colis/index/tracking/'
+
+    def get_url_for_browser(self, idship):
+        pass  # can't post to webbrowser
+
+    def get_content(self, idship):
+        r = self.handler.request('POST', self.url, data={'valeur': idship, 'typeRecherche': 'EXP'})
+        if r.status_code == 200:
+            return r.json()
+
+    def parse_content(self, json):
+        events = []
+        product = None
+        delivered = False
+
+        shipment = json.get('Colis', {}).get('Colis')
+        if shipment:
+            vendor = shipment.get('Enseigne')
+            if vendor:
+                product = f'{self.product} {vendor.capitalize()}'
+
+            timeline = shipment.get('ListEvenements', {}).get('Evenement', ())
+            for event in timeline:
+                status = None
+                label = event['Libelle']
+                date = get_local_time(event['Date'])
+
+                event_delivered = False
+                if event.get('CodeJUS') == 'LIV':
+                    delivered = True
+                    event_delivered = True
+                    relais = json.get('Relais', {}).get('Relais')
+                    if relais:
+                        status = label
+                        label = ', '.join(txt for k in ('Nom', 'Adresse', 'CodePostal', 'Commune') if (txt := relais.get(k)) is not None)
+
+                events.append(dict(date=date, status=status, label=label, delivered=event_delivered))
+
+        return events, dict(product=product, delivered=delivered)
+
+
 class GLS(Courier):
     name = 'GLS'
+    handler = RequestHandler()
 
     def get_url_for_browser(self, idship):
         return f'https://gls-group.eu/FR/fr/suivi-colis.html?match={idship}'
 
     def get_content(self, idship):
         url = f'https://gls-group.eu/app/service/open/rest/FR/fr/rstt001?match={idship}'
-        r = self.request('GET', url)
+        r = self.handler.request('GET', url)
         if r.status_code == 200:
             return r.json()
 
@@ -396,10 +436,10 @@ class GLS(Courier):
                         if weight := infos.get('WEIGHT'):
                             product += f" {weight.get('value')}"
 
-                if history := shipment.get('history'):
+                if timeline := shipment.get('history'):
                     countries = []
 
-                    for event in history:
+                    for event in timeline:
                         label = event['evtDscr']
                         address = event['address']
 
@@ -417,16 +457,16 @@ class GLS(Courier):
         return events, dict(product=product, fromto=fromto)
 
 
-@WithRequests()
 class DPD(Courier):
     name = 'DPD'
+    handler = RequestHandler()
 
     def get_url_for_browser(self, idship):
         return f'https://trace.dpd.fr/fr/trace/{idship}'
 
     def get_content(self, idship):
         url = self.get_url_for_browser(idship)
-        r = self.request('GET', url)
+        r = self.handler.request('GET', url)
         if r.status_code == 200:
             return lxml.html.fromstring(r.content)
 
@@ -453,16 +493,16 @@ class DPD(Courier):
         return events, dict(product=product)
 
 
-@WithRequests()
 class NLPost(Courier):
     name = 'NL Post'
+    handler = RequestHandler()
 
     def get_url_for_browser(self, idship):
         return f'https://postnl.post/Details?barcode={idship}'
 
     def get_content(self, idship):
         url = self.get_url_for_browser(idship)
-        r = self.request('GET', url)
+        r = self.handler.request('GET', url)
         if r.status_code == 200:
             return lxml.html.fromstring(r.content)
 
@@ -478,16 +518,16 @@ class NLPost(Courier):
         return events, {}
 
 
-@WithRequests()
 class FourPX(Courier):
     name = '4PX'
+    handler = RequestHandler()
 
     def get_url_for_browser(self, idship):
         return f'http://track.4px.com/query/{idship}?'
 
     def get_content(self, idship):
         url = self.get_url_for_browser(idship)
-        r = self.request('GET', url)
+        r = self.handler.request('GET', url)
         if r.status_code == 200:
             return lxml.html.fromstring(r.content)
 
@@ -505,10 +545,9 @@ class FourPX(Courier):
         return events, {}
 
 
-@WithRequests()
 class LaPoste(Courier):
     name = 'La Poste'
-
+    handler = RequestHandler()
     idship_validation, idship_validation_msg = get_simple_validation(11, 15)
     headers = {'X-Okapi-Key': LaPoste_key, 'Accept': 'application/json'}
 
@@ -539,7 +578,7 @@ class LaPoste(Courier):
 
     def get_content(self, idship):
         url = f'https://api.laposte.fr/suivi/v2/idships/{idship}?lang=fr_FR'
-        r = self.request('GET', url, headers=self.headers)
+        r = self.handler.request('GET', url, headers=self.headers)
         if r.status_code == 200:
             return r.json()
 
@@ -584,15 +623,14 @@ class LaPoste(Courier):
             return events, dict(status_warn=True, status_label=status_label.replace('.', ''))
 
 
-@WithDriver(wait_elt_timeout=10)
 class Chronopost(LaPoste):
     name = 'Chronopost'
-
+    handler = SeleniumHandler(wait_elt_timeout=10)
     timeline_xpath = '//tr[@class="toggleElmt show"]'
 
     # use La Poste API to find out the url
     def get_url_for_browser(self, idship):
-        json = super().get_content(idship)
+        json = LaPoste.get_content(LaPoste, idship)  # super() calls with a ChronoPost class instance
         if json:
             return json.get('shipment', {}).get('urlDetail')
 
@@ -603,7 +641,7 @@ class Chronopost(LaPoste):
             driver.get(url)
             self.log(f'driver WAIT timeline - {idship}')
             timeline_locator = (By.XPATH, self.timeline_xpath)
-            self.wait(driver, EC.presence_of_all_elements_located(timeline_locator))
+            self.handler.wait(driver, EC.presence_of_all_elements_located(timeline_locator))
             return lxml.html.fromstring(driver.page_source)
 
         else:
@@ -624,10 +662,9 @@ class Chronopost(LaPoste):
         return events, {}
 
 
-@WithRequests()
 class DHL(Courier):
     name = 'DHL'
-
+    handler = RequestHandler()
     idship_validation, idship_validation_msg = get_simple_validation(10)
     headers = {'Accept': 'application/json', 'DHL-API-Key': dhl_key}
 
@@ -636,7 +673,7 @@ class DHL(Courier):
 
     def get_content(self, idship):
         url = f'https://api-eu.dhl.com/track/shipments?trackingNumber={idship}&requesterCountryCode=FR'
-        r = self.request('GET', url, headers=self.headers)
+        r = self.handler.request('GET', url, headers=self.headers)
         return r.status_code == 200, r.json()
 
     def parse_content(self, json):
@@ -666,6 +703,6 @@ if __name__ == '__main__':
         result = couriers.get(name).update(idship)
         ok = True if result and result['ok'] else False
         print(f'>>>>>>>>>>>>>>>> test {"PASS" if  ok else "FAILED"} - {name}')
-        # if ok:
-        #     import pprint
-        #     pprint.pprint(result, indent=4)
+        if ok:
+            import pprint
+            pprint.pprint(result, indent=4)
