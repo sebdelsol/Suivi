@@ -185,7 +185,7 @@ class Tracker:
             content = self.contents.get(courier_name)
             if content:
                 if not content['ok']:
-                    print(f'CLEAN {self.description} - {self.idship}, {courier_name}')
+                    log(f'CLEAN {self.description} - {self.idship}, {courier_name}')
                     del self.contents[courier_name]
 
     def close(self):
