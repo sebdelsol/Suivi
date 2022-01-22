@@ -830,7 +830,6 @@ class Main_window(sg.Window):
 
 
 if __name__ == '__main__':
-
     needed_version = SpecifierSet(Python_version)
     version = '.'.join(str(v) for v in sys.version_info[:3])
     print(f'Python {version} running')
