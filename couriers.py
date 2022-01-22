@@ -119,7 +119,7 @@ class Courier:
 
     def update(self, idship):
         if not self.validate_idship(idship):
-            self.log(f'Wrong tracking {idship} ({self.idship_validation_msg})', error=True)
+            self.log(f'invalid tracking number {idship}, ({self.idship_validation_msg})', error=True)
 
         else:
             self.log(f'LOAD - {idship}')
