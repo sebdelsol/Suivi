@@ -78,7 +78,8 @@ class Edit(Popup):
             courier = button.Key
             disabled = not courier.get_valid_url_for_browser(idship)
             button.update(disabled=disabled, visible=not disabled)
-            msg.update(text_color='red' if disabled else 'green')
+            valid = courier.validate_idship(idship)
+            msg.update(text_color='green' if valid else 'red')
 
     def event_handler(self, event):
         if event == 'idship':
