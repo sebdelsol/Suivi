@@ -713,6 +713,11 @@ class USPS(Courier):
     handler = SeleniumHandler(wait_elt_timeout=10)
     timeline_xpath = '//div[contains(@id, "trackingHistory")]'
 
+    @staticmethod
+    def clean(txt):
+        txt = txt.replace('\xa0', ' ')
+        return re.sub(r'[\n\t]+', ' ', txt).strip()
+
     def get_url_for_browser(self, idship):
         return f'https://tools.usps.com/go/TrackConfirmAction?tLabels={idship}'
 
@@ -724,11 +729,6 @@ class USPS(Courier):
         self.handler.wait(driver, EC.presence_of_all_elements_located(timeline_locator))
         return lxml.html.fromstring(driver.page_source)
 
-    @staticmethod
-    def clean(txt):
-        txt = txt.replace('\xa0', ' ')
-        return re.sub(r'[\n\t]+', ' ', txt).strip()
-
     def parse_content(self, tree):
         events = []
 
@@ -737,11 +737,13 @@ class USPS(Courier):
             txt = self.clean(txt)
             if txt:
                 try:
+                    # is it a date ?
                     date = parse(txt).replace(tzinfo=get_localzone())
                     event = dict(date=date)
                     events.append(event)
 
                 except ParserError:
+                    # not a date, it's either a label then a status, skip everything after
                     if event:
                         if event.setdefault('label', txt) != txt:
                             event.setdefault('status', txt)
