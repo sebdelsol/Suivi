@@ -44,10 +44,6 @@ def get_all_subclasses(cls):
 class Couriers:
     driver_handler = None
 
-    @classmethod
-    def ask_driver_handler(cls, set_driver_handler):
-        cls.need_driver_handler.append(set_driver_handler)
-
     def __init__(self, splash=None):
         self.couriers = {cls.name: cls() for cls in get_all_subclasses(Courier)}
         log(f"Init Couriers {', '.join(self.couriers.keys())}")
