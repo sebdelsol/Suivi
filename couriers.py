@@ -3,7 +3,7 @@ import time
 import requests
 import lxml.html
 from datetime import datetime, timedelta
-from dateutil.parser import parse
+from dateutil.parser import parse, ParserError
 from tzlocal import get_localzone
 import pytz
 from selenium.common.exceptions import WebDriverException, TimeoutException, NoSuchElementException
@@ -706,6 +706,47 @@ class DHL(Courier):
                 events.append(dict(date=date, status=status, label=label, warn=warn))
 
             return events, dict(product=product)
+
+
+class USPS(Courier):
+    name = 'USPS'
+    handler = SeleniumHandler(wait_elt_timeout=10)
+    timeline_xpath = '//div[contains(@id, "trackingHistory")]'
+
+    def get_url_for_browser(self, idship):
+        return f'https://tools.usps.com/go/TrackConfirmAction?tLabels={idship}'
+
+    def get_content(self, driver, idship):
+        url = self.get_url_for_browser(idship)
+        driver.get(url)
+        self.log(f'driver WAIT timeline - {idship}')
+        timeline_locator = (By.XPATH, self.timeline_xpath)
+        self.handler.wait(driver, EC.presence_of_all_elements_located(timeline_locator))
+        return lxml.html.fromstring(driver.page_source)
+
+    @staticmethod
+    def clean(txt):
+        txt = txt.replace('\xa0', ' ')
+        return re.sub(r'[\n\t]+', ' ', txt).strip()
+
+    def parse_content(self, tree):
+        events = []
+
+        txts = tree.xpath(self.timeline_xpath + '//span//text()')
+        for txt in txts:
+            txt = self.clean(txt)
+            if txt:
+                try:
+                    date = parse(txt).replace(tzinfo=get_localzone())
+                    event = dict(date=date)
+                    events.append(event)
+
+                except ParserError:
+                    if event:
+                        if event.setdefault('label', txt) != txt:
+                            event.setdefault('status', txt)
+
+        return events, {}
 
 
 # test couriers
