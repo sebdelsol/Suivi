@@ -2,7 +2,7 @@ import re
 import time
 import requests
 import lxml.html
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil.parser import parse
 from tzlocal import get_localzone
 import pytz
@@ -29,6 +29,10 @@ def get_local_time(date):
 
 def get_local_now():
     return datetime.now().astimezone(get_localzone())
+
+
+def round_minute(dt):
+    return dt.replace(second=0, microsecond=0) + timedelta(minutes=dt.second // 30)
 
 
 def get_all_subclasses(cls):
@@ -160,7 +164,7 @@ class Courier:
                 ok = False
 
             status_date = infos.get('status_date', events[0]['date'] if events else None)
-            status_label = infos.get('status_label', (events[0]['status'] or events[0]['label']) if events else TXT.status_error)
+            status_label = infos.get('status_label', events[0]['label'] if events else TXT.status_error)
             status_warn = infos.get('status_warn', False if events else True)
 
             status = dict(date=status_date,
@@ -665,27 +669,45 @@ class Chronopost(LaPoste):
 class DHL(Courier):
     name = 'DHL'
     handler = RequestHandler()
-    idship_validation, idship_validation_msg = get_simple_validation(10)
+    idship_validation, idship_validation_msg = get_simple_validation(10, 39)
     headers = {'Accept': 'application/json', 'DHL-API-Key': dhl_key}
 
     def get_url_for_browser(self, idship):
         return f'https://www.dhl.com/fr-en/home/our-divisions/parcel/private-customers/tracking-parcel.html?tracking-id={idship}'
 
     def get_content(self, idship):
-        url = f'https://api-eu.dhl.com/track/shipments?trackingNumber={idship}&requesterCountryCode=FR'
+        url = f'https://api-eu.dhl.com/track/shipments?trackingNumber={idship}&language=FR'
         r = self.handler.request('GET', url, headers=self.headers)
         return r.status_code == 200, r.json()
 
     def parse_content(self, json):
         events = []
 
-        shipments = json.get('shipments')
+        shipments = json[1].get('shipments')
         if shipments:
             shipment = shipments[0]
             product = f"DHL {shipment['service']}"
 
             for event in shipment['events']:
-                events.append(dict(date=get_local_time(event['date']), label=event['description']))
+                label = event.get('description') or event.get('status')
+                if label:
+                    label = label.capitalize()
+
+                warn = False
+                if code := event.get('statusCode'):
+                    warn = code == 'failure'
+
+                # round dates to minute to better find duplicate
+                date = round_minute(get_local_time(event['timestamp']))
+
+                status = None
+                location = event.get('location')
+                if location:
+                    status = location.get('address', {}).get('addressLocality').title()
+                if status:
+                    status = status.title()
+
+                events.append(dict(date=date, status=status, label=label, warn=warn))
 
             return events, dict(product=product)
 
