@@ -310,26 +310,27 @@ class TrackerWidget:
 
         if events:
             events_date = [f"{evt['date']:{TXT.Long_date_format}}".replace('.', '').split(',') for evt in events]
-            date_w = max(len(date) for date in events_date)
+            day_w, hour_w = max((len(date[0]), len(date[1])) for date in events_date)
+            day_spaces, hour_spaces = ' ' * day_w, ' ' * hour_w
+            previous_day, previous_hour = None, None
+
             events_courier = [f"{evt['courier']}, " for evt in events]
             courier_w = max(len(courier) for courier in events_courier)
-            previous_day = None
-            previous_hour = None
 
             prt = self.events_widget.print
             for i, event in enumerate(events):
                 event_courier = events_courier[i].center(courier_w)
 
                 day, hour = events_date[i]
-                hour = hour.strip()
                 same_day, previous_day = day == previous_day, day
                 same_hour, previous_hour = hour == previous_hour, hour
                 if same_day:
-                    day = ' ' * len(previous_day)
+                    day = day_spaces
                     if same_hour:
-                        hour = ' ' * len(previous_hour)
+                        hour = hour_spaces
 
-                event_date = f"{day}{' ' if same_day else ','} {hour}{' ' if same_hour and same_day else ','} ".ljust(date_w)
+                event_date = f"{day}{' ' if same_day else ','}".ljust(day_w + 1)
+                event_date += f"{hour}{' ' if same_hour and same_day else ','} "
                 event_status = f"{event['status']}, " if event['status'] else ''
                 event_label = f"{event['label']}."
                 if event_label:
