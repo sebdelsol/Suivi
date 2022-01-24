@@ -1,6 +1,6 @@
 **Tracking** for:
 - 4PX
-- Asiendia
+- Asendia
 - Cainiao (AliExpress)
 - Chronopost
 - DPD
