@@ -179,7 +179,7 @@ class Courier:
 
 class RequestHandler:
     def __init__(self, request_timeout=5, max_retry=1, time_between_retry=1):
-        self. request_timeout = request_timeout
+        self.request_timeout = request_timeout
         self.max_retry = max_retry
         self.time_between_retry = time_between_retry
 
