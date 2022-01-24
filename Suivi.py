@@ -1104,7 +1104,7 @@ class Main_window(sg.Window):
                 self.widgets.show_deleted(window)
 
         else:
-            return window.event_handler(event)
+            return window.event_handler(event) if event else False  # exit, see Popup.loop
 
 
 if __name__ == "__main__":
@@ -1128,6 +1128,7 @@ if __name__ == "__main__":
         import textwrap
         import threading
         from bisect import bisect
+        from tkinter import TclError
         from tkinter import font as tk_font
 
         import timeago
@@ -1145,7 +1146,11 @@ if __name__ == "__main__":
         main_window.addlog(logger)
         splash.close()
 
-        main_window.loop()
+        try:
+            main_window.loop()
+        except TclError as e:
+            log(f"TCL error ({e})", error=True)
+
         main_window.close()
         logger.close()
 

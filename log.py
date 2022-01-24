@@ -1,5 +1,6 @@
 import queue
 import re
+from tkinter import TclError
 
 import PySimpleGUI as sg
 
@@ -164,7 +165,10 @@ class Logger(sg.Window):
                 if event in (None, "Link") or len(event) == 1 or re.match(r"\w+\:\d+", event):
                     break
 
-        self.listen(exiting=True)
+        try:
+            self.listen(exiting=True)
+        except TclError as e:
+            print(f"TCL error ({e})")
 
         super().close()
 
