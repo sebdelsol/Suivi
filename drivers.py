@@ -2,6 +2,7 @@ import threading
 import queue
 from log import log
 from config import chrome_exe
+import theme as TH
 
 USE_UC_V2 = True
 CREATE_DRIVER_AT_INIT = False
@@ -43,7 +44,7 @@ class DriverHandler:
         if CREATE_DRIVER_AT_INIT:
             for i in range(self.n_drivers):
                 if splash:
-                    splash.update(f'création pilote {i + 1}/{self.n_drivers}')
+                    splash.update(f'{TH.driver_creation} {i + 1}/{self.n_drivers}')
                 self.create_driver_if_needed()
 
     def create_driver_if_needed(self):
