@@ -23,6 +23,7 @@ edit = 'Édition'
 
 init = 'inititialisation'
 tracker_creation = 'création suivi'
+driver_creation = 'création pilote'
 updating = 'MàJ...'
 updated = 'MàJ'
 empty = 'Vide'
