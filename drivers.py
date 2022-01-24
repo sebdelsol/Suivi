@@ -79,7 +79,7 @@ class DriverHandler:
         self.drivers_available.put(driver)
 
     def close(self):
-        # remaining driver in creation is handled by undetected_chromedriver @ exit
+        # remaining drivers still in creation are handled by undetected_chromedriver @ exit
         for i, driver in enumerate(self.drivers):
             log(f'QUIT driver {i + 1}/{len(self.drivers)}')
             driver.quit()
