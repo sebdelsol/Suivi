@@ -1,36 +1,52 @@
-import traceback
-import threading
-import os
 import copy
 import json
+import os
 import pickle as pickle
+import threading
+import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from concurrent.futures.thread import _threads_queues
 
-from jsondate import json_decode_datetime, json_encode_datetime
 from couriers import Couriers, get_local_now
+from jsondate import json_decode_datetime, json_encode_datetime
 from log import log
 
-json_ext = '.json'
-pickle_ext = '.trck'
+json_ext = ".json"
+pickle_ext = ".trck"
 
 
 class TrackerState:
-    deleted = 'deleted'
-    archived = 'archived'
-    shown = 'shown'
+    deleted = "deleted"
+    archived = "archived"
+    shown = "shown"
 
 
 class SavedTracker(dict):
     def __init__(self, tracker):
         with tracker.critical:
             # tracker attribute to save
-            for attr in ('idship', 'description', 'used_couriers', 'state', 'contents', 'creation_date'):
+            for attr in (
+                "idship",
+                "description",
+                "used_couriers",
+                "state",
+                "contents",
+                "creation_date",
+            ):
                 self[attr] = tracker.__dict__[attr]
 
 
 class Tracker:
-    def __init__(self, idship, description, used_couriers, available_couriers, state=TrackerState.shown, contents=None, creation_date=None):
+    def __init__(
+        self,
+        idship,
+        description,
+        used_couriers,
+        available_couriers,
+        state=TrackerState.shown,
+        contents=None,
+        creation_date=None,
+    ):
         self.set_id(idship, description, used_couriers)
         self.state = state
         self.contents = contents or {}
@@ -47,13 +63,13 @@ class Tracker:
 
         self.loaded_events = set()
         for content in self.contents.values():
-            if events := content.get('events'):
+            if events := content.get("events"):
                 self.loaded_events |= {tuple(event.items()) for event in events}  # can't hash dict
 
     def set_id(self, idship, description, used_couriers):
         self.used_couriers = used_couriers or []
-        self.description = (description or '').strip().title()
-        self.idship = (idship.upper() or '').strip()
+        self.description = (description or "").strip().title()
+        self.idship = (idship.upper() or "").strip()
 
     def _get_and_prepare_idle_couriers_names(self):
         if self.idship:
@@ -91,7 +107,10 @@ class Tracker:
             with self.executor_ops:
                 if not self.closing:
                     executor = ThreadPoolExecutor(max_workers=len(courier_names))
-                    futures = {executor.submit(self._update_courier, courier_name): courier_name for courier_name in courier_names}
+                    futures = {
+                        executor.submit(self._update_courier, courier_name): courier_name
+                        for courier_name in courier_names
+                    }
                     self.executors.append(executor)
 
             # handle threads
@@ -101,16 +120,19 @@ class Tracker:
                     courier_name = futures[future]
                     with self.critical:
                         if new_content is not None:
-                            if new_content['ok'] or courier_name not in self.contents:
-                                new_content['courier_name'] = courier_name
+                            if new_content["ok"] or courier_name not in self.contents:
+                                new_content["courier_name"] = courier_name
                                 self.contents[courier_name] = new_content
 
-                        error = not(new_content and new_content['ok'])
+                        error = not (new_content and new_content["ok"])
                         self.couriers_error[courier_name] = error
                         self.couriers_updating[courier_name] = False
 
-                    msg = 'FAILED' if error else 'DONE'
-                    log(f'update {msg} - {self.description} - {self.idship}, {courier_name}', error=error)
+                    msg = "FAILED" if error else "DONE"
+                    log(
+                        f"update {msg} - {self.description} - {self.idship}, {courier_name}",
+                        error=error,
+                    )
 
                     yield self.get_consolidated_content()
 
@@ -133,27 +155,34 @@ class Tracker:
         with self.critical:
             contents_ok = []
             for courier_name, content in self.contents.items():
-                if courier_name in self.used_couriers and content['ok'] and content.get('idship') == self.idship:
+                if (
+                    courier_name in self.used_couriers
+                    and content["ok"]
+                    and content.get("idship") == self.idship
+                ):
                     contents_ok.append(copy.deepcopy(content))
 
         if len(contents_ok) > 0:
-            contents_ok.sort(key=lambda c: c['status']['date'], reverse=True)
+            contents_ok.sort(key=lambda c: c["status"]["date"], reverse=True)
             consolidated = contents_ok[0]
 
-            events = sum((content['events'] for content in contents_ok), [])
-            events.sort(key=lambda evt: evt['date'], reverse=True)
+            events = sum((content["events"] for content in contents_ok), [])
+            events.sort(key=lambda evt: evt["date"], reverse=True)
 
             for event in events:
-                event['new'] = tuple(event.items()) not in self.loaded_events
+                event["new"] = tuple(event.items()) not in self.loaded_events
 
-            consolidated['events'] = events
+            consolidated["events"] = events
 
-            delivered = any(content['status'].get('delivered') for content in contents_ok)
-            consolidated['status']['delivered'] = delivered
-            consolidated['elapsed'] = events and (events[0]['date'] if delivered else get_local_now()) - events[-1]['date']
-            consolidated['status']['date'] = self._no_future(consolidated['status']['date'])
+            delivered = any(content["status"].get("delivered") for content in contents_ok)
+            consolidated["status"]["delivered"] = delivered
+            consolidated["elapsed"] = (
+                events
+                and (events[0]["date"] if delivered else get_local_now()) - events[-1]["date"]
+            )
+            consolidated["status"]["date"] = self._no_future(consolidated["status"]["date"])
 
-        consolidated['couriers_update'] = self.get_couriers_update()
+        consolidated["couriers_update"] = self.get_couriers_update()
 
         return consolidated
 
@@ -162,7 +191,9 @@ class Tracker:
             couriers_update = {}
             for courier_name in self.used_couriers:
                 content = self.contents.get(courier_name)
-                ok_date = self._no_future(content and content.setdefault('status', {}).get('ok_date'))
+                ok_date = self._no_future(
+                    content and content.setdefault("status", {}).get("ok_date")
+                )
                 error = self.couriers_error.get(courier_name, True)
                 updating = self.couriers_updating.get(courier_name, False)
                 courier = self.available_couriers.get(courier_name)
@@ -178,14 +209,14 @@ class Tracker:
 
     def get_delivered(self):
         content = self.get_consolidated_content()
-        return content.setdefault('status', {}).get('delivered')
+        return content.setdefault("status", {}).get("delivered")
 
     def clean(self):
         for courier_name in self.available_couriers.get_names():
             content = self.contents.get(courier_name)
             if content:
-                if not content['ok']:
-                    log(f'CLEAN {self.description} - {self.idship}, {courier_name}')
+                if not content["ok"]:
+                    log(f"CLEAN {self.description} - {self.idship}, {courier_name}")
                     del self.contents[courier_name]
 
     def close(self):
@@ -205,13 +236,26 @@ class Trackers:
         self.couriers = Couriers(splash)
 
         if load_as_json:
-            trackers = self.load_from_file(json_ext, 'r', lambda f: json.load(f, object_hook=json_decode_datetime))
+            trackers = self.load_from_file(
+                json_ext, "r", lambda f: json.load(f, object_hook=json_decode_datetime)
+            )
 
         else:
-            trackers = self.load_from_file(pickle_ext, 'rb', lambda f: pickle.load(f))
+            trackers = self.load_from_file(pickle_ext, "rb", lambda f: pickle.load(f))
 
         if trackers:
-            trackers = [Tracker(trk['idship'], trk['description'], trk['used_couriers'], self.couriers, trk['state'], trk['contents'], trk['creation_date']) for trk in trackers]
+            trackers = [
+                Tracker(
+                    trk["idship"],
+                    trk["description"],
+                    trk["used_couriers"],
+                    self.couriers,
+                    trk["state"],
+                    trk["contents"],
+                    trk["creation_date"],
+                )
+                for trk in trackers
+            ]
 
         self.trackers = self.sort(trackers or [])
 
@@ -219,8 +263,13 @@ class Trackers:
         trackers = self.sort(self.get_not_deleted())
         saved_trackers = [SavedTracker(tracker) for tracker in trackers]
 
-        self.save_to_file(saved_trackers, pickle_ext, 'wb', lambda obj, f: pickle.dump(obj, f))
-        self.save_to_file(saved_trackers, json_ext, 'w', lambda obj, f: json.dump(obj, f, default=json_encode_datetime, indent=4))
+        self.save_to_file(saved_trackers, pickle_ext, "wb", lambda obj, f: pickle.dump(obj, f))
+        self.save_to_file(
+            saved_trackers,
+            json_ext,
+            "w",
+            lambda obj, f: json.dump(obj, f, default=json_encode_datetime, indent=4),
+        )
 
     def load_from_file(self, ext, mode, load):
         filename = self.filename + ext

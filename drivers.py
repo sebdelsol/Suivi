@@ -1,8 +1,9 @@
-import threading
 import queue
-from log import log
-from config import chrome_exe
+import threading
+
 import localization as TXT
+from config import chrome_exe
+from log import log
 
 USE_UC_V2 = True
 CREATE_DRIVER_AT_INIT = False
@@ -19,23 +20,34 @@ class DriverHandler:
     n_drivers = 1
 
     experimental_options = dict(
-        prefs={'translate_whitelists': {'de': 'fr', 'es': 'fr', 'en': 'fr', 'und': 'fr', 'zh-CN': 'fr', 'zh-TW': 'fr'},
-               'translate': {'enabled': 'true'},
-               'profile.managed_default_content_settings.images': 2,  # remove image
-               'profile.managed_default_content_settings.cookies': 2,  # remove cookies
-               },
-        excludeSwitches=['enable-logging']
+        prefs={
+            "translate_whitelists": {
+                "de": "fr",
+                "es": "fr",
+                "en": "fr",
+                "und": "fr",
+                "zh-CN": "fr",
+                "zh-TW": "fr",
+            },
+            "translate": {"enabled": "true"},
+            "profile.managed_default_content_settings.images": 2,  # remove image
+            "profile.managed_default_content_settings.cookies": 2,  # remove cookies
+        },
+        excludeSwitches=["enable-logging"],
     )
 
-    options = ('--no-first-run',
-               '--no-service-autorun',
-               '--password-store=basic',
-               '--lang=fr',
-               )
+    options = (
+        "--no-first-run",
+        "--no-service-autorun",
+        "--password-store=basic",
+        "--lang=fr",
+    )
 
-    options_V1 = ('--window-size=1024,768', )  # reach sliders
-    options_V2 = ('--excludeSwitches --enable-logging',
-                  '--blink-settings=imagesEnabled=false')
+    options_V1 = ("--window-size=1024,768",)  # reach sliders
+    options_V2 = (
+        "--excludeSwitches --enable-logging",
+        "--blink-settings=imagesEnabled=false",
+    )
 
     def __init__(self, splash):
         self.drivers_available = queue.Queue() if self.n_drivers > 0 else None
@@ -44,7 +56,7 @@ class DriverHandler:
         if CREATE_DRIVER_AT_INIT:
             for i in range(self.n_drivers):
                 if splash:
-                    splash.update(f'{TXT.driver_creation} {i + 1}/{self.n_drivers}')
+                    splash.update(f"{TXT.driver_creation} {i + 1}/{self.n_drivers}")
                 self.create_driver_if_needed()
 
     def create_driver_if_needed(self):
@@ -52,7 +64,7 @@ class DriverHandler:
         with self.driver_creation:
             if len(self.drivers) < self.n_drivers:
 
-                log(f'driver ({len(self.drivers) + 1}/{self.n_drivers}) CREATION')
+                log(f"driver ({len(self.drivers) + 1}/{self.n_drivers}) CREATION")
                 options = webdriver.ChromeOptions()
                 options.headless = True
                 options.binary_location = chrome_exe
@@ -69,7 +81,7 @@ class DriverHandler:
 
                 self.drivers_available.put(driver)
                 self.drivers.append(driver)
-                log(f'driver ({len(self.drivers)}/{self.n_drivers}) CREATED')
+                log(f"driver ({len(self.drivers)}/{self.n_drivers}) CREATED")
 
     def get(self):
         self.create_driver_if_needed()
@@ -81,5 +93,5 @@ class DriverHandler:
     def close(self):
         # remaining drivers still in creation are handled by undetected_chromedriver @ exit
         for i, driver in enumerate(self.drivers):
-            log(f'QUIT driver {i + 1}/{len(self.drivers)}')
+            log(f"QUIT driver {i + 1}/{len(self.drivers)}")
             driver.quit()
