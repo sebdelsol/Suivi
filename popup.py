@@ -1,4 +1,3 @@
-import webbrowser
 from collections import namedtuple
 
 import PySimpleGUI as sg
@@ -113,8 +112,10 @@ class Edit(Popup):
     def idship_updated(self, idship):
         for msg, button in self.idship_widgets:
             courier = button.Key
+
             disabled = not courier.get_valid_url_for_browser(idship)
             button.update(disabled=disabled, visible=not disabled)
+
             valid = courier.validate_idship(idship)
             msg.update(text_color="green" if valid else "red")
 
@@ -124,8 +125,7 @@ class Edit(Popup):
 
         elif isinstance(event, Courier):
             courier, idship = event, self["idship"].get()
-            url = courier.get_url_for_browser(idship)
-            webbrowser.open(url)
+            courier.open_in_browser(idship)
 
         elif event in self.couriers_names:
             is_checked = self[event].get()

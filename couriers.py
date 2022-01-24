@@ -1,5 +1,6 @@
 import re
 import time
+import webbrowser
 from datetime import datetime, timedelta
 
 import lxml.html
@@ -7,7 +8,8 @@ import pytz
 import requests
 import urllib3
 from dateutil.parser import ParserError, parse
-from selenium.common.exceptions import NoSuchElementException, TimeoutException, WebDriverException
+from selenium.common.exceptions import (NoSuchElementException,
+                                        TimeoutException, WebDriverException)
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -18,6 +20,7 @@ import localization as TXT
 from config import LaPoste_key, dhl_key
 from drivers import DriverHandler
 from log import log
+from tempbrowser import TempBrowser
 
 
 def get_sentence(txt, nb=-1):
@@ -127,6 +130,10 @@ class Courier:
     def get_valid_url_for_browser(self, idship):
         if idship and self.validate_idship(idship):
             return self.get_url_for_browser(idship)
+
+    def open_in_browser(self, idship):
+        url = self.get_url_for_browser(idship)
+        webbrowser.open(url)
 
     def update(self, idship):
         if not self.validate_idship(idship):
@@ -405,7 +412,16 @@ class RelaisColis(Courier):
     url = "https://www.relaiscolis.com/suivi-de-colis/index/tracking/"
 
     def get_url_for_browser(self, idship):
-        pass  # can't post to webbrowser
+        return "https://www.relaiscolis.com/suivi-de-colis/"
+
+    # it's a post request, need selenium
+    def open_in_browser(self, idship):
+        url = self.get_url_for_browser(idship)
+
+        def show(driver, idship=idship):
+            driver.execute_script(f'document.getElementById("valeur").value="{idship}";validationForm();')
+
+        TempBrowser.defer(show, url)
 
     def get_content(self, idship):
         r = self.handler.request("POST", self.url, data={"valeur": idship, "typeRecherche": "EXP"})
@@ -744,6 +760,21 @@ class DHL(Courier):
 
     def get_url_for_browser(self, idship):
         return f"https://www.dhl.com/fr-en/home/our-divisions/parcel/private-customers/tracking-parcel.html?tracking-id={idship}"
+
+    # force submit button
+    def open_in_browser(self, idship):
+        url = self.get_url_for_browser(idship)
+
+        def show(driver):
+            rgpd_locator = (By.XPATH, '//button[contains(@class, "save-preference-btn")]')
+            btn_rgpd = WebDriverWait(driver, 15).until(EC.element_to_be_clickable(rgpd_locator))
+            btn_rgpd.click()
+
+            submit_locator = (By.XPATH, '//button[contains(@class, "tracking-input")]')
+            submit = WebDriverWait(driver, 15).until(EC.element_to_be_clickable(submit_locator))
+            submit.click()
+
+        TempBrowser.defer(show, url)
 
     def get_content(self, idship):
         url = f"https://api-eu.dhl.com/track/shipments?trackingNumber={idship}&language=FR"
