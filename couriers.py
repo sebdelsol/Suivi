@@ -109,14 +109,19 @@ class Courier:
     subs = (
         (r"\.$", ""),  # remove ending .
         (r" +", " "),  # remove extra spaces
+        (r"[\n\r]", ""),  # remove line return
         (r"^\W", ""),  # remove leading non alphanumeric char
         (r"(\w):(\w)", r"\1: \2"),  # add space after :
     )
+
+    additional_subs = ()
 
     def __init__(self):
         # compile re
         self.idship_validation = re.compile(self.idship_validation).match
         self.delivered_searchs = [re.compile(pattern).search for pattern in self.delivered_searchs]
+
+        self.subs = self.additional_subs + self.subs
         self.subs = [(re.compile(pattern).sub, replace) for (pattern, replace) in self.subs]
 
     def log(self, *args, **kwargs):
@@ -522,6 +527,7 @@ class GLS(Courier):
 class DPD(Courier):
     name = "DPD"
     handler = RequestHandler()
+    additional_subs = ((r"Predict vous informe : \n", ""), (r"Instruction :", ""))
 
     def get_url_for_browser(self, idship):
         return f"https://trace.dpd.fr/fr/trace/{idship}"
@@ -546,7 +552,6 @@ class DPD(Courier):
         for evt in timeline:
             txts = [stxt for txt in evt.xpath("./td//text()") if (stxt := txt.strip()) != ""]
             date, hour, label = txts[:3]
-            label = label.replace("Predict vous informe : \n", "").strip()
             location = txts[3] if len(txts) == 4 else None
 
             events.append(
