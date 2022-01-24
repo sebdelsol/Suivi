@@ -3,6 +3,7 @@ import threading
 import time
 import traceback
 
+import psutil
 import undetected_chromedriver as webdriver
 from selenium.common.exceptions import NoSuchWindowException, SessionNotCreatedException, WebDriverException
 
@@ -63,6 +64,12 @@ class TempBrowser:
             for browser in self.browsers:
                 print("QUIT temp browser")
                 browser.quit()
+
+        # for remaining chromedriver still in creation
+        for proc in psutil.process_iter():
+            if "chromedriver.exe" in proc.name().lower():
+                print(f"kill {proc.name()} {proc.pid}")
+                proc.kill()
 
 
 TempBrowser = TempBrowser()

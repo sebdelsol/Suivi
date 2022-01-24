@@ -1,5 +1,8 @@
+import atexit
 import queue
 import threading
+
+import psutil
 
 import localization as TXT
 from config import chrome_exe
@@ -10,6 +13,7 @@ CREATE_DRIVER_AT_INIT = False
 
 if USE_UC_V2:
     import undetected_chromedriver as webdriver
+
 else:
     import undetected_chromedriver._compat as webdriver
 
@@ -59,6 +63,8 @@ class DriverHandler:
                     splash.update(f"{TXT.driver_creation} {i + 1}/{self.n_drivers}")
                 self.create_driver_if_needed()
 
+        atexit.register(self.cleanup)
+
     def create_driver_if_needed(self):
         # prevents driver creation when it's already being created in another thread
         with self.driver_creation:
@@ -91,7 +97,13 @@ class DriverHandler:
         self.drivers_available.put(driver)
 
     def close(self):
-        # remaining drivers still in creation are handled by undetected_chromedriver @ exit
         for i, driver in enumerate(self.drivers):
             log(f"QUIT driver {i + 1}/{len(self.drivers)}")
             driver.quit()
+
+    # for remaining chromedriver still in creation
+    def cleanup(self):
+        for proc in psutil.process_iter():
+            if "chromedriver.exe" in proc.name().lower():
+                print(f"kill {proc.name()} {proc.pid}")
+                proc.kill()
