@@ -241,8 +241,8 @@ class SeleniumHandler:
 
 class Cainiao(Courier):
     name = 'Cainiao'
-    fromto = f'CN{Courier.r_arrow}FR'
     handler = SeleniumHandler(wait_elt_timeout=30)
+    fromto = f'CN{Courier.r_arrow}FR'
 
     def get_url_for_browser(self, idship):
         return f'https://global.cainiao.com/detail.htm?mailNoList={idship}&lang=zh'
