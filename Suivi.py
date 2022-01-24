@@ -55,15 +55,9 @@ class TrackerWidget:
 
             height = TH.widget_button_size - TH.widget_button_img_margin * 2
             size = (TH.widget_button_size, TH.widget_button_size)
-            TrackerWidget.refresh_img = resize_and_colorize_img(
-                TH.refresh_img, height, TH.refresh_color, size
-            )
-            TrackerWidget.edit_img = resize_and_colorize_img(
-                TH.edit_img, height, TH.edit_color, size
-            )
-            TrackerWidget.archive_img = resize_and_colorize_img(
-                TH.archives_img, height, TH.archives_color, size
-            )
+            TrackerWidget.refresh_img = resize_and_colorize_img(TH.refresh_img, height, TH.refresh_color, size)
+            TrackerWidget.edit_img = resize_and_colorize_img(TH.edit_img, height, TH.edit_color, size)
+            TrackerWidget.archive_img = resize_and_colorize_img(TH.archives_img, height, TH.archives_color, size)
 
     def reset_size(self):
         self.width_events = 0
@@ -74,9 +68,7 @@ class TrackerWidget:
         shown = self.tracker.state == TrackerState.shown
 
         self.hline = HLine(color=TH.widget_separator_color)
-        self.layout = sg.Col(
-            [[self.hline]], p=0, expand_x=True, visible=shown
-        )  # to be extended see finalize
+        self.layout = sg.Col([[self.hline]], p=0, expand_x=True, visible=shown)  # to be extended see finalize
         self.pin = sg.pin(self.layout, expand_x=True)  # collapse when hidden
 
         # return minimum layout to be extended in finalize()
@@ -96,12 +88,8 @@ class TrackerWidget:
                 button_color=title_color,
                 mouseover_color=TH.widget_button_mouseover_color,
             )
-            edit_button = ButtonMouseOver(
-                "", image_data=self.edit_img, p=(0, b_pad), **b_colors, k=self.edit
-            )
-            self.refresh_button = ButtonMouseOver(
-                "", image_data=self.refresh_img, p=0, **b_colors, k=self.update
-            )
+            edit_button = ButtonMouseOver("", image_data=self.edit_img, p=(0, b_pad), **b_colors, k=self.edit)
+            self.refresh_button = ButtonMouseOver("", image_data=self.refresh_img, p=0, **b_colors, k=self.update)
             archive_button = ButtonMouseOver(
                 "",
                 image_data=self.archive_img,
@@ -366,9 +354,7 @@ class TrackerWidget:
         content = None
         for content in self.tracker.update_idle_couriers(couriers):
             # https://stackoverflow.com/questions/10452770/python-lambdas-binding-to-local-values
-            window.trigger_event(
-                lambda window, content=content: self.update_one_courier_done(content, window)
-            )
+            window.trigger_event(lambda window, content=content: self.update_one_courier_done(content, window))
 
         window.trigger_event(lambda window: self.update_done(window))
 
@@ -401,9 +387,7 @@ class TrackerWidget:
                 status_delivered = content["status"].get("delivered", False)
                 status_label = content["status"]["label"].replace(".", "")
                 color = "red" if status_warn else ("green" if status_delivered else None)
-                self.status_widget.update(
-                    status_label, text_color=color or TH.widget_status_text_color
-                )
+                self.status_widget.update(status_label, text_color=color or TH.widget_status_text_color)
                 self.desc_widget.update(text_color=color or TH.widget_descrition_text_color)
 
             else:
@@ -419,9 +403,7 @@ class TrackerWidget:
 
             elapsed = content.get("elapsed")
             if elapsed:
-                round_elapsed_days = elapsed.days + (
-                    1 if elapsed.seconds >= 43200 else 0
-                )  # half a day in sec
+                round_elapsed_days = elapsed.days + (1 if elapsed.seconds >= 43200 else 0)  # half a day in sec
                 elapsed_color = TH.widget_elapsed_days_colors[
                     bisect(TH.widget_elapsed_days_intervals, round_elapsed_days)
                 ]
@@ -448,9 +430,7 @@ class TrackerWidget:
             )
 
             status_date = content.get("status", {}).get("date")
-            status_ago = (
-                f"{timeago.format(status_date, get_local_now(), 'fr')}, " if status_date else ""
-            )
+            status_ago = f"{timeago.format(status_date, get_local_now(), 'fr')}, " if status_date else ""
             self.ago_widget.update(status_ago)
 
             self.events_widget.update(visible=self.is_events_visible())
@@ -464,10 +444,7 @@ class TrackerWidget:
         self.height_events = 0
 
         if events:
-            events_date = [
-                f"{evt['date']:{TXT.Long_date_format}}".replace(".", "").split(",")
-                for evt in events
-            ]
+            events_date = [f"{evt['date']:{TXT.Long_date_format}}".replace(".", "").split(",") for evt in events]
             day_w, hour_w = max((len(date[0]), len(date[1])) for date in events_date)
             day_spaces, hour_spaces = " " * day_w, " " * hour_w
             previous_day, previous_hour = None, None
@@ -493,9 +470,7 @@ class TrackerWidget:
                 event_label = f"{event['label']}."
                 if event_label:
                     event_label = (
-                        event_label.capitalize()
-                        if not event_status
-                        else (event_label[0].lower() + event_label[1:])
+                        event_label.capitalize() if not event_status else (event_label[0].lower() + event_label[1:])
                     )
 
                 # create a fake status if missing with firstwords of label
@@ -508,11 +483,7 @@ class TrackerWidget:
                 event_warn = event.get("warn")
                 event_delivered = event.get("delivered")
                 event_color = "red" if event_warn else ("green" if event_delivered else None)
-                event_new, f = (
-                    ("(new) ", self.events_font_bold)
-                    if event.get("new")
-                    else ("", self.events_font)
-                )
+                event_new, f = ("(new) ", self.events_font_bold) if event.get("new") else ("", self.events_font)
 
                 width = sum(len(txt) for txt in (event_courier, event_date, event_new))
 
@@ -525,9 +496,7 @@ class TrackerWidget:
                     or [""]
                 )
                 if len(event_labels) > 1:
-                    next_labels = textwrap.wrap(
-                        "".join(event_labels[1:]), TH.widget_event_max_width
-                    )
+                    next_labels = textwrap.wrap("".join(event_labels[1:]), TH.widget_event_max_width)
                     event_labels[1:] = [f"{' '* width}{label.strip()}" for label in next_labels]
                 event_labels[0] = event_labels[0].strip()
 
@@ -582,9 +551,7 @@ class TrackerWidget:
                     if date
                     else ("red", TXT.never)
                 )
-                name_color, name_font = (
-                    ("red", self.couriers_font_bold) if error else ("green", self.couriers_font)
-                )
+                name_color, name_font = ("red", self.couriers_font_bold) if error else ("green", self.couriers_font)
 
                 if not exists:
                     error_msg = f"{TXT.courier_doesnt_exist}: "
@@ -925,9 +892,7 @@ class GreyWindow:
         )
         self.window = sg.Window("", [[]], size=(0, 0), location=(0, 0), **kwargs)
         self.window.disable()
-        self.followed_window.TKroot.bind(
-            "<Configure>", lambda evt: self.followed_window_changed(), add="+"
-        )
+        self.followed_window.TKroot.bind("<Configure>", lambda evt: self.followed_window_changed(), add="+")
 
     def is_visible(self, window):
         return window.TKroot.attributes("-alpha") > 0.0
@@ -1041,9 +1006,7 @@ class Main_window(sg.Window):
             expand_x=True,
             k=Menu_key,
         )
-        col_kwargs = dict(
-            p=0, expand_x=True, expand_y=True, background_color=TH.widget_event_bg_color
-        )
+        col_kwargs = dict(p=0, expand_x=True, expand_y=True, background_color=TH.widget_event_bg_color)
         new_trakers = sg.Col([[]], k=New_Tracker_widgets_key, **col_kwargs)
         old_trakers = sg.Col([[]], k=Old_Tracker_widgets_key, **col_kwargs)
         all_trackers = sg.Col(
@@ -1097,9 +1060,7 @@ class Main_window(sg.Window):
         window, event, values = sg.read_all_windows()
 
         if SHOW_EVENTS and isinstance(event, str) and "MouseWheel" not in event:
-            log(
-                f"{event = }" + (f", {value = }" if (value := values and values.get(event)) else "")
-            )
+            log(f"{event = }" + (f", {value = }" if (value := values and values.get(event)) else ""))
 
         if callable(event):
             event(window)
@@ -1177,15 +1138,7 @@ if __name__ == "__main__":
         from couriers import get_local_now
         from log import log, logger
         from trackers import Trackers, TrackerState
-        from widget import (
-            AnimatedGif,
-            ButtonMouseOver,
-            ButtonTxtAndImg,
-            GraphRounded,
-            HLine,
-            MlinePulsing,
-            TextFit,
-        )
+        from widget import AnimatedGif, ButtonMouseOver, ButtonTxtAndImg, GraphRounded, HLine, MlinePulsing, TextFit
 
         # create main_window
         main_window = Main_window()

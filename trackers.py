@@ -155,11 +155,7 @@ class Tracker:
         with self.critical:
             contents_ok = []
             for courier_name, content in self.contents.items():
-                if (
-                    courier_name in self.used_couriers
-                    and content["ok"]
-                    and content.get("idship") == self.idship
-                ):
+                if courier_name in self.used_couriers and content["ok"] and content.get("idship") == self.idship:
                     contents_ok.append(copy.deepcopy(content))
 
         if len(contents_ok) > 0:
@@ -177,8 +173,7 @@ class Tracker:
             delivered = any(content["status"].get("delivered") for content in contents_ok)
             consolidated["status"]["delivered"] = delivered
             consolidated["elapsed"] = (
-                events
-                and (events[0]["date"] if delivered else get_local_now()) - events[-1]["date"]
+                events and (events[0]["date"] if delivered else get_local_now()) - events[-1]["date"]
             )
             consolidated["status"]["date"] = self._no_future(consolidated["status"]["date"])
 
@@ -191,9 +186,7 @@ class Tracker:
             couriers_update = {}
             for courier_name in self.used_couriers:
                 content = self.contents.get(courier_name)
-                ok_date = self._no_future(
-                    content and content.setdefault("status", {}).get("ok_date")
-                )
+                ok_date = self._no_future(content and content.setdefault("status", {}).get("ok_date"))
                 error = self.couriers_error.get(courier_name, True)
                 updating = self.couriers_updating.get(courier_name, False)
                 courier = self.available_couriers.get(courier_name)
@@ -236,9 +229,7 @@ class Trackers:
         self.couriers = Couriers(splash)
 
         if load_as_json:
-            trackers = self.load_from_file(
-                json_ext, "r", lambda f: json.load(f, object_hook=json_decode_datetime)
-            )
+            trackers = self.load_from_file(json_ext, "r", lambda f: json.load(f, object_hook=json_decode_datetime))
 
         else:
             trackers = self.load_from_file(pickle_ext, "rb", lambda f: pickle.load(f))

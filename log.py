@@ -88,10 +88,7 @@ class Logger(sg.Window):
                 args, error, kwargs = self.prints.get_nowait()
                 print(*args, **kwargs)
                 self.output.print(
-                    *args,
-                    **kwargs,
-                    t="red" if error else "green",
-                    font=self.log_font_bold if error else None
+                    *args, **kwargs, t="red" if error else "green", font=self.log_font_bold if error else None
                 )
 
         except queue.Empty:
@@ -99,9 +96,7 @@ class Logger(sg.Window):
                 self.TKroot.after(self.listen_step, self.listen)
 
     def resize(self, event):
-        if self.linked and (
-            (event.x == 0 and event.y == 0) or self.current_location() != self.wanted_pos
-        ):
+        if self.linked and ((event.x == 0 and event.y == 0) or self.current_location() != self.wanted_pos):
             self.stick_to_main()
 
     def event_handler(self, event):

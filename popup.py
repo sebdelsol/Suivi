@@ -101,9 +101,7 @@ class Edit(Popup):
                 justification="r",
                 k=f"{name}msg",
             )
-            button = ButtonMouseOver(
-                "voir", font=(TH.fix_font, 8), button_color="grey90", k=courier
-            )
+            button = ButtonMouseOver("voir", font=(TH.fix_font, 8), button_color="grey90", k=courier)
 
             self.idship_widgets.append((msg, button))
             layout.append([cb, msg, sg.vcenter(button)])
