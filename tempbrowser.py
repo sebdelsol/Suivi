@@ -20,6 +20,7 @@ class TempBrowser:
             options.binary_location = chrome_exe
             options.add_argument("--start-maximized")
             return webdriver.Chrome(options=options)
+
         except (SessionNotCreatedException, ProtocolError, SocketError):
             pass
 
@@ -40,6 +41,7 @@ class TempBrowser:
                 self.browsers.append(browser)
 
             log("SHOW in temp browser")
+
             try:
                 browser.get(url)
                 show_func(browser)
@@ -51,6 +53,7 @@ class TempBrowser:
 
             except (NoSuchWindowException, WebDriverException, SessionNotCreatedException) as e:
                 log(f"QUIT temp browser ({e})")
+
             except:
                 log(traceback.format_exc(), error=True)
 
