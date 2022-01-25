@@ -43,7 +43,8 @@ class Window(sg.Window):
             root.bind("<Unmap>", self.notify)
 
     def minimize(self):
-        self.TKroot.overrideredirect(False)
+        if self._no_titlebar:
+            self.TKroot.overrideredirect(False)
         super().minimize()
 
     def notify(self, event):
