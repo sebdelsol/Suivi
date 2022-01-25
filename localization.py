@@ -9,6 +9,7 @@ refresh = "Rafraichir"
 archives = "Archive"
 trash = "Poubelle"
 exit = " X "
+minimize = " _ "
 
 ok = "OK"
 cancel = "Annuler"

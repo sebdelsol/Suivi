@@ -7,6 +7,7 @@ from packaging.specifiers import SpecifierSet
 import localization as TXT
 import theme as TH
 from imgtool import resize_and_colorize_gif, resize_and_colorize_img
+from widget import Window
 
 Python_version = ">=3.8, <3.9"
 TrackersFile = "Trackers"
@@ -24,6 +25,7 @@ Archives_event = "-Archives-"
 Trash_event = "-Trash-"
 Log_event = "-Log-"
 Exit_event = "-Exit-"
+Minimize_event = "-Minimize-"
 
 Menu_key = "-Menu-"
 Its_empty_key = "-Empty-"
@@ -919,7 +921,7 @@ class GreyWindow:
         self.window.close()
 
 
-class Main_window(sg.Window):
+class Main_window(Window):
     def __init__(self):
         p = TH.menu_button_pad
         fs = TH.menu_button_font_size
@@ -978,9 +980,17 @@ class Main_window(sg.Window):
             expand_y=True,
             k=Recenter_event,
         )
+        min_b = ButtonMouseOver(
+            TXT.minimize,
+            p=p,
+            font=(TH.var_font_bold, fs),
+            button_color=TH.menu_color,
+            mouse_over_color="red",
+            k=Minimize_event,
+        )
         exit_b = ButtonMouseOver(
             TXT.exit,
-            p=p,
+            p=((0, p), (p, p)),
             font=(TH.var_font_bold, fs),
             button_color=TH.menu_color,
             mouse_over_color="red",
@@ -1002,7 +1012,7 @@ class Main_window(sg.Window):
         pin_empty.BackgroundColor = TH.empty_color
 
         menu = sg.Col(
-            [[log_b, new_b, refresh_b, archives_b, trash_b, recenter_widget, exit_b]],
+            [[log_b, new_b, refresh_b, archives_b, trash_b, recenter_widget, min_b, exit_b]],
             p=0,
             background_color=TH.menu_color,
             expand_x=True,
@@ -1074,6 +1084,9 @@ class Main_window(sg.Window):
 
             if event in (None, Exit_event, *Exit_shorcuts):
                 return True
+
+            elif event == Minimize_event:
+                self.minimize()
 
             elif event in (Log_event, Log_shorcut):
                 self.log.toggle()

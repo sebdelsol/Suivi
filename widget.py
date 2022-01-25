@@ -1,10 +1,65 @@
 import math
 import time
+from ctypes import windll
 from tkinter import font as tk_font
 
 import PySimpleGUI as sg
 
 from imgtool import expand_right_img64, get_gif_durations, get_img64_size, resize_and_colorize_img
+
+GWL_EXSTYLE = -20
+WS_EX_APPWINDOW = 0x00040000
+WS_EX_TOOLWINDOW = 0x00000080
+
+
+class Window(sg.Window):
+    def __init__(self, *args, no_titlebar=False, **kwargs):
+        self._no_titlebar = no_titlebar
+        self.is_iconified = False
+        super().__init__(*args, **kwargs)
+
+    def Finalize(self, *args, **kwargs):
+        super().Finalize(*args, **kwargs)
+        if self._no_titlebar:
+            root = self.TKroot
+            root.overrideredirect(True)
+            hwnd = windll.user32.GetParent(root.winfo_id())
+
+            if hasattr(windll.user32, "GetWindowLongPtrW"):
+                get_window_style = windll.user32.GetWindowLongPtrW
+                set_window_style = windll.user32.SetWindowLongPtrW
+            else:
+                get_window_style = windll.user32.GetWindowLongW
+                set_window_style = windll.user32.SetWindowLongW
+
+            style = get_window_style(hwnd, GWL_EXSTYLE)
+            style = style & ~WS_EX_TOOLWINDOW
+            style = style | WS_EX_APPWINDOW
+            set_window_style(hwnd, GWL_EXSTYLE, style)
+            root.withdraw()
+            root.deiconify()
+
+            root.bind("<Map>", self.notify)
+            root.bind("<Unmap>", self.notify)
+
+    def minimize(self):
+        self.TKroot.overrideredirect(False)
+        super().minimize()
+
+    def notify(self, event):
+        if self.TKroot == event.widget:
+            # print("!!!!!!!", event.type.name, "icon:", self.is_iconified)
+            if event.type.name == "Map":
+                if self.is_iconified:
+                    self.is_iconified = False
+                    self.TKroot.overrideredirect(True)
+                    # print("   UN minimize")
+
+            elif event.type.name == "Unmap":
+                if not self.is_iconified:
+                    self.is_iconified = True
+                    self.TKroot.overrideredirect(False)
+                    # print("    minimize")
 
 
 class GraphRounded(sg.Graph):
