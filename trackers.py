@@ -229,10 +229,14 @@ class Trackers:
         self.couriers = Couriers(splash)
 
         if load_as_json:
-            trackers = self.load_from_file(json_ext, "r", lambda f: json.load(f, object_hook=json_decode_datetime))
+
+            def json_load(f):
+                return json.load(f, object_hook=json_decode_datetime)
+
+            trackers = self.load_from_file(json_ext, "r", json_load)
 
         else:
-            trackers = self.load_from_file(pickle_ext, "rb", lambda f: pickle.load(f))
+            trackers = self.load_from_file(pickle_ext, "rb", pickle.load)
 
         if trackers:
             trackers = [
@@ -254,13 +258,12 @@ class Trackers:
         trackers = self.sort(self.get_not_deleted())
         saved_trackers = [SavedTracker(tracker) for tracker in trackers]
 
-        self.save_to_file(saved_trackers, pickle_ext, "wb", lambda obj, f: pickle.dump(obj, f))
-        self.save_to_file(
-            saved_trackers,
-            json_ext,
-            "w",
-            lambda obj, f: json.dump(obj, f, default=json_encode_datetime, indent=4),
-        )
+        self.save_to_file(saved_trackers, pickle_ext, "wb", pickle.dump)
+
+        def json_save(obj, f):
+            json.dump(obj, f, default=json_encode_datetime, indent=4)
+
+        self.save_to_file(saved_trackers, json_ext, "w", json_save)
 
     def load_from_file(self, ext, mode, load):
         filename = self.filename + ext
