@@ -254,6 +254,7 @@ class MLinePulsingButton(MlinePulsing):
         self.button_tags = {}
         self.on_click_callback = on_click
         self.pointed_key = None
+        
         widget = self.Widget
         widget.bind("<Any-Motion>", self.on_mouse_move)
         widget.bind("<Leave>", self.on_mouse_leave)
@@ -283,10 +284,9 @@ class MLinePulsingButton(MlinePulsing):
                 widget.tag_configure(tag, background=self.mouse_leave_color)
 
     def add_button_tag(self, key, start, end):
-        widget = self.Widget
         tag = f"{self.button_tag}{key}"
         self.button_tags[tag] = (key, start, end)
-        widget.tag_add(tag, start, end)
+        self.Widget.tag_add(tag, start, end)
 
 
 class HLine(sg.Col):
