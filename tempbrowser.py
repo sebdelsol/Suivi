@@ -31,6 +31,7 @@ class TempBrowser:
         try:
             log("CREATE a temp browser")
             browser = self.create_browser()
+            
         except SessionNotCreatedException:
             browser = None
 
@@ -39,6 +40,7 @@ class TempBrowser:
                 self.browsers.append(browser)
 
             log("SHOW in temp browser")
+            
             try:
                 browser.get(url)
                 show_func(browser)
@@ -50,6 +52,7 @@ class TempBrowser:
 
             except (NoSuchWindowException, WebDriverException, SessionNotCreatedException) as e:
                 log(f"QUIT temp browser ({e})")
+                
             except:
                 log(traceback.format_exc(), error=True)
 
