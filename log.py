@@ -48,7 +48,7 @@ class _Logger(sg.Window):
             p=0,
             font=button_font,
             button_color=("grey60", "grey90"),
-            mouseover_color="grey80",
+            mouse_over_color="grey80",
             expand_x=True,
             expand_y=True,
             k="Link",

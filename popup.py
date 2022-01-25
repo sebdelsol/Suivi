@@ -30,7 +30,7 @@ class Popup(sg.Window):
         layout.extend(body_layout)
         layout.append([HLine(p=5, color=TH.popup_sep_color)])
 
-        b_colors = dict(button_color=TH.button_color, mouseover_color=TH.popup_bg_color)
+        b_colors = dict(button_color=TH.button_color, mouse_over_color=TH.popup_bg_color)
         layout.append(
             [
                 ButtonMouseOver(TXT.ok, font=(TH.var_font, 12), bind_return_key=True, **b_colors),

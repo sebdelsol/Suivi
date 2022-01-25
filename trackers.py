@@ -204,6 +204,11 @@ class Tracker:
         content = self.get_consolidated_content()
         return content.setdefault("status", {}).get("delivered")
 
+    def open_in_browser(self, courier_name):
+        if courier_name in self.used_couriers:
+            courier = self.available_couriers.get(courier_name)
+            courier.open_in_browser(self.idship)
+
     def clean(self):
         for courier_name in self.available_couriers.get_names():
             content = self.contents.get(courier_name)

@@ -86,7 +86,7 @@ class TrackerWidget:
 
             b_colors = dict(
                 button_color=title_color,
-                mouseover_color=TH.widget_button_mouseover_color,
+                mouse_over_color=TH.widget_button_mouse_over_color,
             )
             edit_button = ButtonMouseOver("", image_data=self.edit_img, p=(0, b_pad), **b_colors, k=self.edit)
             self.refresh_button = ButtonMouseOver("", image_data=self.refresh_img, p=0, **b_colors, k=self.update)
@@ -139,7 +139,7 @@ class TrackerWidget:
 
             self.couriers_font = (TH.fix_font, TH.widget_courier_font_size)
             self.couriers_font_bold = (TH.fix_font_bold, TH.widget_courier_font_size)
-            self.couriers_widget = MlinePulsing(
+            self.couriers_widget = MLinePulsingButton(
                 "",
                 p=0,
                 font=self.couriers_font,
@@ -198,7 +198,7 @@ class TrackerWidget:
             expand_font = (TH.fix_font, TH.widget_expand_font_size)
             expand_button_color = dict(
                 button_color=(TH.widget_expand_color, event_color),
-                mouseover_color=title_color,
+                mouse_over_color=title_color,
             )
             self.expand_button = ButtonMouseOver(
                 "",
@@ -257,6 +257,9 @@ class TrackerWidget:
             for widget in (self.events_widget, self.status_widget, self.ago_widget):
                 widget.bind("<Button-1>", "")
 
+            self.couriers_widget.as_a_button(
+                mouse_over_color=TH.widget_courier_mouse_over_color, on_click=self.on_courrier_click
+            )
             self.couriers_widget.init_pulsing(TH.refresh_color, TH.widget_title_bg_color)
             self.id_widget.init_pulsing("blue", TH.widget_title_bg_color)
             self.fit_description()
@@ -530,8 +533,8 @@ class TrackerWidget:
         empty, idship = self.get_idship(check_empty=True)
         prt(idship, autoscroll=False, t="red" if empty else "blue")
 
-        end = len(self.id_widget.get())
-        self.id_widget.add_pulsing_tag("", f"1.{end - len(idship)}", "end")
+        start_col = len(self.id_widget.get()) - len(idship)
+        self.id_widget.add_pulsing_tag("", f"1.{start_col}", "end")
 
     def show_couriers(self, couriers_update):
         if couriers_update:
@@ -553,42 +556,34 @@ class TrackerWidget:
                 )
                 name_color, name_font = ("red", self.couriers_font_bold) if error else ("green", self.couriers_font)
 
+                error_msg = ""
+                update_msg = ""
+
                 if not exists:
-                    error_msg = f"{TXT.courier_doesnt_exist}: "
-                    update_msg = ""
+                    error_msg = TXT.courier_doesnt_exist
 
                 elif updating:
-                    error_msg = ""
-                    update_msg = f"{TXT.updating} "
+                    update_msg = TXT.updating
 
                 elif not valid_idship:
                     empty_idship, _ = self.get_idship(check_empty=True)
-                    error_msg = f"{TXT.no_idship if empty_idship else TXT.invalid_idship}: "
-                    update_msg = ""
+                    error_msg = TXT.no_idship if empty_idship else TXT.invalid_idship
 
                 elif error:
-                    error_msg = f"{TXT.error_courier_update}: "
-                    update_msg = ""
+                    error_msg = TXT.error_courier_update
 
-                else:
-                    error_msg = ""
-                    update_msg = ""
+                if error_msg:
+                    error_msg += ":"
 
-                txts.append((ago, ago_color, name, name_color, name_font, update_msg, error_msg))
+                txts.append((ago, ago_color, name, name_color, name_font, update_msg, error_msg, valid_idship))
 
             width_name = max(len(txt[2]) for txt in txts)
             width_ago = max(len(txt[0]) for txt in txts)
             prt = self.couriers_widget.print
 
-            for i, (
-                ago,
-                ago_color,
-                name,
-                name_color,
-                name_font,
-                update_msg,
-                error_msg,
-            ) in enumerate(txts):
+            for i, (ago, ago_color, name, name_color, name_font, update_msg, error_msg, valid_idship) in enumerate(
+                txts
+            ):
                 prt(update_msg, autoscroll=False, font=self.couriers_font_bold, end="")
                 prt(
                     error_msg,
@@ -597,19 +592,26 @@ class TrackerWidget:
                     t="red",
                     end="",
                 )
-                name_txt = name.center(width_name)
+                name_txt = f" {name.center(width_name)}"
                 prt(name_txt, autoscroll=False, t=name_color, font=name_font, end="")
                 prt(f" {TXT.updated} ", autoscroll=False, t="grey60", end="")
                 prt(ago.ljust(width_ago), autoscroll=False, t=ago_color)
 
                 if update_msg:
                     # https://stackoverflow.com/questions/14786507/how-to-change-the-color-of-certain-words-in-the-tkinter-text-widget/30339009
-                    self.couriers_widget.add_pulsing_tag(
-                        name, f"{i + 1}.0", f"{i + 1}.{len(update_msg) + len(name_txt)}"
-                    )
+                    end_col = len(update_msg) + len(name_txt)
+                    self.couriers_widget.add_pulsing_tag(name, f"{i + 1}.0", f"{i + 1}.{end_col}")
+
+                if valid_idship:
+                    start_col = len(update_msg) + len(error_msg) + 1
+                    end_col = start_col + len(name_txt) - 1
+                    self.couriers_widget.add_button_tag(name, f"{i + 1}.{start_col}", f"{i + 1}.{end_col}")
 
         else:
             self.couriers_widget.update(TXT.no_couriers, text_color="red")
+
+    def on_courrier_click(self, key):
+        self.tracker.open_in_browser(key)  # key is courier_name see couriers_widget.add_button_tag
 
     def edit(self, window):
         popup_edit = popup.Edit(
@@ -925,7 +927,7 @@ class Main_window(sg.Window):
             im_height=TH.menu_button_height,
             im_margin=TH.menu_button_img_margin,
             font=(TH.var_font_bold, fs),
-            mouseover_color="grey90",
+            mouse_over_color="grey90",
         )
 
         log_b = ButtonTxtAndImg(
@@ -981,7 +983,7 @@ class Main_window(sg.Window):
             p=p,
             font=(TH.var_font_bold, fs),
             button_color=TH.menu_color,
-            mouseover_color="red",
+            mouse_over_color="red",
             focus=True,
             k=Exit_event,
         )
@@ -1139,7 +1141,16 @@ if __name__ == "__main__":
         from couriers import get_local_now
         from log import log, logger
         from trackers import Trackers, TrackerState
-        from widget import AnimatedGif, ButtonMouseOver, ButtonTxtAndImg, GraphRounded, HLine, MlinePulsing, TextFit
+        from widget import (
+            AnimatedGif,
+            ButtonMouseOver,
+            ButtonTxtAndImg,
+            GraphRounded,
+            HLine,
+            MlinePulsing,
+            MLinePulsingButton,
+            TextFit,
+        )
 
         # create main_window
         main_window = Main_window()

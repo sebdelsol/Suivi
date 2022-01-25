@@ -29,7 +29,7 @@ class ButtonMouseOver(sg.Button):
         for button in filter(lambda elt: isinstance(elt, cls), window.element_list()):
             button.finalize()
 
-    def __init__(self, *args, mouseover_color=None, **kwargs):
+    def __init__(self, *args, mouse_over_color=None, **kwargs):
         colors = kwargs.get("button_color")
         if isinstance(colors, tuple):
             text_color, button_color = colors
@@ -38,7 +38,7 @@ class ButtonMouseOver(sg.Button):
 
         self.colors = {
             "Leave": button_color or ButtonMouseOver.default_colors["Leave"],
-            "Enter": mouseover_color or ButtonMouseOver.default_colors["Enter"],
+            "Enter": mouse_over_color or ButtonMouseOver.default_colors["Enter"],
         }
 
         kwargs["button_color"] = (text_color, self.colors["Leave"])
@@ -47,9 +47,9 @@ class ButtonMouseOver(sg.Button):
 
     def finalize(self):
         for bind in ButtonMouseOver.binds:
-            self.Widget.bind(bind, self.mouseover)
+            self.Widget.bind(bind, self.on_mouse_over)
 
-    def mouseover(self, event):
+    def on_mouse_over(self, event):
         self.update(button_color=self.colors.get(event.type.name))
 
 
@@ -190,6 +190,49 @@ class MlinePulsing(sg.MLine):
             window.TKroot.after(self.pulsing_time_step, self.pulse)
 
 
+class MLinePulsingButton(MlinePulsing):
+    def as_a_button(self, on_click=None, mouse_over_color=None, button_color=None):
+        self.mouse_enter_color = mouse_over_color or self.BackgroundColor
+        self.mouse_leave_color = button_color or self.BackgroundColor
+        self.button_tag = f"button{id(self)}"
+        self.button_tags = {}
+        self.on_click_callback = on_click
+        self.pointed_key = None
+        widget = self.Widget
+        widget.bind("<Any-Motion>", self.on_mouse_move)
+        widget.bind("<Leave>", self.on_mouse_leave)
+        widget.bind("<Button-1>", self.on_click)
+
+    def on_mouse_leave(self, event):
+        if event.type.name == "Leave":
+            self.pointed_key = None
+            for tag in self.button_tags.keys():
+                self.Widget.tag_configure(tag, background=self.mouse_leave_color)
+
+    def on_click(self, event):
+        if self.pointed_key and self.on_click_callback:
+            self.on_click_callback(self.pointed_key)
+
+    def on_mouse_move(self, event):
+        widget = self.Widget
+        index = widget.index("@%s,%s" % (event.x, event.y))
+
+        self.pointed_key = None
+        tags = widget.tag_names(index)
+        for tag, (key, start, end) in self.button_tags.items():
+            if tag in tags and widget.compare(start, "<=", index) and widget.compare(index, "<=", end):
+                self.pointed_key = key
+                widget.tag_configure(tag, background=self.mouse_enter_color)
+            else:
+                widget.tag_configure(tag, background=self.mouse_leave_color)
+
+    def add_button_tag(self, key, start, end):
+        widget = self.Widget
+        tag = f"{self.button_tag}{key}"
+        self.button_tags[tag] = (key, start, end)
+        widget.tag_add(tag, start, end)
+
+
 class HLine(sg.Col):
     def __init__(self, p=0, color="black", thickness=1):
         super().__init__([[]], p=p, s=(None, thickness), background_color=color, expand_x=True)
@@ -199,11 +242,8 @@ class HLine(sg.Col):
 
 
 class AnimatedGif(sg.Image):
-    def __init__(self, *args, **kwargs):
-        self.speed = kwargs.get("speed", 1)
-        if "speed" in kwargs:
-            del kwargs["speed"]
-
+    def __init__(self, *args, speed=1, **kwargs):
+        self.speed = speed
         super().__init__(*args, **kwargs)
 
         self.durations = get_gif_durations(self.Data)
