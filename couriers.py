@@ -556,7 +556,7 @@ class DPD(Courier):
 
             events.append(
                 dict(
-                    date=datetime.strptime(f"{date} {hour}", "%d/%m/%Y %H:%M").replace(tzinfo=get_localzone()),
+                    date=datetime.strptime(f"{date} {hour}", "%d/%m/%Y %H:%M").astimezone(get_localzone()),
                     status=location,
                     label=label,
                 )
