@@ -8,8 +8,7 @@ import pytz
 import requests
 import urllib3
 from dateutil.parser import ParserError, parse
-from selenium.common.exceptions import (NoSuchElementException,
-                                        TimeoutException, WebDriverException)
+from selenium.common.exceptions import NoSuchElementException, TimeoutException, WebDriverException
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -18,9 +17,8 @@ from tzlocal import get_localzone
 
 import localization as TXT
 from config import LaPoste_key, dhl_key
-from drivers import DriverHandler
+from drivers import DriverHandler, TempBrowser
 from log import log
-from tempbrowser import TempBrowser
 
 
 def get_sentence(txt, nb=-1):
@@ -50,30 +48,17 @@ def get_all_subclasses(cls):
 
 
 class Couriers:
-    driver_handler = None
-
     def __init__(self, splash=None):
         self.couriers = {cls.name: cls() for cls in get_all_subclasses(Courier)}
         log(f"Init Couriers {', '.join(self.couriers.keys())}")
 
-        # create and set a driver_handler if needed
-        need_driver_handler = [
-            courier for courier in self.couriers.values() if isinstance(courier.handler, SeleniumHandler)
-        ]
-        if len(need_driver_handler) > 0:
-            self.driver_handler = DriverHandler(splash)
-            for courier in need_driver_handler:
-                courier.handler.set_driver_handler(self.driver_handler)
+        DriverHandler.start(splash)
 
     def get(self, name):
         return self.couriers.get(name)
 
     def get_names(self):
         return list(self.couriers.keys())
-
-    def close(self):
-        if self.driver_handler:
-            self.driver_handler.close()
 
 
 def get_simple_validation(_min, _max=None):
@@ -250,14 +235,11 @@ class SeleniumHandler:
         self.page_load_timeout = page_load_timeout
         self.wait_elt_timeout = wait_elt_timeout
 
-    def set_driver_handler(self, driver_handler):
-        self.driver_handler = driver_handler
-
     def wait(self, driver, until):
         return WebDriverWait(driver, self.wait_elt_timeout).until(until)
 
     def get_content(self, courier, idship):
-        driver = self.driver_handler.get()
+        driver = DriverHandler.get()
 
         if driver:
             try:
@@ -268,7 +250,7 @@ class SeleniumHandler:
                 error = type(e).__name__
 
             finally:
-                self.driver_handler.dispose(driver)
+                DriverHandler.dispose(driver)
 
         else:
             error = "no driver available"

@@ -294,6 +294,5 @@ class Trackers:
         for tracker in self.trackers:
             tracker.clean()
         self.save()
-        self.couriers.close()
         for tracker in self.trackers:
             tracker.close()

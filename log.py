@@ -9,7 +9,7 @@ import theme as TH
 from widget import ButtonMouseOver
 
 
-class Logger(sg.Window):
+class _Logger(sg.Window):
     link_txt = "\n".join("❱❱❱❱❱")
     unlink_txt = "\n".join("❰❰❰❰❰")
     close_txt = "\n".join(TXT.close.upper())
@@ -173,5 +173,5 @@ class Logger(sg.Window):
         super().close()
 
 
-logger = Logger()
+logger = _Logger()
 log = logger.log
