@@ -123,7 +123,8 @@ class Courier:
 
     def open_in_browser(self, idship):
         url = self.get_url_for_browser(idship)
-        webbrowser.open(url)
+        if url:
+            webbrowser.open(url)
 
     def update(self, idship):
         if not self.validate_idship(idship):
