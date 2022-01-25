@@ -2,10 +2,11 @@ import atexit
 import threading
 import time
 import traceback
+from socket import error as SocketError
 
-import psutil
 import undetected_chromedriver as webdriver
 from selenium.common.exceptions import NoSuchWindowException, SessionNotCreatedException, WebDriverException
+from urllib3.exceptions import ProtocolError
 
 from config import chrome_exe
 from log import log
@@ -14,10 +15,13 @@ from log import log
 class TempBrowser:
     @staticmethod
     def create_browser():
-        options = webdriver.ChromeOptions()
-        options.binary_location = chrome_exe
-        options.add_argument("--start-maximized")
-        return webdriver.Chrome(options=options)
+        try:
+            options = webdriver.ChromeOptions()
+            options.binary_location = chrome_exe
+            options.add_argument("--start-maximized")
+            return webdriver.Chrome(options=options)
+        except (SessionNotCreatedException, ProtocolError, SocketError):
+            pass
 
     def __init__(self):
         self.browsers = []
@@ -28,11 +32,8 @@ class TempBrowser:
         threading.Thread(target=self._defer, args=(show_func, url), daemon=True).start()
 
     def _defer(self, show_func, url):
-        try:
-            log("CREATE a temp browser")
-            browser = self.create_browser()
-        except SessionNotCreatedException:
-            browser = None
+        log("CREATE a temp browser")
+        browser = self.create_browser()
 
         if browser:
             with self.browsers_ops:
@@ -64,12 +65,6 @@ class TempBrowser:
             for browser in self.browsers:
                 print("QUIT temp browser")
                 browser.quit()
-
-        # for remaining chromedriver still in creation
-        for proc in psutil.process_iter():
-            if "chromedriver.exe" in proc.name().lower():
-                print(f"kill {proc.name()} {proc.pid}")
-                proc.kill()
 
 
 TempBrowser = TempBrowser()
