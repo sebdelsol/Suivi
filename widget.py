@@ -11,56 +11,53 @@ GWL_EXSTYLE = -20
 WS_EX_APPWINDOW = 0x00040000
 WS_EX_TOOLWINDOW = 0x00000080
 
+if hasattr(windll.user32, "GetWindowLongPtrW"):
+    _get_window_style = windll.user32.GetWindowLongPtrW
+    _set_window_style = windll.user32.SetWindowLongPtrW
+else:
+    _get_window_style = windll.user32.GetWindowLongW
+    _set_window_style = windll.user32.SetWindowLongW
+
 
 class Window(sg.Window):
     def __init__(self, *args, no_titlebar=False, **kwargs):
         self._no_titlebar = no_titlebar
-        self.is_iconified = False
         super().__init__(*args, **kwargs)
 
     def Finalize(self, *args, **kwargs):
         super().Finalize(*args, **kwargs)
         if self._no_titlebar:
-            root = self.TKroot
-            root.overrideredirect(True)
-            hwnd = windll.user32.GetParent(root.winfo_id())
-
-            if hasattr(windll.user32, "GetWindowLongPtrW"):
-                get_window_style = windll.user32.GetWindowLongPtrW
-                set_window_style = windll.user32.SetWindowLongPtrW
-            else:
-                get_window_style = windll.user32.GetWindowLongW
-                set_window_style = windll.user32.SetWindowLongW
-
-            style = get_window_style(hwnd, GWL_EXSTYLE)
-            style = style & ~WS_EX_TOOLWINDOW
-            style = style | WS_EX_APPWINDOW
-            set_window_style(hwnd, GWL_EXSTYLE, style)
-            root.withdraw()
-            root.deiconify()
-
-            root.bind("<Map>", self.notify)
-            root.bind("<Unmap>", self.notify)
+            self.normal()
 
     def minimize(self):
         if self._no_titlebar:
-            self.TKroot.overrideredirect(False)
+            root = self.TKroot
+            # clear override or Tcl will raise an error
+            root.overrideredirect(False)
+            # redraw the window to have something to show in the taskbar
+            self.refresh()
+            # catch the deinconify event
+            root.bind("<Map>", self.normal)
+
         super().minimize()
 
-    def notify(self, event):
-        if self.TKroot == event.widget:
-            # print("!!!!!!!", event.type.name, "icon:", self.is_iconified)
-            if event.type.name == "Map":
-                if self.is_iconified:
-                    self.is_iconified = False
-                    self.TKroot.overrideredirect(True)
-                    # print("   UN minimize")
+    def normal(self, event=None):
+        if self._no_titlebar:
+            root = self.TKroot
+            # set override to remove the tittlebar
+            root.overrideredirect(True)
+            # set ex_style as WS_EX_APPWINDOW so that it shows in the taskbar
+            hwnd = windll.user32.GetParent(root.winfo_id())
+            style = _get_window_style(hwnd, GWL_EXSTYLE)
+            style &= ~WS_EX_TOOLWINDOW
+            style |= WS_EX_APPWINDOW
+            _set_window_style(hwnd, GWL_EXSTYLE, style)
+            # avoid infinite loop (withdraw + deiconify triggers a <Map>)
+            root.unbind("<Map>")
+            # re-assert window style
+            root.withdraw()
 
-            elif event.type.name == "Unmap":
-                if not self.is_iconified:
-                    self.is_iconified = True
-                    self.TKroot.overrideredirect(False)
-                    # print("    minimize")
+        super().normal()
 
 
 class GraphRounded(sg.Graph):
