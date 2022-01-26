@@ -1044,6 +1044,7 @@ class Main_window(ShowInTaskbarWindow):
 
         args, kwargs = TH.get_window_params(layout, alpha_channel=0)
         kwargs["keep_on_top"] = False
+        kwargs["no_titlebar"] = True
         super().__init__(*args, **kwargs)
 
         ButtonMouseOver.finalize_all(self)
