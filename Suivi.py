@@ -18,7 +18,7 @@ Recenter_event = "-Recenter-"
 Updating_event = "-Updating Changed-"
 Archives_updated_event = "-Archives updated-"
 Trash_updated_event = "-Trash Updated-"
-Update_widgets_size_event = "-Update Widgets Size-"
+Updated_widgets_size_event = "-Updated Widgets Size-"
 New_event = "-New-"
 Refresh_event = "-Refresh-"
 Archives_event = "-Archives-"
@@ -271,7 +271,8 @@ class TrackerWidget:
         self.expand_events = not self.expand_events
         self.update_expand_button()
 
-        window.trigger_event(Update_widgets_size_event)
+        self.update_size()
+        window.trigger_event(Updated_widgets_size_event)
 
     def update_expand_button(self):
         visible = self.is_events_visible() and self.height_events > TH.widget_min_events_shown
@@ -307,10 +308,10 @@ class TrackerWidget:
         self.layout.update(visible=self.tracker.state == TrackerState.shown)
 
     # https://stackoverflow.com/questions/11544187/tkinter-resize-text-to-contents/11545159
-    def update_size(self, w):
+    def update_size(self):
         nb_events_shown = float("inf") if self.expand_events else TH.widget_min_events_shown
         h = min(nb_events_shown, self.height_events)
-        self.events_widget.set_size((w, h))
+        self.events_widget.set_size((self.width_events, h))
 
         self.update_couriers_id_size()
 
@@ -441,7 +442,8 @@ class TrackerWidget:
             self.events_widget.update(visible=self.is_events_visible())
             self.update_expand_button()
 
-            window.trigger_event(Update_widgets_size_event)
+            self.update_size()
+            window.trigger_event(Updated_widgets_size_event)
 
     def show_events(self, content):
         events = content["events"]
@@ -668,7 +670,8 @@ class TrackerWidget:
                 self.update(window)
 
             self.update_visiblity()
-            window.trigger_event(Update_widgets_size_event)
+            self.update_size()
+            window.trigger_event(Updated_widgets_size_event)
             window.trigger_event(event)
 
     def delete(self, window):
@@ -723,7 +726,7 @@ class TrackerWidgets:
             splash.update(f"{TXT.tracker_creation} {i + 1}/{n_trackers}")
             self.create_widget(window, tracker, new=False)
 
-        self.update_size(window)
+        self.update_window_size(window)
         self.recenter(window, True)
 
     def create_widget(self, window, tracker, new=False):
@@ -803,21 +806,17 @@ class TrackerWidgets:
         for widget in self.get_widgets_with_state(TrackerState.shown):
             widget.set_min_width(min_width)
 
-    def update_size(self, window):
+    def update_window_size(self, window):
         shown = self.get_widgets_with_state(TrackerState.shown)
 
         menu_w = self.widget_menu.Widget.winfo_reqwidth()
         menu_h = self.widget_menu.Widget.winfo_reqheight()
         self.set_min_width(menu_w)
 
-        # resize all widgets to the max width
-        max_width_shown = max(widget.width_events for widget in shown) if shown else 0
-        for widget in shown:
-            widget.update_size(max_width_shown)
-
         self.its_empty.update(visible=False if shown else True)
 
-        window.refresh()  # or visibility_changed() that produces more glitches ??!
+        # needed to get the actual widgets MLines size
+        window.refresh()  # or visibility_changed() that produces different glitches
         self.widgets_frame.contents_changed()
 
         # wanted size
@@ -1120,8 +1119,8 @@ class Main_window(ShowInTaskbarWindow):
             elif event == Trash_updated_event:
                 self.widgets.deleted_updated()
 
-            elif event == Update_widgets_size_event:
-                self.widgets.update_size(window)
+            elif event == Updated_widgets_size_event:
+                self.widgets.update_window_size(window)
 
             elif event == New_event:
                 self.widgets.new(window)
@@ -1171,9 +1170,16 @@ if __name__ == "__main__":
         from couriers import get_local_now
         from log import log, logger
         from trackers import Trackers, TrackerState
-        from widget import (AnimatedGif, ButtonMouseOver, ButtonTxtAndImg,
-                            GraphRounded, HLine, MlinePulsing,
-                            MLinePulsingButton, TextFit)
+        from widget import (
+            AnimatedGif,
+            ButtonMouseOver,
+            ButtonTxtAndImg,
+            GraphRounded,
+            HLine,
+            MlinePulsing,
+            MLinePulsingButton,
+            TextFit,
+        )
 
         # create main_window
         main_window = Main_window()
