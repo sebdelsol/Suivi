@@ -5,8 +5,7 @@ from tkinter import font as tk_font
 
 import PySimpleGUI as sg
 
-from imgtool import (expand_right_img64, get_gif_durations, get_img64_size,
-                     resize_and_colorize_img)
+from imgtool import expand_right_img64, get_gif_durations, get_img64_size, resize_and_colorize_img
 
 GWL_EXSTYLE = -20
 WS_EX_APPWINDOW = 0x00040000
@@ -20,10 +19,9 @@ else:
     _set_window_style = windll.user32.SetWindowLongW
 
 
-class Window(sg.Window):
+class ShowInTaskbarWindow(sg.Window):
     def __init__(self, *args, no_titlebar=False, **kwargs):
         self._no_titlebar = no_titlebar
-        kwargs["keep_on_top"] = False
         super().__init__(*args, **kwargs)
 
     def Finalize(self, *args, **kwargs):
@@ -58,6 +56,7 @@ class Window(sg.Window):
             root.unbind("<Map>")
             # re-assert window style
             root.withdraw()
+            # enforce KeepOnTop=False
             if not self.KeepOnTop:
                 root.lower()
                 root.lift()

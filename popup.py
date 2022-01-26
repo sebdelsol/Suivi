@@ -40,7 +40,6 @@ class Popup(sg.Window):
         layout = [[sg.Col(layout, p=5)]]
 
         args, kwargs = TH.get_window_params(layout)
-        kwargs["keep_on_top"] = True
         super().__init__(*args, modal=True, **kwargs)
         ButtonMouseOver.finalize_all(self)
 

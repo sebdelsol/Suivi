@@ -1,6 +1,6 @@
 import PySimpleGUI as sg
 
-no_frame_kwargs = dict(keep_on_top=False, no_titlebar=True)
+no_frame_kwargs = dict(keep_on_top=True, no_titlebar=True)
 frame_kwargs = dict(p=0, border_width=1, relief=sg.RELIEF_SOLID, expand_x=True, expand_y=True)
 window_kwargs = dict(
     **no_frame_kwargs,

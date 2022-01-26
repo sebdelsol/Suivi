@@ -7,7 +7,7 @@ from packaging.specifiers import SpecifierSet
 import localization as TXT
 import theme as TH
 from imgtool import resize_and_colorize_gif, resize_and_colorize_img
-from widget import Window
+from widget import ShowInTaskbarWindow
 
 Python_version = ">=3.8, <3.9"
 TrackersFile = "Trackers"
@@ -894,6 +894,7 @@ class GreyWindow:
             alpha_channel=0,
             finalize=True,
         )
+        kwargs["keep_on_top"] = self.followed_window.KeepOnTop
         self.window = sg.Window("", [[]], size=(0, 0), location=(0, 0), **kwargs)
         self.window.disable()
         self.followed_window.TKroot.bind("<Configure>", self.followed_window_changed, add="+")
@@ -908,6 +909,8 @@ class GreyWindow:
                     root = self.window.TKroot
                     root.lower()
                     root.lift()
+                else:
+                    self.window.bring_to_front()
                 self.window.set_alpha(TH.splash_alpha)
 
         elif self.is_visible(self.window):
@@ -920,17 +923,18 @@ class GreyWindow:
             root = self.window.TKroot
             root.geometry(f"{w}x{h}+{x}+{y}")
 
-            # raise the greyed window above self.followed_window if needed
-            if self.is_visible(self.window):
-                if root.tk.eval("wm stackorder " + str(root) + " isbelow " + str(self.followed_window.TKroot)):
-                    root.lift()
+            if not self.followed_window.KeepOnTop:
+                # raise the greyed window above self.followed_window if needed
+                if self.is_visible(self.window):
+                    if root.tk.eval("wm stackorder " + str(root) + " isbelow " + str(self.followed_window.TKroot)):
+                        root.lift()
 
     def close(self):
         self.enable(False)
         self.window.close()
 
 
-class Main_window(Window):
+class Main_window(ShowInTaskbarWindow):
     def __init__(self):
         p = TH.menu_button_pad
         fs = TH.menu_button_font_size
@@ -1039,7 +1043,8 @@ class Main_window(Window):
         )
         layout = [[menu], [all_trackers], [pin_empty]]
 
-        args, kwargs = TH.get_window_params(layout, alpha_channel=0)  # , resizable=True)
+        args, kwargs = TH.get_window_params(layout, alpha_channel=0)
+        kwargs["keep_on_top"] = False
         super().__init__(*args, **kwargs)
 
         ButtonMouseOver.finalize_all(self)
@@ -1072,9 +1077,12 @@ class Main_window(Window):
             grey_window.enable(enable)
 
     def loop(self):
-        while True:
-            if self.event_handler():
-                break
+        try:
+            while True:
+                if self.event_handler():
+                    break
+        except TclError as e:
+            log(f"TCL error ({e})", error=True)
 
     # return True when exit
     def event_handler(self):
@@ -1172,10 +1180,7 @@ if __name__ == "__main__":
         main_window.addlog(logger)
         splash.close()
 
-        try:
-            main_window.loop()
-        except TclError as e:
-            log(f"TCL error ({e})", error=True)
+        main_window.loop()
 
         main_window.close()
         logger.close()
