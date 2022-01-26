@@ -896,7 +896,7 @@ class GreyWindow:
         )
         self.window = sg.Window("", [[]], size=(0, 0), location=(0, 0), **kwargs)
         self.window.disable()
-        self.followed_window.TKroot.bind("<Configure>", lambda evt: self.followed_window_changed(), add="+")
+        self.followed_window.TKroot.bind("<Configure>", self.followed_window_changed, add="+")
 
     def is_visible(self, window):
         return window.TKroot.attributes("-alpha") > 0.0
@@ -904,17 +904,26 @@ class GreyWindow:
     def enable(self, enable):
         if enable:
             if not self.is_visible(self.window) and self.is_visible(self.followed_window):
-                self.window.bring_to_front()
+                if not self.followed_window.KeepOnTop:
+                    root = self.window.TKroot
+                    root.lower()
+                    root.lift()
                 self.window.set_alpha(TH.splash_alpha)
 
         elif self.is_visible(self.window):
             self.window.set_alpha(0)
 
-    def followed_window_changed(self):
+    def followed_window_changed(self, event):
         if self.window.TKroot:
             w, h = self.followed_window.size
             x, y = self.followed_window.current_location()
-            self.window.TKroot.geometry(f"{w}x{h}+{x}+{y}")
+            root = self.window.TKroot
+            root.geometry(f"{w}x{h}+{x}+{y}")
+
+            # raise the greyed window above self.followed_window if needed
+            if self.is_visible(self.window):
+                if root.tk.eval("wm stackorder " + str(root) + " isbelow " + str(self.followed_window.TKroot)):
+                    root.lift()
 
     def close(self):
         self.enable(False)
@@ -1154,16 +1163,9 @@ if __name__ == "__main__":
         from couriers import get_local_now
         from log import log, logger
         from trackers import Trackers, TrackerState
-        from widget import (
-            AnimatedGif,
-            ButtonMouseOver,
-            ButtonTxtAndImg,
-            GraphRounded,
-            HLine,
-            MlinePulsing,
-            MLinePulsingButton,
-            TextFit,
-        )
+        from widget import (AnimatedGif, ButtonMouseOver, ButtonTxtAndImg,
+                            GraphRounded, HLine, MlinePulsing,
+                            MLinePulsingButton, TextFit)
 
         # create main_window
         main_window = Main_window()

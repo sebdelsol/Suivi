@@ -5,7 +5,8 @@ from tkinter import font as tk_font
 
 import PySimpleGUI as sg
 
-from imgtool import expand_right_img64, get_gif_durations, get_img64_size, resize_and_colorize_img
+from imgtool import (expand_right_img64, get_gif_durations, get_img64_size,
+                     resize_and_colorize_img)
 
 GWL_EXSTYLE = -20
 WS_EX_APPWINDOW = 0x00040000
@@ -22,6 +23,7 @@ else:
 class Window(sg.Window):
     def __init__(self, *args, no_titlebar=False, **kwargs):
         self._no_titlebar = no_titlebar
+        kwargs["keep_on_top"] = False
         super().__init__(*args, **kwargs)
 
     def Finalize(self, *args, **kwargs):
@@ -56,6 +58,9 @@ class Window(sg.Window):
             root.unbind("<Map>")
             # re-assert window style
             root.withdraw()
+            if not self.KeepOnTop:
+                root.lower()
+                root.lift()
 
         super().normal()
 
@@ -251,7 +256,7 @@ class MLinePulsingButton(MlinePulsing):
         self.button_tags = {}
         self.on_click_callback = on_click
         self.pointed_key = None
-        
+
         widget = self.Widget
         widget.bind("<Any-Motion>", self.on_mouse_move)
         widget.bind("<Leave>", self.on_mouse_leave)
