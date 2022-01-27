@@ -19,17 +19,13 @@ else:
     _set_window_style = windll.user32.SetWindowLongW
 
 
-# base window class to handle widget.finalize()
+# PySimpleGUI calls its widgets : elements
+# base window class to handle element.finalize()
 class Window(sg.Window):
     @staticmethod
     def _try_finalize(elt):
         if hasattr(elt, "_auto_finalize"):
-            elt.finalize()
-
-    def Finalize(self, *args, **kwargs):
-        super().Finalize(*args, **kwargs)
-        for elt in self.element_list():
-            self._try_finalize(elt)
+            elt._finalize()
 
     def _finalize_layout(self, rows):
         for row in rows:
@@ -39,15 +35,20 @@ class Window(sg.Window):
                 else:
                     self._try_finalize(elt)
 
+    def Finalize(self, *args, **kwargs):
+        super().Finalize(*args, **kwargs)
+        for elt in self.element_list():
+            self._try_finalize(elt)
+
     def extend_layout(self, container, rows):
         super().extend_layout(container, rows)
         self._finalize_layout(rows)
 
 
-# class decorator for widgets
-def AutoFinalize(widget):
-    widget._auto_finalize = True
-    return widget
+# class decorator for elements
+def AutoFinalize(element):
+    element._auto_finalize = True
+    return element
 
 
 class ShowInTaskbarWindow(Window):
@@ -129,11 +130,11 @@ class ButtonMouseOver(sg.Button):
 
         super().__init__(*args, **kwargs)
 
-    def finalize(self):
+    def _finalize(self):
         for bind in ButtonMouseOver.binds:
-            self.Widget.bind(bind, self.on_mouse_over)
+            self.Widget.bind(bind, self._on_mouse_over)
 
-    def on_mouse_over(self, event):
+    def _on_mouse_over(self, event):
         self.update(button_color=self.colors.get(event.type.name))
 
 
@@ -143,11 +144,11 @@ class ButtonTxtAndImg(ButtonMouseOver):
         self.im_height = im_height
         self.image_filename = image_filename
         self.image_justify = image_justify
-        kwargs["image_data"] = self.get_image_data(kwargs)
+        kwargs["image_data"] = self._get_image_data(kwargs)
         kwargs["auto_size_button"] = False
         super().__init__(*args, **kwargs)
 
-    def get_image_data(self, kwargs):
+    def _get_image_data(self, kwargs):
         self._height = self.im_height + self.im_margin[1] * 2
         if self.image_filename:
             # colorize the img with the text color
@@ -160,26 +161,26 @@ class ButtonTxtAndImg(ButtonMouseOver):
         else:
             self._width = self.im_margin[0]
 
-    def update_size(self, txt):
+    def _update_size(self, txt):
         wfont = tk_font.Font(self.ParentForm.TKroot, self.Font)
         size = wfont.measure(txt) + self._width, self._height
         self.set_size(size)
 
-    def finalize(self):
+    def _finalize(self):
         self.Widget.config(compound=self.image_justify, justify=self.image_justify)
-        self.update_size(self.get_text())
-        super().finalize()
+        self._update_size(self.get_text())
+        super()._finalize()
 
     def update(self, *args, **kwargs):
         if color := kwargs.get("button_color"):
             if isinstance(color, tuple):
                 if color[0] != self.ButtonColor[0]:
-                    kwargs["image_data"] = self.get_image_data(kwargs)
+                    kwargs["image_data"] = self._get_image_data(kwargs)
 
         super().update(*args, **kwargs)
 
         if txt := kwargs.get("text") or (len(args) > 0 and args[0]):
-            self.update_size(txt)
+            self._update_size(txt)
 
 
 class TextFit(sg.Text):
@@ -197,123 +198,6 @@ class TextFit(sg.Text):
         return size
 
 
-class MlinePulsing(sg.MLine):
-    colors = {}
-
-    @staticmethod
-    def blend_rgb_colors(color1, color2, t):
-        r1, g1, b1 = color1
-        r2, g2, b2 = color2
-        return r1 * (1 - t) + r2 * t, g1 * (1 - t) + g2 * t, b1 * (1 - t) + b2 * t
-
-    @staticmethod
-    def get_one_period_colors(color_start, color_end, array_size):
-        colors = []
-        for x in range(array_size):
-            t = (math.cos((2 * math.pi * (x % array_size)) / array_size) + 1) * 0.5
-            r, g, b = MlinePulsing.blend_rgb_colors(color_start, color_end, 1 - t)
-            color = f"#{round(r):02x}{round(g):02x}{round(b):02x}"
-            colors.append(color)
-        return colors
-
-    def color_to_rgb(self, color):
-        r, g, b = self.Widget.winfo_rgb(color)  # works even with any tkinter defined color like 'red'
-        return int(r / 256), int(g / 256), int(b / 256)
-
-    def init_pulsing(self, color_start, color_end, percent_to_end_color=0.75, frequency=1.5):
-        self.is_pulsing = False
-        self.pulsing_tag = f"pulsing{id(self)}"
-        self.pulsing_array_size = 32  # size of colors array
-        self.pulsing_time_step = 50  # ms
-        self.pulsing_frequency = frequency
-        self.pulsing_tags = {}
-
-        color_start = self.color_to_rgb(color_start)
-        color_end = self.color_to_rgb(color_end)
-        color_end = self.blend_rgb_colors(color_start, color_end, percent_to_end_color)
-        self.colors_key = (color_start, color_end)
-
-        # initialized after startup as a class attribute
-        if self.colors_key not in MlinePulsing.colors:
-            MlinePulsing.colors[self.colors_key] = self.get_one_period_colors(
-                color_start, color_end, self.pulsing_array_size
-            )
-
-    def add_pulsing_tag(self, key, start, end):
-        self.Widget.tag_add(f"{self.pulsing_tag}{key}", start, end)
-
-    def start_pulsing(self, keys=None):
-        for key in keys or [""]:
-            self.pulsing_tags[f"{self.pulsing_tag}{key}"] = (0, time.time())
-
-        if not self.is_pulsing:
-            self.is_pulsing = True
-            self.pulse()
-
-    def stop_pulsing(self):
-        for tag in self.pulsing_tags.keys():
-            self.Widget.tag_delete(tag)
-        self.pulsing_tags = {}
-        self.is_pulsing = False
-
-    def pulse(self):
-        if self.is_pulsing:
-            now = time.time()
-            colors = MlinePulsing.colors[self.colors_key]
-            for tag, (index, t) in self.pulsing_tags.items():
-                color = colors[round(index) % self.pulsing_array_size]
-                self.Widget.tag_configure(tag, foreground=color)
-
-                index += self.pulsing_frequency * self.pulsing_array_size * (now - t)
-                self.pulsing_tags[tag] = index, now
-
-            window = self.ParentForm
-            window.TKroot.after(self.pulsing_time_step, self.pulse)
-
-
-class MLinePulsingButton(MlinePulsing):
-    def as_a_button(self, on_click=None, mouse_over_color=None, button_color=None):
-        self.mouse_enter_color = mouse_over_color or self.BackgroundColor
-        self.mouse_leave_color = button_color or self.BackgroundColor
-        self.button_tag = f"button{id(self)}"
-        self.button_tags = {}
-        self.on_click_callback = on_click
-        self.pointed_key = None
-
-        widget = self.Widget
-        widget.bind("<Any-Motion>", self.on_mouse_move)
-        widget.bind("<Leave>", self.on_mouse_leave)
-        widget.bind("<Button-1>", self.on_click)
-
-    def on_mouse_leave(self, event):
-        if event.type.name == "Leave":
-            self.pointed_key = None
-            for tag in self.button_tags.keys():
-                self.Widget.tag_configure(tag, background=self.mouse_leave_color)
-
-    def on_click(self, event):
-        if self.pointed_key and self.on_click_callback:
-            self.on_click_callback(self.pointed_key)
-
-    def on_mouse_move(self, event):
-        widget = self.Widget
-        index = widget.index("@%s,%s" % (event.x, event.y))
-
-        self.pointed_key = None
-        tags = widget.tag_names(index)
-        for tag, (key, start, end) in self.button_tags.items():
-            if tag in tags and widget.compare(start, "<=", index) and widget.compare(index, "<=", end):
-                self.pointed_key = key
-                widget.tag_configure(tag, background=self.mouse_enter_color)
-            else:
-                widget.tag_configure(tag, background=self.mouse_leave_color)
-
-    def add_button_tag(self, key, start, end):
-        tag = f"{self.button_tag}{key}"
-        self.button_tags[tag] = (key, start, end)
-        self.Widget.tag_add(tag, start, end)
-
-
 class HLine(sg.Col):
     def __init__(self, p=0, color="black", thickness=1):
         super().__init__([[]], p=p, s=(None, thickness), background_color=color, expand_x=True)
@@ -328,14 +212,14 @@ class AnimatedGif(sg.Image):
         super().__init__(*args, **kwargs)
 
         self.durations = get_gif_durations(self.Data)
-        self.animate(reset=True)
+        self._animate(reset=True)
 
     def update(self, *args, **kwargs):
         super().update(*args, **kwargs)
         if kwargs.get("visible"):
-            self.animate(reset=True)
+            self._animate(reset=True)
 
-    def animate(self, reset=False):
+    def _animate(self, reset=False):
         if self.visible:
             now = time.time()
             if reset:
@@ -354,4 +238,130 @@ class AnimatedGif(sg.Image):
 
             time_step = max(20, round(duration / self.speed))
             window = self.ParentForm
-            window.TKroot.after(time_step, self.animate)
+            window.TKroot.after(time_step, self._animate)
+
+
+# basic components
+class Component:
+    def __init__(self, element):
+        if type(element).__name__ == self._for.__name__:
+            self._element = element
+
+
+class MlineButtonsComponent(Component):
+    _for = sg.MLine
+
+    def init(self, on_click=None, mouse_over_color=None, button_color=None):
+        element = self._element
+        self.mouse_enter_color = mouse_over_color or element.BackgroundColor
+        self.mouse_leave_color = button_color or element.BackgroundColor
+        self.button_tag = f"button{id(self)}"
+        self.button_tags = {}
+        self.on_click_callback = on_click
+        self.pointed_key = None
+
+        widget = element.Widget
+        widget.bind("<Any-Motion>", self._on_mouse_move)
+        widget.bind("<Leave>", self._on_mouse_leave)
+        widget.bind("<Button-1>", self._on_click)
+
+    def _on_mouse_leave(self, event):
+        if event.type.name == "Leave":
+            self.pointed_key = None
+            for tag in self.button_tags.keys():
+                self._element.Widget.tag_configure(tag, background=self.mouse_leave_color)
+
+    def _on_click(self, event):
+        if self.pointed_key and self.on_click_callback:
+            self.on_click_callback(self.pointed_key)
+
+    def _on_mouse_move(self, event):
+        widget = self._element.Widget
+        index = widget.index("@%s,%s" % (event.x, event.y))
+
+        self.pointed_key = None
+        tags = widget.tag_names(index)
+        for tag, (key, start, end) in self.button_tags.items():
+            if tag in tags and widget.compare(start, "<=", index) and widget.compare(index, "<=", end):
+                self.pointed_key = key
+                widget.tag_configure(tag, background=self.mouse_enter_color)
+            else:
+                widget.tag_configure(tag, background=self.mouse_leave_color)
+
+    def add_tag(self, key, start, end):
+        tag = f"{self.button_tag}{key}"
+        self.button_tags[tag] = (key, start, end)
+        self._element.Widget.tag_add(tag, start, end)
+
+
+class MlinePulsingComponent(Component):
+    _for = sg.MLine
+    colors = {}
+
+    def init(self, color_start, color_end, percent_to_end_color=0.75, frequency=1.5):
+        self.is_pulsing = False
+        self.pulsing_tag = f"pulsing{id(self)}"
+        self.pulsing_array_size = 32  # size of colors array
+        self.pulsing_time_step = 50  # ms
+        self.pulsing_frequency = frequency
+        self.pulsing_tags = {}
+
+        color_start = self._color_to_rgb(color_start)
+        color_end = self._color_to_rgb(color_end)
+        color_end = self._blend_rgb_colors(color_start, color_end, percent_to_end_color)
+        self.colors_key = (color_start, color_end)
+
+        # initialized as a class attribute
+        if self.colors_key not in self.colors:
+            self.colors[self.colors_key] = self._get_one_period_colors(color_start, color_end, self.pulsing_array_size)
+
+    @staticmethod
+    def _blend_rgb_colors(color1, color2, t):
+        r1, g1, b1 = color1
+        r2, g2, b2 = color2
+        return r1 * (1 - t) + r2 * t, g1 * (1 - t) + g2 * t, b1 * (1 - t) + b2 * t
+
+    @staticmethod
+    def _get_one_period_colors(color_start, color_end, array_size):
+        colors = []
+        for x in range(array_size):
+            t = (math.cos((2 * math.pi * (x % array_size)) / array_size) + 1) * 0.5
+            r, g, b = MlinePulsingComponent._blend_rgb_colors(color_start, color_end, 1 - t)
+            color = f"#{round(r):02x}{round(g):02x}{round(b):02x}"
+            colors.append(color)
+        return colors
+
+    def _color_to_rgb(self, color):
+        r, g, b = self._element.Widget.winfo_rgb(color)  # works even with any tkinter defined color like 'red'
+        return int(r / 256), int(g / 256), int(b / 256)
+
+    def add_tag(self, key, start, end):
+        self._element.Widget.tag_add(f"{self.pulsing_tag}{key}", start, end)
+
+    def start(self, keys=None):
+        for key in keys or [""]:
+            self.pulsing_tags[f"{self.pulsing_tag}{key}"] = (0, time.time())
+
+        if not self.is_pulsing:
+            self.is_pulsing = True
+            self._pulse()
+
+    def stop(self):
+        for tag in self.pulsing_tags.keys():
+            self._element.Widget.tag_delete(tag)
+        self.pulsing_tags = {}
+        self.is_pulsing = False
+
+    def _pulse(self):
+        if self.is_pulsing:
+            now = time.time()
+            colors = self.colors[self.colors_key]
+            for tag, (index, t) in self.pulsing_tags.items():
+                color = colors[round(index) % self.pulsing_array_size]
+                self._element.Widget.tag_configure(tag, foreground=color)
+
+                index += self.pulsing_frequency * self.pulsing_array_size * (now - t)
+                self.pulsing_tags[tag] = index, now
+
+            window = self._element.ParentForm
+            window.TKroot.after(self.pulsing_time_step, self._pulse)

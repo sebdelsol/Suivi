@@ -15,9 +15,17 @@ from couriers import get_local_now
 from imgtool import resize_and_colorize_gif, resize_and_colorize_img
 from log import log
 from trackers import Trackers, TrackerState
-from widget import (AnimatedGif, ButtonMouseOver, ButtonTxtAndImg,
-                    GraphRounded, HLine, MlinePulsing, MLinePulsingButton,
-                    ShowInTaskbarWindow, TextFit)
+from widget import (
+    AnimatedGif,
+    ButtonMouseOver,
+    ButtonTxtAndImg,
+    GraphRounded,
+    HLine,
+    MlineButtonsComponent,
+    MlinePulsingComponent,
+    ShowInTaskbarWindow,
+    TextFit,
+)
 
 TrackersFile = "Trackers"
 LOAD_AS_JSON = True
@@ -141,7 +149,7 @@ class TrackerWidget:
         )
 
         id_font = (TH.fix_font, TH.widget_idship_font_size)
-        self.id_widget = MlinePulsing(
+        self.id_widget = sg.MLine(
             "",
             p=0,
             font=id_font,
@@ -152,7 +160,7 @@ class TrackerWidget:
 
         self.couriers_font = (TH.fix_font, TH.widget_courier_font_size)
         self.couriers_font_bold = (TH.fix_font_bold, TH.widget_courier_font_size)
-        self.couriers_widget = MLinePulsingButton(
+        self.couriers_widget = sg.MLine(
             "",
             p=0,
             font=self.couriers_font,
@@ -263,11 +271,18 @@ class TrackerWidget:
         for widget in (self.events_widget, self.status_widget, self.ago_widget):
             widget.bind("<Button-1>", "")
 
-        self.couriers_widget.as_a_button(
-            mouse_over_color=TH.widget_courier_mouse_over_color, on_click=self.on_courrier_click
-        )
-        self.couriers_widget.init_pulsing(TH.refresh_color, TH.widget_title_bg_color)
-        self.id_widget.init_pulsing("blue", TH.widget_title_bg_color)
+        buttons = MlineButtonsComponent(self.couriers_widget)
+        buttons.init(mouse_over_color=TH.widget_courier_mouse_over_color, on_click=self.on_courrier_click)
+        self.couriers_widget.buttons = buttons
+
+        pulsing = MlinePulsingComponent(self.couriers_widget)
+        pulsing.init(TH.refresh_color, TH.widget_title_bg_color)
+        self.couriers_widget.pulsing = pulsing
+
+        pulsing = MlinePulsingComponent(self.id_widget)
+        pulsing.init("blue", TH.widget_title_bg_color)
+        self.id_widget.pulsing = pulsing
+
         self.fit_description()
         self.show_current_content(window)
 
@@ -346,8 +361,8 @@ class TrackerWidget:
             self.free_to_update = False
 
             if couriers := self.tracker.get_idle_couriers():
-                self.couriers_widget.start_pulsing(couriers)
-                self.id_widget.start_pulsing()
+                self.couriers_widget.pulsing.start(couriers)
+                self.id_widget.pulsing.start()
 
                 self.disable_buttons(True)
                 window.trigger_event(Updating_event)
@@ -382,8 +397,8 @@ class TrackerWidget:
 
     def update_done(self, window):
         if not self.tracker.is_courier_still_updating():
-            self.id_widget.stop_pulsing()
-            self.couriers_widget.stop_pulsing()
+            self.id_widget.pulsing.stop()
+            self.couriers_widget.pulsing.stop()
             self.disable_buttons(False)
             self.updating_widget.update(visible=False)
 
@@ -548,7 +563,7 @@ class TrackerWidget:
         prt(idship, autoscroll=False, t="red" if empty else "blue")
 
         start_col = len(self.id_widget.get()) - len(idship)
-        self.id_widget.add_pulsing_tag("", f"1.{start_col}", "end")
+        self.id_widget.pulsing.add_tag("", f"1.{start_col}", "end")
 
     def show_couriers(self, couriers_update):
         if couriers_update:
@@ -614,18 +629,18 @@ class TrackerWidget:
                 if update_msg:
                     # https://stackoverflow.com/questions/14786507/how-to-change-the-color-of-certain-words-in-the-tkinter-text-widget/30339009
                     end_col = len(update_msg) + len(name_txt)
-                    self.couriers_widget.add_pulsing_tag(name, f"{i + 1}.0", f"{i + 1}.{end_col}")
+                    self.couriers_widget.pulsing.add_tag(name, f"{i + 1}.0", f"{i + 1}.{end_col}")
 
                 if valid_idship:
                     start_col = len(update_msg) + len(error_msg) + 1
                     end_col = start_col + len(name_txt) - 1
-                    self.couriers_widget.add_button_tag(name, f"{i + 1}.{start_col}", f"{i + 1}.{end_col}")
+                    self.couriers_widget.buttons.add_tag(name, f"{i + 1}.{start_col}", f"{i + 1}.{end_col}")
 
         else:
             self.couriers_widget.update(TXT.no_couriers, text_color="red")
 
     def on_courrier_click(self, key):
-        self.tracker.open_in_browser(key)  # key is courier_name see couriers_widget.add_button_tag
+        self.tracker.open_in_browser(key)  # key is courier_name see couriers_widget.buttons.add_tag
 
     def edit(self, window):
         popup_edit = popup.Edit(
