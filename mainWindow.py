@@ -15,17 +15,9 @@ from couriers import get_local_now
 from imgtool import resize_and_colorize_gif, resize_and_colorize_img
 from log import log
 from trackers import Trackers, TrackerState
-from widget import (
-    AnimatedGif,
-    ButtonMouseOver,
-    ButtonTxtAndImg,
-    GraphRounded,
-    HLine,
-    MlinePulsing,
-    MLinePulsingButton,
-    ShowInTaskbarWindow,
-    TextFit,
-)
+from widget import (AnimatedGif, ButtonMouseOver, ButtonTxtAndImg,
+                    GraphRounded, HLine, MlinePulsing, MLinePulsingButton,
+                    ShowInTaskbarWindow, TextFit)
 
 TrackersFile = "Trackers"
 LOAD_AS_JSON = True
@@ -64,7 +56,6 @@ class TrackerWidget:
         self.tracker = tracker
         self.reset_size()
         self.free_to_update = True
-        self.finalized = False
 
         # faster startup
         if not TrackerWidget.updating_gif:
@@ -96,194 +87,195 @@ class TrackerWidget:
         return [[self.pin]]
 
     def finalize(self, window):
-        if not self.finalized:
-            self.finalized = True
+        title_color = TH.widget_title_bg_color
+        event_color = TH.widget_event_bg_color
+        mline_kwargs = dict(write_only=True, no_scrollbar=True, disabled=True)
+        padx = TH.widget_padx
+        b_pad = TH.widget_button_pad
 
-            title_color = TH.widget_title_bg_color
-            event_color = TH.widget_event_bg_color
-            mline_kwargs = dict(write_only=True, no_scrollbar=True, disabled=True)
-            padx = TH.widget_padx
-            b_pad = TH.widget_button_pad
+        b_colors = dict(
+            button_color=title_color,
+            mouse_over_color=TH.widget_button_mouse_over_color,
+        )
+        b_size = (TH.widget_button_size, TH.widget_button_size)
+        edit_button = ButtonMouseOver("", image_data=self.edit_img, p=(0, b_pad), **b_colors, size=b_size, k=self.edit)
+        self.refresh_button = ButtonMouseOver(
+            "", image_data=self.refresh_img, p=0, **b_colors, size=b_size, k=self.update
+        )
+        archive_button = ButtonMouseOver(
+            "",
+            image_data=self.archive_img,
+            p=(0, b_pad),
+            **b_colors,
+            size=b_size,
+            k=self.archive_or_delete,
+        )
 
-            b_colors = dict(
-                button_color=title_color,
-                mouse_over_color=TH.widget_button_mouse_over_color,
-            )
-            b_size = (TH.widget_button_size, TH.widget_button_size)
-            edit_button = ButtonMouseOver(
-                "", image_data=self.edit_img, p=(0, b_pad), **b_colors, size=b_size, k=self.edit
-            )
-            self.refresh_button = ButtonMouseOver(
-                "", image_data=self.refresh_img, p=0, **b_colors, size=b_size, k=self.update
-            )
-            archive_button = ButtonMouseOver(
-                "",
-                image_data=self.archive_img,
-                p=(0, b_pad),
-                **b_colors,
-                size=b_size,
-                k=self.archive_or_delete,
-            )
+        self.buttons = [edit_button, self.refresh_button, archive_button]
+        buttons = sg.Col(
+            [[button] for button in self.buttons],
+            p=(padx, 0),
+            background_color=title_color,
+        )
 
-            self.buttons = [edit_button, self.refresh_button, archive_button]
-            buttons = sg.Col(
-                [[button] for button in self.buttons],
-                p=(padx, 0),
-                background_color=title_color,
-            )
+        self.days_size = TH.widget_elapsed_days_box_size
+        self.days_font = (TH.fix_font_bold, TH.widget_elapsed_days_font_size)
+        graph_size = (self.days_size, self.days_size)
+        self.days_widget = GraphRounded(
+            canvas_size=graph_size,
+            graph_bottom_left=(0, 0),
+            graph_top_right=graph_size,
+            p=(padx, 0),
+            background_color=title_color,
+        )
 
-            self.days_size = TH.widget_elapsed_days_box_size
-            self.days_font = (TH.fix_font_bold, TH.widget_elapsed_days_font_size)
-            graph_size = (self.days_size, self.days_size)
-            self.days_widget = GraphRounded(
-                canvas_size=graph_size,
-                graph_bottom_left=(0, 0),
-                graph_top_right=graph_size,
-                p=(padx, 0),
-                background_color=title_color,
-            )
+        desc_font = (TH.var_font, TH.widget_description_font_size)
+        self.desc_widget = TextFit(
+            "",
+            p=0,
+            font=desc_font,
+            text_color=TH.widget_descrition_text_color,
+            background_color=title_color,
+            expand_x=True,
+            justification="l",
+        )
 
-            desc_font = (TH.var_font, TH.widget_description_font_size)
-            self.desc_widget = TextFit(
-                "",
-                p=0,
-                font=desc_font,
-                text_color=TH.widget_descrition_text_color,
-                background_color=title_color,
-                expand_x=True,
-                justification="l",
-            )
+        id_font = (TH.fix_font, TH.widget_idship_font_size)
+        self.id_widget = MlinePulsing(
+            "",
+            p=0,
+            font=id_font,
+            background_color=title_color,
+            justification="r",
+            **mline_kwargs,
+        )
 
-            id_font = (TH.fix_font, TH.widget_idship_font_size)
-            self.id_widget = MlinePulsing(
-                "",
-                p=0,
-                font=id_font,
-                background_color=title_color,
-                justification="r",
-                **mline_kwargs,
-            )
+        self.couriers_font = (TH.fix_font, TH.widget_courier_font_size)
+        self.couriers_font_bold = (TH.fix_font_bold, TH.widget_courier_font_size)
+        self.couriers_widget = MLinePulsingButton(
+            "",
+            p=0,
+            font=self.couriers_font,
+            background_color=title_color,
+            expand_x=True,
+            justification="r",
+            **mline_kwargs,
+        )
 
-            self.couriers_font = (TH.fix_font, TH.widget_courier_font_size)
-            self.couriers_font_bold = (TH.fix_font_bold, TH.widget_courier_font_size)
-            self.couriers_widget = MLinePulsingButton(
-                "",
-                p=0,
-                font=self.couriers_font,
-                background_color=title_color,
-                expand_x=True,
-                justification="r",
-                **mline_kwargs,
-            )
+        self.updating_widget = AnimatedGif(
+            data=self.updating_gif,
+            p=0,
+            background_color=title_color,
+            visible=False,
+            speed=1,
+        )
+        updating_widget_col = sg.Col(
+            [[self.updating_widget]],
+            p=0,
+            background_color=title_color,
+            vertical_alignment="center",
+        )
+        push = sg.Push(background_color=title_color)
 
-            self.updating_widget = AnimatedGif(
-                data=self.updating_gif,
-                p=0,
-                background_color=title_color,
-                visible=False,
-                speed=1,
-            )
-            updating_widget_col = sg.Col(
-                [[self.updating_widget]],
-                p=0,
-                background_color=title_color,
-                vertical_alignment="center",
-            )
-            push = sg.Push(background_color=title_color)
+        id_couriers_widget_layout = [
+            [push, updating_widget_col, self.id_widget],
+            [self.couriers_widget],
+        ]
+        id_couriers_widget = sg.Col(
+            id_couriers_widget_layout,
+            p=((padx * 2, 0), (b_pad, b_pad)),
+            expand_x=True,
+            background_color=title_color,
+            vertical_alignment="top",
+        )
 
-            id_couriers_widget_layout = [
-                [push, updating_widget_col, self.id_widget],
-                [self.couriers_widget],
-            ]
-            id_couriers_widget = sg.Col(
-                id_couriers_widget_layout,
-                p=((padx * 2, 0), (b_pad, b_pad)),
-                expand_x=True,
-                background_color=title_color,
-                vertical_alignment="top",
-            )
+        ago_font = (TH.var_font, TH.widget_status_font_size)
+        self.ago_widget = sg.T(
+            "",
+            p=0,
+            font=ago_font,
+            text_color=TH.widget_ago_color,
+            k=lambda w: self.toggle_expand(w),
+        )
 
-            ago_font = (TH.var_font, TH.widget_status_font_size)
-            self.ago_widget = sg.T(
-                "",
-                p=0,
-                font=ago_font,
-                text_color=TH.widget_ago_color,
-                k=lambda w: self.toggle_expand(w),
-            )
+        status_font = (TH.var_font, TH.widget_status_font_size)
+        self.status_widget = sg.T(
+            "",
+            p=0,
+            font=status_font,
+            text_color=TH.widget_status_text_color,
+            expand_x=True,
+            k=lambda w: self.toggle_expand(w),
+        )
 
-            status_font = (TH.var_font, TH.widget_status_font_size)
-            self.status_widget = sg.T(
-                "",
-                p=0,
-                font=status_font,
-                text_color=TH.widget_status_text_color,
-                expand_x=True,
-                k=lambda w: self.toggle_expand(w),
-            )
+        expand_font = (TH.fix_font, TH.widget_expand_font_size)
+        expand_button_color = dict(
+            button_color=(TH.widget_expand_color, event_color),
+            mouse_over_color=title_color,
+        )
+        self.expand_button = ButtonMouseOver(
+            "",
+            p=0,
+            font=expand_font,
+            **expand_button_color,
+            k=lambda w: self.toggle_expand(w),
+        )
 
-            expand_font = (TH.fix_font, TH.widget_expand_font_size)
-            expand_button_color = dict(
-                button_color=(TH.widget_expand_color, event_color),
-                mouse_over_color=title_color,
-            )
-            self.expand_button = ButtonMouseOver(
-                "",
-                p=0,
-                font=expand_font,
-                **expand_button_color,
-                k=lambda w: self.toggle_expand(w),
-            )
+        self.events_font = (TH.fix_font, TH.widget_event_font_size)
+        self.events_font_bold = (TH.fix_font_bold, TH.widget_event_font_size)
+        self.events_widget = sg.MLine(
+            "",
+            p=0,
+            font=self.events_font,
+            background_color=event_color,
+            visible=False,
+            k=self.toggle_expand,
+            **mline_kwargs,
+        )
+        events_widget_pin = sg.pin(self.events_widget, expand_x=True)  # collapse when hidden
 
-            self.events_font = (TH.fix_font, TH.widget_event_font_size)
-            self.events_font_bold = (TH.fix_font_bold, TH.widget_event_font_size)
-            self.events_widget = sg.MLine(
-                "",
-                p=0,
-                font=self.events_font,
-                background_color=event_color,
-                visible=False,
-                k=self.toggle_expand,
-                **mline_kwargs,
-            )
-            events_widget_pin = sg.pin(self.events_widget, expand_x=True)  # collapse when hidden
+        title_col = sg.Col(
+            [[self.days_widget, self.desc_widget, id_couriers_widget, buttons]],
+            p=0,
+            background_color=title_color,
+            expand_x=True,
+        )
+        status_col = sg.Col(
+            [[self.ago_widget, self.status_widget, self.expand_button]],
+            p=0,
+            expand_x=True,
+        )
+        event_col = sg.Col(
+            [[status_col], [events_widget_pin]],
+            p=(padx, TH.widget_event_pady),
+            expand_x=True,
+        )
 
-            title_col = sg.Col(
-                [[self.days_widget, self.desc_widget, id_couriers_widget, buttons]],
-                p=0,
-                background_color=title_color,
-                expand_x=True,
-            )
-            status_col = sg.Col(
-                [[self.ago_widget, self.status_widget, self.expand_button]],
-                p=0,
-                expand_x=True,
-            )
-            event_col = sg.Col(
-                [[status_col], [events_widget_pin]],
-                p=(padx, TH.widget_event_pady),
-                expand_x=True,
-            )
+        # extend the layout & finalize
+        window.extend_layout(self.layout, [[title_col], [event_col]])
 
-            # extend the layout & finalize
-            window.extend_layout(self.layout, [[title_col], [event_col]])
+        for widget in (self.id_widget, self.events_widget, self.couriers_widget):
+            widget.grab_anywhere_include()
+            # prevent selection https://stackoverflow.com/questions/54792599/how-can-i-make-a-tkinter-text-widget-unselectable?noredirect=1&lq=1
+            widget.Widget.bindtags((str(widget.Widget), str(window.TKroot), "all"))
 
-            for widget in (self.id_widget, self.events_widget, self.couriers_widget):
-                widget.grab_anywhere_include()
-                # prevent selection https://stackoverflow.com/questions/54792599/how-can-i-make-a-tkinter-text-widget-unselectable?noredirect=1&lq=1
-                widget.Widget.bindtags((str(widget.Widget), str(window.TKroot), "all"))
+        # toggle expand
+        for widget in (self.events_widget, self.status_widget, self.ago_widget):
+            widget.bind("<Button-1>", "")
 
-            # toggle expand
-            for widget in (self.events_widget, self.status_widget, self.ago_widget):
-                widget.bind("<Button-1>", "")
+        self.couriers_widget.as_a_button(
+            mouse_over_color=TH.widget_courier_mouse_over_color, on_click=self.on_courrier_click
+        )
+        self.couriers_widget.init_pulsing(TH.refresh_color, TH.widget_title_bg_color)
+        self.id_widget.init_pulsing("blue", TH.widget_title_bg_color)
+        self.fit_description()
+        self.show_current_content(window)
 
-            self.couriers_widget.as_a_button(
-                mouse_over_color=TH.widget_courier_mouse_over_color, on_click=self.on_courrier_click
-            )
-            self.couriers_widget.init_pulsing(TH.refresh_color, TH.widget_title_bg_color)
-            self.id_widget.init_pulsing("blue", TH.widget_title_bg_color)
-            self.fit_description()
-            self.show_current_content(window)
+        # no more finalization needed
+        self.finalize = self.dummy_finalize
+
+    def dummy_finalize(self, window):
+        pass
 
     def toggle_expand(self, window):
         self.expand_events = not self.expand_events

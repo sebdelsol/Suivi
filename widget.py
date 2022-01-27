@@ -21,8 +21,8 @@ else:
 
 # base window class to handle widget.finalize()
 class Window(sg.Window):
-    @classmethod
-    def _try_finalize(self, elt):
+    @staticmethod
+    def _try_finalize(elt):
         if hasattr(elt, "_auto_finalize"):
             elt.finalize()
 
@@ -48,19 +48,6 @@ class Window(sg.Window):
 def AutoFinalize(widget):
     widget._auto_finalize = True
     return widget
-
-
-# class Widget:
-#     def __init__(self, components):
-#         self.components = [comp(self) for comp in components]
-
-#         self.components = []
-#         for comp in components:
-#             if comp.for_cls.__name__ == type(self).__name__:
-#                 self.components.append(comp())
-#                 for method in dir(comp):
-#                     if not method.startswith("__"):
-#                         self.__setattr__(method, comp.method)
 
 
 class ShowInTaskbarWindow(Window):
@@ -125,11 +112,6 @@ class GraphRounded(sg.Graph):
 class ButtonMouseOver(sg.Button):
     default_colors = dict(Enter="grey75", Leave="grey95")
     binds = ("<Enter>", "<Leave>")
-
-    # @classmethod
-    # def finalize_all(cls, window):
-    #     for button in filter(lambda elt: isinstance(elt, cls), window.element_list()):
-    #         button.finalize()
 
     def __init__(self, *args, mouse_over_color=None, **kwargs):
         colors = kwargs.get("button_color")
