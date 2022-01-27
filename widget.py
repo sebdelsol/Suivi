@@ -19,7 +19,51 @@ else:
     _set_window_style = windll.user32.SetWindowLongW
 
 
-class ShowInTaskbarWindow(sg.Window):
+# base window class to handle widget.finalize()
+class Window(sg.Window):
+    @classmethod
+    def _try_finalize(self, elt):
+        if hasattr(elt, "_auto_finalize"):
+            elt.finalize()
+
+    def Finalize(self, *args, **kwargs):
+        super().Finalize(*args, **kwargs)
+        for elt in self.element_list():
+            self._try_finalize(elt)
+
+    def _finalize_layout(self, rows):
+        for row in rows:
+            for elt in row:
+                if hasattr(elt, "Rows"):
+                    self._finalize_layout(elt.Rows)
+                else:
+                    self._try_finalize(elt)
+
+    def extend_layout(self, container, rows):
+        super().extend_layout(container, rows)
+        self._finalize_layout(rows)
+
+
+# class decorator for widgets
+def AutoFinalize(widget):
+    widget._auto_finalize = True
+    return widget
+
+
+# class Widget:
+#     def __init__(self, components):
+#         self.components = [comp(self) for comp in components]
+
+#         self.components = []
+#         for comp in components:
+#             if comp.for_cls.__name__ == type(self).__name__:
+#                 self.components.append(comp())
+#                 for method in dir(comp):
+#                     if not method.startswith("__"):
+#                         self.__setattr__(method, comp.method)
+
+
+class ShowInTaskbarWindow(Window):
     def __init__(self, *args, no_titlebar=False, **kwargs):
         self._no_titlebar = no_titlebar
         super().__init__(*args, **kwargs)
@@ -77,14 +121,15 @@ class GraphRounded(sg.Graph):
         self.draw_arc((x + w2 - r2, y - h2), (x + w2, y - h2 + r2), 90, 270, fill_color=color, arc_color=color)
 
 
+@AutoFinalize
 class ButtonMouseOver(sg.Button):
     default_colors = dict(Enter="grey75", Leave="grey95")
     binds = ("<Enter>", "<Leave>")
 
-    @classmethod
-    def finalize_all(cls, window):
-        for button in filter(lambda elt: isinstance(elt, cls), window.element_list()):
-            button.finalize()
+    # @classmethod
+    # def finalize_all(cls, window):
+    #     for button in filter(lambda elt: isinstance(elt, cls), window.element_list()):
+    #         button.finalize()
 
     def __init__(self, *args, mouse_over_color=None, **kwargs):
         colors = kwargs.get("button_color")

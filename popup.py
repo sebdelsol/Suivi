@@ -5,10 +5,10 @@ import PySimpleGUI as sg
 import localization as TXT
 import theme as TH
 from couriers import Courier
-from widget import ButtonMouseOver, HLine
+from widget import ButtonMouseOver, HLine, Window
 
 
-class Popup(sg.Window):
+class Popup(Window):
     def __init__(self, title, body_layout, main_window):
         self.main_window = main_window
         self.main_window.grey_all(True)
@@ -41,7 +41,6 @@ class Popup(sg.Window):
 
         args, kwargs = TH.get_window_params(layout)
         super().__init__(*args, modal=True, **kwargs)
-        ButtonMouseOver.finalize_all(self)
 
     def loop(self):
         while True:

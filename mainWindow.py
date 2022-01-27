@@ -109,13 +109,19 @@ class TrackerWidget:
                 button_color=title_color,
                 mouse_over_color=TH.widget_button_mouse_over_color,
             )
-            edit_button = ButtonMouseOver("", image_data=self.edit_img, p=(0, b_pad), **b_colors, k=self.edit)
-            self.refresh_button = ButtonMouseOver("", image_data=self.refresh_img, p=0, **b_colors, k=self.update)
+            b_size = (TH.widget_button_size, TH.widget_button_size)
+            edit_button = ButtonMouseOver(
+                "", image_data=self.edit_img, p=(0, b_pad), **b_colors, size=b_size, k=self.edit
+            )
+            self.refresh_button = ButtonMouseOver(
+                "", image_data=self.refresh_img, p=0, **b_colors, size=b_size, k=self.update
+            )
             archive_button = ButtonMouseOver(
                 "",
                 image_data=self.archive_img,
                 p=(0, b_pad),
                 **b_colors,
+                size=b_size,
                 k=self.archive_or_delete,
             )
 
@@ -261,13 +267,6 @@ class TrackerWidget:
 
             # extend the layout & finalize
             window.extend_layout(self.layout, [[title_col], [event_col]])
-
-            size = (TH.widget_button_size, TH.widget_button_size)
-            for button in self.buttons:
-                button.set_size(size)
-                button.finalize()
-
-            self.expand_button.finalize()
 
             for widget in (self.id_widget, self.events_widget, self.couriers_widget):
                 widget.grab_anywhere_include()
@@ -1050,7 +1049,6 @@ class MainWindow(ShowInTaskbarWindow):
         kwargs["no_titlebar"] = True
         super().__init__(*args, **kwargs)
 
-        ButtonMouseOver.finalize_all(self)
         recenter_widget.bind("<Double-Button-1>", "")
 
         self.trackers = Trackers(TrackersFile, LOAD_AS_JSON, splash)

@@ -6,10 +6,10 @@ import PySimpleGUI as sg
 
 import localization as TXT
 import theme as TH
-from widget import ButtonMouseOver
+from widget import ButtonMouseOver, Window
 
 
-class _Logger(sg.Window):
+class _Logger(Window):
     link_txt = "\n".join("❱❱❱❱❱")
     unlink_txt = "\n".join("❰❰❰❰❰")
     close_txt = "\n".join(TXT.close.upper())
@@ -73,7 +73,6 @@ class _Logger(sg.Window):
         self.set_min_size(self.size)
         self.wanted_pos = None
         self.output.Widget.configure(selectbackground=self.select_bg_color)
-        self.link_button.finalize()
 
     def link_to(self, main_window):
         self.main_window = main_window
