@@ -382,7 +382,6 @@ class TrackerWidget:
                 self.show_current_content(window)
 
     def update_idle_couriers(self, window, couriers):
-        content = None
         for content in self.tracker.update_idle_couriers(couriers):
             # https://stackoverflow.com/questions/10452770/python-lambdas-binding-to-local-values
             window.trigger_event(lambda window, content=content: self.update_one_courier_done(content, window))
