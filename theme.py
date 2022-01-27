@@ -22,10 +22,6 @@ def get_window_params(layout, **new_kwargs):
     return args, kwargs
 
 
-# def is_debugger():
-#     return _is_debugger
-
-
 fix_font = "Roboto Mono Light"
 fix_font_bold = "Roboto Mono Bold"
 var_font = "Roboto Light"
