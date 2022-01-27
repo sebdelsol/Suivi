@@ -121,18 +121,21 @@ class ButtonTxtAndImg(ButtonMouseOver):
         super().__init__(*args, **kwargs)
 
     def get_image_data(self, kwargs):
+        self._height = self.im_height + self.im_margin[1] * 2
         if self.image_filename:
             # colorize the img with the text color
             txt_color = kwargs.get("button_color")[0]
-            self.im_data = resize_and_colorize_img(self.image_filename, self.im_height, txt_color)
-            self.im_width = get_img64_size(self.im_data)[0]
+            self.im_data = resize_and_colorize_img(
+                self.image_filename, self.im_height, txt_color, margin=self.im_margin
+            )
+            self._width = get_img64_size(self.im_data)[0] + self.im_margin[0] * 2
             return self.im_data
         else:
-            self.im_width = 0
+            self._width = self.im_margin[0]
 
     def update_size(self, txt):
         wfont = tk_font.Font(self.ParentForm.TKroot, self.Font)
-        size = (wfont.measure(txt) + self.im_width + self.im_margin * 2, self.im_height + self.im_margin * 2)
+        size = wfont.measure(txt) + self._width, self._height
         self.set_size(size)
 
     def finalize(self):

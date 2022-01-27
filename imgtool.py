@@ -60,7 +60,7 @@ def get_gif_durations(image64):
     return durations
 
 
-def resize_and_colorize_img(image, height, color, canvas_size=None):
+def resize_and_colorize_img(image, height, color, canvas_size=None, margin=None):
     im = Image.open(image)
 
     alpha = im.split()[3]
@@ -69,9 +69,17 @@ def resize_and_colorize_img(image, height, color, canvas_size=None):
     width = round(im.size[0] * height / im.size[1])
     im.thumbnail((width, height))
 
+    w, h = im.size
+    if margin:
+        padw, padh = margin
+        canvas_size = w + 2 * padw, h + 2 * padh
+
+    elif canvas_size:
+        W, H = canvas_size
+        padw, padh = round((W - w) * 0.5), round((H - h) * 0.5)
+
     if canvas_size:
         new = Image.new("RGBA", canvas_size, 0)
-        padw, padh = (round((cS - imS) * 0.5) for cS, imS in zip(canvas_size, im.size))
         new.paste(im, (padw, padh))
         im = new
 

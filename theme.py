@@ -63,7 +63,7 @@ empty_font_size = 20
 menu_button_pad = 7
 menu_button_font_size = 13
 menu_button_height = 20
-menu_button_img_margin = 5
+menu_button_img_margin = 1, 5
 
 widget_padx = 10
 widget_title_bg_color = "grey85"
