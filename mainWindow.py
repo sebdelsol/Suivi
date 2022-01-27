@@ -15,9 +15,17 @@ from couriers import get_local_now
 from imgtool import resize_and_colorize_gif, resize_and_colorize_img
 from log import log
 from trackers import Trackers, TrackerState
-from widget import (AnimatedGif, ButtonMouseOver, ButtonTxtAndImg,
-                    GraphRounded, HLine, MlinePulsing, MLinePulsingButton,
-                    ShowInTaskbarWindow, TextFit)
+from widget import (
+    AnimatedGif,
+    ButtonMouseOver,
+    ButtonTxtAndImg,
+    GraphRounded,
+    HLine,
+    MlinePulsing,
+    MLinePulsingButton,
+    ShowInTaskbarWindow,
+    TextFit,
+)
 
 TrackersFile = "Trackers"
 LOAD_AS_JSON = True
@@ -327,7 +335,7 @@ class TrackerWidget:
         self.update_couriers_id_size()
 
     def update_couriers_id_size(self):
-        txts = [t for t in self.couriers_widget.get().split("\n")]
+        txts = self.couriers_widget.get().split("\n")
         self.couriers_widget.set_size((max(len(t) for t in txts), len(txts)))
 
         txt = self.id_widget.get()
