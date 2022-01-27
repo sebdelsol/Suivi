@@ -78,16 +78,6 @@ def resize_and_colorize_img(image, height, color, canvas_size=None):
     return save_img64(im, format="PNG")
 
 
-def expand_right_img64(image64, new_size):
-    im = load_img64(image64)
-
-    new = Image.new("RGBA", new_size, 0)
-    pad = round((new_size[1] - im.size[1]) * 0.5)
-    new.paste(im, (pad, pad))
-
-    return save_img64(new, format="PNG")
-
-
 def get_img64_size(image64):
     im = load_img64(image64)
     return im.size

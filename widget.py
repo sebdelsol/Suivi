@@ -5,7 +5,7 @@ from tkinter import font as tk_font
 
 import PySimpleGUI as sg
 
-from imgtool import expand_right_img64, get_gif_durations, get_img64_size, resize_and_colorize_img
+from imgtool import get_gif_durations, get_img64_size, resize_and_colorize_img
 
 GWL_EXSTYLE = -20
 WS_EX_APPWINDOW = 0x00040000
@@ -111,51 +111,45 @@ class ButtonMouseOver(sg.Button):
 
 
 class ButtonTxtAndImg(ButtonMouseOver):
-    def __init__(self, *args, im_margin=0, im_height=20, **kwargs):
+    def __init__(self, *args, im_margin=0, image_filename=None, image_justify="left", im_height=20, **kwargs):
         self.im_margin = im_margin
         self.im_height = im_height
-        self.image_filename = kwargs["image_filename"]
-
-        del kwargs["image_filename"]
+        self.image_filename = image_filename
+        self.image_justify = image_justify
         kwargs["image_data"] = self.get_image_data(kwargs)
-
         kwargs["auto_size_button"] = False
         super().__init__(*args, **kwargs)
 
     def get_image_data(self, kwargs):
-        # colorize the img with the text color
-        txt_color = kwargs.get("button_color")[0]
-        self.im_data = resize_and_colorize_img(self.image_filename, self.im_height, txt_color)
-        self.im_width = get_img64_size(self.im_data)[0]
-        return self.im_data
+        if self.image_filename:
+            # colorize the img with the text color
+            txt_color = kwargs.get("button_color")[0]
+            self.im_data = resize_and_colorize_img(self.image_filename, self.im_height, txt_color)
+            self.im_width = get_img64_size(self.im_data)[0]
+            return self.im_data
+        else:
+            self.im_width = 0
 
-    def update_layout(self, txt):
-        # add spaces to fit text after the img
+    def update_size(self, txt):
         wfont = tk_font.Font(self.ParentForm.TKroot, self.Font)
-        new_txt = " " * round((self.im_width + self.im_margin * 2) / wfont.measure(" ")) + txt
-        new_size = (wfont.measure(new_txt) + self.im_margin, self.im_height + self.im_margin * 2)
-
-        # expand the img to the right to fill the whole button
-        self.set_size(new_size)
-        self.Widget.configure(wraplength=new_size[0])
-        new_image_data = expand_right_img64(self.im_data, new_size)
-        self.update(new_txt, image_data=new_image_data, update_layout=False)
+        size = (wfont.measure(txt) + self.im_width + self.im_margin * 2, self.im_height + self.im_margin * 2)
+        self.set_size(size)
 
     def finalize(self):
-        self.update_layout(self.get_text())
+        self.Widget.config(compound=self.image_justify, justify=self.image_justify)
+        self.update_size(self.get_text())
         super().finalize()
 
-    def update(self, *args, update_layout=True, **kwargs):
+    def update(self, *args, **kwargs):
         if color := kwargs.get("button_color"):
             if isinstance(color, tuple):
                 if color[0] != self.ButtonColor[0]:
                     kwargs["image_data"] = self.get_image_data(kwargs)
 
         super().update(*args, **kwargs)
-        if update_layout:
-            txt = kwargs.get("text") or (len(args) > 0 and args[0])
-            if txt:
-                self.update_layout(txt)
+
+        if txt := kwargs.get("text") or (len(args) > 0 and args[0]):
+            self.update_size(txt)
 
 
 class TextFit(sg.Text):
