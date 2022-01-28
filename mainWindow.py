@@ -15,17 +15,9 @@ from couriers import get_local_now
 from imgtool import resize_and_colorize_gif, resize_and_colorize_img
 from log import log
 from trackers import Trackers, TrackerState
-from widget import (
-    AnimatedGif,
-    ButtonMouseOver,
-    ButtonTxtAndImg,
-    GraphRounded,
-    HLine,
-    MlineButtonsComponent,
-    MlinePulsingComponent,
-    ShowInTaskbarWindow,
-    TextFit,
-)
+from widget import (AnimatedGif, ButtonMouseOver, ButtonTxtAndImg,
+                    GraphRounded, HLine, MlineButtonsComponent,
+                    MlinePulsingComponent, ShowInTaskbarWindow, TextFit)
 
 TrackersFile = "Trackers"
 LOAD_AS_JSON = True
@@ -918,7 +910,7 @@ class GreyWindow:
                     root.lift()
                 else:
                     self.window.bring_to_front()
-                self.window.set_alpha(TH.splash_alpha)
+                self.window.set_alpha(TH.greyed_alpha)
 
         elif self.is_visible(self.window):
             self.window.set_alpha(0)

@@ -13,8 +13,8 @@ Python_version = ">=3.8, <3.9"
 
 class Splash:
     def __init__(self):
-        self.log = sg.T("", font=(TH.var_font, 10), text_color=TH.splash_color)
-        img_data = resize_and_colorize_img(TH.mail_img, 200, TH.splash_color)
+        self.log = sg.T("", font=(TH.var_font, TH.splash_font_size), text_color=TH.splash_color)
+        img_data = resize_and_colorize_img(TH.mail_img, TH.splash_img_height, TH.splash_color)
         layout = [[sg.Image(data=img_data)], [self.log]]
         args, kwargs = TH.get_window_params(layout, grab_anywhere=False)
         self.window = sg.Window(*args, **kwargs)
@@ -27,10 +27,10 @@ class Splash:
         self.window.close()
 
 
-if __name__ == "__main__":   
+if __name__ == "__main__":
     version = ".".join(str(v) for v in sys.version_info[:3])
     print(f"Python {version} running")
-    
+
     needed_version = SpecifierSet(Python_version)
     if version not in needed_version:
         needs = " and ".join(need for need in str(needed_version).split(","))
