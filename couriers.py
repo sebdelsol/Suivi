@@ -16,9 +16,11 @@ from selenium.webdriver.support.ui import WebDriverWait
 from tzlocal import get_localzone
 
 import localization as TXT
-from config import LaPoste_key, dhl_key
 from drivers import DriverHandler, TempBrowser
 from log import log
+
+# import API keys for La poste & DHL
+from secret import LaPoste_key, dhl_key
 
 
 def get_sentence(txt, nb=-1):
