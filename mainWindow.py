@@ -256,7 +256,7 @@ class MainWindow(ShowInTaskbarWindow):
             elif event == Events.trash_updated:
                 self.widgets.deleted_updated()
 
-            elif event == Events.updated_tracker_widgets_size:
+            elif event == Events.update_window_size:
                 self.widgets.update_window_size(window)
 
             elif event == Events.new:

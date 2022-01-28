@@ -54,10 +54,8 @@ class TrackerWidget:
         self.expand_events = False
 
     def create_layout(self):
-        shown = self.tracker.state == TrackerState.shown
-
         self.hline = HLine(color=TH.widget_separator_color)
-        self.layout = sg.Col([[self.hline]], p=0, expand_x=True, visible=shown)  # to be extended see finalize
+        self.layout = sg.Col([[self.hline]], p=0, expand_x=True, visible=False)  # to be extended, see finalize
         self.pin = sg.pin(self.layout, expand_x=True)  # collapse when hidden
 
         # return minimum layout to be extended in finalize()
@@ -252,21 +250,21 @@ class TrackerWidget:
         pulsing.init("blue", TH.widget_title_bg_color)
         self.id_widget.pulsing = pulsing
 
-        self.fit_description()
         self.show_current_content(window)
 
         # no more finalization needed
         self.finalize = self.dummy_finalize
+        return True
 
     def dummy_finalize(self, window):
-        pass
+        return False
 
     def toggle_expand(self, window):
         self.expand_events = not self.expand_events
         self.update_expand_button()
 
         self.update_size()
-        window.trigger_event(Events.updated_tracker_widgets_size)
+        window.trigger_event(Events.update_window_size)
 
     def update_expand_button(self):
         visible = self.is_events_visible() and self.height_events > TH.widget_min_events_shown
@@ -298,7 +296,7 @@ class TrackerWidget:
             )
             log(f"set font {size=} for {self.get_description()}")
 
-    def update_visiblity(self):
+    def update_visibility(self):
         self.layout.update(visible=self.tracker.state == TrackerState.shown)
 
     # https://stackoverflow.com/questions/11544187/tkinter-resize-text-to-contents/11545159
@@ -436,7 +434,9 @@ class TrackerWidget:
             self.update_expand_button()
 
             self.update_size()
-            window.trigger_event(Events.updated_tracker_widgets_size)
+            self.fit_description()
+            self.update_visibility()
+            window.trigger_event(Events.update_window_size)
 
     def show_events(self, content):
         events = content["events"]
@@ -622,8 +622,6 @@ class TrackerWidget:
         ok, idship, description, used_couriers = popup_edit.loop()
         if ok:
             self.tracker.set_id(idship, description, used_couriers)
-            self.fit_description()
-            self.reset_size()
             self.update(window)
 
     def archive_or_delete(self, window):
@@ -657,14 +655,14 @@ class TrackerWidget:
 
             if reappear:
                 self.reset_size()
-                self.finalize(window)
-                self.fit_description()
-                self.show_current_content(window)
+                if not self.finalize(window):
+                    self.show_current_content(window)
                 self.update(window)
 
-            self.update_visiblity()
-            self.update_size()
-            window.trigger_event(Events.updated_tracker_widgets_size)
+            else:
+                self.update_visibility()
+                window.trigger_event(Events.update_window_size)
+
             window.trigger_event(event)
 
     def delete(self, window):
@@ -822,12 +820,22 @@ class TrackerWidgets:
             h_screen_margin = 0
             max_h = screen_h - h_screen_margin
 
+            tk_scrollable_frame = self.widgets_frame.TKColFrame
             if h > max_h:
-                self.widgets_frame.Widget.vscrollbar.pack(side=sg.tk.RIGHT, fill="y")
-                w += int(self.widgets_frame.Widget.vscrollbar["width"])
+                tk_scrollable_frame.vscrollbar.pack(side=sg.tk.RIGHT, fill="y")
+                # tk_scrollable_frame.TKFrame.bind("<Enter>", tk_scrollable_frame.hookMouseWheel)
+                w += int(tk_scrollable_frame.vscrollbar["width"])
+                # print("scrollbar")
 
             else:
-                self.widgets_frame.Widget.vscrollbar.pack_forget()
+                # self.widgets_frame.contents_changed()
+                # # tk_scrollable_frame.vscrollbar.pack(side=sg.tk.RIGHT, fill="y")
+                # tk_scrollable_frame.canvas.yview_moveto(1.0)
+                # # tk_scrollable_frame.canvas.yview_scroll(10, "unit")
+                tk_scrollable_frame.vscrollbar.pack_forget()
+                # tk_scrollable_frame.TKFrame.unbind("<Enter>")
+                # tk_scrollable_frame.unhookMouseWheel(None)
+                # print("NO scrollbar")
 
             window.size = min(w, screen_w), min(h, max_h)
             self.recenter(window)

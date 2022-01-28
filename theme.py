@@ -55,8 +55,6 @@ popup_sep_color = "grey20"
 popup_title_font_size = 25
 
 button_color = "grey75"
-separator_color = "grey50"
-
 menu_color = "grey75"
 empty_color = "grey90"
 empty_font_size = 20

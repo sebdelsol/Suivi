@@ -3,7 +3,7 @@ class Events:
     updating = "-Updating Changed-"
     archives_updated = "-Archives updated-"
     trash_updated = "-Trash Updated-"
-    updated_tracker_widgets_size = "-Updated Widgets Size-"
+    update_window_size = "-Updated Widgets Size-"
     new = "-New-"
     refresh = "-Refresh-"
     archives = "-Archives-"
