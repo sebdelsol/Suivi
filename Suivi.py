@@ -9,6 +9,8 @@ import theme as TH
 from imgtool import resize_and_colorize_img
 
 Python_version = ">=3.8, <3.9"
+Trackers_filename = "Trackers"
+Load_as_json = True
 
 
 class Splash:
@@ -46,7 +48,7 @@ if __name__ == "__main__":
         from log import logger
         from mainWindow import MainWindow
 
-        main_window = MainWindow(splash)
+        main_window = MainWindow(Trackers_filename, Load_as_json, splash)
         main_window.addlog(logger)
         splash.close()
 
