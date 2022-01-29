@@ -29,19 +29,20 @@ class Splash:
         self.window.close()
 
 
+def check_python_version(version_spec):
+    current_version = ".".join(str(v) for v in sys.version_info[:3])
+    print(f"Python {current_version} running")
+
+    needed_version = SpecifierSet(version_spec)
+    if current_version in needed_version:
+        return True
+
+    needs = " and ".join(need for need in str(needed_version).split(","))
+    print(f"Unfortunatly this app needs Python {needs}")
+    return False
+
+
 if __name__ == "__main__":
-
-    def check_python_version(version_spec):
-        current_version = ".".join(str(v) for v in sys.version_info[:3])
-        print(f"Python {current_version} running")
-
-        needed_version = SpecifierSet(version_spec)
-        if current_version in needed_version:
-            return True
-
-        needs = " and ".join(need for need in str(needed_version).split(","))
-        print(f"Unfortunatly this app needs Python {needs}")
-
     if check_python_version(PYTHON_VERSIONS_SPEC):
         sg.theme(TH.theme)
 
