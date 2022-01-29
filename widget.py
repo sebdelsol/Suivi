@@ -251,8 +251,8 @@ class MlineButtonsComponent(Component):
         element = self._element
         self.mouse_enter_color = mouse_over_color or element.BackgroundColor
         self.mouse_leave_color = button_color or element.BackgroundColor
-        self.button_tag = f"button{id(self)}"
-        self.button_tags = {}
+        self.tag = f"button{id(self)}"
+        self.tags = {}
         self.on_click_callback = on_click
         self.pointed_key = None
 
@@ -270,7 +270,11 @@ class MlineButtonsComponent(Component):
     def _on_click(self, event):
         if self.pointed_key and self.on_click_callback:
             self.on_click_callback(self.pointed_key)
-
+            
+    @staticmethod
+    def is_in_between(widget, index, start, end):
+        return widget.compare(start, "<=", index) and widget.compare(index, "<=", end):
+        
     def _on_mouse_move(self, event):
         widget = self._element.Widget
         index = widget.index(f"@{event.x},{event.y}")
@@ -278,29 +282,29 @@ class MlineButtonsComponent(Component):
         self.pointed_key = None
         tags = widget.tag_names(index)
         for tag, (key, start, end) in self.button_tags.items():
-            if tag in tags and widget.compare(start, "<=", index) and widget.compare(index, "<=", end):
+            if tag in tags and self.is_in_between(widget, index, start, end):
                 self.pointed_key = key
                 widget.tag_configure(tag, bg=self.mouse_enter_color)
             else:
                 widget.tag_configure(tag, bg=self.mouse_leave_color)
 
     def add_tag(self, key, start, end):
-        tag = f"{self.button_tag}{key}"
-        self.button_tags[tag] = (key, start, end)
+        tag = f"{self.tag}{key}"
+        self.tags[tag] = (key, start, end)
         self._element.Widget.tag_add(tag, start, end)
 
 
 class MlinePulsingComponent(Component):
     _for = sg.MLine
     colors = {}
-    pulsing_array_size = 32  # size of colors array
-    pulsing_time_step = 50  # ms
+    array_size = 32  # size of colors array
+    time_step = 50  # ms
 
     def init(self, color_start, color_end, percent_to_end_color=0.75, frequency=1.5):
         self.is_pulsing = False
-        self.pulsing_tag = f"pulsing{id(self)}"   
-        self.pulsing_frequency = frequency
-        self.pulsing_tags = {}
+        self.frequency = frequency
+        self.tag = f"pulsing{id(self)}" 
+        self.tags = {}  
 
         color_start = self._color_to_rgb(color_start)
         color_end = self._color_to_rgb(color_end)
@@ -319,10 +323,9 @@ class MlinePulsingComponent(Component):
     def _get_one_period_colors(color_start, color_end, array_size):
         colors = []
         for x in range(array_size):
-            t = (math.cos((2 * math.pi * (x % array_size)) / array_size) + 1) * 0.5
+            t = .5 * (1 + math.cos((2 * math.pi * (x % array_size)) / array_size))
             r, g, b = MlinePulsingComponent._blend_rgb_colors(color_start, color_end, 1 - t)
-            color = f"#{round(r):02x}{round(g):02x}{round(b):02x}"
-            colors.append(color)
+            colors.append(f"#{round(r):02x}{round(g):02x}{round(b):02x}")
         return colors
 
     def _color_to_rgb(self, color):
@@ -331,11 +334,11 @@ class MlinePulsingComponent(Component):
         return map(lambda c: int(c / 256), rgb)
 
     def add_tag(self, key, start, end):
-        self._element.Widget.tag_add(f"{self.pulsing_tag}{key}", start, end)
+        self._element.Widget.tag_add(f"{self.tag}{key}", start, end)
 
     def start(self, keys=None):
         for key in keys or [""]:
-            self.pulsing_tags[f"{self.pulsing_tag}{key}"] = (0, time.time())
+            self.tags[f"{self.tag}{key}"] = (0, time.time())
 
         if not self.is_pulsing:
             self.is_pulsing = True
@@ -344,19 +347,19 @@ class MlinePulsingComponent(Component):
     def stop(self):
         for tag in self.pulsing_tags:
             self._element.Widget.tag_delete(tag)
-        self.pulsing_tags = {}
+        self.tags = {}
         self.is_pulsing = False
 
     def _pulse(self):
         if self.is_pulsing:
             now = time.time()
             colors = self.colors[self.colors_key]
-            for tag, (index, t) in self.pulsing_tags.items():
-                color = colors[round(index) % self.pulsing_array_size]
+            for tag, (index, t) in self.tags.items():
+                color = colors[round(index) % self.array_size]
                 self._element.Widget.tag_configure(tag, fg=color)
 
-                index += self.pulsing_frequency * self.pulsing_array_size * (now - t)
-                self.pulsing_tags[tag] = index, now
+                index += self.frequency * self.array_size * (now - t)
+                self.tags[tag] = index, now
 
             window = self._element.ParentForm
-            window.TKroot.after(self.pulsing_time_step, self._pulse)
+            window.TKroot.after(self.time_step, self._pulse)
