@@ -820,8 +820,7 @@ class TrackerWidgets:
 
             # need a scrollbar ?
             screen_w, screen_h = window.get_screen_size()
-            h_screen_margin = 0
-            max_h = screen_h - h_screen_margin
+            max_h = screen_h - TH.window_height_screen_margin
 
             tk_scrollable_frame = self.widgets_frame.TKColFrame
             if h > max_h:

@@ -50,6 +50,8 @@ class TH:
     mail_img = "icons/mail.png"
     warn_img = "icons/warn.png"
 
+    window_height_screen_margin = 0  # for recenter
+
     popup_bg_color = "grey90"
     popup_title_color = "grey40"
     popup_sep_color = "grey20"
