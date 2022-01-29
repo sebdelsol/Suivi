@@ -93,14 +93,15 @@ class ShowInTaskbarWindow(Window):
 class GraphRounded(sg.Graph):
     def draw_rounded_box(self, x, y, w, h, r, color):
         w, h, r2 = w * 0.5, h * 0.5, r * 2
+        colors = dict(fill_color=color, line_color=color)
         # cross
-        self.draw_rectangle((x - w, y + h - r), (x + w, y - h + r), fill_color=color, line_color=color)
-        self.draw_rectangle((x - w + r, y + h), (x + w - r, y - h), fill_color=color, line_color=color)
+        self.draw_rectangle((x - w, y + h - r), (x + w, y - h + r), **colors)
+        self.draw_rectangle((x - w + r, y + h), (x + w - r, y - h), **colors)
         # corners
-        self.draw_arc((x - w, y + h - r2), (x - w + r2, y + h), 90, 90, fill_color=color, arc_color=color)
-        self.draw_arc((x + w - r2, y + h - r2), (x + w, y + h), 90, 0, fill_color=color, arc_color=color)
-        self.draw_arc((x - w, y - h), (x - w + r2, y - h + r2), 90, 180, fill_color=color, arc_color=color)
-        self.draw_arc((x + w - r2, y - h), (x + w, y - h + r2), 90, 270, fill_color=color, arc_color=color)
+        self.draw_arc((x - w, y + h - r2), (x - w + r2, y + h), 90, 90, **colors)
+        self.draw_arc((x + w - r2, y + h - r2), (x + w, y + h), 90, 0, **colors)
+        self.draw_arc((x - w, y - h), (x - w + r2, y - h + r2), 90, 180, **colors)
+        self.draw_arc((x + w - r2, y - h), (x + w, y - h + r2), 90, 270, **colors)
 
 
 class ButtonMouseOver(sg.Button):
