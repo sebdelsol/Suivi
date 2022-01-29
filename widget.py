@@ -272,7 +272,7 @@ class MlineButtonsComponent(Component):
             self.on_click_callback(self.pointed_key)
             
     @staticmethod
-    def is_in_between(widget, index, start, end):
+    def _is_in_between(widget, index, start, end):
         return widget.compare(start, "<=", index) and widget.compare(index, "<=", end):
         
     def _on_mouse_move(self, event):
@@ -282,7 +282,7 @@ class MlineButtonsComponent(Component):
         self.pointed_key = None
         tags = widget.tag_names(index)
         for tag, (key, start, end) in self.button_tags.items():
-            if tag in tags and self.is_in_between(widget, index, start, end):
+            if tag in tags and self._is_in_between(widget, index, start, end):
                 self.pointed_key = key
                 widget.tag_configure(tag, bg=self.mouse_enter_color)
             else:
