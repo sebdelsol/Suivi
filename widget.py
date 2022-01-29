@@ -293,12 +293,12 @@ class MlineButtonsComponent(Component):
 class MlinePulsingComponent(Component):
     _for = sg.MLine
     colors = {}
+    pulsing_array_size = 32  # size of colors array
+    pulsing_time_step = 50  # ms
 
     def init(self, color_start, color_end, percent_to_end_color=0.75, frequency=1.5):
         self.is_pulsing = False
-        self.pulsing_tag = f"pulsing{id(self)}"
-        self.pulsing_array_size = 32  # size of colors array
-        self.pulsing_time_step = 50  # ms
+        self.pulsing_tag = f"pulsing{id(self)}"   
         self.pulsing_frequency = frequency
         self.pulsing_tags = {}
 
