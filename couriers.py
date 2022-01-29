@@ -20,7 +20,7 @@ from localization import TXT
 from log import log
 
 # import API keys for La poste & DHL
-from secret import LaPoste_key, dhl_key
+from secret import LAPOSTE_KEY, DHL_KEY
 
 
 def get_sentence(txt, n=-1):
@@ -620,7 +620,7 @@ class LaPoste(Courier):
     name = "La Poste"
     handler = RequestHandler()
     idship_validation, idship_validation_msg = get_simple_validation(11, 15)
-    headers = {"X-Okapi-Key": LaPoste_key, "Accept": "application/json"}
+    headers = {"X-Okapi-Key": LAPOSTE_KEY, "Accept": "application/json"}
 
     codes = dict(
         DR1=("Déclaratif réceptionné", False),
@@ -746,7 +746,7 @@ class DHL(Courier):
     name = "DHL"
     handler = RequestHandler()
     idship_validation, idship_validation_msg = get_simple_validation(10, 39)
-    headers = {"Accept": "application/json", "DHL-API-Key": dhl_key}
+    headers = {"Accept": "application/json", "DHL-API-Key": DHL_KEY}
 
     def get_url_for_browser(self, idship):
         return f"https://www.dhl.com/fr-en/home/our-divisions/parcel/private-customers/tracking-parcel.html?tracking-id={idship}"

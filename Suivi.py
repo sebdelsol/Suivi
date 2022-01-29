@@ -39,9 +39,8 @@ if __name__ == "__main__":
         if current_version in needed_version:
             return True
 
-        else:
-            needs = " and ".join(need for need in str(needed_version).split(","))
-            print(f"Unfortunatly this app needs Python {needs}")
+        needs = " and ".join(need for need in str(needed_version).split(","))
+        print(f"Unfortunatly this app needs Python {needs}")
 
     if check_python_version(PYTHON_VERSIONS_SPEC):
         sg.theme(TH.theme)
