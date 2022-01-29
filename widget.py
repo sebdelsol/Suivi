@@ -20,11 +20,11 @@ else:
 
 
 # PySimpleGUI calls its widgets : elements
-# base window class to handle element.finalize()
+# base window class to handle custom element._finalize()
 class Window(sg.Window):
     @staticmethod
     def _try_finalize(elt):
-        if hasattr(elt, "_auto_finalize"):
+        if hasattr(elt, "_finalize"):
             elt._finalize()
 
     def _finalize_layout(self, rows):
@@ -43,12 +43,6 @@ class Window(sg.Window):
     def extend_layout(self, container, rows):
         super().extend_layout(container, rows)
         self._finalize_layout(rows)
-
-
-# class decorator for elements
-def AutoFinalize(element):
-    element._auto_finalize = True
-    return element
 
 
 class ShowInTaskbarWindow(Window):
@@ -109,7 +103,6 @@ class GraphRounded(sg.Graph):
         self.draw_arc((x + w2 - r2, y - h2), (x + w2, y - h2 + r2), 90, 270, fill_color=color, arc_color=color)
 
 
-@AutoFinalize
 class ButtonMouseOver(sg.Button):
     default_colors = dict(Enter="grey75", Leave="grey95")
     binds = ("<Enter>", "<Leave>")
