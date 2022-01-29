@@ -98,6 +98,7 @@ class GraphRounded(sg.Graph):
         self.draw_rectangle((x - w, y + h - r), (x + w, y - h + r), **colors)
         self.draw_rectangle((x - w + r, y + h), (x + w - r, y - h), **colors)
         # corners
+        colors = dict(fill_color=color, arc_color=color)
         self.draw_arc((x - w, y + h - r2), (x - w + r2, y + h), 90, 90, **colors)
         self.draw_arc((x + w - r2, y + h - r2), (x + w, y + h), 90, 0, **colors)
         self.draw_arc((x - w, y - h), (x - w + r2, y - h + r2), 90, 180, **colors)
@@ -264,29 +265,29 @@ class MlineButtonsComponent(Component):
     def _on_mouse_leave(self, event):
         if event.type.name == "Leave":
             self.pointed_button_key = None
-            for tag in self.button_tags:
-                self._element.Widget.tag_configure(tag, bg=self.mouse_leave_color)
+            for tag in self.tags:
+                self._element.Widget.tag_configure(tag, background=self.mouse_leave_color)
 
     def _on_click(self, event):
         if self.pointed_button_key and self.on_click_callback:
             self.on_click_callback(self.pointed_button_key)
-            
+
     @staticmethod
     def _is_in_between(widget, index, start, end):
-        return widget.compare(start, "<=", index) and widget.compare(index, "<=", end):
-        
+        return widget.compare(start, "<=", index) and widget.compare(index, "<=", end)
+
     def _on_mouse_move(self, event):
         widget = self._element.Widget
         index = widget.index(f"@{event.x},{event.y}")
 
         self.pointed_button_key = None
         tags = widget.tag_names(index)
-        for tag, (button_key, start, end) in self.button_tags.items():
+        for tag, (button_key, start, end) in self.tags.items():
             if tag in tags and self._is_in_between(widget, index, start, end):
                 self.pointed_button_key = button_key
-                widget.tag_configure(tag, bg=self.mouse_enter_color)
+                widget.tag_configure(tag, background=self.mouse_enter_color)
             else:
-                widget.tag_configure(tag, bg=self.mouse_leave_color)
+                widget.tag_configure(tag, background=self.mouse_leave_color)
 
     def add_tag(self, button_key, start, end):
         tag = f"{self.tag}{button_key}"
@@ -303,8 +304,8 @@ class MlinePulsingComponent(Component):
     def init(self, color_start, color_end, percent_to_end_color=0.75, frequency=1.5):
         self.is_pulsing = False
         self.frequency = frequency
-        self.tag = f"pulsing{id(self)}" 
-        self.tags = {}  
+        self.tag = f"pulsing{id(self)}"
+        self.tags = {}
 
         color_start = self._color_to_rgb(color_start)
         color_end = self._color_to_rgb(color_end)
@@ -317,14 +318,14 @@ class MlinePulsingComponent(Component):
 
     @staticmethod
     def _blend_rgb_colors(color1, color2, t):
-        return map(lambda c1, c2: c1 * (1 - t) + c2 * t, zip(color1, color2))
+        return tuple(map(lambda c: c[0] * (1 - t) + c[1] * t, zip(color1, color2)))
 
     @staticmethod
     def _get_one_period_colors(color_start, color_end):
-        array_size = self.color_array_size
+        array_size = MlinePulsingComponent.color_array_size
         colors = []
         for x in range(array_size):
-            t = .5 * (1 + math.cos((2 * math.pi * (x % array_size)) / array_size))
+            t = 0.5 * (1 + math.cos((2 * math.pi * (x % array_size)) / array_size))
             r, g, b = MlinePulsingComponent._blend_rgb_colors(color_start, color_end, 1 - t)
             colors.append(f"#{round(r):02x}{round(g):02x}{round(b):02x}")
         return colors
@@ -332,7 +333,7 @@ class MlinePulsingComponent(Component):
     def _color_to_rgb(self, color):
         # winfo_rgb works with any tkinter defined color like 'red'
         rgb = self._element.Widget.winfo_rgb(color)
-        return map(lambda c: int(c / 256), rgb)
+        return tuple(map(lambda c: int(c / 256), rgb))
 
     def add_tag(self, pulsing_key, start, end):
         self._element.Widget.tag_add(f"{self.tag}{pulsing_key}", start, end)
@@ -346,7 +347,7 @@ class MlinePulsingComponent(Component):
             self._pulse()
 
     def stop(self):
-        for tag in self.pulsing_tags:
+        for tag in self.tags:
             self._element.Widget.tag_delete(tag)
         self.tags = {}
         self.is_pulsing = False
@@ -355,11 +356,12 @@ class MlinePulsingComponent(Component):
         if self.is_pulsing:
             now = time.time()
             colors = self.colors[self.colors_key]
+            array_size = MlinePulsingComponent.color_array_size
             for tag, (index, t) in self.tags.items():
-                color = colors[round(index) % self.array_size]
-                self._element.Widget.tag_configure(tag, fg=color)
+                color = colors[round(index) % array_size]
+                self._element.Widget.tag_configure(tag, foreground=color)
 
-                index += self.frequency * self.array_size * (now - t)
+                index += self.frequency * array_size * (now - t)
                 self.tags[tag] = index, now
 
             window = self._element.ParentForm
