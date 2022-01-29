@@ -314,14 +314,14 @@ class MlinePulsingComponent(Component):
 
         # initialized as a class attribute
         if self.colors_key not in self.colors:
-            self.colors[self.colors_key] = self._get_one_period_colors(color_start, color_end)
+            self.colors[self.colors_key] = self._get_color_array(color_start, color_end)
 
     @staticmethod
     def _blend_rgb_colors(color1, color2, t):
-        return tuple(map(lambda c: c[0] * (1 - t) + c[1] * t, zip(color1, color2)))
+        return tuple(map(lambda color: color[0] * (1 - t) + color[1] * t, zip(color1, color2)))
 
     @staticmethod
-    def _get_one_period_colors(color_start, color_end):
+    def _get_color_array(color_start, color_end):
         array_size = MlinePulsingComponent.color_array_size
         colors = []
         for x in range(array_size):
@@ -331,9 +331,9 @@ class MlinePulsingComponent(Component):
         return colors
 
     def _color_to_rgb(self, color):
-        # winfo_rgb works with any tkinter defined color like 'red'
+        # winfo_rgb works with any tkinter defined color like "red"
         rgb = self._element.Widget.winfo_rgb(color)
-        return tuple(map(lambda c: int(c / 256), rgb))
+        return tuple(map(lambda color: int(color / 256), rgb))
 
     def add_tag(self, pulsing_key, start, end):
         self._element.Widget.tag_add(f"{self.tag}{pulsing_key}", start, end)
