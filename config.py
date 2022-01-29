@@ -1,5 +1,5 @@
 # add your actuel chrome path
-chrome_exe = r"C:/Program Files/Google/Chrome/Application/chrome.exe"
+CHROME_EXE = r"C:/Program Files/Google/Chrome/Application/chrome.exe"
 
 # couriers tests
 couriers_tests = []

@@ -2,9 +2,9 @@ from collections import namedtuple
 
 import PySimpleGUI as sg
 
-import localization as TXT
-import theme as TH
 from couriers import Courier
+from localization import TXT
+from theme import TH
 from widget import ButtonMouseOver, HLine, Window
 
 
@@ -45,9 +45,9 @@ class Popup(Window):
     def loop(self):
         while True:
             # to keep main_window correctly refreshing
-            exit = self.main_window.event_handler()
-            if exit is not None:
-                return exit
+            do_exit = self.main_window.event_handler()
+            if do_exit is not None:
+                return do_exit
 
     def event_handler(self, event):
         if event in (None, TXT.cancel, "Escape:27"):
@@ -260,7 +260,7 @@ class OneChoice(Popup):
         return choice
 
 
-class Warning(Popup):
+class Warn(Popup):
     def __init__(self, title, text, main_window):
         layout = [[sg.Image(filename=TH.warn_img), sg.T(text, font=(TH.var_font, 15))]]
         super().__init__(title, layout, main_window)

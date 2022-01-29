@@ -19,3 +19,8 @@ class Keys:
     all_tracker_widgets = "-Tracks-"
     old_tracker_widgets = "-Old Tracks-"
     new_tracker_widgets = "-New Tracks-"
+
+
+class Shortcuts:
+    exit = ("Escape:27",)
+    log = "l"

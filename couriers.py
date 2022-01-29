@@ -15,16 +15,16 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from tzlocal import get_localzone
 
-import localization as TXT
 from drivers import DriverHandler, TempBrowser
+from localization import TXT
 from log import log
 
 # import API keys for La poste & DHL
 from secret import LaPoste_key, dhl_key
 
 
-def get_sentence(txt, nb=-1):
-    return "".join(re.split(r"[.!]", txt)[:nb])
+def get_sentence(txt, n=-1):
+    return "".join(re.split(r"[.!]", txt)[:n])
 
 
 def get_local_time(date):
@@ -527,7 +527,7 @@ class DPD(Courier):
         events = []
 
         infos = tree.xpath('//ul[@class="tableInfosAR"]//text()')
-        infos = [info for info in infos if (sinfo := info.replace("\n", "").strip()) != ""]
+        infos = [info for info in infos if info.replace("\n", "").strip() != ""]
         infos = dict((k, v) for k, v in zip(infos[::2], infos[1::2]))
         product = "Colis"
         if weight := infos.get("Poids du colis"):
@@ -866,7 +866,7 @@ if __name__ == "__main__":
             evt = result["events"][0]
             print(f"PASS test - {name}", end="")
             status = evt["status"] + ", " if evt["status"] else ""
-            print(f" - {evt['date']:{TXT.Long_date_format}} - {status}{evt['label']}")
+            print(f" - {evt['date']:{TXT.long_date_format}} - {status}{evt['label']}")
 
         else:
             failed.append(name)

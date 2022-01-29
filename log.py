@@ -4,8 +4,9 @@ from tkinter import TclError
 
 import PySimpleGUI as sg
 
-import localization as TXT
-import theme as TH
+from events import Shortcuts
+from localization import TXT
+from theme import TH
 from widget import ButtonMouseOver, Window
 
 
@@ -100,7 +101,7 @@ class _Logger(Window):
             self.stick_to_main()
 
     def event_handler(self, event):
-        if event in (None, "l"):
+        if event in (None, Shortcuts.log):
             self.toggle()
 
         elif event == "Link":
@@ -126,7 +127,7 @@ class _Logger(Window):
     def stick_to_main(self, gap=0, force=False):
         if (self.visible and self.linked) or force:
             w, h = self.size
-            W, H = self.main_window.size
+            _, H = self.main_window.size
             x, y = self.main_window.current_location()
             self.wanted_pos = int(x - w - gap) + 1, int(y + (H - h) * 0.5)
             self.move(*self.wanted_pos)

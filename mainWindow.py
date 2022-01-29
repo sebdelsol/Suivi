@@ -3,19 +3,17 @@ from tkinter import TclError
 
 import PySimpleGUI as sg
 
-import localization as TXT
-import theme as TH
-from events import Events, Keys
+from events import Events, Keys, Shortcuts
+from localization import TXT
 from log import log
+from theme import TH
 from trackers import Trackers
 from trackersWidget import TrackerWidgets
 from widget import ButtonMouseOver, ButtonTxtAndImg, ShowInTaskbarWindow
 
-locale.setlocale(locale.LC_ALL, TXT.Locale_setting)  # date in correct language
+SHOW_EVENTS = False
 
-Show_events = False
-Exit_shorcuts = ("Escape:27",)
-Log_shorcut = "l"
+locale.setlocale(locale.LC_ALL, TXT.locale_setting)  # date in correct language
 
 
 class GreyWindow:
@@ -224,7 +222,7 @@ class MainWindow(ShowInTaskbarWindow):
     def event_handler(self):
         window, event, values = sg.read_all_windows()
 
-        if Show_events and isinstance(event, str) and "MouseWheel" not in event:
+        if SHOW_EVENTS and isinstance(event, str) and "MouseWheel" not in event:
             log(f"{event = }" + (f", {value = }" if (value := values and values.get(event)) else ""))
 
         if callable(event):
@@ -235,13 +233,13 @@ class MainWindow(ShowInTaskbarWindow):
 
         elif window == self:
 
-            if event in (None, Events.exit, *Exit_shorcuts):
+            if event in (None, Events.exit, *Shortcuts.exit):
                 return True
 
             elif event == Events.minimize:
                 self.minimize()
 
-            elif event in (Events.log, Log_shorcut):
+            elif event in (Events.log, Shortcuts.log):
                 self.log.toggle()
 
             elif event == Events.recenter:

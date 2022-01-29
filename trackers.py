@@ -1,7 +1,7 @@
 import copy
 import json
 import os
-import pickle as pickle
+import pickle
 import threading
 import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -11,8 +11,8 @@ from couriers import Couriers, get_local_now
 from jsondate import json_decode_datetime, json_encode_datetime
 from log import log
 
-json_ext = ".json"
-pickle_ext = ".trck"
+JSON_EXT = ".json"
+PICKLE_EXT = ".trck"
 
 
 class TrackerState:
@@ -238,10 +238,10 @@ class Trackers:
             def json_load(f):
                 return json.load(f, object_hook=json_decode_datetime)
 
-            trackers = self.load_from_file(json_ext, "r", json_load)
+            trackers = self.load_from_file(JSON_EXT, "r", json_load)
 
         else:
-            trackers = self.load_from_file(pickle_ext, "rb", pickle.load)
+            trackers = self.load_from_file(PICKLE_EXT, "rb", pickle.load)
 
         if trackers:
             trackers = [
@@ -263,12 +263,12 @@ class Trackers:
         trackers = self.sort(self.get_not_deleted())
         saved_trackers = [SavedTracker(tracker) for tracker in trackers]
 
-        self.save_to_file(saved_trackers, pickle_ext, "wb", pickle.dump)
+        self.save_to_file(saved_trackers, PICKLE_EXT, "wb", pickle.dump)
 
         def json_save(obj, f):
             json.dump(obj, f, default=json_encode_datetime, indent=4)
 
-        self.save_to_file(saved_trackers, json_ext, "w", json_save)
+        self.save_to_file(saved_trackers, JSON_EXT, "w", json_save)
 
     def load_from_file(self, ext, mode, load):
         filename = self.filename + ext

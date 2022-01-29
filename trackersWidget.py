@@ -6,13 +6,13 @@ from tkinter import font as tk_font
 import PySimpleGUI as sg
 import timeago
 
-import localization as TXT
 import popup
-import theme as TH
 from couriers import get_local_now
 from events import Events, Keys
 from imgtool import resize_and_colorize_gif, resize_and_colorize_img
+from localization import TXT
 from log import log
+from theme import TH
 from trackers import TrackerState
 from widget import (
     AnimatedGif,
@@ -55,7 +55,8 @@ class TrackerWidget:
 
     def create_layout(self):
         self.hline = HLine(color=TH.widget_separator_color)
-        self.layout = sg.Col([[self.hline]], p=0, expand_x=True, visible=False)  # to be extended, see finalize
+        # to be extended, see finalize
+        self.layout = sg.Col([[self.hline]], p=0, expand_x=True, visible=False)
         self.pin = sg.pin(self.layout, expand_x=True)  # collapse when hidden
 
         # return minimum layout to be extended in finalize()
@@ -312,7 +313,8 @@ class TrackerWidget:
         self.couriers_widget.set_size((max(len(t) for t in txts), len(txts)))
 
         txt = self.id_widget.get()
-        self.id_widget.set_size((len(txt) + 1, 1))  # arrow character is not fixed size, so add 1
+        # arrow character is not fixed size, so add 1
+        self.id_widget.set_size((len(txt) + 1, 1))
 
     def show_current_content(self, window):
         if self.tracker.state == TrackerState.shown:
@@ -444,7 +446,7 @@ class TrackerWidget:
         self.height_events = 0
 
         if events:
-            events_date = [f"{evt['date']:{TXT.Long_date_format}}".replace(".", "").split(",") for evt in events]
+            events_date = [f"{evt['date']:{TXT.long_date_format}}".replace(".", "").split(",") for evt in events]
             day_w, hour_w = max((len(date[0]), len(date[1])) for date in events_date)
             day_spaces, hour_spaces = " " * day_w, " " * hour_w
             previous_day, previous_hour = None, None
@@ -608,7 +610,8 @@ class TrackerWidget:
             self.couriers_widget.update(TXT.no_couriers, text_color="red")
 
     def on_courrier_click(self, key):
-        self.tracker.open_in_browser(key)  # key is courier_name see couriers_widget.buttons.add_tag
+        # key is courier_name see couriers_widget.buttons.add_tag
+        self.tracker.open_in_browser(key)
 
     def edit(self, window):
         popup_edit = popup.Edit(
@@ -643,12 +646,12 @@ class TrackerWidget:
     def set_state(self, state, window, ask, event, reappear=False):
         do_it = True
         if ask:
-            popup_warning = popup.Warning(
+            popup_warn = popup.Warn(
                 ask.capitalize(),
                 f"{self.get_description()} - {self.get_idship()}",
                 window,
             )
-            do_it = popup_warning.loop()
+            do_it = popup_warn.loop()
 
         if do_it:
             self.tracker.state = state
@@ -678,7 +681,7 @@ class TrackerWidget:
         self.set_state(TrackerState.shown, window, False, Events.archives_updated, reappear=True)
 
     def get_creation_date(self):
-        return f"{self.tracker.creation_date:{TXT.Short_date_format}}".replace(".", "")
+        return f"{self.tracker.creation_date:{TXT.short_date_format}}".replace(".", "")
 
     def get_idship(self, check_empty=False):
         idship = self.tracker.idship.strip()
@@ -823,19 +826,10 @@ class TrackerWidgets:
             tk_scrollable_frame = self.widgets_frame.TKColFrame
             if h > max_h:
                 tk_scrollable_frame.vscrollbar.pack(side=sg.tk.RIGHT, fill="y")
-                # tk_scrollable_frame.TKFrame.bind("<Enter>", tk_scrollable_frame.hookMouseWheel)
                 w += int(tk_scrollable_frame.vscrollbar["width"])
-                # print("scrollbar")
 
             else:
-                # self.widgets_frame.contents_changed()
-                # # tk_scrollable_frame.vscrollbar.pack(side=sg.tk.RIGHT, fill="y")
-                # tk_scrollable_frame.canvas.yview_moveto(1.0)
-                # # tk_scrollable_frame.canvas.yview_scroll(10, "unit")
                 tk_scrollable_frame.vscrollbar.pack_forget()
-                # tk_scrollable_frame.TKFrame.unbind("<Enter>")
-                # tk_scrollable_frame.unhookMouseWheel(None)
-                # print("NO scrollbar")
 
             window.size = min(w, screen_w), min(h, max_h)
             self.recenter(window)

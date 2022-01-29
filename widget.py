@@ -92,15 +92,15 @@ class ShowInTaskbarWindow(Window):
 
 class GraphRounded(sg.Graph):
     def draw_rounded_box(self, x, y, w, h, r, color):
-        w2, h2, r2 = w * 0.5, h * 0.5, r * 2
+        w, h, r2 = w * 0.5, h * 0.5, r * 2
         # cross
-        self.draw_rectangle((x - w2, y + h2 - r), (x + w2, y - h2 + r), fill_color=color, line_color=color)
-        self.draw_rectangle((x - w2 + r, y + h2), (x + w2 - r, y - h2), fill_color=color, line_color=color)
+        self.draw_rectangle((x - w, y + h - r), (x + w, y - h + r), fill_color=color, line_color=color)
+        self.draw_rectangle((x - w + r, y + h), (x + w - r, y - h), fill_color=color, line_color=color)
         # corners
-        self.draw_arc((x - w2, y + h2 - r2), (x - w2 + r2, y + h2), 90, 90, fill_color=color, arc_color=color)
-        self.draw_arc((x + w2 - r2, y + h2 - r2), (x + w2, y + h2), 90, 0, fill_color=color, arc_color=color)
-        self.draw_arc((x - w2, y - h2), (x - w2 + r2, y - h2 + r2), 90, 180, fill_color=color, arc_color=color)
-        self.draw_arc((x + w2 - r2, y - h2), (x + w2, y - h2 + r2), 90, 270, fill_color=color, arc_color=color)
+        self.draw_arc((x - w, y + h - r2), (x - w + r2, y + h), 90, 90, fill_color=color, arc_color=color)
+        self.draw_arc((x + w - r2, y + h - r2), (x + w, y + h), 90, 0, fill_color=color, arc_color=color)
+        self.draw_arc((x - w, y - h), (x - w + r2, y - h + r2), 90, 180, fill_color=color, arc_color=color)
+        self.draw_arc((x + w - r2, y - h), (x + w, y - h + r2), 90, 270, fill_color=color, arc_color=color)
 
 
 class ButtonMouseOver(sg.Button):
@@ -236,6 +236,8 @@ class AnimatedGif(sg.Image):
 
 # basic components
 class Component:
+    _for = None
+
     def __init__(self, element):
         if type(element).__name__ == self._for.__name__:
             self._element = element
@@ -261,7 +263,7 @@ class MlineButtonsComponent(Component):
     def _on_mouse_leave(self, event):
         if event.type.name == "Leave":
             self.pointed_key = None
-            for tag in self.button_tags.keys():
+            for tag in self.button_tags:
                 self._element.Widget.tag_configure(tag, background=self.mouse_leave_color)
 
     def _on_click(self, event):
@@ -270,7 +272,7 @@ class MlineButtonsComponent(Component):
 
     def _on_mouse_move(self, event):
         widget = self._element.Widget
-        index = widget.index("@%s,%s" % (event.x, event.y))
+        index = widget.index(f"@{event.x},{event.y}")
 
         self.pointed_key = None
         tags = widget.tag_names(index)
@@ -340,7 +342,7 @@ class MlinePulsingComponent(Component):
             self._pulse()
 
     def stop(self):
-        for tag in self.pulsing_tags.keys():
+        for tag in self.pulsing_tags:
             self._element.Widget.tag_delete(tag)
         self.pulsing_tags = {}
         self.is_pulsing = False

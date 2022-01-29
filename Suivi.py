@@ -4,13 +4,13 @@ import sys
 import PySimpleGUI as sg
 from packaging.specifiers import SpecifierSet
 
-import localization as TXT
-import theme as TH
 from imgtool import resize_and_colorize_img
+from localization import TXT
+from theme import TH
 
-Python_version = ">=3.8, <3.9"
-Trackers_filename = "Trackers"
-Load_as_json = True
+PYTHON_VERSIONS_SPEC = ">=3.8, <3.9"
+TRACKERS_FILENAME = "Trackers"
+LOAD_AS_JSON = True
 
 
 class Splash:
@@ -30,15 +30,20 @@ class Splash:
 
 
 if __name__ == "__main__":
-    version = ".".join(str(v) for v in sys.version_info[:3])
-    print(f"Python {version} running")
 
-    needed_version = SpecifierSet(Python_version)
-    if version not in needed_version:
-        needs = " and ".join(need for need in str(needed_version).split(","))
-        print(f"Unfortunatly this app needs Python {needs}")
+    def check_python_version(version_spec):
+        current_version = ".".join(str(v) for v in sys.version_info[:3])
+        print(f"Python {current_version} running")
 
-    else:
+        needed_version = SpecifierSet(version_spec)
+        if current_version in needed_version:
+            return True
+
+        else:
+            needs = " and ".join(need for need in str(needed_version).split(","))
+            print(f"Unfortunatly this app needs Python {needs}")
+
+    if check_python_version(PYTHON_VERSIONS_SPEC):
         sg.theme(TH.theme)
 
         # create splash before importing to reduce startup time
@@ -48,7 +53,7 @@ if __name__ == "__main__":
         from log import logger
         from mainWindow import MainWindow
 
-        main_window = MainWindow(Trackers_filename, Load_as_json, splash)
+        main_window = MainWindow(TRACKERS_FILENAME, LOAD_AS_JSON, splash)
         main_window.addlog(logger)
         splash.close()
 
