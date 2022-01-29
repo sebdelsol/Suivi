@@ -51,7 +51,7 @@ if __name__ == "__main__":
         splash.update(TXT.init)
 
         from log import logger
-        from mainWindow import MainWindow
+        from main_window import MainWindow
 
         main_window = MainWindow(TRACKERS_FILENAME, LOAD_AS_JSON, splash)
         main_window.addlog(logger)

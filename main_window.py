@@ -8,7 +8,7 @@ from localization import TXT
 from log import log
 from theme import TH
 from trackers import Trackers
-from trackersWidget import TrackerWidgets
+from trackers_widget import TrackerWidgets
 from widget import ButtonMouseOver, ButtonTxtAndImg, ShowInTaskbarWindow
 
 SHOW_EVENTS = False
