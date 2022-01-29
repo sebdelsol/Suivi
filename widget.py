@@ -254,7 +254,7 @@ class MlineButtonsComponent(Component):
         self.tag = f"button{id(self)}"
         self.tags = {}
         self.on_click_callback = on_click
-        self.pointed_key = None
+        self.pointed_button_key = None
 
         widget = element.Widget
         widget.bind("<Any-Motion>", self._on_mouse_move)
@@ -263,13 +263,13 @@ class MlineButtonsComponent(Component):
 
     def _on_mouse_leave(self, event):
         if event.type.name == "Leave":
-            self.pointed_key = None
+            self.pointed_button_key = None
             for tag in self.button_tags:
                 self._element.Widget.tag_configure(tag, bg=self.mouse_leave_color)
 
     def _on_click(self, event):
-        if self.pointed_key and self.on_click_callback:
-            self.on_click_callback(self.pointed_key)
+        if self.pointed_button_key and self.on_click_callback:
+            self.on_click_callback(self.pointed_button_key)
             
     @staticmethod
     def _is_in_between(widget, index, start, end):
@@ -279,25 +279,25 @@ class MlineButtonsComponent(Component):
         widget = self._element.Widget
         index = widget.index(f"@{event.x},{event.y}")
 
-        self.pointed_key = None
+        self.pointed_button_key = None
         tags = widget.tag_names(index)
-        for tag, (key, start, end) in self.button_tags.items():
+        for tag, (button_key, start, end) in self.button_tags.items():
             if tag in tags and self._is_in_between(widget, index, start, end):
-                self.pointed_key = key
+                self.pointed_button_key = button_key
                 widget.tag_configure(tag, bg=self.mouse_enter_color)
             else:
                 widget.tag_configure(tag, bg=self.mouse_leave_color)
 
-    def add_tag(self, key, start, end):
-        tag = f"{self.tag}{key}"
-        self.tags[tag] = (key, start, end)
+    def add_tag(self, button_key, start, end):
+        tag = f"{self.tag}{button_key}"
+        self.tags[tag] = (button_key, start, end)
         self._element.Widget.tag_add(tag, start, end)
 
 
 class MlinePulsingComponent(Component):
     _for = sg.MLine
     colors = {}
-    array_size = 32  # size of colors array
+    color_array_size = 32  # size of colors array
     time_step = 50  # ms
 
     def init(self, color_start, color_end, percent_to_end_color=0.75, frequency=1.5):
@@ -313,14 +313,15 @@ class MlinePulsingComponent(Component):
 
         # initialized as a class attribute
         if self.colors_key not in self.colors:
-            self.colors[self.colors_key] = self._get_one_period_colors(color_start, color_end, self.pulsing_array_size)
+            self.colors[self.colors_key] = self._get_one_period_colors(color_start, color_end)
 
     @staticmethod
     def _blend_rgb_colors(color1, color2, t):
         return map(lambda c1, c2: c1 * (1 - t) + c2 * t, zip(color1, color2))
 
     @staticmethod
-    def _get_one_period_colors(color_start, color_end, array_size):
+    def _get_one_period_colors(color_start, color_end):
+        array_size = self.color_array_size
         colors = []
         for x in range(array_size):
             t = .5 * (1 + math.cos((2 * math.pi * (x % array_size)) / array_size))
@@ -333,12 +334,12 @@ class MlinePulsingComponent(Component):
         rgb = self._element.Widget.winfo_rgb(color)
         return map(lambda c: int(c / 256), rgb)
 
-    def add_tag(self, key, start, end):
-        self._element.Widget.tag_add(f"{self.tag}{key}", start, end)
+    def add_tag(self, pulsing_key, start, end):
+        self._element.Widget.tag_add(f"{self.tag}{pulsing_key}", start, end)
 
-    def start(self, keys=None):
-        for key in keys or [""]:
-            self.tags[f"{self.tag}{key}"] = (0, time.time())
+    def start(self, pulsing_keys=None):
+        for pulsing_key in pulsing_keys or [""]:
+            self.tags[f"{self.tag}{pulsing_key}"] = (0, time.time())
 
         if not self.is_pulsing:
             self.is_pulsing = True
