@@ -750,9 +750,7 @@ class Chronopost(Courier):
 
     # use La Poste API to find out the url
     def get_url_for_browser(self, idship):
-        json = LaPoste.get_content(LaPoste, idship)
-        if json:
-            return json.get("shipment", {}).get("urlDetail")
+        return f"https://www.chronopost.fr/tracking-no-cms/suivi-page?listeNumerosLT={idship}"
 
     #  do not return any selenium objects, the driver is disposed after
     def get_content(self, driver, idship):
