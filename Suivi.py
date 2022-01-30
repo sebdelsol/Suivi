@@ -30,7 +30,7 @@ class Splash:
 
 
 def check_python_version(requirements):
-    current_version = ".".join(str(v) for v in sys.version_info[:3])
+    current_version = ".".join(str(n) for n in sys.version_info[:3])
     print(f"Python {current_version} running")
 
     if current_version in SpecifierSet(requirements):
