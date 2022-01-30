@@ -15,8 +15,15 @@ from localization import TXT
 from log import log
 from theme import TH
 from trackers import TrackerState
-from widget import (AnimatedGif, ButtonMouseOver, GraphRounded, HLine,
-                    MlineButtonsComponent, MlinePulsingComponent, TextFit)
+from widget import (
+    AnimatedGif,
+    ButtonMouseOver,
+    GraphRounded,
+    HLine,
+    MlineButtonsComponent,
+    MlinePulsingComponent,
+    TextFit,
+)
 
 
 class TrackerWidget:
@@ -27,6 +34,7 @@ class TrackerWidget:
         self.tracker = tracker
         self.reset_size()
         self.free_to_update = True
+        self.finalized = False
 
         # faster startup
         if not TrackerWidget.updating_gif:
@@ -58,6 +66,9 @@ class TrackerWidget:
         return [[self.pin]]
 
     def finalize(self, window):
+        if self.finalized:
+            return False
+
         title_color = TH.widget_title_bg_color
         event_color = TH.widget_event_bg_color
         mline_kwargs = dict(write_only=True, no_scrollbar=True, disabled=True)
@@ -251,11 +262,8 @@ class TrackerWidget:
         self.show_current_content(window)
 
         # no more finalization needed
-        self.finalize = self.dummy_finalize
+        self.finalized = True
         return True
-
-    def dummy_finalize(self, window):
-        return False
 
     def toggle_expand(self, window):
         self.expand_events = not self.expand_events
@@ -619,7 +627,7 @@ class TrackerWidget:
             self.tracker.idship,
             self.tracker.description,
             self.tracker.used_couriers,
-            self.tracker.available_couriers,
+            self.tracker.couriers,
             window,
         )
         ok, idship, description, used_couriers = popup_edit.loop()

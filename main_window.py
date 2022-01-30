@@ -223,7 +223,8 @@ class MainWindow(ShowInTaskbarWindow):
         window, event, values = sg.read_all_windows()
 
         if SHOW_EVENTS and isinstance(event, str) and "MouseWheel" not in event:
-            log(f"{event = }" + (f", {value = }" if (value := values and values.get(event)) else ""))
+            value = values and values.get(event)
+            log(f"{event = }" + (f", {value = }" if value else ""))
 
         if callable(event):
             event(window)

@@ -20,7 +20,7 @@ from localization import TXT
 from log import log
 
 # import API keys for La poste & DHL
-from secret import LAPOSTE_KEY, DHL_KEY
+from secret import DHL_KEY, LAPOSTE_KEY
 
 
 def get_sentence(txt, n=-1):
@@ -50,14 +50,38 @@ def get_all_subclasses(cls):
 
 
 class Couriers:
-    def __init__(self, splash=None):
+    def __init__(self, splash=None, max_drivers=None):
         self.couriers = {cls.name: cls() for cls in get_all_subclasses(Courier)}
         log(f"Init Couriers {', '.join(self.couriers)}")
 
-        DriverHandler.start(splash)
+        DriverHandler.start(splash, max_drivers)
 
-    def get(self, name):
-        return self.couriers.get(name)
+    def exists(self, name):
+        return True if self.couriers.get(name) else False
+
+    def open_in_browser(self, name, idship):
+        if courier := self.couriers.get(name):
+            courier.open_in_browser(idship)
+
+    def validate_idship(self, name, idship):
+        if courier := self.couriers.get(name):
+            return True if courier.idship_validation(idship) else False
+        return False
+
+    def get_url_for_browser(self, name, idship):
+        if courier := self.couriers.get(name):
+            return True if courier.get_url_for_browser(idship) else False
+        return False
+
+    def get_idship_validation_msg(self, name):
+        if courier := self.couriers.get(name):
+            return courier.idship_validation_msg
+        return ""
+
+    def update(self, name, idship):
+        if courier := self.couriers.get(name):
+            return courier.update(idship)
+        return None
 
     def get_names(self):
         return list(self.couriers)
@@ -65,13 +89,12 @@ class Couriers:
 
 def get_simple_validation(_min, _max=None):
     if _max is None:
-        return fr"^\w{{{_min}}}$", f"{_min} {TXT.letters} {TXT.or_} {TXT.digits}"
+        return rf"^\w{{{_min}}}$", f"{_min} {TXT.letters} {TXT.or_} {TXT.digits}"
 
-    else:
-        return (
-            fr"^\w{{{_min},{_max}}}$",
-            f"{TXT.from_} {_min} {TXT.to_} {_max} {TXT.letters} {TXT.or_} {TXT.digits}",
-        )
+    return (
+        rf"^\w{{{_min},{_max}}}$",
+        f"{TXT.from_} {_min} {TXT.to_} {_max} {TXT.letters} {TXT.or_} {TXT.digits}",
+    )
 
 
 class Courier:
@@ -103,6 +126,9 @@ class Courier:
 
     additional_subs = ()
 
+    handler = None
+    name = None
+
     def __init__(self):
         # compile re
         self.idship_validation = re.compile(self.idship_validation).match
@@ -119,84 +145,97 @@ class Courier:
     def validate_idship(self, idship):
         return self.idship_validation(idship)
 
-    def get_valid_url_for_browser(self, idship):
-        if idship and self.validate_idship(idship):
-            return self.get_url_for_browser(idship)
-
     def open_in_browser(self, idship):
-        url = self.get_url_for_browser(idship)
-        if url:
+        if url := self.get_url_for_browser(idship):
             webbrowser.open(url)
 
+    def get_url_for_browser(self, idship):
+        self.log("get_url_for_browser function is missing", error=True)
+        return None
+
+    def parse_content(self, content):
+        self.log("parse_content function is missing", error=True)
+        return None
+
     def update(self, idship):
+        if not self.name:
+            log(f"courier {type(self).__name__} miss a name", error=True)
+            return None
+
+        if not self.handler:
+            self.log("courier miss a handler", error=True)
+            return None
+
         if not self.validate_idship(idship):
-            # should be catched way before. better safe than sorry
             self.log(
                 f"invalid tracking number {idship}, ({self.idship_validation_msg})",
                 error=True,
             )
+            return None
 
-        else:
-            self.log(f"LOAD - {idship}")
-            content = self.handler.get_content(self, idship)
-            ok = True if content is not None else False
-            events, infos = [], {}
-            if ok:
-                self.log(f"PARSE - {idship}")
-                events, infos = self.parse_content(content)
+        self.log(f"LOAD - {idship}")
 
-            # remove duplicate events
-            # https://stackoverflow.com/questions/9427163/remove-duplicate-dict-in-list-in-python
-            events = [dict(evt_tuple) for evt_tuple in {tuple(evt.items()) for evt in events}]
+        events = []
+        infos = {}
+        content = self.handler.get_content(self, idship)
 
-            # sort by date
-            events.sort(key=lambda evt: evt["date"], reverse=True)
+        if ok := content is not None:
+            self.log(f"PARSE - {idship}")
+            if result := self.parse_content(content):
+                events, infos = result
 
-            # add couriers and check for delivery & errors events
-            delivered = infos.get("delivered", False)
-            for event in events:
-                event["courier"] = self.name
-                # clean label
-                event["status"] = event.get("status") or ""
-                for sub, replace in self.subs:
-                    event["label"] = sub(replace, event["label"].strip())
-                    event["status"] = sub(replace, event["status"].strip())
+        # remove duplicate events
+        # https://stackoverflow.com/questions/9427163/remove-duplicate-dict-in-list-in-python
+        events = [dict(evt_tuple) for evt_tuple in {tuple(evt.items()) for evt in events}]
 
-                whole_txt = " ".join((event["status"], event["label"]))
-                event["delivered"] = event.get("delivered", False) or any(
-                    search(whole_txt.lower()) for search in self.delivered_searchs
-                )
+        # sort by date
+        events.sort(key=lambda evt: evt["date"], reverse=True)
 
-                if event["delivered"]:
-                    delivered = True
+        # add couriers and check for delivery & errors events
+        delivered = infos.get("delivered", False)
+        for event in events:
+            event["courier"] = self.name
+            # clean label
+            event["status"] = event.get("status") or ""
+            for sub, replace in self.subs:
+                event["label"] = sub(replace, event["label"].strip())
+                event["status"] = sub(replace, event["status"].strip())
 
-                event["warn"] = event.get("warn", False) or any(
-                    error_word in whole_txt.lower() for error_word in self.error_words
-                )
-
-            if not (events or infos.get("status_label")):
-                ok = False
-
-            status_date = infos.get("status_date", events[0]["date"] if events else None)
-            status_label = infos.get("status_label", events[0]["label"] if events else TXT.status_error)
-            status_warn = infos.get("status_warn", False if events else True)
-
-            status = dict(
-                date=status_date,
-                ok_date=status_date if ok else None,
-                label=status_label,
-                warn=status_warn,
-                delivered=delivered,
+            whole_txt = " ".join((event["status"], event["label"]))
+            event["delivered"] = event.get("delivered", False) or any(
+                search(whole_txt.lower()) for search in self.delivered_searchs
             )
 
-            return dict(
-                ok=ok,
-                product=infos.get("product", self.product),
-                idship=idship,
-                fromto=infos.get("fromto", self.fromto),
-                status=status,
-                events=events,
+            if event["delivered"]:
+                delivered = True
+
+            event["warn"] = event.get("warn", False) or any(
+                error_word in whole_txt.lower() for error_word in self.error_words
             )
+
+        if not (events or infos.get("status_label")):
+            ok = False
+
+        status_date = infos.get("status_date", events[0]["date"] if events else None)
+        status_label = infos.get("status_label", events[0]["label"] if events else TXT.status_error)
+        status_warn = infos.get("status_warn", False if events else True)
+
+        status = dict(
+            date=status_date,
+            ok_date=status_date if ok else None,
+            label=status_label,
+            warn=status_warn,
+            delivered=delivered,
+        )
+
+        return dict(
+            ok=ok,
+            product=infos.get("product", self.product),
+            idship=idship,
+            fromto=infos.get("fromto", self.fromto),
+            status=status,
+            events=events,
+        )
 
 
 class RequestHandler:
@@ -302,10 +341,10 @@ class Cainiao(Courier):
 
         return lxml.html.fromstring(driver.page_source)
 
-    def parse_content(self, tree):
+    def parse_content(self, content):
         events = []
 
-        timeline = tree.xpath('//ol[@class="waybill-path"]/li')
+        timeline = content.xpath('//ol[@class="waybill-path"]/li')
         for li in timeline:
             txts = li.xpath("./p/text()")
             label, date = txts[:2]
@@ -334,10 +373,10 @@ class Asendia(Courier):
         if r.status_code == 200:
             return r.json()
 
-    def parse_content(self, json):
+    def parse_content(self, content):
         events = []
 
-        timeline = json[0]["events"]
+        timeline = content[0]["events"]
         for event in timeline:
             label = event["translatedLabelBC"]
             location = event["location"]["name"]
@@ -374,10 +413,10 @@ class MondialRelay(Courier):
         if r.status_code == 200:
             return lxml.html.fromstring(r.content)
 
-    def parse_content(self, tree):
+    def parse_content(self, content):
         events = []
 
-        timeline = tree.xpath('//div[@class="infos-account"]')
+        timeline = content.xpath('//div[@class="infos-account"]')
         for events_by_days in timeline:
             elts = events_by_days.xpath("./div")
             date_text = elts[0].xpath(".//p//text()")[0]
@@ -418,12 +457,12 @@ class RelaisColis(Courier):
         if r.status_code == 200:
             return r.json()
 
-    def parse_content(self, json):
+    def parse_content(self, content):
         events = []
         product = None
         delivered = False
 
-        shipment = json.get("Colis", {}).get("Colis")
+        shipment = content.get("Colis", {}).get("Colis")
         if shipment:
             vendor = shipment.get("Enseigne")
             if vendor:
@@ -439,7 +478,7 @@ class RelaisColis(Courier):
                 if event.get("CodeJUS") == "LIV":
                     delivered = True
                     event_delivered = True
-                    relais = json.get("Relais", {}).get("Relais")
+                    relais = content.get("Relais", {}).get("Relais")
                     if relais:
                         status = label
                         label = ", ".join(
@@ -466,12 +505,12 @@ class GLS(Courier):
         if r.status_code == 200:
             return r.json()
 
-    def parse_content(self, json):
+    def parse_content(self, content):
         events = []
         product = None
         fromto = None
 
-        if shipments := json.get("tuStatus"):
+        if shipments := content.get("tuStatus"):
             if len(shipments) > 0:
                 shipment = shipments[0]
                 if infos := shipment.get("infos"):
@@ -523,17 +562,17 @@ class DPD(Courier):
         if r.status_code == 200:
             return lxml.html.fromstring(r.content)
 
-    def parse_content(self, tree):
+    def parse_content(self, content):
         events = []
 
-        infos = tree.xpath('//ul[@class="tableInfosAR"]//text()')
+        infos = content.xpath('//ul[@class="tableInfosAR"]//text()')
         infos = [info for info in infos if info.replace("\n", "").strip() != ""]
         infos = dict((k, v) for k, v in zip(infos[::2], infos[1::2]))
         product = "Colis"
         if weight := infos.get("Poids du colis"):
             product += f" {weight}"
 
-        timeline = tree.xpath('//tr[contains(@id, "ligneTableTrace")]')
+        timeline = content.xpath('//tr[contains(@id, "ligneTableTrace")]')
         for evt in timeline:
             txts = [stxt for txt in evt.xpath("./td//text()") if (stxt := txt.strip()) != ""]
             date, hour, label = txts[:3]
@@ -563,10 +602,10 @@ class NLPost(Courier):
         if r.status_code == 200:
             return lxml.html.fromstring(r.content)
 
-    def parse_content(self, tree):
+    def parse_content(self, content):
         events = []
 
-        timeline = tree.xpath('//tr[@class="first detail"]') + tree.xpath('//tr[@class="detail"]')
+        timeline = content.xpath('//tr[@class="first detail"]') + content.xpath('//tr[@class="detail"]')
         for event in timeline:
             date, label = event.xpath("./td/text()")[:2]
 
@@ -593,10 +632,10 @@ class FourPX(Courier):
         if r.status_code == 200:
             return lxml.html.fromstring(r.content)
 
-    def parse_content(self, tree):
+    def parse_content(self, content):
         events = []
 
-        timeline = tree.xpath('//div[@class="track-container"]//li')
+        timeline = content.xpath('//div[@class="track-container"]//li')
         for event in timeline:
             date, hour, label = [
                 stxt
@@ -653,10 +692,10 @@ class LaPoste(Courier):
         if r.status_code == 200:
             return r.json()
 
-    def parse_content(self, json):
+    def parse_content(self, content):
         events = []
 
-        shipment = json.get("shipment")
+        shipment = content.get("shipment")
         if shipment:
             product = shipment.get("product").capitalize()
 
@@ -698,7 +737,7 @@ class LaPoste(Courier):
             )
 
         else:
-            error = json.get("returnMessage", "Erreur")
+            error = content.get("returnMessage", "Erreur")
             status_label = get_sentence(error, 1)
             return events, dict(status_warn=True, status_label=status_label.replace(".", ""))
 
@@ -727,10 +766,10 @@ class Chronopost(LaPoste):
         else:
             self.log(f"FAILURE - can't find url for {idship}", error=True)
 
-    def parse_content(self, tree):
+    def parse_content(self, content):
         events = []
 
-        for tr in tree.xpath(self.timeline_xpath):
+        for tr in content.xpath(self.timeline_xpath):
             tds = tr.xpath("./td")
             day, hour = tds[0].xpath("./text()")
             location, label = tds[1].xpath("./text()")
@@ -771,10 +810,10 @@ class DHL(Courier):
         r = self.handler.request("GET", url, headers=self.headers)
         return r.status_code == 200, r.json()
 
-    def parse_content(self, json):
+    def parse_content(self, content):
         events = []
 
-        shipments = json[1].get("shipments")
+        shipments = content[1].get("shipments")
         if shipments:
             shipment = shipments[0]
             product = f"DHL {shipment['service']}"
@@ -824,10 +863,10 @@ class USPS(Courier):
         self.handler.wait(driver, EC.presence_of_all_elements_located(timeline_locator))
         return lxml.html.fromstring(driver.page_source)
 
-    def parse_content(self, tree):
+    def parse_content(self, content):
         events = []
 
-        txts = tree.xpath(self.timeline_xpath + "//span//text()")
+        txts = content.xpath(self.timeline_xpath + "//span//text()")
         for txt in txts:
             txt = self.clean(txt)
             if txt:
@@ -854,14 +893,13 @@ if __name__ == "__main__":
     logger.print_only()
     logger.close()
 
-    couriers = Couriers()
+    couriers = Couriers(max_drivers=1)
     couriers_tests.sort(key=lambda t: t[0])
     passed, failed = [], []
 
     for name, idship in couriers_tests:
-        result = couriers.get(name).update(idship)
-        ok = True if result and result["ok"] else False
-        if ok:
+        result = couriers.update(name, idship)
+        if result and result["ok"]:
             passed.append(name)
             evt = result["events"][0]
             print(f"PASS test - {name}", end="")

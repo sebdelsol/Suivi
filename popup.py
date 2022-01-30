@@ -2,7 +2,6 @@ from collections import namedtuple
 
 import PySimpleGUI as sg
 
-from couriers import Courier
 from events import Shortcuts
 from localization import TXT
 from theme import TH
@@ -76,6 +75,7 @@ class Popup(Window):
 
 class Edit(Popup):
     def __init__(self, title, idship, description, used_couriers, couriers, main_window):
+        self.couriers = couriers
         self.couriers_names = couriers.get_names()
         self.couriers_names.sort()
         layout = [
@@ -94,8 +94,6 @@ class Edit(Popup):
 
         self.idship_widgets = []
         for name in self.couriers_names:
-            courier = couriers.get(name)
-
             is_checked = name in used_couriers
             cb = sg.CB(
                 f" {name}",
@@ -106,17 +104,17 @@ class Edit(Popup):
                 k=name,
             )
             msg = sg.T(
-                f"({courier.idship_validation_msg})",
+                f"({self.couriers.get_idship_validation_msg(name)})",
                 font=self.msg_font[is_checked],
                 expand_x=True,
                 justification="r",
-                k=f"{name}msg",
+                k=(name, "msg"),
             )
             button = ButtonMouseOver(
                 TXT.show.lower(),
                 font=(TH.fix_font, TH.edit_show_button_font_size),
                 button_color=TH.edit_show_button_color,
-                k=courier,
+                k=(name, "button"),
             )
 
             self.idship_widgets.append((msg, button))
@@ -128,26 +126,26 @@ class Edit(Popup):
 
     def idship_updated(self, idship):
         for msg, button in self.idship_widgets:
-            courier = button.Key
+            name = button.Key[0]
 
-            disabled = not courier.get_valid_url_for_browser(idship)
-            button.update(disabled=disabled, visible=not disabled)
-
-            valid = courier.validate_idship(idship)
+            valid = self.couriers.validate_idship(name, idship)
             msg.update(text_color=TH.ok_color if valid else TH.warn_color)
+
+            visible = valid and self.couriers.get_url_for_browser(name, idship)
+            button.update(disabled=not visible, visible=visible)
 
     def event_handler(self, event):
         if event == "idship":
             self.idship_updated(self["idship"].get())
 
-        elif isinstance(event, Courier):
-            courier, idship = event, self["idship"].get()
-            courier.open_in_browser(idship)
+        elif isinstance(event, tuple) and len(event) > 1 and event[1] == "button":
+            name, idship = event[0], self["idship"].get()
+            self.couriers.open_in_browser(name, idship)
 
         elif event in self.couriers_names:
             is_checked = self[event].get()
             self[event].update(text_color=self.check_colors[is_checked])
-            self[f"{event}msg"].update(font=self.msg_font[is_checked])
+            self[(event, "msg")].update(font=self.msg_font[is_checked])
 
         else:
             return super().event_handler(event)

@@ -43,7 +43,7 @@ class Tracker:
         idship,
         description,
         used_couriers,
-        available_couriers,
+        couriers,
         state=TrackerState.shown,
         contents=None,
         creation_date=None,
@@ -53,7 +53,7 @@ class Tracker:
         self.contents = contents or {}
         self.creation_date = creation_date or get_local_now()
 
-        self.available_couriers = available_couriers
+        self.couriers = couriers
         self.critical = threading.Lock()
         self.couriers_error = {}
         self.couriers_updating = {}
@@ -75,16 +75,13 @@ class Tracker:
     def _get_and_prepare_idle_couriers_names(self):
         if self.idship:
             with self.critical:
-                for courier_name in self.used_couriers:
-                    # check the courier exists
-                    if courier := self.available_couriers.get(courier_name):
-                        # check it's not already updating
-                        if not self.couriers_updating.get(courier_name):
-                            # check it's a valid id_ship for this courier
-                            if courier.validate_idship(self.idship):
-                                self.couriers_error[courier_name] = True
-                                self.couriers_updating[courier_name] = True
-                                yield courier_name
+                for name in self.used_couriers:
+                    if self.couriers.exists(name):
+                        if not self.couriers_updating.get(name):
+                            if self.couriers.validate_idship(name, self.idship):
+                                self.couriers_error[name] = True
+                                self.couriers_updating[name] = True
+                                yield name
 
     def get_idle_couriers(self):
         return list(self._get_and_prepare_idle_couriers_names())
@@ -92,46 +89,42 @@ class Tracker:
     def is_courier_still_updating(self):
         if self.idship:
             with self.critical:
-                for courier_name in self.used_couriers:
-                    if self.couriers_updating.get(courier_name):
+                for name in self.used_couriers:
+                    if self.couriers_updating.get(name):
                         return True
-                else:
-                    return False
+                return False
         else:
             return True  # as if it's updating, to prevent enabling refresh button
 
-    def update_idle_couriers(self, courier_names):
-        if self.idship and courier_names:
-            log(f'update START - {self.description} - {self.idship}, {" - ".join(courier_names)}')
+    def update_idle_couriers(self, names):
+        if self.idship and names:
+            log(f'update START - {self.description} - {self.idship}, {" - ".join(names)}')
 
             # create threads with executor
             with self.executor_ops:
                 if not self.closing:
-                    executor = ThreadPoolExecutor(max_workers=len(courier_names))
-                    futures = {
-                        executor.submit(self._update_courier, courier_name): courier_name
-                        for courier_name in courier_names
-                    }
+                    executor = ThreadPoolExecutor(max_workers=len(names))
+                    futures = {executor.submit(self._update_courier, name): name for name in names}
                     self.executors.append(executor)
 
             # handle threads
             if executor:
                 for future in as_completed(futures):
                     new_content = future.result()
-                    courier_name = futures[future]
+                    name = futures[future]
                     with self.critical:
                         if new_content is not None:
-                            if new_content["ok"] or courier_name not in self.contents:
-                                new_content["courier_name"] = courier_name
-                                self.contents[courier_name] = new_content
+                            if new_content["ok"] or name not in self.contents:
+                                new_content["courier_name"] = name
+                                self.contents[name] = new_content
 
                         error = not (new_content and new_content["ok"])
-                        self.couriers_error[courier_name] = error
-                        self.couriers_updating[courier_name] = False
+                        self.couriers_error[name] = error
+                        self.couriers_updating[name] = False
 
                     msg = "FAILED" if error else "DONE"
                     log(
-                        f"update {msg} - {self.description} - {self.idship}, {courier_name}",
+                        f"update {msg} - {self.description} - {self.idship}, {name}",
                         error=error,
                     )
 
@@ -142,21 +135,21 @@ class Tracker:
                     executor.shutdown()
                     self.executors.remove(executor)
 
-    def _update_courier(self, courier_name):
+    def _update_courier(self, name):
         try:
-            courier = self.available_couriers.get(courier_name)
-            return courier.update(self.idship)
+            return self.couriers.update(name, self.idship)
 
         except:
             log(traceback.format_exc(), error=True)
+            return None
 
     def get_consolidated_content(self):
         consolidated = {}
 
         with self.critical:
             contents_ok = []
-            for courier_name, content in self.contents.items():
-                if courier_name in self.used_couriers and content["ok"] and content.get("idship") == self.idship:
+            for name, content in self.contents.items():
+                if name in self.used_couriers and content["ok"] and content.get("idship") == self.idship:
                     contents_ok.append(copy.deepcopy(content))
 
         if len(contents_ok) > 0:
@@ -185,38 +178,38 @@ class Tracker:
     def get_couriers_update(self):
         with self.critical:
             couriers_update = {}
-            for courier_name in self.used_couriers:
-                content = self.contents.get(courier_name)
+            for name in self.used_couriers:
+                content = self.contents.get(name)
                 ok_date = self._no_future(content and content.setdefault("status", {}).get("ok_date"))
-                error = self.couriers_error.get(courier_name, True)
-                updating = self.couriers_updating.get(courier_name, False)
-                courier = self.available_couriers.get(courier_name)
-                valid_idship = courier and self.idship and courier.validate_idship(self.idship)
-                exists = True if self.available_couriers.get(courier_name) else False
-                couriers_update[courier_name] = (ok_date, error, updating, valid_idship, exists)
+                error = self.couriers_error.get(name, True)
+                updating = self.couriers_updating.get(name, False)
+                valid_idship = self.couriers.validate_idship(name, self.idship)
+                exists = self.couriers.exists(name)
+                couriers_update[name] = (ok_date, error, updating, valid_idship, exists)
 
-        return couriers_update
+            return couriers_update
 
-    def _no_future(self, date):
+    @staticmethod
+    def _no_future(date):
         if date:  # not in future
             return min(date, get_local_now())
+        return None
 
     def get_delivered(self):
         content = self.get_consolidated_content()
         return content.setdefault("status", {}).get("delivered")
 
-    def open_in_browser(self, courier_name):
-        if courier_name in self.used_couriers:
-            courier = self.available_couriers.get(courier_name)
-            courier.open_in_browser(self.idship)
+    def open_in_browser(self, name):
+        if name in self.used_couriers:
+            self.couriers.open_in_browser(name, self.idship)
 
     def clean(self):
-        for courier_name in self.available_couriers.get_names():
-            content = self.contents.get(courier_name)
+        for name in self.couriers.get_names():
+            content = self.contents.get(name)
             if content:
                 if not content["ok"]:
-                    log(f"CLEAN {self.description} - {self.idship}, {courier_name}")
-                    del self.contents[courier_name]
+                    log(f"CLEAN {self.description} - {self.idship}, {name}")
+                    del self.contents[name]
 
     def close(self):
         with self.executor_ops:

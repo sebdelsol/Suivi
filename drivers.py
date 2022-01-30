@@ -96,7 +96,10 @@ class _DriverHandler(_BaseHandler):
         self._drivers_available = queue.Queue() if self._max_drivers > 0 else None
         super().__init__("driver")
 
-    def start(self, splash):
+    def start(self, splash, max_drivers=None):
+        if max_drivers:
+            self._max_drivers = max_drivers
+
         if CREATE_DRIVER_AT_INIT:
             for i in range(self._max_drivers):
                 if splash:
@@ -152,7 +155,7 @@ class _TempBrowser(_BaseHandler):
             return webdriver.Chrome(options=options)
 
         except (SessionNotCreatedException, ProtocolError, SocketError):
-            pass
+            return None
 
     def __init__(self):
         super().__init__("browser")
