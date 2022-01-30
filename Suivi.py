@@ -8,7 +8,7 @@ from imgtool import resize_and_colorize_img
 from localization import TXT
 from theme import TH
 
-PYTHON_VERSIONS_SPEC = ">=3.8, <3.9"
+PYTHON_REQUIREMENTS = ">=3.8,<3.9"
 TRACKERS_FILENAME = "Trackers"
 LOAD_AS_JSON = True
 
@@ -18,7 +18,7 @@ class Splash:
         self.log = sg.T("", font=(TH.var_font, TH.splash_font_size), text_color=TH.splash_color)
         img_data = resize_and_colorize_img(TH.mail_img, TH.splash_img_height, TH.splash_color)
         layout = [[sg.Image(data=img_data)], [self.log]]
-        args, kwargs = TH.get_window_params(layout, grab_anywhere=False)
+        args, kwargs = TH.get_window_params(layout)
         self.window = sg.Window(*args, **kwargs)
 
     def update(self, txt):
@@ -29,21 +29,21 @@ class Splash:
         self.window.close()
 
 
-def check_python_version(version_spec):
+def check_python_version(requirements):
     current_version = ".".join(str(v) for v in sys.version_info[:3])
     print(f"Python {current_version} running")
 
-    needed_version = SpecifierSet(version_spec)
-    if current_version in needed_version:
+    required_version = SpecifierSet(requirements)
+    if current_version in required_version:
         return True
 
-    needs = " and ".join(need for need in str(needed_version).split(","))
-    print(f"Unfortunatly this app needs Python {needs}")
+    require = " and ".join(req.strip() for req in str(requirements).split(","))
+    print(f"this app requires Python {require}")
     return False
 
 
 if __name__ == "__main__":
-    if check_python_version(PYTHON_VERSIONS_SPEC):
+    if check_python_version(PYTHON_REQUIREMENTS):
         sg.theme(TH.theme)
 
         # create splash before importing to reduce startup time
