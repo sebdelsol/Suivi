@@ -2,6 +2,7 @@ import re
 import textwrap
 import threading
 from bisect import bisect
+from collections import namedtuple
 from tkinter import font as tk_font
 
 import PySimpleGUI as sg
@@ -15,15 +16,8 @@ from localization import TXT
 from log import log
 from theme import TH
 from trackers import TrackerState
-from widget import (
-    AnimatedGif,
-    ButtonMouseOver,
-    GraphRounded,
-    HLine,
-    MlineButtonsComponent,
-    MlinePulsingComponent,
-    TextFit,
-)
+from widget import (AnimatedGif, ButtonMouseOver, GraphRounded, HLine,
+                    MlineButtonsComponent, MlinePulsingComponent, TextFit)
 
 
 class TrackerWidget:
@@ -435,7 +429,12 @@ class TrackerWidget:
             )
 
             status_date = content.get("status", {}).get("date")
-            status_ago = f"{timeago.format(status_date, get_local_now(), 'fr')}, " if status_date else ""
+            if status_date:
+                status_ago = f"{timeago.format(status_date, get_local_now(), TXT.locale_country_code)}, "
+
+            else:
+                status_ago = ""
+
             self.ago_widget.update(status_ago)
 
             self.events_widget.update(visible=self.is_events_visible())
@@ -539,38 +538,42 @@ class TrackerWidget:
         start_col = len(self.id_widget.get()) - len(idship)
         self.id_widget.pulsing.add_tag("", f"1.{start_col}", "end")
 
+    Param = namedtuple("Param", "ago ago_color name name_color name_font update_msg error_msg valid")
+
     def show_couriers(self, couriers_update):
         if couriers_update:
             couriers_update_names = list(couriers_update)
             couriers_update_names.sort()
-
             self.couriers_widget.update("")
+            params = []
 
-            txts = []
             for name in couriers_update_names:
-                date, error, updating, valid_idship, exists = couriers_update[name]
-                ago_color, ago = (
-                    (
-                        TH.ok_color,
-                        f"{timeago.format(date, get_local_now(), 'fr').replace(TXT.ago, '').strip()}",
-                    )
-                    if date
-                    else (TH.warn_color, TXT.never)
-                )
-                name_color, name_font = (
-                    (TH.warn_color, self.couriers_font_bold) if error else (TH.ok_color, self.couriers_font)
-                )
+                date, error, updating, valid, exists = couriers_update[name]
+                if date:
+                    ago_color = TH.ok_color
+                    ago = timeago.format(date, get_local_now(), TXT.locale_country_code).replace(TXT.ago, "").strip()
+
+                else:
+                    ago_color = TH.warn_color
+                    ago = TXT.never
+
+                if error:
+                    name_color = TH.warn_color
+                    name_font = self.couriers_font_bold
+
+                else:
+                    name_color = TH.ok_color
+                    name_font = self.couriers_font
 
                 error_msg = ""
                 update_msg = ""
-
                 if not exists:
                     error_msg = TXT.courier_doesnt_exist
 
                 elif updating:
                     update_msg = TXT.updating
 
-                elif not valid_idship:
+                elif not valid:
                     empty_idship, _ = self.get_idship(check_empty=True)
                     error_msg = TXT.no_idship if empty_idship else TXT.invalid_idship
 
@@ -580,39 +583,33 @@ class TrackerWidget:
                 if error_msg:
                     error_msg += ":"
 
-                txts.append((ago, ago_color, name, name_color, name_font, update_msg, error_msg, valid_idship))
+                param = self.Param(ago, ago_color, name, name_color, name_font, update_msg, error_msg, valid)
+                params.append(param)
 
-            width_name = max(len(txt[2]) for txt in txts)
-            width_ago = max(len(txt[0]) for txt in txts)
+            width_name = max(len(param.name) for param in params)
+            width_ago = max(len(param.ago) for param in params)
             prt = self.couriers_widget.print
+            prt_kw = dict(autoscroll=False, end="")
 
-            for i, (ago, ago_color, name, name_color, name_font, update_msg, error_msg, valid_idship) in enumerate(
-                txts
-            ):
-                prt(update_msg, autoscroll=False, font=self.couriers_font_bold, end="")
-                prt(
-                    error_msg,
-                    autoscroll=False,
-                    font=self.couriers_font,
-                    t=TH.warn_color,
-                    end="",
-                )
-                name_txt = f" {name.center(width_name)}"
-                prt(name_txt, autoscroll=False, t=name_color, font=name_font, end="")
-                prt(f" {TXT.updated} ", autoscroll=False, t=TH.courier_updated_color, end="")
-                prt(ago.ljust(width_ago), autoscroll=False, t=ago_color)
+            for i, param in enumerate(params):
+                name_txt = f" {param.name.center(width_name)}"
+                prt(param.update_msg, font=self.couriers_font_bold, **prt_kw)
+                prt(param.error_msg, font=self.couriers_font, t=TH.warn_color, **prt_kw)
+                prt(name_txt, t=param.name_color, font=param.name_font, **prt_kw)
+                prt(f" {TXT.updated} ", t=TH.courier_updated_color, **prt_kw)
+                prt(param.ago.ljust(width_ago), t=param.ago_color, autoscroll=False)
 
-                if update_msg:
+                if param.update_msg:
                     # https://stackoverflow.com/questions/14786507/how-to-change-the-color-of-certain-words-in-the-tkinter-text-widget/30339009
-                    end_col = len(update_msg) + len(name_txt)
-                    self.couriers_widget.pulsing.add_tag(name, f"{i + 1}.0", f"{i + 1}.{end_col}")
+                    end_col = len(param.update_msg) + len(name_txt)
+                    self.couriers_widget.pulsing.add_tag(param.name, f"{i + 1}.0", f"{i + 1}.{end_col}")
 
-                if valid_idship:
-                    start = len(update_msg) + len(error_msg)
+                if param.valid:
+                    start = len(param.update_msg) + len(param.error_msg)
                     find_name = list(re.finditer(r"\w+", name_txt))
                     start_col = start + find_name[0].start()
                     end_col = start + find_name[-1].end()
-                    self.couriers_widget.buttons.add_tag(name, f"{i + 1}.{start_col}", f"{i + 1}.{end_col}")
+                    self.couriers_widget.buttons.add_tag(param.name, f"{i + 1}.{start_col}", f"{i + 1}.{end_col}")
 
         else:
             self.couriers_widget.update(TXT.no_couriers, text_color=TH.warn_color)
