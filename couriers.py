@@ -60,7 +60,7 @@ class Couriers:
         return self.couriers.get(name)
 
     def get_names(self):
-        return list(self.couriers.keys())
+        return list(self.couriers)
 
 
 def get_simple_validation(_min, _max=None):
