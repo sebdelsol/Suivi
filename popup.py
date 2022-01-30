@@ -6,7 +6,7 @@ from couriers import Courier
 from localization import TXT
 from theme import TH
 from widget import ButtonMouseOver, HLine, Window
-from events import Shortcut
+from events import Shortcuts
 
 
 class Popup(Window):
@@ -51,7 +51,7 @@ class Popup(Window):
                 return do_exit
 
     def event_handler(self, event):
-        if event in (None, TXT.cancel, *Shortcut.exit):
+        if event in (None, TXT.cancel, *Shortcuts.exit):
             return False
 
         elif event == TXT.ok:
