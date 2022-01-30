@@ -303,8 +303,8 @@ class TrackerWidget:
     # https://stackoverflow.com/questions/11544187/tkinter-resize-text-to-contents/11545159
     def update_size(self):
         nb_events_shown = float("inf") if self.expand_events else TH.widget_min_events_shown
-        h = min(nb_events_shown, self.height_events)
-        self.events_widget.set_size((self.width_events, h))
+        height = min(nb_events_shown, self.height_events)
+        self.events_widget.set_size((self.width_events, height))
 
         self.update_couriers_id_size()
 
