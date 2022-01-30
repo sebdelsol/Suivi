@@ -16,8 +16,15 @@ from localization import TXT
 from log import log
 from theme import TH
 from trackers import TrackerState
-from widget import (AnimatedGif, ButtonMouseOver, GraphRounded, HLine,
-                    MlineButtonsComponent, MlinePulsingComponent, TextFit)
+from widget import (
+    AnimatedGif,
+    ButtonMouseOver,
+    GraphRounded,
+    HLine,
+    MlineButtonsComponent,
+    MlinePulsingComponent,
+    TextFit,
+)
 
 
 class TrackerWidget:
@@ -46,9 +53,11 @@ class TrackerWidget:
 
     def reset_size(self):
         self.n_events = 0
+        self.n_new_events = 0
         self.width_events = 0
         self.height_events = 0
         self.expand_events = False
+        self.can_collapse_events = True
 
     def create_layout(self):
         self.hline = HLine(color=TH.widget_separator_color)
@@ -182,10 +191,11 @@ class TrackerWidget:
             k=lambda w: self.toggle_expand(w),
         )
 
+        self.n_event_font = (TH.var_font, TH.n_event_font_size)
         self.n_event_widget = sg.T(
             "",
             p=0,
-            font=(TH.var_font, TH.n_event_font_size),
+            font=self.n_event_font,
             text_color=TH.widget_expand_color,
             k=lambda w: self.toggle_expand(w),
         )
@@ -241,16 +251,27 @@ class TrackerWidget:
         for widget in (self.events_widget, self.status_widget, self.ago_widget, self.n_event_widget):
             widget.bind("<Button-1>", "")
 
+        buttons = MlineButtonsComponent(self.events_widget)
+        buttons.init(
+            mouse_over_color=TH.widget_event_mouse_over_color,
+            on_click=lambda key, window=window: self.on_event_click(key, window),
+        )
+        self.events_widget.buttons = buttons
+
+        pulsing = MlinePulsingComponent(self.events_widget)
+        pulsing.init(TH.event_new_color, event_color)
+        self.events_widget.pulsing = pulsing
+
         buttons = MlineButtonsComponent(self.couriers_widget)
         buttons.init(mouse_over_color=TH.widget_courier_mouse_over_color, on_click=self.on_courrier_click)
         self.couriers_widget.buttons = buttons
 
         pulsing = MlinePulsingComponent(self.couriers_widget)
-        pulsing.init(TH.refresh_color, TH.widget_title_bg_color)
+        pulsing.init(TH.refresh_color, title_color)
         self.couriers_widget.pulsing = pulsing
 
         pulsing = MlinePulsingComponent(self.id_widget)
-        pulsing.init(TH.idship_color, TH.widget_title_bg_color)
+        pulsing.init(TH.idship_color, title_color)
         self.id_widget.pulsing = pulsing
 
         self.show_current_content(window)
@@ -260,11 +281,12 @@ class TrackerWidget:
         return True
 
     def toggle_expand(self, window):
-        self.expand_events = not self.expand_events
-        self.update_expand_button()
+        if self.can_collapse_events or not self.expand_events:
+            self.expand_events = not self.expand_events
+            self.update_expand_button()
 
-        self.update_size()
-        window.trigger_event(Events.update_window_size)
+            self.update_size()
+            window.trigger_event(Events.update_window_size)
 
     def update_expand_button(self):
         visible = self.is_events_visible() and self.height_events > TH.widget_min_events_shown
@@ -301,9 +323,6 @@ class TrackerWidget:
 
     # https://stackoverflow.com/questions/11544187/tkinter-resize-text-to-contents/11545159
     def update_size(self):
-        txt = f"{self.n_events} {TXT.event}{'s' if self.n_events >1 else ''}" if self.n_events > 0 else ""
-        self.n_event_widget.update(txt)
-
         n_events_shown = float("inf") if self.expand_events else TH.widget_min_events_shown
         height = min(n_events_shown, self.height_events)
         self.events_widget.set_size((self.width_events, height))
@@ -392,10 +411,28 @@ class TrackerWidget:
                 self.desc_widget.update(text_color=color or TH.widget_descrition_text_color)
 
             else:
+                self.n_events = 0
+                self.n_new_events = 0
                 self.width_events = 0
                 self.height_events = 0
                 self.status_widget.update(TXT.unknown_status, text_color=TH.warn_color)
                 self.desc_widget.update(text_color=TH.widget_descrition_error_text_color)
+
+            if self.n_events > 0:
+                if self.n_new_events > 0:
+                    plural = TXT.several_new if self.n_events > 1 else TXT.new
+                    n_txt = f"{self.n_new_events} {plural}"
+                    self.n_event_widget.update(
+                        n_txt, font=(TH.var_font_bold, TH.n_new_event_font_size), text_color=TH.warn_color
+                    )
+
+                else:
+                    plural = TXT.events if self.n_events > 1 else TXT.event
+                    n_txt = f"{self.n_events} {plural}"
+                    self.n_event_widget.update(n_txt, font=self.n_event_font, text_color=TH.widget_expand_color)
+
+            else:
+                self.n_event_widget.update("", font=self.n_event_font, text_color=TH.widget_expand_color)
 
             self.show_id(content)
 
@@ -449,6 +486,9 @@ class TrackerWidget:
         events = content["events"]
         self.width_events = 0
         self.height_events = 0
+        self.n_events = 0
+        self.n_new_events = 0
+        self.can_collapse_events = True
 
         if events:
             events_date = [f"{evt['date']:{TXT.long_date_format}}".replace(".", "").split(",") for evt in events]
@@ -459,8 +499,10 @@ class TrackerWidget:
             events_courier = [f"{evt['courier']}, " for evt in events]
             courier_w = max(len(courier) for courier in events_courier)
 
+            current_line = 1
             self.n_events = len(events)
             prt = self.events_widget.print
+            prt_kw = dict(autoscroll=False, end="")
             for i, event in enumerate(events):
                 event_courier = events_courier[i].center(courier_w)
 
@@ -491,7 +533,14 @@ class TrackerWidget:
                 event_warn = event.get("warn")
                 event_delivered = event.get("delivered")
                 event_color = TH.warn_color if event_warn else (TH.ok_color if event_delivered else None)
-                event_new, f = ("(new) ", self.events_font_bold) if event.get("new") else ("", self.events_font)
+
+                if event.get("new"):
+                    self.n_new_events += 1
+                    event_new = f"{TXT.new} "
+                    font = self.events_font_bold
+                else:
+                    event_new = ""
+                    font = self.events_font
 
                 width = sum(len(txt) for txt in (event_courier, event_date, event_new))
 
@@ -500,27 +549,46 @@ class TrackerWidget:
                     TH.widget_event_max_width - len(event_status),
                     drop_whitespace=False,
                 ) or [""]
+
                 if len(event_labels) > 1:
                     next_labels = textwrap.wrap("".join(event_labels[1:]), TH.widget_event_max_width)
                     event_labels[1:] = [f"{' '* width}{label.strip()}" for label in next_labels]
                 event_labels[0] = event_labels[0].strip()
 
-                prt(event_date, font=f, autoscroll=False, t=TH.event_date_color, end="")
-                prt(event_courier, font=f, autoscroll=False, t=TH.event_courier_color, end="")
-                prt(event_new, font=f, autoscroll=False, t=TH.event_new_color, end="")
-                prt(
-                    event_status,
-                    font=self.events_font_bold if event_warn or event_delivered else f,
-                    autoscroll=False,
-                    t=event_color or TH.event_status_color,
-                    end="",
-                )
+                prt(event_date, font=font, t=TH.event_date_color, **prt_kw)
+                prt(event_courier, font=font, t=TH.event_courier_color, **prt_kw)
+                prt(event_new, font=font, **prt_kw)
+                status_font = self.events_font_bold if event_warn or event_delivered else font
+                prt(event_status, font=status_font, t=event_color or TH.event_status_color, **prt_kw)
                 for event_label in event_labels:
-                    prt(event_label, font=f, autoscroll=False, t=event_color or TH.event_label_color)
+                    prt(event_label, font=font, t=event_color or TH.event_label_color, autoscroll=False)
 
                 width += sum(len(txt) for txt in (event_status, event_labels[0]))
                 self.width_events = max(width, self.width_events)
                 self.height_events += len(event_labels)
+
+                if event_new:
+                    start_line = current_line
+                    end_line = start_line + len(event_labels) - 1
+                    event = content["original_events"][i]  # original event needed by remove_new
+                    self.events_widget.buttons.add_tag(event, f"{start_line}.{0}", f"{end_line}.{width}")
+
+                    start_col = len(event_courier) + len(event_date)
+                    end_col = start_col + len(event_new)
+                    self.events_widget.pulsing.add_tag("", f"{start_line}.{start_col}", f"{start_line}.{end_col}")
+
+                    self.can_collapse_events = False
+                    self.events_widget.pulsing.start()
+
+                current_line += len(event_labels)
+
+        if self.can_collapse_events:
+            self.events_widget.pulsing.stop()
+
+    def on_event_click(self, key, window):
+        # key is event see events_widget.buttons.add_tag
+        self.tracker.remove_new(key)
+        self.show_current_content(window)
 
     def show_id(self, content):
         self.id_widget.update("")
@@ -826,11 +894,11 @@ class TrackerWidgets:
     def update_window_size(self, window):
         shown = self.get_widgets_with_state(TrackerState.shown)
 
-        self.widgets_frame.contents_changed()
-        self.its_empty.update(visible=not shown)
-
         # needed to get the actual sizes
         window.refresh()  # or visibility_changed() that produces different glitches
+
+        self.widgets_frame.contents_changed()
+        self.its_empty.update(visible=not shown)
 
         menu_w = self.widget_menu.Widget.winfo_reqwidth()
         menu_h = self.widget_menu.Widget.winfo_reqheight()

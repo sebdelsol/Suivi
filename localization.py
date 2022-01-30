@@ -7,6 +7,7 @@ class TXT:
 
     log = "Log"
     new = "Nouveau"
+    several_new = "Nouveaux"
     refresh = "Rafraichir"
     archives = "Archive"
     trash = "Poubelle"
@@ -25,6 +26,7 @@ class TXT:
     edit = "Édition"
     cant_undo = "Cette opération est définitive"
     event = "évènement"
+    events = "évènements"
     init = "inititialisation"
     tracker_creation = "création suivi"
     driver_creation = "création pilote"

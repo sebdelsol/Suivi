@@ -258,9 +258,9 @@ class MlineButtonsComponent(Component):
         self.pointed_button_key = None
 
         widget = element.Widget
-        widget.bind("<Any-Motion>", self._on_mouse_move)
-        widget.bind("<Leave>", self._on_mouse_leave)
-        widget.bind("<Button-1>", self._on_click)
+        widget.bind("<Any-Motion>", self._on_mouse_move, add="+")
+        widget.bind("<Leave>", self._on_mouse_leave, add="+")
+        widget.bind("<Button-1>", self._on_click, add="+")
 
     def _on_mouse_leave(self, event):
         if event.type.name == "Leave":
@@ -295,6 +295,7 @@ class MlineButtonsComponent(Component):
         self._element.Widget.tag_add(tag, start, end)
 
 
+# DO NOT print with t attribute or it won't pulse
 class MlinePulsingComponent(Component):
     _for = sg.MLine
     colors = {}

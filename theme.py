@@ -104,6 +104,7 @@ class TH:
     widget_title_bg_color = "grey85"
     widget_event_bg_color = "grey90"
     widget_event_pady = 5
+    widget_event_mouse_over_color = "grey80"
     widget_separator_color = "grey70"
     widget_descrition_text_color = "grey40"
     widget_descrition_error_text_color = "grey70"
@@ -133,6 +134,7 @@ class TH:
     elapsed_days_font_size = 15
 
     n_event_font_size = 7
+    n_new_event_font_size = 10
 
     event_date_color = "grey"
     event_courier_color = "grey70"

@@ -62,10 +62,30 @@ class Tracker:
         self.executors = []
         self.closing = False
 
-        self.loaded_events = set()
+        self.create_events_reference()
+
+    @staticmethod
+    def get_event_ref(event):
+        # remove 'new' key
+        return tuple((k, v) for k, v in event.items() if k != "new")
+
+    def create_events_reference(self):
+        self.events_new = {}
         for content in self.contents.values():
             if events := content.get("events"):
-                self.loaded_events |= {tuple(event.items()) for event in events}  # can't hash dict
+                for event in events:
+                    self.events_new[self.get_event_ref(event)] = event.get("new", False)
+
+    def update_new(self, new_content):
+        if new_content:
+            if events := new_content.get("events"):
+                for event in events:
+                    # new is the ref value or True if not found
+                    event["new"] = self.events_new.get(self.get_event_ref(event), True)
+
+    def remove_new(self, event):
+        event["new"] = False
+        self.events_new[self.get_event_ref(event)] = False
 
     def set_id(self, idship, description, used_couriers):
         self.used_couriers = used_couriers or []
@@ -117,6 +137,7 @@ class Tracker:
                             if new_content["ok"] or name not in self.contents:
                                 new_content["courier_name"] = name
                                 self.contents[name] = new_content
+                                self.update_new(new_content)
 
                         error = not (new_content and new_content["ok"])
                         self.couriers_error[name] = error
@@ -150,19 +171,18 @@ class Tracker:
             contents_ok = []
             for name, content in self.contents.items():
                 if name in self.used_couriers and content["ok"] and content.get("idship") == self.idship:
-                    contents_ok.append(copy.deepcopy(content))
+                    contents_ok.append(content)
 
         if len(contents_ok) > 0:
             contents_ok.sort(key=lambda c: c["status"]["date"], reverse=True)
-            consolidated = contents_ok[0]
 
             events = sum((content["events"] for content in contents_ok), [])
             events.sort(key=lambda evt: evt["date"], reverse=True)
 
-            for event in events:
-                event["new"] = tuple(event.items()) not in self.loaded_events
-
-            consolidated["events"] = events
+            # protect against any modifiction further
+            consolidated = copy.deepcopy(contents_ok[0])
+            consolidated["events"] = copy.deepcopy(events)
+            consolidated["original_events"] = events  # do not not modify!
 
             delivered = any(content["status"].get("delivered") for content in contents_ok)
             consolidated["status"]["delivered"] = delivered
@@ -255,8 +275,6 @@ class Trackers:
 
     def save(self):
         trackers = self.sort(self.get_not_definitly_deleted())
-        for tracker in trackers:
-            print(tracker.description)
         saved_trackers = [SavedTracker(tracker) for tracker in trackers]
 
         self.save_to_file(saved_trackers, PICKLE_EXT, "wb", pickle.dump)
