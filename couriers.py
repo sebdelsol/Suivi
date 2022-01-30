@@ -52,7 +52,7 @@ def get_all_subclasses(cls):
 class Couriers:
     def __init__(self, splash=None):
         self.couriers = {cls.name: cls() for cls in get_all_subclasses(Courier)}
-        log(f"Init Couriers {', '.join(self.couriers.keys())}")
+        log(f"Init Couriers {', '.join(self.couriers)}")
 
         DriverHandler.start(splash)
 
