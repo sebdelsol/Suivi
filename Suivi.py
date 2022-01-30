@@ -33,8 +33,7 @@ def check_python_version(requirements):
     current_version = ".".join(str(v) for v in sys.version_info[:3])
     print(f"Python {current_version} running")
 
-    required_version = SpecifierSet(requirements)
-    if current_version in required_version:
+    if current_version in SpecifierSet(requirements):
         return True
 
     require = " and ".join(req.strip() for req in requirements.split(","))
