@@ -70,7 +70,8 @@ class GreyWindow:
 
 class MainWindow(ShowInTaskbarWindow):
     def __init__(self, trackers_filename, load_as_json, splash):
-        p = TH.menu_button_pad
+        px = TH.menu_button_padx
+        py = TH.menu_button_pady
         b_kwargs = dict(
             im_height=TH.menu_button_height,
             im_margin=TH.menu_button_img_margin,
@@ -80,7 +81,7 @@ class MainWindow(ShowInTaskbarWindow):
 
         log_b = ButtonTxtAndImg(
             TXT.log,
-            p=p,
+            p=((py, px), (py, py)),
             image_filename=TH.log_img,
             button_color=(TH.log_color, TH.menu_color),
             k=Events.log,
@@ -88,7 +89,7 @@ class MainWindow(ShowInTaskbarWindow):
         )
         new_b = ButtonTxtAndImg(
             TXT.new,
-            p=(0, p),
+            p=(0, py),
             image_filename=TH.edit_img,
             button_color=(TH.edit_color, TH.menu_color),
             k=Events.new,
@@ -96,7 +97,7 @@ class MainWindow(ShowInTaskbarWindow):
         )
         refresh_b = ButtonTxtAndImg(
             TXT.refresh,
-            p=p,
+            p=(px, py),
             image_filename=TH.refresh_img,
             button_color=(TH.refresh_color, TH.menu_color),
             k=Events.refresh,
@@ -104,7 +105,7 @@ class MainWindow(ShowInTaskbarWindow):
         )
         archives_b = ButtonTxtAndImg(
             TXT.archives,
-            p=(0, p),
+            p=(0, py),
             image_filename=TH.archives_img,
             button_color=(TH.archives_color_empty, TH.menu_color),
             k=Events.archives,
@@ -112,7 +113,7 @@ class MainWindow(ShowInTaskbarWindow):
         )
         trash_b = ButtonTxtAndImg(
             TXT.trash,
-            p=p,
+            p=(px, py),
             image_filename=TH.trash_img,
             button_color=(TH.trash_color_empty, TH.menu_color),
             k=Events.trash,
@@ -128,7 +129,7 @@ class MainWindow(ShowInTaskbarWindow):
         )
         min_b = ButtonMouseOver(
             TXT.minimize,
-            p=p,
+            p=(0, py),
             font=(TH.var_font_bold, TH.menu_button_font_size),
             button_color=TH.menu_color,
             mouse_over_color=TH.menu_sys_button_mouse_over_color,
@@ -136,7 +137,7 @@ class MainWindow(ShowInTaskbarWindow):
         )
         exit_b = ButtonMouseOver(
             TXT.exit,
-            p=((0, p), (p, p)),
+            p=((0, py), (py, py)),
             font=(TH.var_font_bold, TH.menu_button_font_size),
             button_color=TH.menu_color,
             mouse_over_color=TH.menu_sys_button_mouse_over_color,
