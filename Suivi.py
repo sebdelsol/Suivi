@@ -37,7 +37,7 @@ def check_python_version(requirements):
     if current_version in required_version:
         return True
 
-    require = " and ".join(req.strip() for req in str(requirements).split(","))
+    require = " and ".join(req.strip() for req in requirements.split(","))
     print(f"this app requires Python {require}")
     return False
 
