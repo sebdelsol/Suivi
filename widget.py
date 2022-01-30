@@ -24,8 +24,8 @@ else:
 class Window(sg.Window):
     @staticmethod
     def _try_finalize(elt):
-        if hasattr(elt, "_finalize"):
-            elt._finalize()
+        if hasattr(elt, "finalize"):
+            elt.finalize()
 
     def _finalize_layout(self, rows):
         for row in rows:
@@ -63,11 +63,11 @@ class ShowInTaskbarWindow(Window):
             # redraw the window to have something to show in the taskbar
             self.refresh()
             # catch the deinconify event
-            root.bind("<Map>", self.normal)
+            root.bind("<Map>", lambda event: self.normal())
 
         super().minimize()
 
-    def normal(self, event=None):
+    def normal(self):
         if self._no_titlebar:
             root = self.TKroot
             # set override to remove the tittlebar
@@ -125,7 +125,7 @@ class ButtonMouseOver(sg.Button):
 
         super().__init__(*args, **kwargs)
 
-    def _finalize(self):
+    def finalize(self):
         for bind in ButtonMouseOver.binds:
             self.Widget.bind(bind, self._on_mouse_over)
 
@@ -161,10 +161,10 @@ class ButtonTxtAndImg(ButtonMouseOver):
         size = wfont.measure(txt) + self._width, self._height
         self.set_size(size)
 
-    def _finalize(self):
+    def finalize(self):
         self.Widget.config(compound=self.image_justify, justify=self.image_justify)
         self._update_size(self.get_text())
-        super()._finalize()
+        super().finalize()
 
     def update(self, *args, **kwargs):
         if color := kwargs.get("button_color"):

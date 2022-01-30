@@ -489,14 +489,11 @@ class TrackerWidget:
 
                 width = sum(len(txt) for txt in (event_courier, event_date, event_new))
 
-                event_labels = (
-                    textwrap.wrap(
-                        event_label,
-                        TH.widget_event_max_width - len(event_status),
-                        drop_whitespace=False,
-                    )
-                    or [""]
-                )
+                event_labels = textwrap.wrap(
+                    event_label,
+                    TH.widget_event_max_width - len(event_status),
+                    drop_whitespace=False,
+                ) or [""]
                 if len(event_labels) > 1:
                     next_labels = textwrap.wrap("".join(event_labels[1:]), TH.widget_event_max_width)
                     event_labels[1:] = [f"{' '* width}{label.strip()}" for label in next_labels]
