@@ -743,14 +743,14 @@ class LaPoste(Courier):
             return events, dict(status_warn=True, status_label=status_label.replace(".", ""))
 
 
-class Chronopost(LaPoste):
+class Chronopost(Courier):
     name = "Chronopost"
     handler = SeleniumHandler(wait_elt_timeout=10)
     timeline_xpath = '//tr[@class="toggleElmt show"]'
 
     # use La Poste API to find out the url
     def get_url_for_browser(self, idship):
-        json = LaPoste.get_content(LaPoste, idship)  # super() calls with a ChronoPost class instance
+        json = LaPoste.get_content(LaPoste, idship)
         if json:
             return json.get("shipment", {}).get("urlDetail")
 
