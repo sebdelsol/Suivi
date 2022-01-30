@@ -632,7 +632,7 @@ class TrackerWidget:
         choices = {TXT.archive: self.archive, TXT.delete: self.delete}
         choices_colors = {TXT.archive: "green", TXT.delete: "red", False: "grey75"}
         popup_one_choice = popup.OneChoice(
-            choices.keys(),
+            choices,
             choices_colors,
             f"{self.get_description()} - {self.get_idship()}",
             window,
