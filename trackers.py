@@ -179,7 +179,7 @@ class Tracker:
             events = sum((content["events"] for content in contents_ok), [])
             events.sort(key=lambda evt: evt["date"], reverse=True)
 
-            # protect against any modifiction further
+            # protect against any further modification
             consolidated = copy.deepcopy(contents_ok[0])
             consolidated["events"] = copy.deepcopy(events)
             consolidated["original_events"] = events  # do not not modify!
