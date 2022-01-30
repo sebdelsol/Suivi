@@ -537,7 +537,7 @@ class TrackerWidget:
 
     def show_couriers(self, couriers_update):
         if couriers_update:
-            couriers_update_names = list(couriers_update.keys())
+            couriers_update_names = list(couriers_update)
             couriers_update_names.sort()
 
             self.couriers_widget.update("")
