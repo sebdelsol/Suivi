@@ -248,7 +248,7 @@ class TrackerWidget:
         self.couriers_widget.pulsing = pulsing
 
         pulsing = MlinePulsingComponent(self.id_widget)
-        pulsing.init("blue", TH.widget_title_bg_color)
+        pulsing.init(TH.idship_color, TH.widget_title_bg_color)
         self.id_widget.pulsing = pulsing
 
         self.show_current_content(window)
@@ -385,14 +385,14 @@ class TrackerWidget:
                 status_warn = content["status"].get("warn", False)
                 status_delivered = content["status"].get("delivered", False)
                 status_label = content["status"]["label"].replace(".", "")
-                color = "red" if status_warn else ("green" if status_delivered else None)
+                color = TH.warn_color if status_warn else (TH.ok_color if status_delivered else None)
                 self.status_widget.update(status_label, text_color=color or TH.widget_status_text_color)
                 self.desc_widget.update(text_color=color or TH.widget_descrition_text_color)
 
             else:
                 self.width_events = 0
                 self.height_events = 0
-                self.status_widget.update(TXT.unknown_status, text_color="red")
+                self.status_widget.update(TXT.unknown_status, text_color=TH.warn_color)
                 self.desc_widget.update(text_color=TH.widget_descrition_error_text_color)
 
             self.show_id(content)
@@ -484,7 +484,7 @@ class TrackerWidget:
 
                 event_warn = event.get("warn")
                 event_delivered = event.get("delivered")
-                event_color = "red" if event_warn else ("green" if event_delivered else None)
+                event_color = TH.warn_color if event_warn else (TH.ok_color if event_delivered else None)
                 event_new, f = ("(new) ", self.events_font_bold) if event.get("new") else ("", self.events_font)
 
                 width = sum(len(txt) for txt in (event_courier, event_date, event_new))
@@ -499,18 +499,18 @@ class TrackerWidget:
                     event_labels[1:] = [f"{' '* width}{label.strip()}" for label in next_labels]
                 event_labels[0] = event_labels[0].strip()
 
-                prt(event_date, font=f, autoscroll=False, t="grey", end="")
-                prt(event_courier, font=f, autoscroll=False, t="grey70", end="")
-                prt(event_new, font=f, autoscroll=False, t="black", end="")
+                prt(event_date, font=f, autoscroll=False, t=TH.event_date_color, end="")
+                prt(event_courier, font=f, autoscroll=False, t=TH.event_courier_color, end="")
+                prt(event_new, font=f, autoscroll=False, t=TH.event_new_color, end="")
                 prt(
                     event_status,
                     font=self.events_font_bold if event_warn or event_delivered else f,
                     autoscroll=False,
-                    t=event_color or "black",
+                    t=event_color or TH.event_status_color,
                     end="",
                 )
                 for event_label in event_labels:
-                    prt(event_label, font=f, autoscroll=False, t=event_color or "grey50")
+                    prt(event_label, font=f, autoscroll=False, t=event_color or TH.event_label_color)
 
                 width += sum(len(txt) for txt in (event_status, event_labels[0]))
                 self.width_events = max(width, self.width_events)
@@ -524,10 +524,10 @@ class TrackerWidget:
         fromto = f" {fromto.lower()} " if fromto else " "
 
         prt = self.id_widget.print
-        prt(product, autoscroll=False, t="grey50", end="")
-        prt(fromto, autoscroll=False, t="grey70", end="")
+        prt(product, autoscroll=False, t=TH.product_color, end="")
+        prt(fromto, autoscroll=False, t=TH.from_to_color, end="")
         empty, idship = self.get_idship(check_empty=True)
-        prt(idship, autoscroll=False, t="red" if empty else "blue")
+        prt(idship, autoscroll=False, t=TH.warn_color if empty else TH.idship_color)
 
         start_col = len(self.id_widget.get()) - len(idship)
         self.id_widget.pulsing.add_tag("", f"1.{start_col}", "end")
@@ -544,13 +544,15 @@ class TrackerWidget:
                 date, error, updating, valid_idship, exists = couriers_update[name]
                 ago_color, ago = (
                     (
-                        "green",
+                        TH.ok_color,
                         f"{timeago.format(date, get_local_now(), 'fr').replace(TXT.ago, '').strip()}",
                     )
                     if date
-                    else ("red", TXT.never)
+                    else (TH.warn_color, TXT.never)
                 )
-                name_color, name_font = ("red", self.couriers_font_bold) if error else ("green", self.couriers_font)
+                name_color, name_font = (
+                    (TH.warn_color, self.couriers_font_bold) if error else (TH.ok_color, self.couriers_font)
+                )
 
                 error_msg = ""
                 update_msg = ""
@@ -585,12 +587,12 @@ class TrackerWidget:
                     error_msg,
                     autoscroll=False,
                     font=self.couriers_font,
-                    t="red",
+                    t=TH.warn_color,
                     end="",
                 )
                 name_txt = f" {name.center(width_name)}"
                 prt(name_txt, autoscroll=False, t=name_color, font=name_font, end="")
-                prt(f" {TXT.updated} ", autoscroll=False, t="grey60", end="")
+                prt(f" {TXT.updated} ", autoscroll=False, t=TH.courier_updated_color, end="")
                 prt(ago.ljust(width_ago), autoscroll=False, t=ago_color)
 
                 if update_msg:
@@ -604,7 +606,7 @@ class TrackerWidget:
                     self.couriers_widget.buttons.add_tag(name, f"{i + 1}.{start_col}", f"{i + 1}.{end_col}")
 
         else:
-            self.couriers_widget.update(TXT.no_couriers, text_color="red")
+            self.couriers_widget.update(TXT.no_couriers, text_color=TH.warn_color)
 
     def on_courrier_click(self, key):
         # key is courier_name see couriers_widget.buttons.add_tag
@@ -627,7 +629,7 @@ class TrackerWidget:
     def archive_or_delete(self, window):
         self.disable_buttons(True)
         choices = {TXT.archive: self.archive, TXT.delete: self.delete}
-        choices_colors = {TXT.archive: "green", TXT.delete: "red", False: "grey75"}
+        choices_colors = {TXT.archive: TH.ok_color, TXT.delete: TH.warn_color, False: TH.unselected_color}
         popup_one_choice = popup.OneChoice(
             choices,
             choices_colors,
@@ -759,7 +761,7 @@ class TrackerWidgets:
 
         choices = []
         for widget in widgets:
-            color = "green" if widget.get_delivered() else "red"
+            color = TH.ok_color if widget.get_delivered() else TH.warn_color
             date = f"{widget.get_creation_date()},".ljust(w_date + 1)
             txt = f"{date} {widget.get_description().ljust(w_desc)} - {widget.get_idship()}"
             choices.append((txt, color))

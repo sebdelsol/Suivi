@@ -15,6 +15,7 @@ class TXT:
     ok = "OK"
     cancel = "Annuler"
     close = "Fermer"
+    show = "Voir"
 
     delete = "Supprimer"
     archive = "Archiver"

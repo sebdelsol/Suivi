@@ -52,16 +52,48 @@ class TH:
 
     window_height_screen_margin = 0  # for recenter
 
+    warn_color = "red"
+    ok_color = "green"
+    idship_color = "blue"
+    unselected_color = "grey75"
+
+    log_font_size = 8
+    log_button_font_size = 12
+    log_select_color = "grey75"
+    log_button_mouse_over_color = "grey80"
+    log_button_text_color = "grey60"
+    log_button_color = "grey90"
+    log_button_close_text_color = "red"
+
     popup_bg_color = "grey90"
+    popup_button_color = "grey75"
     popup_title_color = "grey40"
-    popup_sep_color = "grey20"
     popup_title_font_size = 25
+    popup_sep_color = "grey20"
+    popup_sep_padx = 5
+    popup_button_font_size = 12
     popup_max_choices = 20
 
-    button_color = "grey75"
-    menu_color = "grey75"
+    edit_font_size = 10
+    edit_msg_font_size = 8
+    edit_show_button_font_size = 8
+    edit_show_button_color = "grey90"
+    edit_courier_font_size = 12
+    edit_check_color = "black"
+    edit_unchecked_color = "grey60"
+
+    choices_font_size = 9
+    on_choice_font_size = 20
+    warn_font_size = 15
+
     empty_color = "grey90"
     empty_font_size = 20
+    empty_font_color = "grey"
+    empty_pady = 15
+
+    menu_color = "grey90"
+    menu_button_mouse_over_color = "grey80"
+    menu_sys_button_mouse_over_color = "red"
     menu_button_pad = 7
     menu_button_font_size = 13
     menu_button_height = 20
@@ -98,6 +130,16 @@ class TH:
     widget_elapsed_days_bg_color = "grey90"
     widget_elapsed_days_box_size = 50
     widget_elapsed_days_font_size = 15
+
+    event_date_color = "grey"
+    event_courier_color = "grey70"
+    event_status_color = "black"
+    event_label_color = "grey50"
+    event_new_color = "black"
+
+    from_to_color = "grey70"
+    product_color = "grey50"
+    courier_updated_color = "grey60"
 
     _theme_definition = {
         "BACKGROUND": widget_event_bg_color,

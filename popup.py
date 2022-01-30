@@ -3,10 +3,10 @@ from collections import namedtuple
 import PySimpleGUI as sg
 
 from couriers import Courier
+from events import Shortcuts
 from localization import TXT
 from theme import TH
 from widget import ButtonMouseOver, HLine, Window
-from events import Shortcuts
 
 
 class Popup(Window):
@@ -26,16 +26,18 @@ class Popup(Window):
                     expand_x=True,
                 )
             ],
-            [HLine(p=5, color=TH.popup_sep_color)],
+            [HLine(p=TH.popup_sep_padx, color=TH.popup_sep_color)],
         ]
         layout.extend(body_layout)
-        layout.append([HLine(p=5, color=TH.popup_sep_color)])
+        layout.append([HLine(p=TH.popup_sep_padx, color=TH.popup_sep_color)])
 
-        b_colors = dict(button_color=TH.button_color, mouse_over_color=TH.popup_bg_color)
+        b_colors = dict(button_color=TH.popup_button_color, mouse_over_color=TH.popup_bg_color)
         layout.append(
             [
-                ButtonMouseOver(TXT.ok, font=(TH.var_font, 12), bind_return_key=True, **b_colors),
-                ButtonMouseOver(TXT.cancel, font=(TH.var_font, 12), **b_colors),
+                ButtonMouseOver(
+                    TXT.ok, font=(TH.var_font, TH.popup_button_font_size), bind_return_key=True, **b_colors
+                ),
+                ButtonMouseOver(TXT.cancel, font=(TH.var_font, TH.popup_button_font_size), **b_colors),
             ]
         )
         layout = [[sg.Col(layout, p=5)]]
@@ -68,17 +70,17 @@ class Edit(Popup):
         self.couriers_names.sort()
         layout = [
             [
-                sg.T(TXT.description, font=(TH.fix_font, 10)),
-                sg.Input(description, font=(TH.fix_font, 10), key="description"),
+                sg.T(TXT.description, font=(TH.fix_font, TH.edit_font_size)),
+                sg.Input(description, font=(TH.fix_font, TH.edit_font_size), key="description"),
             ],
             [
-                sg.T(TXT.idship, font=(TH.fix_font, 10)),
-                sg.Input(idship, font=(TH.fix_font, 10), enable_events=True, key="idship"),
+                sg.T(TXT.idship, font=(TH.fix_font, TH.edit_font_size)),
+                sg.Input(idship, font=(TH.fix_font, TH.edit_font_size), enable_events=True, key="idship"),
             ],
         ]
 
-        self.check_colors = {True: "black", False: "grey60"}
-        self.msg_font = {True: (TH.fix_font_bold, 8), False: (TH.fix_font, 8)}
+        self.check_colors = {True: TH.edit_check_color, False: TH.edit_unchecked_color}
+        self.msg_font = {True: (TH.fix_font_bold, TH.edit_msg_font_size), False: (TH.fix_font, TH.edit_msg_font_size)}
 
         self.idship_widgets = []
         for name in self.couriers_names:
@@ -89,7 +91,7 @@ class Edit(Popup):
                 f" {name}",
                 default=is_checked,
                 text_color=self.check_colors[is_checked],
-                font=(TH.fix_font, 12),
+                font=(TH.fix_font, TH.edit_courier_font_size),
                 enable_events=True,
                 k=name,
             )
@@ -100,7 +102,12 @@ class Edit(Popup):
                 justification="r",
                 k=f"{name}msg",
             )
-            button = ButtonMouseOver("voir", font=(TH.fix_font, 8), button_color="grey90", k=courier)
+            button = ButtonMouseOver(
+                TXT.show.lower(),
+                font=(TH.fix_font, TH.edit_show_button_font_size),
+                button_color=TH.edit_show_button_color,
+                k=courier,
+            )
 
             self.idship_widgets.append((msg, button))
             layout.append([cb, msg, sg.vcenter(button)])
@@ -117,7 +124,7 @@ class Edit(Popup):
             button.update(disabled=disabled, visible=not disabled)
 
             valid = courier.validate_idship(idship)
-            msg.update(text_color="green" if valid else "red")
+            msg.update(text_color=TH.ok_color if valid else TH.warn_color)
 
     def event_handler(self, event):
         if event == "idship":
@@ -150,7 +157,8 @@ class Edit(Popup):
 
 class Choices(Popup):
     max_lines = TH.popup_max_choices
-    selected_font, unselected_font = (TH.fix_font_bold, 9), (TH.fix_font, 9)
+    selected_font = (TH.fix_font_bold, TH.choices_font_size)
+    unselected_font = (TH.fix_font, TH.choices_font_size)
 
     def __init__(self, choices, title, main_window):
         row = namedtuple("row", "cb txt")
@@ -178,7 +186,7 @@ class Choices(Popup):
                         TXT.empty,
                         expand_x=True,
                         font=self.selected_font,
-                        text_color="red",
+                        text_color=TH.warn_color,
                         justification="center",
                     )
                 ]
@@ -230,7 +238,7 @@ class OneChoice(Popup):
                 choice,
                 group_id="choices",
                 text_color=color,
-                font=(TH.var_font_bold, 20),
+                font=(TH.var_font_bold, TH.on_choice_font_size),
                 enable_events=True,
                 default=i == 0,
                 k=choice,
@@ -263,7 +271,7 @@ class OneChoice(Popup):
 
 class Warn(Popup):
     def __init__(self, title, text, main_window):
-        layout = [[sg.Image(filename=TH.warn_img), sg.T(text, font=(TH.var_font, 15))]]
+        layout = [[sg.Image(filename=TH.warn_img), sg.T(text, font=(TH.var_font, TH.warn_font_size))]]
         super().__init__(title, layout, main_window)
 
     def loop(self):

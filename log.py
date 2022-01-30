@@ -14,10 +14,7 @@ class _Logger(Window):
     link_txt = "\n".join("❱❱❱❱❱")
     unlink_txt = "\n".join("❰❰❰❰❰")
     close_txt = "\n".join(TXT.close.upper())
-
-    log_event = "-UPDATE LOG-"
     listen_step = 20  # ms
-    select_bg_color = "#C0C0C0"
 
     def __init__(self):
         self.is_print_only = False
@@ -25,17 +22,13 @@ class _Logger(Window):
         self.linked = True
         self.resizing = False
         self.visible = False
+        self.log_font_bold = (TH.fix_font_bold, TH.log_font_size)
+        self.button_font_bold = (TH.var_font_bold, TH.log_button_font_size)
 
-        log_f_size = 8
-        log_font, self.log_font_bold, button_font = (
-            (TH.fix_font, log_f_size),
-            (TH.fix_font_bold, log_f_size),
-            (TH.var_font, 12),
-        )
         self.output = sg.MLine(
             "",
             p=(5, 0),
-            font=log_font,
+            font=(TH.fix_font, TH.log_font_size),
             s=(80, 40),
             auto_refresh=True,
             autoscroll=True,
@@ -47,9 +40,9 @@ class _Logger(Window):
         self.link_button = ButtonMouseOver(
             self.link_txt,
             p=0,
-            font=button_font,
-            button_color=("grey60", "grey90"),
-            mouse_over_color="grey80",
+            font=(TH.var_font, TH.log_button_font_size),
+            button_color=(TH.log_button_text_color, TH.log_button_color),
+            mouse_over_color=TH.log_button_mouse_over_color,
             expand_x=True,
             expand_y=True,
             k="Link",
@@ -73,7 +66,7 @@ class _Logger(Window):
         self.TKroot.resizable(width=False, height=True)
         self.set_min_size(self.size)
         self.wanted_pos = None
-        self.output.Widget.configure(selectbackground=self.select_bg_color)
+        self.output.Widget.configure(selectbackground=TH.log_select_color)
 
     def link_to(self, main_window):
         self.main_window = main_window
@@ -89,7 +82,10 @@ class _Logger(Window):
                 args, error, kwargs = self.prints.get_nowait()
                 print(*args, **kwargs)
                 self.output.print(
-                    *args, **kwargs, t="red" if error else "green", font=self.log_font_bold if error else None
+                    *args,
+                    **kwargs,
+                    t=TH.warn_color if error else TH.ok_color,
+                    font=self.log_font_bold if error else None,
                 )
 
         except queue.Empty:
@@ -108,7 +104,7 @@ class _Logger(Window):
             self.linked = not self.linked
             if self.linked:
                 self.output.Widget.tag_remove("sel", "1.0", "end")
-                self.output.Widget.configure(selectbackground=self.select_bg_color)
+                self.output.Widget.configure(selectbackground=TH.log_select_color)
 
                 self.grab_any_where_off()
                 self.output.grab_anywhere_exclude()
@@ -155,7 +151,11 @@ class _Logger(Window):
     def close(self):
         if self.visible:
             self.log("<< HIT a key to CLOSE >>", error=True)
-            self.link_button.update(self.close_txt, button_color=("red", "grey85"))
+            self.link_button.update(
+                self.close_txt,
+                button_color=(TH.log_button_close_text_color, TH.log_button_color),
+            )
+            self.link_button.Widget.config(font=self.button_font_bold)
             self.force_focus()
             self.TKroot.unbind("<Configure>")
 

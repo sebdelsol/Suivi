@@ -71,12 +71,11 @@ class GreyWindow:
 class MainWindow(ShowInTaskbarWindow):
     def __init__(self, trackers_filename, load_as_json, splash):
         p = TH.menu_button_pad
-        fs = TH.menu_button_font_size
         b_kwargs = dict(
             im_height=TH.menu_button_height,
             im_margin=TH.menu_button_img_margin,
-            font=(TH.var_font_bold, fs),
-            mouse_over_color="grey90",
+            font=(TH.var_font_bold, TH.menu_button_font_size),
+            mouse_over_color=TH.menu_button_mouse_over_color,
         )
 
         log_b = ButtonTxtAndImg(
@@ -130,28 +129,28 @@ class MainWindow(ShowInTaskbarWindow):
         min_b = ButtonMouseOver(
             TXT.minimize,
             p=p,
-            font=(TH.var_font_bold, fs),
+            font=(TH.var_font_bold, TH.menu_button_font_size),
             button_color=TH.menu_color,
-            mouse_over_color="red",
+            mouse_over_color=TH.menu_sys_button_mouse_over_color,
             k=Events.minimize,
         )
         exit_b = ButtonMouseOver(
             TXT.exit,
             p=((0, p), (p, p)),
-            font=(TH.var_font_bold, fs),
+            font=(TH.var_font_bold, TH.menu_button_font_size),
             button_color=TH.menu_color,
-            mouse_over_color="red",
+            mouse_over_color=TH.menu_sys_button_mouse_over_color,
             focus=True,
             k=Events.exit,
         )
 
         its_empty = sg.T(
             TXT.empty,
-            p=(0, 15),
+            p=(0, TH.empty_pady),
             expand_x=True,
             expand_y=True,
             font=(TH.var_font_bold, TH.empty_font_size),
-            text_color="grey",
+            text_color=TH.empty_font_color,
             background_color=TH.empty_color,
             k=Keys.its_empty,
         )
