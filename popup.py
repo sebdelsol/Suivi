@@ -10,7 +10,7 @@ from widget import ButtonMouseOver, HLine, Window
 
 
 class Popup(Window):
-    def __init__(self, title, body_layout, main_window):
+    def __init__(self, title, body_layout, main_window, added_buttons=None):
         self.main_window = main_window
         self.main_window.grey_all(True)
 
@@ -31,15 +31,22 @@ class Popup(Window):
         layout.extend(body_layout)
         layout.append([HLine(p=TH.popup_sep_padx, color=TH.popup_sep_color)])
 
-        b_colors = dict(button_color=TH.popup_button_color, mouse_over_color=TH.popup_bg_color)
-        layout.append(
-            [
-                ButtonMouseOver(
-                    TXT.ok, font=(TH.var_font, TH.popup_button_font_size), bind_return_key=True, **b_colors
-                ),
-                ButtonMouseOver(TXT.cancel, font=(TH.var_font, TH.popup_button_font_size), **b_colors),
-            ]
+        b_kwargs = dict(
+            button_color=TH.popup_button_color,
+            mouse_over_color=TH.popup_bg_color,
+            font=(TH.var_font, TH.popup_button_font_size),
         )
+        buttons = [
+            ButtonMouseOver(TXT.ok, bind_return_key=True, **b_kwargs),
+            ButtonMouseOver(TXT.cancel, **b_kwargs),
+        ]
+        self.added_buttons = added_buttons or ()
+        if added_buttons:
+            buttons.append(sg.Push())
+            for txt in added_buttons:
+                buttons.append(ButtonMouseOver(txt, **b_kwargs))
+
+        layout.append(buttons)
         layout = [[sg.Col(layout, p=5)]]
 
         args, kwargs = TH.get_window_params(layout)
@@ -56,8 +63,11 @@ class Popup(Window):
         if event in (None, TXT.cancel, *Shortcuts.exit):
             return False
 
-        elif event == TXT.ok:
+        if event == TXT.ok:
             return True
+
+        if event in self.added_buttons:
+            return event
 
     def close(self):
         self.main_window.grey_all(False)
@@ -160,7 +170,7 @@ class Choices(Popup):
     selected_font = (TH.fix_font_bold, TH.choices_font_size)
     unselected_font = (TH.fix_font, TH.choices_font_size)
 
-    def __init__(self, choices, title, main_window):
+    def __init__(self, choices, title, main_window, added_buttons=None):
         row = namedtuple("row", "cb txt")
         rows = []
         for i, (choice, color) in enumerate(choices):
@@ -193,7 +203,8 @@ class Choices(Popup):
             ]
 
         self.choices = choices
-        super().__init__(title, layout, main_window)
+        self.added_buttons = added_buttons or ()
+        super().__init__(title, layout, main_window, added_buttons)
 
         if rows:
             for row in rows:
@@ -222,8 +233,12 @@ class Choices(Popup):
     def loop(self):
         chosen = []
 
-        if super().loop():
+        exit_result = super().loop()
+        if exit_result is True:
             chosen = [i for i in range(len(self.choices)) if self[f"cb_choice{i}"].get()]
+
+        elif exit_result in self.added_buttons:
+            chosen = exit_result
 
         self.close()
         return chosen
@@ -269,10 +284,10 @@ class OneChoice(Popup):
         return choice
 
 
-class Warn(Popup):
+class AskConfirmation(Popup):
     def __init__(self, title, text, main_window):
-        layout = [[sg.Image(filename=TH.warn_img), sg.T(text, font=(TH.var_font, TH.warn_font_size))]]
-        super().__init__(title, layout, main_window)
+        layout = [[sg.Image(filename=TH.warn_img), sg.T(text, font=(TH.var_font, TH.ask_confirmation_font_size))]]
+        super().__init__(f"{title.capitalize()}?", layout, main_window)
 
     def loop(self):
         ok = super().loop()

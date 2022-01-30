@@ -646,8 +646,8 @@ class TrackerWidget:
     def set_state(self, state, window, ask, event, reappear=False):
         do_it = True
         if ask:
-            popup_warn = popup.Warn(
-                ask.capitalize(),
+            popup_warn = popup.AskConfirmation(
+                ask,
                 f"{self.get_description()} - {self.get_idship()}",
                 window,
             )
@@ -670,6 +670,9 @@ class TrackerWidget:
 
     def delete(self, window):
         self.set_state(TrackerState.deleted, window, TXT.delete, Events.trash_updated)
+
+    def definitly_delete(self, window):
+        self.set_state(TrackerState.definitly_deleted, window, False, Events.trash_updated)
 
     def undelete(self, window):
         self.set_state(TrackerState.shown, window, False, Events.trash_updated, reappear=True)
@@ -751,11 +754,24 @@ class TrackerWidgets:
             widget.unarchive(window)
 
     def show_deleted(self, window):
-        widgets = self.choose(window, TXT.restore, TrackerState.deleted)
-        for widget in widgets:
-            widget.undelete(window)
+        result = self.choose(window, TXT.restore, TrackerState.deleted, (TXT.empty_all,))
+        if result == TXT.empty_all:
+            popup_warn = popup.AskConfirmation(
+                TXT.empty_all,
+                TXT.cant_undo,
+                window,
+            )
+            definitly_delete = popup_warn.loop()
+            if definitly_delete:
+                for widget in self.get_widgets_with_state(TrackerState.deleted):
+                    widget.definitly_delete(window)
 
-    def choose(self, window, title, state):
+        else:
+            widgets = result
+            for widget in widgets:
+                widget.undelete(window)
+
+    def choose(self, window, title, state, added_buttons=None):
         widgets = self.get_sorted(self.get_widgets_with_state(state))
         w_desc = max(len(widget.get_description()) for widget in widgets) if widgets else 0
         w_date = max(len(widget.get_creation_date()) for widget in widgets) if widgets else 0
@@ -767,8 +783,10 @@ class TrackerWidgets:
             txt = f"{date} {widget.get_description().ljust(w_desc)} - {widget.get_idship()}"
             choices.append((txt, color))
 
-        popup_choices = popup.Choices(choices, title, window)
+        popup_choices = popup.Choices(choices, title, window, added_buttons)
         chosen = popup_choices.loop()
+        if added_buttons and chosen in added_buttons:
+            return chosen
         return [widgets[i] for i in chosen]
 
     def archives_updated(self):

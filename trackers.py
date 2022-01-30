@@ -16,6 +16,7 @@ PICKLE_EXT = ".trck"
 
 
 class TrackerState:
+    definitly_deleted = "definitly deleted"
     deleted = "deleted"
     archived = "archived"
     shown = "shown"
@@ -260,7 +261,9 @@ class Trackers:
         self.trackers = self.sort(trackers or [])
 
     def save(self):
-        trackers = self.sort(self.get_not_deleted())
+        trackers = self.sort(self.get_not_definitly_deleted())
+        for tracker in trackers:
+            print(tracker.description)
         saved_trackers = [SavedTracker(tracker) for tracker in trackers]
 
         self.save_to_file(saved_trackers, PICKLE_EXT, "wb", pickle.dump)
@@ -292,8 +295,8 @@ class Trackers:
         self.trackers.append(tracker)
         return tracker
 
-    def get_not_deleted(self):
-        return [tracker for tracker in self.trackers if tracker.state != TrackerState.deleted]
+    def get_not_definitly_deleted(self):
+        return [tracker for tracker in self.trackers if tracker.state != TrackerState.definitly_deleted]
 
     def count_state(self, state):
         return len([tracker for tracker in self.trackers if tracker.state == state])

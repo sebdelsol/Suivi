@@ -16,13 +16,13 @@ class TXT:
     cancel = "Annuler"
     close = "Fermer"
     show = "Voir"
-
+    empty_all = "Tout vider"
     delete = "Supprimer"
     archive = "Archiver"
     restore = "Restaurer"
     unarchive = "Désarchiver"
     edit = "Édition"
-
+    cant_undo = "Cette opération est définitive"
     event = "évènement"
     init = "inititialisation"
     tracker_creation = "création suivi"
