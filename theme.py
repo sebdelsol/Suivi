@@ -56,6 +56,7 @@ class TH:
     popup_title_color = "grey40"
     popup_sep_color = "grey20"
     popup_title_font_size = 25
+    popup_max_choices = 20
 
     button_color = "grey75"
     menu_color = "grey75"
@@ -98,9 +99,7 @@ class TH:
     widget_elapsed_days_box_size = 50
     widget_elapsed_days_font_size = 15
 
-    popup_max_choices = 20
-
-    _theme = {
+    _theme_definition = {
         "BACKGROUND": widget_event_bg_color,
         "TEXT": "black",
         "INPUT": widget_title_bg_color,
@@ -113,5 +112,5 @@ class TH:
         "PROGRESS_DEPTH": 0,
     }
 
-    theme = "custom theme"
-    sg.theme_add_new(theme, _theme)
+    theme = "suivi theme"
+    sg.theme_add_new(theme, _theme_definition)
