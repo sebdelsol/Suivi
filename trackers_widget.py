@@ -49,6 +49,7 @@ class TrackerWidget:
             TrackerWidget.archive_img = resize_and_colorize_img(TH.archives_img, height, TH.archives_color, size)
 
     def reset_size(self):
+        self.n_events = 0
         self.width_events = 0
         self.height_events = 0
         self.expand_events = False
@@ -75,9 +76,11 @@ class TrackerWidget:
         )
         b_size = (TH.widget_button_size, TH.widget_button_size)
         edit_button = ButtonMouseOver("", image_data=self.edit_img, p=(0, b_pad), **b_colors, size=b_size, k=self.edit)
+
         self.refresh_button = ButtonMouseOver(
             "", image_data=self.refresh_img, p=0, **b_colors, size=b_size, k=self.update
         )
+
         archive_button = ButtonMouseOver(
             "",
             image_data=self.archive_img,
@@ -94,8 +97,8 @@ class TrackerWidget:
             background_color=title_color,
         )
 
-        self.days_size = TH.widget_elapsed_days_box_size
-        self.days_font = (TH.fix_font_bold, TH.widget_elapsed_days_font_size)
+        self.days_size = TH.elapsed_days_box_size
+        self.days_font = (TH.fix_font_bold, TH.elapsed_days_font_size)
         graph_size = (self.days_size, self.days_size)
         self.days_widget = GraphRounded(
             canvas_size=graph_size,
@@ -105,22 +108,20 @@ class TrackerWidget:
             background_color=title_color,
         )
 
-        desc_font = (TH.var_font, TH.widget_description_font_size)
         self.desc_widget = TextFit(
             "",
             p=0,
-            font=desc_font,
+            font=(TH.var_font, TH.widget_description_font_size),
             text_color=TH.widget_descrition_text_color,
             background_color=title_color,
             expand_x=True,
             justification="l",
         )
 
-        id_font = (TH.fix_font, TH.widget_idship_font_size)
         self.id_widget = sg.MLine(
             "",
             p=0,
-            font=id_font,
+            font=(TH.fix_font, TH.widget_idship_font_size),
             background_color=title_color,
             justification="r",
             **mline_kwargs,
@@ -165,35 +166,37 @@ class TrackerWidget:
             vertical_alignment="top",
         )
 
-        ago_font = (TH.var_font, TH.widget_status_font_size)
         self.ago_widget = sg.T(
             "",
             p=0,
-            font=ago_font,
+            font=(TH.var_font, TH.widget_status_font_size),
             text_color=TH.widget_ago_color,
             k=lambda w: self.toggle_expand(w),
         )
 
-        status_font = (TH.var_font, TH.widget_status_font_size)
         self.status_widget = sg.T(
             "",
             p=0,
-            font=status_font,
+            font=(TH.var_font, TH.widget_status_font_size),
             text_color=TH.widget_status_text_color,
             expand_x=True,
             k=lambda w: self.toggle_expand(w),
         )
 
-        expand_font = (TH.fix_font, TH.widget_expand_font_size)
-        expand_button_color = dict(
-            button_color=(TH.widget_expand_color, event_color),
-            mouse_over_color=title_color,
+        self.n_event_widget = sg.T(
+            "",
+            p=0,
+            font=(TH.var_font, TH.n_event_font_size),
+            text_color=TH.widget_expand_color,
+            k=lambda w: self.toggle_expand(w),
         )
+
         self.expand_button = ButtonMouseOver(
             "",
             p=0,
-            font=expand_font,
-            **expand_button_color,
+            font=(TH.fix_font, TH.widget_expand_font_size),
+            button_color=(TH.widget_expand_color, event_color),
+            mouse_over_color=title_color,
             k=lambda w: self.toggle_expand(w),
         )
 
@@ -217,7 +220,7 @@ class TrackerWidget:
             expand_x=True,
         )
         status_col = sg.Col(
-            [[self.ago_widget, self.status_widget, self.expand_button]],
+            [[self.ago_widget, self.status_widget, self.n_event_widget, self.expand_button]],
             p=0,
             expand_x=True,
         )
@@ -236,7 +239,7 @@ class TrackerWidget:
             widget.Widget.bindtags((str(widget.Widget), str(window.TKroot), "all"))
 
         # toggle expand
-        for widget in (self.events_widget, self.status_widget, self.ago_widget):
+        for widget in (self.events_widget, self.status_widget, self.ago_widget, self.n_event_widget):
             widget.bind("<Button-1>", "")
 
         buttons = MlineButtonsComponent(self.couriers_widget)
@@ -302,8 +305,11 @@ class TrackerWidget:
 
     # https://stackoverflow.com/questions/11544187/tkinter-resize-text-to-contents/11545159
     def update_size(self):
-        nb_events_shown = float("inf") if self.expand_events else TH.widget_min_events_shown
-        height = min(nb_events_shown, self.height_events)
+        txt = f"{self.n_events} {TXT.event}{'s' if self.n_events >1 else ''}" if self.n_events > 0 else ""
+        self.n_event_widget.update(txt)
+
+        n_events_shown = float("inf") if self.expand_events else TH.widget_min_events_shown
+        height = min(n_events_shown, self.height_events)
         self.events_widget.set_size((self.width_events, height))
 
         self.update_couriers_id_size()
@@ -403,12 +409,10 @@ class TrackerWidget:
             elapsed = content.get("elapsed")
             if elapsed:
                 round_elapsed_days = elapsed.days + (1 if elapsed.seconds >= 43200 else 0)  # half a day in sec
-                elapsed_color = TH.widget_elapsed_days_colors[
-                    bisect(TH.widget_elapsed_days_intervals, round_elapsed_days)
-                ]
+                elapsed_color = TH.elapsed_days_colors[bisect(TH.elapsed_days_intervals, round_elapsed_days)]
                 elapsed_txt = f"{round_elapsed_days}{'j' if round_elapsed_days <= 100 else ''}"
             else:
-                elapsed_color = TH.widget_elapsed_days_default_color
+                elapsed_color = TH.elapsed_days_default_color
                 elapsed_txt = "?"
 
             self.days_widget.erase()
@@ -418,7 +422,7 @@ class TrackerWidget:
                 self.days_size,
                 self.days_size * 0.9,
                 self.days_size * 0.15,
-                TH.widget_elapsed_days_bg_color,
+                TH.elapsed_days_bg_color,
             )
             self.days_widget.draw_text(
                 elapsed_txt,
@@ -454,6 +458,7 @@ class TrackerWidget:
             events_courier = [f"{evt['courier']}, " for evt in events]
             courier_w = max(len(courier) for courier in events_courier)
 
+            self.n_events = len(events)
             prt = self.events_widget.print
             for i, event in enumerate(events):
                 event_courier = events_courier[i].center(courier_w)

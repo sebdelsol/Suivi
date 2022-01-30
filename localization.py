@@ -23,6 +23,7 @@ class TXT:
     unarchive = "Désarchiver"
     edit = "Édition"
 
+    event = "évènement"
     init = "inititialisation"
     tracker_creation = "création suivi"
     driver_creation = "création pilote"

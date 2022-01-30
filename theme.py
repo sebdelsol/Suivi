@@ -124,12 +124,14 @@ class TH:
     widget_updating_gif_height = 15
     widget_event_max_width = 90
     widget_min_events_shown = 1
-    widget_elapsed_days_intervals = [10, 20, 30]
-    widget_elapsed_days_colors = ["lime green", "dark orange", "red", "black"]
-    widget_elapsed_days_default_color = "grey70"
-    widget_elapsed_days_bg_color = "grey90"
-    widget_elapsed_days_box_size = 50
-    widget_elapsed_days_font_size = 15
+    elapsed_days_intervals = [10, 20, 30]
+    elapsed_days_colors = ["lime green", "dark orange", "red", "black"]
+    elapsed_days_default_color = "grey70"
+    elapsed_days_bg_color = "grey90"
+    elapsed_days_box_size = 50
+    elapsed_days_font_size = 15
+
+    n_event_font_size = 7
 
     event_date_color = "grey"
     event_courier_color = "grey70"
