@@ -1,3 +1,4 @@
+import re
 import textwrap
 import threading
 from bisect import bisect
@@ -14,15 +15,8 @@ from localization import TXT
 from log import log
 from theme import TH
 from trackers import TrackerState
-from widget import (
-    AnimatedGif,
-    ButtonMouseOver,
-    GraphRounded,
-    HLine,
-    MlineButtonsComponent,
-    MlinePulsingComponent,
-    TextFit,
-)
+from widget import (AnimatedGif, ButtonMouseOver, GraphRounded, HLine,
+                    MlineButtonsComponent, MlinePulsingComponent, TextFit)
 
 
 class TrackerWidget:
@@ -606,8 +600,10 @@ class TrackerWidget:
                     self.couriers_widget.pulsing.add_tag(name, f"{i + 1}.0", f"{i + 1}.{end_col}")
 
                 if valid_idship:
-                    start_col = len(update_msg) + len(error_msg) + 1
-                    end_col = start_col + len(name_txt) - 1
+                    start = len(update_msg) + len(error_msg)
+                    find_name = list(re.finditer(r"\w+", name_txt))
+                    start_col = start + find_name[0].start()
+                    end_col = start + find_name[-1].end()
                     self.couriers_widget.buttons.add_tag(name, f"{i + 1}.{start_col}", f"{i + 1}.{end_col}")
 
         else:
