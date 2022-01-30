@@ -57,7 +57,7 @@ class Couriers:
         DriverHandler.start(splash, max_drivers)
 
     def exists(self, name):
-        return True if self.couriers.get(name) else False
+        return bool(self.couriers.get(name))
 
     def open_in_browser(self, name, idship):
         if courier := self.couriers.get(name):
@@ -65,12 +65,12 @@ class Couriers:
 
     def validate_idship(self, name, idship):
         if courier := self.couriers.get(name):
-            return True if courier.idship_validation(idship) else False
+            return bool(courier.idship_validation(idship))
         return False
 
     def get_url_for_browser(self, name, idship):
         if courier := self.couriers.get(name):
-            return True if courier.get_url_for_browser(idship) else False
+            return bool(courier.get_url_for_browser(idship))
         return False
 
     def get_idship_validation_msg(self, name):
@@ -218,7 +218,7 @@ class Courier:
 
         status_date = infos.get("status_date", events[0]["date"] if events else None)
         status_label = infos.get("status_label", events[0]["label"] if events else TXT.status_error)
-        status_warn = infos.get("status_warn", False if events else True)
+        status_warn = infos.get("status_warn", not events)
 
         status = dict(
             date=status_date,
@@ -298,6 +298,7 @@ class SeleniumHandler:
             error = "no driver available"
 
         courier.log(f"driver FAILURE - {error} for {idship}", error=True)
+        return None
 
 
 class Cainiao(Courier):

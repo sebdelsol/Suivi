@@ -829,17 +829,18 @@ class TrackerWidgets:
     def update_window_size(self, window):
         shown = self.get_widgets_with_state(TrackerState.shown)
 
+        self.widgets_frame.contents_changed()
+        self.its_empty.update(visible=not shown)
+
+        # needed to get the actual sizes
+        window.refresh()  # or visibility_changed() that produces different glitches
+
         menu_w = self.widget_menu.Widget.winfo_reqwidth()
         menu_h = self.widget_menu.Widget.winfo_reqheight()
         self.set_min_width(menu_w)
 
-        self.its_empty.update(visible=False if shown else True)
-
-        # needed to get the actual widgets MLines size
-        window.refresh()  # or visibility_changed() that produces different glitches
-        self.widgets_frame.contents_changed()
-
         # wanted size
+        scrollbar = self.widgets_frame.TKColFrame.vscrollbar
         if shown:
             w = max(widget.get_pixel_width() for widget in shown)
             h = sum(widget.get_pixel_height() for widget in self.widgets) + menu_h + 5
@@ -848,19 +849,18 @@ class TrackerWidgets:
             screen_w, screen_h = window.get_screen_size()
             max_h = screen_h - TH.window_height_screen_margin
 
-            tk_scrollable_frame = self.widgets_frame.TKColFrame
             if h > max_h:
-                tk_scrollable_frame.vscrollbar.pack(side=sg.tk.RIGHT, fill="y")
-                w += int(tk_scrollable_frame.vscrollbar["width"])
+                scrollbar.pack(side=sg.tk.RIGHT, fill="y")
+                w += int(scrollbar["width"])
 
             else:
-                tk_scrollable_frame.vscrollbar.pack_forget()
+                scrollbar.pack_forget()
 
             window.size = min(w, screen_w), min(h, max_h)
             self.recenter(window)
 
         else:
-            self.widgets_frame.Widget.vscrollbar.pack_forget()
+            scrollbar.pack_forget()
 
             # needed to set height because the scrollbar missing prevents the right height computation in pySimpleGUI
             window.size = (
