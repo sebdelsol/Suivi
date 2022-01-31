@@ -13,7 +13,7 @@ from widget import ButtonMouseOver, ButtonTxtAndImg, ShowInTaskbarWindow
 
 SHOW_EVENTS = False
 
-locale.setlocale(locale.LC_ALL, TXT.locale_setting)  # date in correct language
+locale.setlocale(locale.LC_TIME, TXT.locale_setting)  # date in correct language
 
 
 class GreyWindow:
