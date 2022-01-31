@@ -78,7 +78,7 @@ class Tracker:
         return tuple((k, v) for k, v in event.items() if k != "new")
 
     # for keeping track of new events
-    def _create_events(self, remove_new=False):
+    def _create_events(self):
         self.events = {}
         for content in self.contents.values():
             for event in content["events"]:
