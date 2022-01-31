@@ -61,11 +61,10 @@ class Tracker:
         self.executors = []
         self.closing = False
 
-        self._create_event_is_new()
+        self._create_events()
 
     def get_to_save(self):
         with self.critical:
-            self._save_is_new()
             return SavedTracker(self)
 
     def set_id(self, idship, description, used_couriers):
@@ -78,31 +77,31 @@ class Tracker:
         # remove 'new' from the event dict keys
         return tuple((k, v) for k, v in event.items() if k != "new")
 
-    def _create_event_is_new(self, remove_new=False):
-        self.event_is_new = {}
+    # for keeping track of new events
+    def _create_events(self, remove_new=False):
+        self.events = {}
         for content in self.contents.values():
             for event in content["events"]:
-                is_new = False if remove_new else event.get("new", False)
-                self.event_is_new[self._get_event_key(event)] = is_new
+                self.events[self._get_event_key(event)] = event
 
     def _update_event_is_new(self, new_content):
         if new_content:
             for event in new_content["events"]:
-                # new is True if not found
-                self.event_is_new.setdefault(self._get_event_key(event), True)
-
-    def _save_is_new(self):
-        for content in self.contents.values():
-            for event in content["events"]:
-                event["new"] = self.event_is_new[self._get_event_key(event)]
+                key = self._get_event_key(event)
+                old_event = self.events.get(key)
+                event["new"] = old_event.get("new", False) if old_event else True
+                self.events[key] = event
 
     def remove_new_event(self, event):
         with self.critical:
-            self.event_is_new[self._get_event_key(event)] = False
+            if event := self.events.get(self._get_event_key(event)):
+                event["new"] = False
 
     def remove_all_new_event(self):
         with self.critical:
-            self._create_event_is_new(remove_new=True)
+            for content in self.contents.values():
+                for event in content["events"]:
+                    event["new"] = False
 
     def _get_and_prepare_idle_couriers_names(self):
         if self.idship:
@@ -195,11 +194,6 @@ class Tracker:
             events = sum((content["events"] for content in contents_ok), [])
             events.sort(key=lambda evt: evt["date"], reverse=True)
             consolidated["events"] = events
-
-            # update new key
-            with self.critical:
-                for event in events:
-                    event["new"] = self.event_is_new[self._get_event_key(event)]
 
             delivered = any(content["status"].get("delivered") for content in contents_ok)
             consolidated["status"]["delivered"] = delivered
