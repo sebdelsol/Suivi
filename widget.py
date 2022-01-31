@@ -1,4 +1,5 @@
 import math
+import threading
 import time
 from ctypes import windll
 from tkinter import font as tk_font
@@ -295,18 +296,16 @@ class MlineButtonsComponent(Component):
         self._element.Widget.tag_add(tag, start, end)
 
 
-# DO NOT print with t attribute or it won't pulse
-class MlinePulsingComponent(Component):
-    _for = sg.MLine
+class _PulsingBaseComponent(Component):
     colors = {}
     color_array_size = 32  # size of colors array
     time_step = 50  # ms
 
     def init(self, color_start, color_end, percent_to_end_color=0.75, frequency=1.5):
-        self.is_pulsing = False
+        self._is_pulsing = False
         self.frequency = frequency
-        self.tag = f"pulsing{id(self)}"
-        self.tags = {}
+        self._index_and_time = {}
+        self._lock = threading.Lock()
 
         color_start = self._color_to_rgb(color_start)
         color_end = self._color_to_rgb(color_end)
@@ -323,11 +322,11 @@ class MlinePulsingComponent(Component):
 
     @staticmethod
     def _get_color_array(color_start, color_end):
-        array_size = MlinePulsingComponent.color_array_size
+        array_size = _PulsingBaseComponent.color_array_size
         colors = []
         for x in range(array_size):
             t = 0.5 * (1 + math.cos((2 * math.pi * (x % array_size)) / array_size))
-            r, g, b = MlinePulsingComponent._blend_rgb_colors(color_start, color_end, 1 - t)
+            r, g, b = _PulsingBaseComponent._blend_rgb_colors(color_start, color_end, 1 - t)
             colors.append(f"#{round(r):02x}{round(g):02x}{round(b):02x}")
         return colors
 
@@ -336,34 +335,67 @@ class MlinePulsingComponent(Component):
         rgb = self._element.Widget.winfo_rgb(color)
         return tuple(map(lambda color: int(color / 256), rgb))
 
-    def add_tag(self, pulsing_key, start, end):
-        self._element.Widget.tag_add(f"{self.tag}{pulsing_key}", start, end)
+    def _add_key(self, key):
+        with self._lock:
+            self._index_and_time[key] = (0, None)
 
-    def start(self, pulsing_keys=None):
-        for pulsing_key in pulsing_keys or [""]:
-            self.tags[f"{self.tag}{pulsing_key}"] = (0, time.time())
+    def _remove_key(self, key):
+        pass
 
-        if not self.is_pulsing:
-            self.is_pulsing = True
+    def start(self):
+        if not self._is_pulsing:
+            self._is_pulsing = True
             self._pulse()
 
     def stop(self):
-        for tag in self.tags:
-            self._element.Widget.tag_delete(tag)
-        self.tags = {}
-        self.is_pulsing = False
+        self._is_pulsing = False
+        with self._lock:
+            for key in self._index_and_time:
+                self._remove_key(key)
+            self._index_and_time = {}
 
     def _pulse(self):
-        if self.is_pulsing:
+        if self._is_pulsing:
             now = time.time()
             colors = self.colors[self.colors_key]
-            array_size = MlinePulsingComponent.color_array_size
-            for tag, (index, t) in self.tags.items():
-                color = colors[round(index) % array_size]
-                self._element.Widget.tag_configure(tag, foreground=color)
-
-                index += self.frequency * array_size * (now - t)
-                self.tags[tag] = index, now
+            array_size = _PulsingBaseComponent.color_array_size
+            with self._lock:
+                for key, (index, t) in self._index_and_time.items():
+                    color = colors[round(index) % array_size]
+                    if t:
+                        index += self.frequency * array_size * (now - t)
+                    self._index_and_time[key] = index, now
+                    self._update_color(key, color)
 
             window = self._element.ParentForm
             window.TKroot.after(self.time_step, self._pulse)
+
+
+class MlinePulsingComponent(_PulsingBaseComponent):
+    _for = sg.MLine
+
+    def init(self, *args, **kwargs):
+        super().init(*args, **kwargs)
+        self.tag = f"pulsing{id(self)}"
+
+    def add_tag(self, key, start, end):
+        key = f"{self.tag}{key}"
+        self._element.Widget.tag_add(key, start, end)
+        super()._add_key(key)
+
+    def _remove_key(self, key):
+        self._element.Widget.tag_delete(key)
+
+    def _update_color(self, key, color):
+        self._element.Widget.tag_configure(key, foreground=color)
+
+
+class TextPulsingComponent(_PulsingBaseComponent):
+    _for = sg.Text
+
+    def start(self):
+        self._add_key("")
+        super().start()
+
+    def _update_color(self, key, color):
+        self._element.update(text_color=color)

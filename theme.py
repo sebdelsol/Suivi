@@ -138,11 +138,11 @@ class TH:
 
     event_date_color = "grey"
     event_courier_color = "grey70"
+    event_new_color = "red"
     event_status_color = "black"
     event_label_color = "grey50"
-    event_new_color = "black"
 
-    from_to_color = "grey70"
+    from_to_color = "grey65"
     product_color = "grey50"
     courier_updated_color = "grey60"
 

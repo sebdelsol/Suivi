@@ -24,6 +24,7 @@ from widget import (
     MlineButtonsComponent,
     MlinePulsingComponent,
     TextFit,
+    TextPulsingComponent,
 )
 
 
@@ -274,6 +275,10 @@ class TrackerWidget:
         pulsing.init(TH.idship_color, title_color)
         self.id_widget.pulsing = pulsing
 
+        pulsing = TextPulsingComponent(self.n_event_widget)
+        pulsing.init(TH.warn_color, event_color)
+        self.n_event_widget.pulsing = pulsing
+
         self.show_current_content(window)
 
         # no more finalization needed
@@ -351,7 +356,7 @@ class TrackerWidget:
             self.free_to_update = False
 
             if couriers := self.tracker.get_idle_couriers():
-                self.couriers_widget.pulsing.start(couriers)
+                self.couriers_widget.pulsing.start()
                 self.id_widget.pulsing.start()
 
                 self.disable_buttons(True)
@@ -418,21 +423,22 @@ class TrackerWidget:
                 self.status_widget.update(TXT.unknown_status, text_color=TH.warn_color)
                 self.desc_widget.update(text_color=TH.widget_descrition_error_text_color)
 
-            if self.n_events > 0:
-                if self.n_new_events > 0:
-                    plural = TXT.several_new if self.n_events > 1 else TXT.new
-                    n_txt = f"{self.n_new_events} {plural}"
-                    self.n_event_widget.update(
-                        n_txt, font=(TH.var_font_bold, TH.n_new_event_font_size), text_color=TH.warn_color
-                    )
-
-                else:
-                    plural = TXT.events if self.n_events > 1 else TXT.event
-                    n_txt = f"{self.n_events} {plural}"
-                    self.n_event_widget.update(n_txt, font=self.n_event_font, text_color=TH.widget_expand_color)
+            if self.n_events > 0 and self.n_new_events > 0:
+                plural = TXT.several_new if self.n_events > 1 else TXT.new
+                n_txt = f"{self.n_new_events} {plural}"
+                self.n_event_widget.update(n_txt, font=(TH.var_font_bold, TH.n_new_event_font_size))
+                self.n_event_widget.pulsing.start()
 
             else:
-                self.n_event_widget.update("", font=self.n_event_font, text_color=TH.widget_expand_color)
+                if self.n_events > 0:
+                    plural = TXT.events if self.n_events > 1 else TXT.event
+                    n_txt = f"{self.n_events} {plural}"
+
+                else:
+                    n_txt = ""
+
+                self.n_event_widget.update(n_txt, font=self.n_event_font, text_color=TH.widget_expand_color)
+                self.n_event_widget.pulsing.stop()
 
             self.show_id(content)
 
