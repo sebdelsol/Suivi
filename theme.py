@@ -138,9 +138,14 @@ class TH:
 
     event_date_color = "grey"
     event_courier_color = "grey70"
-    event_new_color = "red"
     event_status_color = "black"
     event_label_color = "grey50"
+
+    event_new_color = "red"
+    remove_new_events_button_color = "white"
+    remove_new_events_text_color = "black"
+    remove_new_events_padx = 5
+    remove_new_events_font_size = 10
 
     from_to_color = "grey65"
     product_color = "grey50"

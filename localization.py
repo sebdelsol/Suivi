@@ -13,7 +13,7 @@ class TXT:
     trash = "Poubelle"
     exit = " X "
     minimize = " _ "
-
+    I_have_seen = "J'ai vu"
     ok = "OK"
     cancel = "Annuler"
     close = "Fermer"

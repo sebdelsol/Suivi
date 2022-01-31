@@ -13,7 +13,6 @@ from couriers import get_local_now
 from events import Events, Keys
 from imgtool import resize_and_colorize_gif, resize_and_colorize_img
 from localization import TXT
-from log import log
 from theme import TH
 from trackers import TrackerState
 from widget import (
@@ -193,6 +192,7 @@ class TrackerWidget:
         )
 
         self.n_event_font = (TH.var_font, TH.n_event_font_size)
+        self.n_new_event_font = (TH.var_font_bold, TH.n_new_event_font_size)
         self.n_event_widget = sg.T(
             "",
             p=0,
@@ -200,6 +200,17 @@ class TrackerWidget:
             text_color=TH.widget_expand_color,
             k=lambda w: self.toggle_expand(w),
         )
+
+        self.remove_new_events_button = ButtonMouseOver(
+            TXT.I_have_seen,
+            p=(TH.remove_new_events_padx, 0),
+            font=(TH.var_font_bold, TH.remove_new_events_font_size),
+            button_color=(TH.remove_new_events_text_color, TH.remove_new_events_button_color),
+            mouse_over_color=event_color,
+            visible=False,
+            k=lambda w: self.remove_all_new_events(w),
+        )
+        remove_new_pin = sg.pin(self.remove_new_events_button)
 
         self.expand_button = ButtonMouseOver(
             "",
@@ -230,7 +241,15 @@ class TrackerWidget:
             expand_x=True,
         )
         status_col = sg.Col(
-            [[self.ago_widget, self.status_widget, self.n_event_widget, self.expand_button]],
+            [
+                [
+                    self.ago_widget,
+                    self.status_widget,
+                    remove_new_pin,
+                    self.n_event_widget,
+                    self.expand_button,
+                ]
+            ],
             p=0,
             expand_x=True,
         )
@@ -255,7 +274,7 @@ class TrackerWidget:
         buttons = MlineButtonsComponent(self.events_widget)
         buttons.init(
             mouse_over_color=TH.widget_event_mouse_over_color,
-            on_click=lambda key, window=window: self.on_event_click(key, window),
+            on_click=lambda key, window=window: self.remove_new_event(key, window),
         )
         self.events_widget.buttons = buttons
 
@@ -288,10 +307,30 @@ class TrackerWidget:
     def toggle_expand(self, window):
         if self.can_collapse_events or not self.expand_events:
             self.expand_events = not self.expand_events
+            self.update_new_event()
             self.update_expand_button()
-
             self.update_size()
             window.trigger_event(Events.update_window_size)
+
+    def update_new_event(self):
+        if self.n_events > 0 and self.n_new_events > 0:
+            plural = TXT.several_new if self.n_events > 1 else TXT.new
+            n_txt = f"{self.n_new_events} {plural}"
+            self.n_event_widget.update(n_txt, font=self.n_new_event_font)
+            self.n_event_widget.pulsing.start()
+            self.remove_new_events_button.update(visible=self.expand_events)
+
+        else:
+            if self.n_events > 0:
+                plural = TXT.events if self.n_events > 1 else TXT.event
+                n_txt = f"{self.n_events} {plural}"
+
+            else:
+                n_txt = ""
+
+            self.n_event_widget.update(n_txt, font=self.n_event_font, text_color=TH.widget_expand_color)
+            self.n_event_widget.pulsing.stop()
+            self.remove_new_events_button.update(visible=False)
 
     def update_expand_button(self):
         visible = self.is_events_visible() and self.height_events > TH.widget_min_events_shown
@@ -315,13 +354,12 @@ class TrackerWidget:
 
     def fit_description(self):
         if self.tracker.state == TrackerState.shown:
-            size = self.desc_widget.font_fit_to_txt(
+            self.desc_widget.font_fit_to_txt(
                 self.get_description(),
                 TH.widget_description_max_width,
                 TH.widget_description_font_size,
                 7,
             )
-            log(f"set font {size=} for {self.get_description()}")
 
     def update_visibility(self):
         self.layout.update(visible=self.tracker.state == TrackerState.shown)
@@ -423,22 +461,7 @@ class TrackerWidget:
                 self.status_widget.update(TXT.unknown_status, text_color=TH.warn_color)
                 self.desc_widget.update(text_color=TH.widget_descrition_error_text_color)
 
-            if self.n_events > 0 and self.n_new_events > 0:
-                plural = TXT.several_new if self.n_events > 1 else TXT.new
-                n_txt = f"{self.n_new_events} {plural}"
-                self.n_event_widget.update(n_txt, font=(TH.var_font_bold, TH.n_new_event_font_size))
-                self.n_event_widget.pulsing.start()
-
-            else:
-                if self.n_events > 0:
-                    plural = TXT.events if self.n_events > 1 else TXT.event
-                    n_txt = f"{self.n_events} {plural}"
-
-                else:
-                    n_txt = ""
-
-                self.n_event_widget.update(n_txt, font=self.n_event_font, text_color=TH.widget_expand_color)
-                self.n_event_widget.pulsing.stop()
+            self.update_new_event()
 
             self.show_id(content)
 
@@ -455,20 +478,10 @@ class TrackerWidget:
                 elapsed_txt = "?"
 
             self.days_widget.erase()
-            self.days_widget.draw_rounded_box(
-                self.days_size * 0.5,
-                self.days_size * 0.5,
-                self.days_size,
-                self.days_size * 0.9,
-                self.days_size * 0.15,
-                TH.elapsed_days_bg_color,
-            )
+            s = self.days_size
+            self.days_widget.draw_rounded_box(s * 0.5, s * 0.5, s, s * 0.9, s * 0.15, TH.elapsed_days_bg_color)
             self.days_widget.draw_text(
-                elapsed_txt,
-                (self.days_size * 0.5, self.days_size * 0.5),
-                color=elapsed_color,
-                font=self.days_font,
-                text_location="center",
+                elapsed_txt, (s * 0.5, s * 0.5), color=elapsed_color, font=self.days_font, text_location="center"
             )
 
             status_date = content.get("status", {}).get("date")
@@ -576,7 +589,6 @@ class TrackerWidget:
                 if event_new:
                     start_line = current_line
                     end_line = start_line + len(event_labels) - 1
-                    event = content["original_events"][i]  # original event needed by remove_new
                     self.events_widget.buttons.add_tag(event, f"{start_line}.{0}", f"{end_line}.{width}")
 
                     start_col = len(event_courier) + len(event_date)
@@ -591,10 +603,14 @@ class TrackerWidget:
         if self.can_collapse_events:
             self.events_widget.pulsing.stop()
 
-    def on_event_click(self, key, window):
+    def remove_new_event(self, key, window):
         # key is event see events_widget.buttons.add_tag
-        self.tracker.remove_new(key)
-        self.show_current_content(window)
+        self.tracker.remove_new_event(key)
+        self.show_current_content(window)  # show_events instead ??
+
+    def remove_all_new_events(self, window):
+        self.tracker.remove_all_new_event()
+        self.show_current_content(window)  # show_events instead ??
 
     def show_id(self, content):
         self.id_widget.update("")

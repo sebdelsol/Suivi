@@ -24,17 +24,16 @@ class TrackerState:
 
 class SavedTracker(dict):
     def __init__(self, tracker):
-        with tracker.critical:
-            # tracker attribute to save
-            for attr in (
-                "idship",
-                "description",
-                "used_couriers",
-                "state",
-                "contents",
-                "creation_date",
-            ):
-                self[attr] = tracker.__dict__[attr]
+        # tracker attribute to save
+        for attr in (
+            "idship",
+            "description",
+            "used_couriers",
+            "state",
+            "contents",
+            "creation_date",
+        ):
+            self[attr] = copy.deepcopy(tracker.__dict__[attr])
 
 
 class Tracker:
@@ -62,35 +61,48 @@ class Tracker:
         self.executors = []
         self.closing = False
 
-        self.create_events_reference()
+        self._create_event_is_new()
 
-    @staticmethod
-    def get_event_ref(event):
-        # remove 'new' key
-        return tuple((k, v) for k, v in event.items() if k != "new")
-
-    def create_events_reference(self):
-        self.events_new = {}
-        for content in self.contents.values():
-            if events := content.get("events"):
-                for event in events:
-                    self.events_new[self.get_event_ref(event)] = event.get("new", False)
-
-    def update_new(self, new_content):
-        if new_content:
-            if events := new_content.get("events"):
-                for event in events:
-                    # new is the ref value or True if not found
-                    event["new"] = self.events_new.get(self.get_event_ref(event), True)
-
-    def remove_new(self, event):
-        event["new"] = False
-        self.events_new[self.get_event_ref(event)] = False
+    def get_to_save(self):
+        with self.critical:
+            self._save_is_new()
+            return SavedTracker(self)
 
     def set_id(self, idship, description, used_couriers):
         self.used_couriers = used_couriers or []
         self.description = (description or "").strip().title()
         self.idship = (idship.upper() or "").strip()
+
+    @staticmethod
+    def _get_event_key(event):
+        # remove 'new' from the event dict keys
+        return tuple((k, v) for k, v in event.items() if k != "new")
+
+    def _create_event_is_new(self, remove_new=False):
+        self.event_is_new = {}
+        for content in self.contents.values():
+            for event in content["events"]:
+                is_new = False if remove_new else event.get("new", False)
+                self.event_is_new[self._get_event_key(event)] = is_new
+
+    def _update_event_is_new(self, new_content):
+        if new_content:
+            for event in new_content["events"]:
+                # new is True if not found
+                self.event_is_new.setdefault(self._get_event_key(event), True)
+
+    def _save_is_new(self):
+        for content in self.contents.values():
+            for event in content["events"]:
+                event["new"] = self.event_is_new[self._get_event_key(event)]
+
+    def remove_new_event(self, event):
+        with self.critical:
+            self.event_is_new[self._get_event_key(event)] = False
+
+    def remove_all_new_event(self):
+        with self.critical:
+            self._create_event_is_new(remove_new=True)
 
     def _get_and_prepare_idle_couriers_names(self):
         if self.idship:
@@ -137,7 +149,7 @@ class Tracker:
                             if new_content["ok"] or name not in self.contents:
                                 new_content["courier_name"] = name
                                 self.contents[name] = new_content
-                                self.update_new(new_content)
+                                self._update_event_is_new(new_content)
 
                         error = not (new_content and new_content["ok"])
                         self.couriers_error[name] = error
@@ -164,31 +176,41 @@ class Tracker:
             log(traceback.format_exc(), error=True)
             return None
 
+    def _get_contents_ok(self):
+        for name, content in self.contents.items():
+            if name in self.used_couriers and content["ok"] and content.get("idship") == self.idship:
+                yield content
+
     def get_consolidated_content(self):
         consolidated = {}
 
         with self.critical:
-            contents_ok = []
-            for name, content in self.contents.items():
-                if name in self.used_couriers and content["ok"] and content.get("idship") == self.idship:
-                    contents_ok.append(content)
+            contents_ok = [copy.deepcopy(content) for content in self._get_contents_ok()]
 
         if len(contents_ok) > 0:
-            contents_ok.sort(key=lambda c: c["status"]["date"], reverse=True)
+            # consolidated is the content with the most recent date status
+            consolidated = max(contents_ok, key=lambda content: content["status"]["date"])
 
+            # merge all events
             events = sum((content["events"] for content in contents_ok), [])
             events.sort(key=lambda evt: evt["date"], reverse=True)
+            consolidated["events"] = events
 
-            # protect against any further modification
-            consolidated = copy.deepcopy(contents_ok[0])
-            consolidated["events"] = copy.deepcopy(events)
-            consolidated["original_events"] = events  # do not not modify!
+            # update new key
+            with self.critical:
+                for event in events:
+                    event["new"] = self.event_is_new[self._get_event_key(event)]
 
             delivered = any(content["status"].get("delivered") for content in contents_ok)
             consolidated["status"]["delivered"] = delivered
-            consolidated["elapsed"] = (
-                events and (events[0]["date"] if delivered else get_local_now()) - events[-1]["date"]
-            )
+
+            if events:
+                last_date = events[0]["date"] if delivered else get_local_now()
+                consolidated["elapsed"] = last_date - events[-1]["date"]
+
+            else:
+                consolidated["elapsed"] = None
+
             consolidated["status"]["date"] = self._no_future(consolidated["status"]["date"])
 
         consolidated["couriers_update"] = self.get_couriers_update()
@@ -200,7 +222,7 @@ class Tracker:
             couriers_update = {}
             for name in self.used_couriers:
                 content = self.contents.get(name)
-                ok_date = self._no_future(content and content.setdefault("status", {}).get("ok_date"))
+                ok_date = self._no_future(content and content.get("status", {}).get("ok_date"))
                 error = self.couriers_error.get(name, True)
                 updating = self.couriers_updating.get(name, False)
                 valid_idship = self.couriers.validate_idship(name, self.idship)
@@ -216,8 +238,8 @@ class Tracker:
         return None
 
     def get_delivered(self):
-        content = self.get_consolidated_content()
-        return content.setdefault("status", {}).get("delivered")
+        with self.critical:
+            return any(content["status"].get("delivered") for content in self._get_contents_ok())
 
     def open_in_browser(self, name):
         if name in self.used_couriers:
@@ -252,12 +274,12 @@ class Trackers:
             def json_load(f):
                 return json.load(f, object_hook=json_decode_datetime)
 
-            trackers = self.load_from_file(JSON_EXT, "r", json_load)
+            loaded_trackers = self._load_from_file(JSON_EXT, "r", json_load)
 
         else:
-            trackers = self.load_from_file(PICKLE_EXT, "rb", pickle.load)
+            loaded_trackers = self._load_from_file(PICKLE_EXT, "rb", pickle.load)
 
-        if trackers:
+        if loaded_trackers:
             trackers = [
                 Tracker(
                     trk["idship"],
@@ -268,37 +290,42 @@ class Trackers:
                     trk["contents"],
                     trk["creation_date"],
                 )
-                for trk in trackers
+                for trk in loaded_trackers
             ]
 
-        self.trackers = self.sort(trackers or [])
+        else:
+            trackers = []
+
+        self.trackers = self.sort(trackers)
 
     def save(self):
         trackers = self.sort(self.get_not_definitly_deleted())
-        saved_trackers = [SavedTracker(tracker) for tracker in trackers]
+        to_save_trackers = [tracker.get_to_save() for tracker in trackers]
 
-        self.save_to_file(saved_trackers, PICKLE_EXT, "wb", pickle.dump)
+        self._save_to_file(to_save_trackers, PICKLE_EXT, "wb", pickle.dump)
 
         def json_save(obj, f):
             json.dump(obj, f, default=json_encode_datetime, indent=4)
 
-        self.save_to_file(saved_trackers, JSON_EXT, "w", json_save)
+        self._save_to_file(to_save_trackers, JSON_EXT, "w", json_save)
 
-    def load_from_file(self, ext, mode, load):
+    def _load_from_file(self, ext, mode, load):
         filename = self.filename + ext
         if os.path.exists(filename):
             with open(filename, mode) as f:
                 obj = load(f)
             log(f'trackers LOADED from "{filename}"')
             return obj
+        return None
 
-    def save_to_file(self, obj, ext, mode, save):
+    def _save_to_file(self, obj, ext, mode, save):
         filename = self.filename + ext
         with open(filename, mode) as f:
             save(obj, f)
         log(f'trackers SAVED to "{filename}"')
 
-    def sort(self, objs, get_tracker=lambda obj: obj):
+    @staticmethod
+    def sort(objs, get_tracker=lambda obj: obj):
         return sorted(objs, key=lambda obj: get_tracker(obj).creation_date, reverse=True)
 
     def new(self, idship, description, used_couriers):
