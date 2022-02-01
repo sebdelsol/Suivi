@@ -42,12 +42,12 @@ class _BaseHandler:
         self.type_txt = type_txt
         self._drivers = []
         self._n_drivers = 0
-        self._driver_reference_ops = threading.Lock()
+        self._driver_count_ops = threading.Lock()
         atexit.register(self._close)
 
     def _close(self):
         print(f"CLOSE {self.type_txt}s")
-        with self._driver_reference_ops:
+        with self._driver_count_ops:
             for i, driver in enumerate(self._drivers):
                 print(f"QUIT {self.type_txt} {i + 1}/{self._n_drivers}")
                 driver.quit()
@@ -93,7 +93,8 @@ class _DriverHandler(_BaseHandler):
     )
 
     def __init__(self):
-        self._drivers_available = queue.Queue() if self._max_drivers > 0 else None
+        self._drivers_available = queue.Queue()
+        self._first_driver = threading.Lock()
         super().__init__("driver")
 
     def start(self, splash, max_drivers=None):
@@ -122,19 +123,30 @@ class _DriverHandler(_BaseHandler):
 
     def _create_driver_if_needed(self):
         # prevent not needed creation from another thread
-        with self._driver_reference_ops:
+        with self._driver_count_ops:
             needed = self._n_drivers < self._max_drivers
             if needed:
+                is_first = self._n_drivers == 0
                 self._n_drivers += 1
+                n_driver = self._n_drivers
 
         if needed:
-            log(f"driver ({self._n_drivers}/{self._max_drivers}) CREATION")
-            driver = self._create_driver()
-            log(f"driver ({self._n_drivers}/{self._max_drivers}) CREATED")
+            log(f"CREATING driver ({n_driver}/{self._max_drivers})")
+            if is_first:
+                with self._first_driver:
+                    driver = self._create_driver()
+            else:
+                # block till the 1st driver has been created
+                # to avoid permission error due to the 1st driver modifying its file
+                with self._first_driver:
+                    pass
+                driver = self._create_driver()
+
+            log(f"driver ({n_driver}/{self._max_drivers}) has been CREATED")
 
             self._drivers_available.put(driver)
 
-            with self._driver_reference_ops:
+            with self._driver_count_ops:
                 self._drivers.append(driver)
 
     def get(self):
@@ -164,7 +176,7 @@ class _TempBrowser(_BaseHandler):
         threading.Thread(target=self._defer, args=(show_func, url), daemon=True).start()
 
     def _defer(self, show_func, url):
-        with self._driver_reference_ops:
+        with self._driver_count_ops:
             self._n_drivers += 1
 
         log("temp browser CREATION")
@@ -172,7 +184,7 @@ class _TempBrowser(_BaseHandler):
         log("temp browser CREATED")
 
         if driver:
-            with self._driver_reference_ops:
+            with self._driver_count_ops:
                 self._drivers.append(driver)
 
             log("SHOW in temp browser")
@@ -193,12 +205,12 @@ class _TempBrowser(_BaseHandler):
                 log(traceback.format_exc(), error=True)
 
             finally:
-                with self._driver_reference_ops:
+                with self._driver_count_ops:
                     driver.quit()
                     self._drivers.remove(driver)
                     self._n_drivers -= 1
         else:
-            with self._driver_reference_ops:
+            with self._driver_count_ops:
                 self._n_drivers -= 1
 
 
