@@ -30,7 +30,7 @@ class SavedTracker(dict):
     def __init__(self, tracker):
         # tracker attribute to save
         for attr in ATTR_TO_SAVE:
-            self[attr] = copy.deepcopy(tracker.__dict__[attr])
+            self[attr] = copy.deepcopy(getattr(tracker, attr))
 
 
 class Tracker:
