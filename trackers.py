@@ -4,6 +4,7 @@ import os
 import pickle
 import threading
 import traceback
+from collections import namedtuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from concurrent.futures.thread import _threads_queues
 
@@ -13,6 +14,9 @@ from log import log
 
 JSON_EXT = ".json"
 PICKLE_EXT = ".trck"
+ATTR_TO_SAVE = ("idship", "description", "used_couriers", "state", "contents", "creation_date")
+
+CouriersStatus = namedtuple("CouriersStatus", "name, ok_date, error, updating, valid_idship, exists")
 
 
 class TrackerState:
@@ -25,14 +29,7 @@ class TrackerState:
 class SavedTracker(dict):
     def __init__(self, tracker):
         # tracker attribute to save
-        for attr in (
-            "idship",
-            "description",
-            "used_couriers",
-            "state",
-            "contents",
-            "creation_date",
-        ):
+        for attr in ATTR_TO_SAVE:
             self[attr] = copy.deepcopy(tracker.__dict__[attr])
 
 
@@ -213,15 +210,15 @@ class Tracker:
 
     def get_couriers_status(self):
         with self.critical:
-            couriers_status = {}
-            for name in self.used_couriers:
+            couriers_status = []
+            for name in sorted(self.used_couriers):
                 content = self.contents.get(name)
                 ok_date = self._no_future(content and content.get("status", {}).get("ok_date"))
                 error = self.couriers_error.get(name, True)
                 updating = self.couriers_updating.get(name, False)
                 valid_idship = self.couriers.validate_idship(name, self.idship)
                 exists = self.couriers.exists(name)
-                couriers_status[name] = (ok_date, error, updating, valid_idship, exists)
+                couriers_status.append(CouriersStatus(name, ok_date, error, updating, valid_idship, exists))
 
             return couriers_status
 
