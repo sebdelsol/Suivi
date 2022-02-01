@@ -93,7 +93,6 @@ class TH:
 
     menu_color = "grey90"
     menu_button_mouse_over_color = "grey80"
-    menu_sys_button_mouse_over_color = "red"
     menu_button_padx = 15
     menu_button_pady = 7
     menu_button_font_size = 13

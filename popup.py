@@ -9,7 +9,7 @@ from widget import ButtonMouseOver, HLine, Window
 
 
 class Popup(Window):
-    def __init__(self, title, body_layout, main_window, added_buttons=None):
+    def __init__(self, title, body_layout, main_window, added_button=None):
         self.main_window = main_window
         self.main_window.grey_all(True)
 
@@ -35,15 +35,17 @@ class Popup(Window):
             mouse_over_color=TH.popup_bg_color,
             font=(TH.var_font, TH.popup_button_font_size),
         )
+        self.ok_key = "-OK-"
         buttons = [
-            ButtonMouseOver(TXT.ok, bind_return_key=True, **b_kwargs),
+            ButtonMouseOver(TXT.ok, bind_return_key=True, **b_kwargs, k=self.ok_key),
             ButtonMouseOver(TXT.cancel, **b_kwargs),
         ]
-        self.added_buttons = added_buttons or ()
-        if added_buttons:
+        self.added_button_key = added_button and added_button["key"]
+        if added_button:
+            added_button["button_color"] = b_kwargs["button_color"]
+            added_button["font"] = b_kwargs["font"]
             buttons.append(sg.Push())
-            for txt in added_buttons:
-                buttons.append(ButtonMouseOver(txt, **b_kwargs))
+            buttons.append(ButtonMouseOver("", **added_button))
 
         layout.append(buttons)
         layout = [[sg.Col(layout, p=5)]]
@@ -62,11 +64,11 @@ class Popup(Window):
         if event in (None, TXT.cancel, *Shortcuts.exit):
             return False
 
-        if event == TXT.ok:
+        if event == self.ok_key:
             return True
 
-        if event in self.added_buttons:
-            return event
+        if self.added_button_key and event == self.added_button_key:
+            return self.added_button_key
 
     def close(self):
         self.main_window.grey_all(False)
@@ -168,9 +170,9 @@ class Choices(Popup):
     selected_font = (TH.fix_font_bold, TH.choices_font_size)
     unselected_font = (TH.fix_font, TH.choices_font_size)
 
-    def __init__(self, choices, title, main_window, added_buttons=None):
-        row = namedtuple("row", "cb txt")
-        rows = []
+    def __init__(self, choices, title, main_window, ok_name=TXT.ok, added_button=None):
+        Row = namedtuple("Row", "cb, txt")
+        self.rows = rows = []
         for i, (choice, color) in enumerate(choices):
             cb = sg.CB("", p=0, default=False, enable_events=True, k=f"cb_choice{i}")
             t = sg.T(
@@ -181,9 +183,9 @@ class Choices(Popup):
                 enable_events=True,
                 k=f"txt_choice{i}",
             )
-            rows.append(row(cb, t))
+            rows.append(Row(cb, t))
 
-        if rows:
+        if self.rows:
             col = sg.Col(rows, scrollable=len(rows) > self.max_lines, vertical_scroll_only=True)
             layout = [[col]]
 
@@ -200,9 +202,16 @@ class Choices(Popup):
                 ]
             ]
 
+        self.ok_name = ok_name
         self.choices = choices
-        self.added_buttons = added_buttons or ()
-        super().__init__(title, layout, main_window, added_buttons)
+
+        self.added_button_key = added_button and added_button["key"]
+        if self.added_button_key:
+            self.added_button_txt = added_button["txt"]
+            del added_button["txt"]
+
+        super().__init__(title, layout, main_window, added_button)
+        self.update_ok_name()
 
         if rows:
             for row in rows:
@@ -214,32 +223,39 @@ class Choices(Popup):
                 # https://github.com/PySimpleGUI/PySimpleGUI/issues/4407#issuecomment-860863915
                 col.Widget.canvas.configure(width=None, height=height)
 
+    def update_ok_name(self):
+        n_selected = [row.cb.get() for row in self.rows].count(True)
+        self[self.ok_key].update(f"{self.ok_name} ({n_selected})")
+
+        if self.added_button_key:
+            self[self.added_button_key].update(f"{self.added_button_txt} ({n_selected})")
+
     def event_handler(self, event):
         if "cb_choice" in event:
             cb_widget, txt_widget = self[event], self[event.replace("cb", "txt")]
             txt_widget.update(font=self.selected_font if cb_widget.get() else self.unselected_font)
+            self.update_ok_name()
 
         elif "txt_choice" in event:
             cb_widget, txt_widget = self[event.replace("txt", "cb")], self[event]
             toggle_check = not cb_widget.get()
             cb_widget.update(value=toggle_check)
             txt_widget.update(font=self.selected_font if toggle_check else self.unselected_font)
+            self.update_ok_name()
 
         else:
             return super().event_handler(event)
 
     def loop(self):
+        return_chosen = (True, self.added_button_key)
         chosen = []
 
         exit_result = super().loop()
-        if exit_result is True:
-            chosen = [i for i in range(len(self.choices)) if self[f"cb_choice{i}"].get()]
-
-        elif exit_result in self.added_buttons:
-            chosen = exit_result
+        if exit_result in return_chosen:
+            chosen = [i for i, row in enumerate(self.rows) if row.cb.get()]
 
         self.close()
-        return chosen
+        return exit_result, chosen
 
 
 class OneChoice(Popup):
@@ -284,7 +300,7 @@ class OneChoice(Popup):
 
 class AskConfirmation(Popup):
     def __init__(self, title, text, main_window):
-        layout = [[sg.Image(filename=TH.warn_img), sg.T(text, font=(TH.var_font, TH.ask_confirmation_font_size))]]
+        layout = [[sg.Image(filename=TH.warn_img), sg.T(text, font=(TH.fix_font, TH.ask_confirmation_font_size))]]
         super().__init__(f"{title.capitalize()}?", layout, main_window)
 
     def loop(self):

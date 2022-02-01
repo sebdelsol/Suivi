@@ -132,7 +132,7 @@ class MainWindow(ShowInTaskbarWindow):
             p=(0, py),
             font=(TH.var_font_bold, TH.menu_button_font_size),
             button_color=TH.menu_color,
-            mouse_over_color=TH.menu_sys_button_mouse_over_color,
+            mouse_over_color=TH.warn_color,
             k=Events.minimize,
         )
         exit_b = ButtonMouseOver(
@@ -140,7 +140,7 @@ class MainWindow(ShowInTaskbarWindow):
             p=((0, py), (py, py)),
             font=(TH.var_font_bold, TH.menu_button_font_size),
             button_color=TH.menu_color,
-            mouse_over_color=TH.menu_sys_button_mouse_over_color,
+            mouse_over_color=TH.warn_color,
             focus=True,
             k=Events.exit,
         )

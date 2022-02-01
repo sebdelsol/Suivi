@@ -835,29 +835,35 @@ class TrackerWidgets:
         return [widget for widget in self.widgets if widget.tracker.state == state]
 
     def show_archives(self, window):
-        widgets = self.choose(window, TXT.unarchive, TrackerState.archived)
-        for widget in widgets:
-            widget.unarchive(window)
+        exit_result, chosen = self.choose(window, TXT.unarchive, TrackerState.archived, ok_name=TXT.unarchive)
+        if exit_result:
+            for widget in chosen:
+                widget.unarchive(window)
 
     def show_deleted(self, window):
-        result = self.choose(window, TXT.restore, TrackerState.deleted, (TXT.empty_all,))
-        if result == TXT.empty_all:
+        def_delete_button_key = "-definitly delete-"
+        def_delete_button = dict(txt=TXT.delete_definitly, mouse_over_color=TH.warn_color, key=def_delete_button_key)
+        exit_result, chosen = self.choose(
+            window, TXT.restore, TrackerState.deleted, ok_name=TXT.restore, added_button=def_delete_button
+        )
+        if exit_result == def_delete_button_key and chosen:
+            w_desc = max(len(widget.get_description()) for widget in chosen)
+            txt = "\n".join(f"{widget.get_description().ljust(w_desc)} - {widget.get_idship()}" for widget in chosen)
             popup_warn = popup.AskConfirmation(
-                TXT.empty_all,
-                TXT.cant_undo,
+                TXT.delete_definitly,
+                txt,
                 window,
             )
             definitly_delete = popup_warn.loop()
             if definitly_delete:
-                for widget in self.get_widgets_with_state(TrackerState.deleted):
+                for widget in chosen:
                     widget.definitly_delete(window)
 
         else:
-            widgets = result
-            for widget in widgets:
+            for widget in chosen:
                 widget.undelete(window)
 
-    def choose(self, window, title, state, added_buttons=None):
+    def choose(self, window, title, state, ok_name, added_button=None):
         widgets = self.get_sorted(self.get_widgets_with_state(state))
         w_desc = max(len(widget.get_description()) for widget in widgets) if widgets else 0
         w_date = max(len(widget.get_creation_date()) for widget in widgets) if widgets else 0
@@ -869,11 +875,9 @@ class TrackerWidgets:
             txt = f"{date} {widget.get_description().ljust(w_desc)} - {widget.get_idship()}"
             choices.append((txt, color))
 
-        popup_choices = popup.Choices(choices, title, window, added_buttons)
-        chosen = popup_choices.loop()
-        if added_buttons and chosen in added_buttons:
-            return chosen
-        return [widgets[i] for i in chosen]
+        popup_choices = popup.Choices(choices, title, window, ok_name, added_button)
+        exit_result, chosen = popup_choices.loop()
+        return exit_result, [widgets[i] for i in chosen]
 
     def archives_updated(self):
         n_archives = self.trackers.count_state(TrackerState.archived)
