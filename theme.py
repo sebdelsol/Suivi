@@ -141,9 +141,9 @@ class TH:
     event_status_color = "black"
     event_label_color = "grey50"
 
-    event_new_color = "red"
+    event_new_color = "blue"
     remove_new_events_button_color = "white"
-    remove_new_events_text_color = "black"
+    remove_new_events_text_color = "blue"
     remove_new_events_padx = 5
     remove_new_events_font_size = 10
 

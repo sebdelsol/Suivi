@@ -57,7 +57,6 @@ class TrackerWidget:
         self.width_events = 0
         self.height_events = 0
         self.expand_events = False
-        self.can_collapse_events = True
 
     def create_layout(self):
         self.hline = HLine(color=TH.widget_separator_color)
@@ -179,7 +178,6 @@ class TrackerWidget:
             p=0,
             font=(TH.var_font, TH.widget_status_font_size),
             text_color=TH.widget_ago_color,
-            k=lambda w: self.toggle_expand(w),
         )
 
         self.status_widget = sg.T(
@@ -188,7 +186,6 @@ class TrackerWidget:
             font=(TH.var_font, TH.widget_status_font_size),
             text_color=TH.widget_status_text_color,
             expand_x=True,
-            k=lambda w: self.toggle_expand(w),
         )
 
         self.n_event_font = (TH.var_font, TH.n_event_font_size)
@@ -198,7 +195,6 @@ class TrackerWidget:
             p=0,
             font=self.n_event_font,
             text_color=TH.widget_expand_color,
-            k=lambda w: self.toggle_expand(w),
         )
 
         self.remove_new_events_button = ButtonMouseOver(
@@ -208,7 +204,7 @@ class TrackerWidget:
             button_color=(TH.remove_new_events_text_color, TH.remove_new_events_button_color),
             mouse_over_color=event_color,
             visible=False,
-            k=lambda w: self.remove_all_new_events(w),
+            k=self.remove_all_new_events,
         )
         remove_new_pin = sg.pin(self.remove_new_events_button)
 
@@ -218,7 +214,7 @@ class TrackerWidget:
             font=(TH.fix_font, TH.widget_expand_font_size),
             button_color=(TH.widget_expand_color, event_color),
             mouse_over_color=title_color,
-            k=lambda w: self.toggle_expand(w),
+            k=self.toggle_expand,
         )
 
         self.events_font = (TH.fix_font, TH.widget_event_font_size)
@@ -229,7 +225,6 @@ class TrackerWidget:
             font=self.events_font,
             background_color=event_color,
             visible=False,
-            k=self.toggle_expand,
             **mline_kwargs,
         )
         events_widget_pin = sg.pin(self.events_widget, expand_x=True)  # collapse when hidden
@@ -267,9 +262,12 @@ class TrackerWidget:
             # prevent selection https://stackoverflow.com/questions/54792599/how-can-i-make-a-tkinter-text-widget-unselectable?noredirect=1&lq=1
             widget.Widget.bindtags((str(widget.Widget), str(window.TKroot), "all"))
 
-        # toggle expand
-        for widget in (self.events_widget, self.status_widget, self.ago_widget, self.n_event_widget):
-            widget.bind("<Button-1>", "")
+        # toggle expand are tkinter bound
+        # to be able to remove them without removing all binds
+        self.button1_bind_id = {}
+        self.toggle_expand_bind = lambda event, window=window: self.toggle_expand(window)
+        for widget in (self.events_widget, events_widget_pin, self.status_widget, self.ago_widget, self.n_event_widget):
+            self.bind_button1_to_expand(widget, bind=True)
 
         buttons = MlineButtonsComponent(self.events_widget)
         buttons.init(
@@ -283,7 +281,7 @@ class TrackerWidget:
         self.events_widget.pulsing = pulsing
 
         buttons = MlineButtonsComponent(self.couriers_widget)
-        buttons.init(mouse_over_color=TH.widget_courier_mouse_over_color, on_click=self.on_courrier_click)
+        buttons.init(mouse_over_color=TH.widget_courier_mouse_over_color, on_click=self.open_in_browser)
         self.couriers_widget.buttons = buttons
 
         pulsing = MlinePulsingComponent(self.couriers_widget)
@@ -295,7 +293,7 @@ class TrackerWidget:
         self.id_widget.pulsing = pulsing
 
         pulsing = TextPulsingComponent(self.n_event_widget)
-        pulsing.init(TH.warn_color, event_color)
+        pulsing.init(TH.event_new_color, event_color)
         self.n_event_widget.pulsing = pulsing
 
         self.show_current_content(window)
@@ -305,32 +303,47 @@ class TrackerWidget:
         return True
 
     def toggle_expand(self, window):
-        if self.can_collapse_events or not self.expand_events:
-            self.expand_events = not self.expand_events
-            self.update_new_event()
-            self.update_expand_button()
-            self.update_size()
-            window.trigger_event(Events.update_window_size)
+        self.expand_events = not self.expand_events
+        self.update_new_event()
+        self.update_expand_button()
+        self.update_size()
+        window.trigger_event(Events.update_window_size)
+
+    def bind_button1_to_expand(self, element, bind=True):
+        if bind:
+            if not self.button1_bind_id.get(element):
+                bind_id = element.Widget.bind("<Button-1>", self.toggle_expand_bind, add="+")
+                self.button1_bind_id[element] = bind_id
+
+        else:
+            if bind_id := self.button1_bind_id.get(element):
+                # should be : element.Widget.unbind("<Button-1>", bind_id)
+                # but there's a bug with unbind that removes all
+                binds = element.Widget.bind("<Button-1>").split("\n")
+                new_binds = [l for l in binds if l[6 : 6 + len(bind_id)] != bind_id]
+                element.Widget.bind("<Button-1>", "\n".join(new_binds))
+                self.button1_bind_id[element] = None
 
     def update_new_event(self):
         if self.n_events > 0 and self.n_new_events > 0:
             plural = TXT.several_new if self.n_events > 1 else TXT.new
             n_txt = f"{self.n_new_events} {plural}"
             self.n_event_widget.update(n_txt, font=self.n_new_event_font)
-            self.n_event_widget.pulsing.start()
+
+            self.bind_button1_to_expand(self.events_widget, bind=not self.expand_events)
             self.remove_new_events_button.update(visible=self.expand_events)
+            self.n_event_widget.pulsing.start()
+            self.events_widget.pulsing.start()
 
         else:
-            if self.n_events > 0:
-                plural = TXT.events if self.n_events > 1 else TXT.event
-                n_txt = f"{self.n_events} {plural}"
-
-            else:
-                n_txt = ""
-
+            plural = TXT.events if self.n_events > 1 else TXT.event
+            n_txt = f"{self.n_events} {plural}"
             self.n_event_widget.update(n_txt, font=self.n_event_font, text_color=TH.widget_expand_color)
-            self.n_event_widget.pulsing.stop()
+
+            self.bind_button1_to_expand(self.events_widget, bind=True)
             self.remove_new_events_button.update(visible=False)
+            self.n_event_widget.pulsing.stop()
+            self.events_widget.pulsing.stop()
 
     def update_expand_button(self):
         visible = self.is_events_visible() and self.height_events > TH.widget_min_events_shown
@@ -461,8 +474,6 @@ class TrackerWidget:
                 self.status_widget.update(TXT.unknown_status, text_color=TH.warn_color)
                 self.desc_widget.update(text_color=TH.widget_descrition_error_text_color)
 
-            self.update_new_event()
-
             self.show_id(content)
 
             couriers_update = content.get("couriers_update")
@@ -507,7 +518,6 @@ class TrackerWidget:
         self.height_events = 0
         self.n_events = 0
         self.n_new_events = 0
-        self.can_collapse_events = True
 
         if events:
             events_date = [f"{evt['date']:{TXT.long_date_format}}".replace(".", "").split(",") for evt in events]
@@ -595,13 +605,9 @@ class TrackerWidget:
                     end_col = start_col + len(event_new)
                     self.events_widget.pulsing.add_tag("", f"{start_line}.{start_col}", f"{start_line}.{end_col}")
 
-                    self.can_collapse_events = False
-                    self.events_widget.pulsing.start()
-
                 current_line += len(event_labels)
 
-        if self.can_collapse_events:
-            self.events_widget.pulsing.stop()
+        self.update_new_event()
 
     def remove_new_event(self, key, window):
         # key is event see events_widget.buttons.add_tag
@@ -704,7 +710,7 @@ class TrackerWidget:
         else:
             self.couriers_widget.update(TXT.no_couriers, text_color=TH.warn_color)
 
-    def on_courrier_click(self, key):
+    def open_in_browser(self, key):
         # key is courier_name see couriers_widget.buttons.add_tag
         self.tracker.open_in_browser(key)
 
