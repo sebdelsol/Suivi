@@ -14,9 +14,16 @@ from imgtool import resize_and_colorize_gif, resize_and_colorize_img
 from localization import TXT
 from theme import TH
 from trackers import TrackerState
-from widget import (AnimatedGif, ButtonMouseOver, GraphRounded, HLine,
-                    MlineButtonsComponent, MlinePulsingComponent, TextFit,
-                    TextPulsingComponent)
+from widget import (
+    AnimatedGif,
+    ButtonMouseOver,
+    GraphRounded,
+    HLine,
+    MlineButtonsComponent,
+    MlinePulsingComponent,
+    TextFit,
+    TextPulsingComponent,
+)
 
 
 class TrackerWidget:
@@ -599,6 +606,9 @@ class TrackerWidget:
                     self.events_widget.buttons.add_tag(event, f"{start_line}.{0}", f"{end_line}.{width}")
 
                 current_line += len(event_labels)
+
+        if not self.n_new_events:
+            self.events_widget.buttons.remove_tags()
 
         self.update_new_event()
 

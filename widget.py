@@ -295,6 +295,10 @@ class MlineButtonsComponent(Component):
         self.tags[tag] = (button_key, start, end)
         self._element.Widget.tag_add(tag, start, end)
 
+    def remove_tags(self):
+        for tag in self.tags:
+            self._element.Widget.tag_delete(tag)
+
 
 class _PulsingBaseComponent(Component):
     colors = {}
