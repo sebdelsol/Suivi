@@ -137,7 +137,7 @@ class DriverHandler(_BaseHandler):
                     driver = self._create_driver()
             else:
                 # block till the 1st driver has been created
-                # to avoid permission error due to the 1st driver modifying its file
+                # to avoid permission error due to the 1st driver patching the chromedriver.exe
                 with self._first_driver:
                     pass
                 driver = self._create_driver()
