@@ -14,16 +14,9 @@ from imgtool import resize_and_colorize_gif, resize_and_colorize_img
 from localization import TXT
 from theme import TH
 from trackers import TrackerState
-from widget import (
-    AnimatedGif,
-    ButtonMouseOver,
-    GraphRounded,
-    HLine,
-    MlineButtonsComponent,
-    MlinePulsingComponent,
-    TextFit,
-    TextPulsingComponent,
-)
+from widget import (AnimatedGif, ButtonMouseOver, GraphRounded, HLine,
+                    MlineButtonsComponent, MlinePulsingComponent, TextFit,
+                    TextPulsingComponent)
 
 
 class TrackerWidget:
@@ -570,13 +563,14 @@ class TrackerWidget:
                     event_new = ""
                     font = self.events_font
 
-                width = sum(len(txt) for txt in (event_courier, event_date, event_new))
-
+                # wrap event label and align with previous line(s)
                 event_labels = textwrap.wrap(
                     event_label,
                     TH.widget_event_max_width - len(event_status),
                     drop_whitespace=False,
                 ) or [""]
+
+                width = sum(len(txt) for txt in (event_courier, event_date, event_new))
 
                 if len(event_labels) > 1:
                     next_labels = textwrap.wrap("".join(event_labels[1:]), TH.widget_event_max_width)
@@ -597,21 +591,24 @@ class TrackerWidget:
 
                 if event_new:
                     start_line = current_line
-                    end_line = start_line + len(event_labels) - 1
-                    self.events_widget.buttons.add_tag(event, f"{start_line}.{0}", f"{end_line}.{width}")
-
                     start_col = len(event_courier) + len(event_date)
                     end_col = start_col + len(event_new)
                     self.events_widget.pulsing.add_tag("", f"{start_line}.{start_col}", f"{start_line}.{end_col}")
+
+                    end_line = start_line + len(event_labels) - 1
+                    self.events_widget.buttons.add_tag(event, f"{start_line}.{0}", f"{end_line}.{width}")
 
                 current_line += len(event_labels)
 
         self.update_new_event()
 
     def remove_new_event(self, key, window):
-        # key is event see events_widget.buttons.add_tag
-        self.tracker.remove_new_event(key)
-        self.show_current_content(window)  # show_events instead ??
+        if self.expand_events:
+            # key is event see events_widget.buttons.add_tag
+            self.tracker.remove_new_event(key)
+            self.show_current_content(window)  # show_events instead ??
+        else:
+            self.toggle_expand(window)
 
     def remove_all_new_events(self, window):
         self.tracker.remove_all_new_event()
@@ -709,14 +706,8 @@ class TrackerWidget:
         self.tracker.open_in_browser(key)
 
     def edit(self, window):
-        popup_edit = popup.Edit(
-            TXT.edit,
-            self.tracker.idship,
-            self.tracker.description,
-            self.tracker.used_couriers,
-            self.tracker.couriers,
-            window,
-        )
+        trk = self.tracker
+        popup_edit = popup.Edit(TXT.edit, trk.idship, trk.description, trk.used_couriers, trk.couriers, window)
         ok, idship, description, used_couriers = popup_edit.loop()
         if ok:
             self.tracker.set_id(idship, description, used_couriers)
