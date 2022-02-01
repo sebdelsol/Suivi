@@ -59,7 +59,7 @@ class _BaseHandler:
         print(f"DONE CLOSE {self.type_txt}s")
 
 
-class _DriverHandler(_BaseHandler):
+class DriverHandler(_BaseHandler):
     _max_drivers = 2
 
     experimental_options = dict(
@@ -157,7 +157,7 @@ class _DriverHandler(_BaseHandler):
         self._drivers_available.put(driver)
 
 
-class _TempBrowser(_BaseHandler):
+class TempBrowser(_BaseHandler):
     @staticmethod
     def _create_driver():
         try:
@@ -212,7 +212,3 @@ class _TempBrowser(_BaseHandler):
         else:
             with self._driver_count_ops:
                 self._n_drivers -= 1
-
-
-TempBrowser = _TempBrowser()
-DriverHandler = _DriverHandler()

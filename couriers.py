@@ -20,6 +20,9 @@ from drivers import DriverHandler, TempBrowser
 from localization import TXT
 from log import log
 
+TempBrowser = TempBrowser()
+DriverHandler = DriverHandler()
+
 
 def get_sentence(txt, n=-1):
     return "".join(re.split(r"[.!]", txt)[:n])
@@ -880,40 +883,3 @@ class USPS(Courier):
                             event.setdefault("status", txt)
 
         return events, {}
-
-
-# test couriers
-if __name__ == "__main__":
-    from couriers_test import COURIERS_IDSHIP
-    from log import logger
-
-    logger.print_only()
-    logger.close()
-
-    couriers = Couriers(max_drivers=1)
-    passed, failed = [], []
-
-    for name, idship in sorted(COURIERS_IDSHIP, key=lambda t: t[0]):
-        result = couriers.update(name, idship)
-        if result and result["ok"]:
-            passed.append(name)
-            evt = result["events"][0]
-            print(f"PASS test - {name}", end="")
-            status = evt["status"] + ", " if evt["status"] else ""
-            print(f" - {evt['date']:{TXT.long_date_format}} - {status}{evt['label']}")
-
-        else:
-            failed.append(name)
-            print(f"FAIL test - {name} !!!!!!!!!!!!!!!!!!!!!!!")
-
-    def get_list_of_names(names):
-        if not names:
-            return "NONE"
-
-        txt = "ALL " if len(names) == len(COURIERS_IDSHIP) else ""
-        return f"{txt}{len(names)} ({', '.join(names)})"
-
-    print()
-    print(f"Passed: {get_list_of_names(passed)}")
-    print(f"Failed: {get_list_of_names(failed)}")
-    print()
