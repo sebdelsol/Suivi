@@ -398,8 +398,8 @@ class TrackerWidget:
             self.show(self.tracker.get_consolidated_content(), window)
 
     def show_current_courier_widget(self):
-        couriers_update = self.tracker.get_couriers_update()
-        self.show_couriers(couriers_update)
+        couriers_status = self.tracker.get_couriers_status()
+        self.show_couriers(couriers_status)
         self.update_couriers_id_size()
 
     def update(self, window):
@@ -476,8 +476,8 @@ class TrackerWidget:
 
             self.show_id(content)
 
-            couriers_update = content.get("couriers_update")
-            self.show_couriers(couriers_update)
+            couriers_status = content.get("couriers_status")
+            self.show_couriers(couriers_status)
 
             elapsed = content.get("elapsed")
             if elapsed:
@@ -636,15 +636,15 @@ class TrackerWidget:
 
     Param = namedtuple("Param", "ago ago_color name name_color name_font update_msg error_msg valid")
 
-    def show_couriers(self, couriers_update):
-        if couriers_update:
-            couriers_update_names = list(couriers_update)
-            couriers_update_names.sort()
+    def show_couriers(self, couriers_status):
+        if couriers_status:
+            couriers_status_names = list(couriers_status)
+            couriers_status_names.sort()
             self.couriers_widget.update("")
             params = []
 
-            for name in couriers_update_names:
-                date, error, updating, valid, exists = couriers_update[name]
+            for name in couriers_status_names:
+                date, error, updating, valid, exists = couriers_status[name]
                 if date:
                     ago_color = TH.ok_color
                     ago = timeago.format(date, get_local_now(), TXT.locale_country_code).replace(TXT.ago, "").strip()

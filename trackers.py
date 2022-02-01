@@ -207,13 +207,13 @@ class Tracker:
 
             consolidated["status"]["date"] = self._no_future(consolidated["status"]["date"])
 
-        consolidated["couriers_update"] = self.get_couriers_update()
+        consolidated["couriers_status"] = self.get_couriers_status()
 
         return consolidated
 
-    def get_couriers_update(self):
+    def get_couriers_status(self):
         with self.critical:
-            couriers_update = {}
+            couriers_status = {}
             for name in self.used_couriers:
                 content = self.contents.get(name)
                 ok_date = self._no_future(content and content.get("status", {}).get("ok_date"))
@@ -221,9 +221,9 @@ class Tracker:
                 updating = self.couriers_updating.get(name, False)
                 valid_idship = self.couriers.validate_idship(name, self.idship)
                 exists = self.couriers.exists(name)
-                couriers_update[name] = (ok_date, error, updating, valid_idship, exists)
+                couriers_status[name] = (ok_date, error, updating, valid_idship, exists)
 
-            return couriers_update
+            return couriers_status
 
     @staticmethod
     def _no_future(date):
