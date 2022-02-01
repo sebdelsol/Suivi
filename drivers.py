@@ -9,7 +9,7 @@ import psutil
 from selenium.common.exceptions import NoSuchWindowException, SessionNotCreatedException, WebDriverException
 from urllib3.exceptions import ProtocolError
 
-from config import CHROME_EXE
+from config import CHROME_EXE_PATH
 from localization import TXT
 from log import log
 
@@ -110,7 +110,7 @@ class _DriverHandler(_BaseHandler):
     def _create_driver(self):
         options = webdriver.ChromeOptions()
         options.headless = True
-        options.binary_location = CHROME_EXE
+        options.binary_location = CHROME_EXE_PATH
 
         for option in self.options + (self.options_V2 if USE_UC_V2 else self.options_V1):
             options.add_argument(option)
@@ -162,7 +162,7 @@ class _TempBrowser(_BaseHandler):
     def _create_driver():
         try:
             options = webdriver.ChromeOptions()
-            options.binary_location = CHROME_EXE
+            options.binary_location = CHROME_EXE_PATH
             options.add_argument("--start-maximized")
             return webdriver.Chrome(options=options)
 

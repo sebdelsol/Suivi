@@ -15,12 +15,10 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from tzlocal import get_localzone
 
+from api_keys import DHL_KEY, LAPOSTE_KEY
 from drivers import DriverHandler, TempBrowser
 from localization import TXT
 from log import log
-
-# import API keys for La poste & DHL
-from secret import DHL_KEY, LAPOSTE_KEY
 
 
 def get_sentence(txt, n=-1):
@@ -886,17 +884,16 @@ class USPS(Courier):
 
 # test couriers
 if __name__ == "__main__":
-    from config import couriers_tests
+    from couriers_test import COURIERS_IDSHIP
     from log import logger
 
     logger.print_only()
     logger.close()
 
     couriers = Couriers(max_drivers=1)
-    couriers_tests.sort(key=lambda t: t[0])
     passed, failed = [], []
 
-    for name, idship in couriers_tests:
+    for name, idship in sorted(COURIERS_IDSHIP, key=lambda t: t[0]):
         result = couriers.update(name, idship)
         if result and result["ok"]:
             passed.append(name)
@@ -913,7 +910,7 @@ if __name__ == "__main__":
         if not names:
             return "NONE"
 
-        txt = "ALL " if len(names) == len(couriers_tests) else ""
+        txt = "ALL " if len(names) == len(COURIERS_IDSHIP) else ""
         return f"{txt}{len(names)} ({', '.join(names)})"
 
     print()
