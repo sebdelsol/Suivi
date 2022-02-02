@@ -405,7 +405,7 @@ class TrackerWidget:
         if self.tracker.state == TrackerState.shown:
             self.free_to_update = False
 
-            if couriers := self.tracker.get_idle_couriers():
+            if couriers := self.tracker.prepare_idle_couriers():
                 self.couriers_widget.pulsing.start()
                 self.id_widget.pulsing.start()
 
@@ -440,7 +440,7 @@ class TrackerWidget:
         window.trigger_event(Events.updating)
 
     def update_done(self, window):
-        if not self.tracker.is_courier_still_updating():
+        if not self.tracker.is_still_updating():
             self.id_widget.pulsing.stop()
             self.couriers_widget.pulsing.stop()
             self.disable_buttons(False)
@@ -720,7 +720,7 @@ class TrackerWidget:
         popup_edit = popup.Edit(TXT.edit, trk.idship, trk.description, trk.used_couriers, trk.couriers, window)
         ok, idship, description, used_couriers = popup_edit.loop()
         if ok:
-            self.tracker.set_id(idship, description, used_couriers)
+            self.tracker.modify(idship, description, used_couriers)
             self.update(window)
 
     def archive_or_delete(self, window):
