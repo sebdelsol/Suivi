@@ -71,79 +71,24 @@ class GreyWindow:
 
 class MainWindow(ShowInTaskbarWindow):
     def __init__(self, trackers_filename, load_as_json, splash):
-        px = TH.menu_button_padx
-        py = TH.menu_button_pady
-        b_kwargs = dict(
-            im_height=TH.menu_button_height,
-            im_margin=TH.menu_button_img_margin,
-            font=(TH.var_font_bold, TH.menu_button_font_size),
-            mouse_over_color=TH.menu_button_mouse_over_color,
+        col_kwargs = dict(p=0, expand_x=True, expand_y=True, background_color=TH.widget_event_bg_color)
+        new_trakers = sg.Col([[]], k=Keys.new_tracker_widgets, **col_kwargs)
+        old_trakers = sg.Col([[]], k=Keys.old_tracker_widgets, **col_kwargs)
+        all_trackers = sg.Col(
+            [[new_trakers], [old_trakers]],
+            scrollable=True,
+            vertical_scroll_only=True,
+            k=Keys.all_tracker_widgets,
+            **col_kwargs,
         )
 
-        log_b = ButtonTxtAndImg(
-            TXT.log,
-            p=((py, px), (py, py)),
-            image_filename=TH.log_img,
-            button_color=(TH.log_color, TH.menu_color),
-            k=Events.log,
-            **b_kwargs,
-        )
-        new_b = ButtonTxtAndImg(
-            TXT.new,
-            p=(0, py),
-            image_filename=TH.edit_img,
-            button_color=(TH.edit_color, TH.menu_color),
-            k=Events.new,
-            **b_kwargs,
-        )
-        refresh_b = ButtonTxtAndImg(
-            TXT.refresh,
-            p=(px, py),
-            image_filename=TH.refresh_img,
-            button_color=(TH.refresh_color, TH.menu_color),
-            k=Events.refresh,
-            **b_kwargs,
-        )
-        archives_b = ButtonTxtAndImg(
-            TXT.archives,
-            p=(0, py),
-            image_filename=TH.archives_img,
-            button_color=(TH.archives_color_empty, TH.menu_color),
-            k=Events.archives,
-            **b_kwargs,
-        )
-        trash_b = ButtonTxtAndImg(
-            TXT.trash,
-            p=(px, py),
-            image_filename=TH.trash_img,
-            button_color=(TH.trash_color_empty, TH.menu_color),
-            k=Events.trash,
-            **b_kwargs,
-        )
-        recenter_widget = sg.T(
-            "",
-            background_color=TH.menu_color,
+        menu_layout = self.get_menu_layout()
+        menu = sg.Col(
+            [menu_layout],
             p=0,
+            background_color=TH.menu_color,
             expand_x=True,
-            expand_y=True,
-            k=Events.recenter,
-        )
-        min_b = ButtonMouseOver(
-            TXT.minimize,
-            p=(0, py),
-            font=(TH.var_font_bold, TH.menu_button_font_size),
-            button_color=TH.menu_color,
-            mouse_over_color=TH.warn_color,
-            k=Events.minimize,
-        )
-        exit_b = ButtonMouseOver(
-            TXT.exit,
-            p=((0, py), (py, py)),
-            font=(TH.var_font_bold, TH.menu_button_font_size),
-            button_color=TH.menu_color,
-            mouse_over_color=TH.warn_color,
-            focus=True,
-            k=Events.exit,
+            k=Keys.menu,
         )
 
         its_empty = sg.T(
@@ -159,23 +104,6 @@ class MainWindow(ShowInTaskbarWindow):
         pin_empty = sg.pin(its_empty, expand_x=True)
         pin_empty.BackgroundColor = TH.empty_color
 
-        menu = sg.Col(
-            [[log_b, new_b, refresh_b, archives_b, trash_b, recenter_widget, min_b, exit_b]],
-            p=0,
-            background_color=TH.menu_color,
-            expand_x=True,
-            k=Keys.menu,
-        )
-        col_kwargs = dict(p=0, expand_x=True, expand_y=True, background_color=TH.widget_event_bg_color)
-        new_trakers = sg.Col([[]], k=Keys.new_tracker_widgets, **col_kwargs)
-        old_trakers = sg.Col([[]], k=Keys.old_tracker_widgets, **col_kwargs)
-        all_trackers = sg.Col(
-            [[new_trakers], [old_trakers]],
-            scrollable=True,
-            vertical_scroll_only=True,
-            k=Keys.all_tracker_widgets,
-            **col_kwargs,
-        )
         layout = [[menu], [all_trackers], [pin_empty]]
 
         args, kwargs = TH.get_window_params(layout, alpha_channel=0)
@@ -183,13 +111,108 @@ class MainWindow(ShowInTaskbarWindow):
         kwargs["no_titlebar"] = True
         super().__init__(*args, **kwargs)
 
-        recenter_widget.bind("<Double-Button-1>", "")
-
+        self[Events.recenter].bind("<Double-Button-1>", "")
         self.trackers = Trackers(trackers_filename, load_as_json, splash)
         self.widgets = TrackerWidgets(self, self.trackers, splash)
+        self.set_event_to_action()
 
         self.grey_windows = [GreyWindow(self)]
         self.reappear()
+
+    @staticmethod
+    def get_menu_layout():
+        px = TH.menu_button_padx
+        py = TH.menu_button_pady
+        b_kwargs = dict(
+            im_height=TH.menu_button_height,
+            im_margin=TH.menu_button_img_margin,
+            font=(TH.var_font_bold, TH.menu_button_font_size),
+            mouse_over_color=TH.menu_button_mouse_over_color,
+        )
+
+        layout = []
+        layout.append(
+            ButtonTxtAndImg(
+                TXT.log,
+                p=((py, px), (py, py)),
+                image_filename=TH.log_img,
+                button_color=(TH.log_color, TH.menu_color),
+                k=Events.log,
+                **b_kwargs,
+            )
+        )
+        layout.append(
+            ButtonTxtAndImg(
+                TXT.new,
+                p=(0, py),
+                image_filename=TH.edit_img,
+                button_color=(TH.edit_color, TH.menu_color),
+                k=Events.new,
+                **b_kwargs,
+            )
+        )
+        layout.append(
+            ButtonTxtAndImg(
+                TXT.refresh,
+                p=(px, py),
+                image_filename=TH.refresh_img,
+                button_color=(TH.refresh_color, TH.menu_color),
+                k=Events.refresh,
+                **b_kwargs,
+            )
+        )
+        layout.append(
+            ButtonTxtAndImg(
+                TXT.archives,
+                p=(0, py),
+                image_filename=TH.archives_img,
+                button_color=(TH.archives_color_empty, TH.menu_color),
+                k=Events.archives,
+                **b_kwargs,
+            )
+        )
+        layout.append(
+            ButtonTxtAndImg(
+                TXT.trash,
+                p=(px, py),
+                image_filename=TH.trash_img,
+                button_color=(TH.trash_color_empty, TH.menu_color),
+                k=Events.trash,
+                **b_kwargs,
+            )
+        )
+        layout.append(
+            sg.T(
+                "",
+                background_color=TH.menu_color,
+                p=0,
+                expand_x=True,
+                expand_y=True,
+                k=Events.recenter,
+            )
+        )
+        layout.append(
+            ButtonMouseOver(
+                TXT.minimize,
+                p=(0, py),
+                font=(TH.var_font_bold, TH.menu_button_font_size),
+                button_color=TH.menu_color,
+                mouse_over_color=TH.warn_color,
+                k=Events.minimize,
+            )
+        )
+        layout.append(
+            ButtonMouseOver(
+                TXT.exit,
+                p=((0, py), (py, py)),
+                font=(TH.var_font_bold, TH.menu_button_font_size),
+                button_color=TH.menu_color,
+                mouse_over_color=TH.warn_color,
+                focus=True,
+                k=Events.exit,
+            )
+        )
+        return layout
 
     def addlog(self, log):
         self.log = log
@@ -219,8 +242,22 @@ class MainWindow(ShowInTaskbarWindow):
         except TclError as e:
             log(f"TCL error ({e})", error=True)
 
-    # return True when exit
+    def set_event_to_action(self):
+        self.event_to_action = {
+            Events.minimize: self.minimize,
+            Events.recenter: lambda window=self: self.widgets.recenter(window, force=True),
+            Events.updating: self.widgets.updating_changed,
+            Events.archives_updated: self.widgets.archives_updated,
+            Events.trash_updated: self.widgets.deleted_updated,
+            Events.update_window_size: lambda window=self: self.widgets.update_window_size(window),
+            Events.new: lambda window=self: self.widgets.new(window),
+            Events.refresh: lambda window=self: self.widgets.update(window),
+            Events.archives: lambda window=self: self.widgets.show_archives(window),
+            Events.trash: lambda window=self: self.widgets.show_deleted(window),
+        }
+
     def event_handler(self):
+        """return True when exit"""
         window, event, values = sg.read_all_windows()
 
         if SHOW_EVENTS and isinstance(event, str) and "MouseWheel" not in event:
@@ -238,40 +275,11 @@ class MainWindow(ShowInTaskbarWindow):
             if event in (None, Events.exit, *Shortcuts.exit):
                 return True
 
-            if event == Events.minimize:
-                self.minimize()
-
             elif event in (Events.log, Shortcuts.log):
                 self.log.toggle()
 
-            elif event == Events.recenter:
-                self.widgets.recenter(window, force=True)
-
-            elif event == Events.updating:
-                self.widgets.updating_changed()
-
-            elif event == Events.archives_updated:
-                self.widgets.archives_updated()
-
-            elif event == Events.trash_updated:
-                self.widgets.deleted_updated()
-
-            elif event == Events.update_window_size:
-                self.widgets.update_window_size(window)
-
-            elif event == Events.new:
-                self.widgets.new(window)
-
-            elif event == Events.refresh:
-                self.widgets.update(window)
-
-            elif event == Events.archives:
-                self.widgets.show_archives(window)
-
-            elif event == Events.trash:
-                self.widgets.show_deleted(window)
-
-            return None
+            if action := self.event_to_action.get(event):
+                action()
 
         else:
             return window.event_handler(event) if event else False  # exit, see Popup.loop
