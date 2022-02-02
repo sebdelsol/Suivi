@@ -114,7 +114,7 @@ class DriverHandler(_BaseHandler):
 
         for option in self.options + (self.options_V2 if USE_UC_V2 else self.options_V1):
             options.add_argument(option)
-            
+
         # prefs do not work with UC v2 at the moment
         if not USE_UC_V2:
             for k, v in self.experimental_options.items():
@@ -173,10 +173,10 @@ class TempBrowser(_BaseHandler):
     def __init__(self):
         super().__init__("browser")
 
-    def defer(self, show_func, url):
+    def defer(self, show, url):
         threading.Thread(target=self._defer, args=(show, url), daemon=True).start()
 
-    def _defer(self, show_func, url):
+    def _defer(self, show, url):
         with self._driver_count_ops:
             self._n_drivers += 1
 
