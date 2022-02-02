@@ -21,6 +21,7 @@ COURIERS_TEST = (
 )
 
 if not MUTI_THREADED:
+
     class MockThreadPoolExecutor(ThreadPoolExecutor):
         def submit(self, f, *args, **kwargs):
             future = Future()
@@ -31,10 +32,10 @@ if not MUTI_THREADED:
             pass
 
     ThreadPoolExecutor = MockThreadPoolExecutor
-    N_DRIVERS = 2
+    N_DRIVERS = 1
 
 else:
-    N_DRIVERS = 1
+    N_DRIVERS = 2
 
 
 if __name__ == "__main__" and __package__ is None:
@@ -58,7 +59,7 @@ if __name__ == "__main__" and __package__ is None:
     with ThreadPoolExecutor(max_workers=len(couriers_test)) as executor:
         futures = {
             executor.submit(couriers_handler.update, courier_name, id_ship): courier_name
-            for courier_name, id_ship in couriers_test)
+            for courier_name, id_ship in couriers_test
         }
 
         for future in as_completed(futures):

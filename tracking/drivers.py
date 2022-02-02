@@ -25,7 +25,7 @@ else:
 
 class _BaseHandler:
     @staticmethod
-    def driver_to_kill(n_to_kill):
+    def _driver_to_kill(n_to_kill):
         n_killed = 0
         current_proc = psutil.Process()
         while n_killed < n_to_kill:
@@ -55,7 +55,7 @@ class _BaseHandler:
             # if drivers are still being created kill those
             if (n_to_kill := self._n_drivers - len(self._drivers)) > 0:
                 print(f"{n_to_kill} {self.type_txt}(s) to KILL")
-                self.driver_to_kill(n_to_kill)
+                self._driver_to_kill(n_to_kill)
         print(f"DONE CLOSE {self.type_txt}s")
 
 
@@ -200,7 +200,7 @@ class TempBrowser(_BaseHandler):
                     time.sleep(0.5)
 
             except (NoSuchWindowException, WebDriverException, SessionNotCreatedException) as e:
-                log(f"temp browser SHOW failed ({e})", error=true)
+                log(f"temp browser SHOW failed ({e})", error=True)
 
             except:
                 log(traceback.format_exc(), error=True)
