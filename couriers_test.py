@@ -3,9 +3,9 @@ from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from localization import TXT
 from log import log, logger
 
-MUTI_THREADED = False
+MUTI_THREADED = True
 
-COURIERS_IDSHIP = (
+COURIERS_TEST = (
     ("USPS", "LZ596462615US"),
     ("DHL", "JVGL084127362550620461415537"),
     # ('DHL', '1234567890'),
@@ -35,6 +35,10 @@ if not MUTI_THREADED:
             pass
 
     ThreadPoolExecutor = MockThreadPoolExecutor
+    N_DRIVERS = 2
+
+else:
+    N_DRIVERS = 1
 
 
 if __name__ == "__main__":
@@ -45,12 +49,13 @@ if __name__ == "__main__":
     logger.close()
 
     passed, failed = [], []
-    couriers_handler = CouriersHandler(max_drivers=1)
+    couriers_handler = CouriersHandler(max_drivers=N_DRIVERS)
+    couriers_test = sorted(COURIERS_TEST, key=lambda t: t[0])
 
-    with ThreadPoolExecutor(max_workers=len(COURIERS_IDSHIP)) as executor:
+    with ThreadPoolExecutor(max_workers=len(couriers_test)) as executor:
         futures = {
             executor.submit(couriers_handler.update, courier_name, id_ship): courier_name
-            for courier_name, id_ship in sorted(COURIERS_IDSHIP, key=lambda t: t[0])
+            for courier_name, id_ship in sorted(couriers_test, key=lambda t: t[0])
         }
 
         for future in as_completed(futures):
@@ -68,11 +73,11 @@ if __name__ == "__main__":
                 failed.append(courier_name)
                 log(f"FAIL test - {courier_name} !!!!!!!!!!!!!!!!!!!!!!!")
 
-        def get_list_of_names(names):
-            if not names:
+        def get_list_of_names(type_):
+            if not type_:
                 return "NONE"
-            txt = "ALL " if len(names) == len(COURIERS_IDSHIP) else ""
-            return f"{txt}{len(names)} ({', '.join(names)})"
+            txt = "ALL " if len(type_) == len(couriers_test) else ""
+            return f"{txt}{len(type_)} ({', '.join(type_)})"
 
         log()
         log(f"Passed: {get_list_of_names(passed)}")
