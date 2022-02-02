@@ -33,7 +33,8 @@ class GreyWindow:
         self.window.disable()
         self.followed_window.TKroot.bind("<Configure>", self.followed_window_changed, add="+")
 
-    def is_visible(self, window):
+    @staticmethod
+    def is_visible(window):
         return window.TKroot.attributes("-alpha") > 0.0
 
     def enable(self, enable):
@@ -269,6 +270,8 @@ class MainWindow(ShowInTaskbarWindow):
 
             elif event == Events.trash:
                 self.widgets.show_deleted(window)
+
+            return None
 
         else:
             return window.event_handler(event) if event else False  # exit, see Popup.loop
