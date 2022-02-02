@@ -4,7 +4,7 @@ import sys
 import PySimpleGUI as sg
 from packaging.specifiers import SpecifierSet
 
-from tools.imgtool import resize_and_colorize_img
+from tools.img_tool import resize_and_colorize_img
 from windows.localization import TXT
 from windows.theme import TH
 

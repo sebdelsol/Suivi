@@ -6,7 +6,7 @@ from tkinter import font as tk_font
 
 import PySimpleGUI as sg
 import timeago
-from tools.imgtool import resize_and_colorize_gif, resize_and_colorize_img
+from tools.img_tool import resize_and_colorize_gif, resize_and_colorize_img
 from tracking.couriers import get_local_now
 from tracking.trackers import TrackerState
 
