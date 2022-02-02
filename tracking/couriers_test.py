@@ -69,12 +69,12 @@ if __name__ == "__main__" and __package__ is None:
                 passed.append(courier_name)
                 evt = result["events"][0]
                 log(f"PASS test - {courier_name}", end="")
-                status = evt["status"] + ", " if evt["status"] else ""
+                status = f"{evt['status']}, " if evt["status"] else ""
                 log(f" - {evt['date']:{TXT.long_date_format}} - {status}{evt['label']}")
 
             else:
                 failed.append(courier_name)
-                log(f"FAIL test - {courier_name} !!!!!!!!!!!!!!!!!!!!!!!")
+                log(f"FAIL test - {courier_name} !!")
 
         def get_list_of_names(type_):
             if not type_:
