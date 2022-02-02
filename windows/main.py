@@ -275,10 +275,10 @@ class MainWindow(ShowInTaskbarWindow):
             if event in (None, Events.exit, *Shortcuts.exit):
                 return True
 
-            elif event in (Events.log, Shortcuts.log):
+            if event in (Events.log, Shortcuts.log):
                 self.log.toggle()
 
-            if action := self.event_to_action.get(event):
+            elif action := self.event_to_action.get(event):
                 action()
 
         else:
