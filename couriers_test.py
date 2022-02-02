@@ -1,5 +1,9 @@
+from concurrent.futures import Future, ThreadPoolExecutor, as_completed
+
 from localization import TXT
-from log import logger
+from log import log, logger
+
+MUTI_THREADED = False
 
 COURIERS_IDSHIP = (
     ("USPS", "LZ596462615US"),
@@ -19,6 +23,20 @@ COURIERS_IDSHIP = (
     ("NL Post", "LT666174269NL"),
 )
 
+if not MUTI_THREADED:
+
+    class MockThreadPoolExecutor(ThreadPoolExecutor):
+        def submit(self, f, *args, **kwargs):
+            future = Future()
+            future.set_result(f(*args, **kwargs))
+            return future
+
+        def shutdown(self, wait=True):
+            pass
+
+    ThreadPoolExecutor = MockThreadPoolExecutor
+
+
 if __name__ == "__main__":
     # prevent drivers to be created in subprocess
     from couriers import CouriersHandler
@@ -26,30 +44,37 @@ if __name__ == "__main__":
     logger.print_only()
     logger.close()
 
-    couriers_handler = CouriersHandler(max_drivers=1)
     passed, failed = [], []
+    couriers_handler = CouriersHandler(max_drivers=1)
 
-    for name, idship in sorted(COURIERS_IDSHIP, key=lambda t: t[0]):
-        result = couriers_handler.update(name, idship)
-        if result and result["ok"]:
-            passed.append(name)
-            evt = result["events"][0]
-            print(f"PASS test - {name}", end="")
-            status = evt["status"] + ", " if evt["status"] else ""
-            print(f" - {evt['date']:{TXT.long_date_format}} - {status}{evt['label']}")
+    with ThreadPoolExecutor(max_workers=len(COURIERS_IDSHIP)) as executor:
+        futures = {
+            executor.submit(couriers_handler.update, courier_name, id_ship): courier_name
+            for courier_name, id_ship in sorted(COURIERS_IDSHIP, key=lambda t: t[0])
+        }
 
-        else:
-            failed.append(name)
-            print(f"FAIL test - {name} !!!!!!!!!!!!!!!!!!!!!!!")
+        for future in as_completed(futures):
+            result = future.result()
+            courier_name = futures[future]
 
-    def get_list_of_names(names):
-        if not names:
-            return "NONE"
+            if result and result["ok"]:
+                passed.append(courier_name)
+                evt = result["events"][0]
+                log(f"PASS test - {courier_name}", end="")
+                status = evt["status"] + ", " if evt["status"] else ""
+                log(f" - {evt['date']:{TXT.long_date_format}} - {status}{evt['label']}")
 
-        txt = "ALL " if len(names) == len(COURIERS_IDSHIP) else ""
-        return f"{txt}{len(names)} ({', '.join(names)})"
+            else:
+                failed.append(courier_name)
+                log(f"FAIL test - {courier_name} !!!!!!!!!!!!!!!!!!!!!!!")
 
-    print()
-    print(f"Passed: {get_list_of_names(passed)}")
-    print(f"Failed: {get_list_of_names(failed)}")
-    print()
+        def get_list_of_names(names):
+            if not names:
+                return "NONE"
+            txt = "ALL " if len(names) == len(COURIERS_IDSHIP) else ""
+            return f"{txt}{len(names)} ({', '.join(names)})"
+
+        log()
+        log(f"Passed: {get_list_of_names(passed)}")
+        log(f"Failed: {get_list_of_names(failed)}")
+        log()

@@ -1,5 +1,6 @@
 import queue
 import re
+import threading
 from tkinter import TclError
 
 import PySimpleGUI as sg
@@ -17,7 +18,7 @@ class _Logger(Window):
     listen_step = 20  # ms
 
     def __init__(self):
-        self.is_print_only = False
+        self.print_only_lock = None
         self.prints = queue.Queue()
         self.linked = True
         self.resizing = False
@@ -140,13 +141,14 @@ class _Logger(Window):
             self.disable()
 
     def log(self, *args, error=False, **kwargs):
-        if self.is_print_only:
-            print(*args, **kwargs)
+        if self.print_only_lock:
+            with self.print_only_lock:
+                print(*args, **kwargs)
         else:
             self.prints.put((args, error, kwargs))
 
     def print_only(self):
-        self.is_print_only = True
+        self.print_only_lock = threading.Lock()
 
     def close(self):
         if self.visible:
