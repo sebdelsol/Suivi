@@ -14,16 +14,9 @@ import windows.popup as popup
 from windows.events import Events, Keys
 from windows.localization import TXT
 from windows.theme import TH
-from windows.widgets import (
-    AnimatedGif,
-    ButtonMouseOver,
-    GraphRounded,
-    HLine,
-    MlineButtonsComponent,
-    MlinePulsingComponent,
-    TextFit,
-    TextPulsingComponent,
-)
+from windows.widgets import (AnimatedGif, ButtonMouseOver, GraphRounded, HLine,
+                             MlineButtonsComponent, MlinePulsingComponent,
+                             TextFit, TextPulsingComponent)
 
 
 class TrackerWidget:
@@ -817,12 +810,12 @@ class TrackerWidgets:
         n_trackers = len(trackers.trackers)
         for i, tracker in enumerate(trackers.trackers):
             splash.update(f"{TXT.tracker_creation} {i + 1}/{n_trackers}")
-            self.create_widget(window, tracker, new=False)
+            self._create_widget(window, tracker, new=False)
 
         self.update_window_size(window)
         self.recenter(window, True)
 
-    def create_widget(self, window, tracker, new=False):
+    def _create_widget(self, window, tracker, new=False):
         widget = TrackerWidget(tracker)
         self.widgets.append(widget)
 
@@ -839,13 +832,13 @@ class TrackerWidgets:
         ok, *tracker_params = popup_edit.loop()
         if ok:
             tracker = self.trackers.new(*tracker_params)
-            self.create_widget(window, tracker, new=True)
+            self._create_widget(window, tracker, new=True)
 
-    def get_widgets_with_state(self, state):
+    def _get_widgets_with_state(self, state):
         return [widget for widget in self.widgets if widget.tracker.state == state]
 
     def show_archives(self, window):
-        exit_result, chosen = self.choose(window, TXT.unarchive, TrackerState.archived, ok_name=TXT.unarchive)
+        exit_result, chosen = self._choose(window, TXT.unarchive, TrackerState.archived, ok_name=TXT.unarchive)
         if exit_result:
             for widget in chosen:
                 widget.unarchive(window)
@@ -853,7 +846,7 @@ class TrackerWidgets:
     def show_deleted(self, window):
         def_delete_button_key = "-definitly delete-"
         def_delete_button = dict(txt=TXT.delete_definitly, mouse_over_color=TH.warn_color, key=def_delete_button_key)
-        exit_result, chosen = self.choose(
+        exit_result, chosen = self._choose(
             window, TXT.restore, TrackerState.deleted, ok_name=TXT.restore, added_button=def_delete_button
         )
         if exit_result == def_delete_button_key and chosen:
@@ -873,8 +866,11 @@ class TrackerWidgets:
             for widget in chosen:
                 widget.undelete(window)
 
-    def choose(self, window, title, state, ok_name, added_button=None):
-        widgets = self.get_sorted(self.get_widgets_with_state(state))
+    def _get_sorted(self, widgets):
+        return self.trackers.sort(widgets, get_tracker=lambda widget: widget.tracker)
+
+    def _choose(self, window, title, state, ok_name, added_button=None):
+        widgets = self._get_sorted(self._get_widgets_with_state(state))
         w_desc = max(len(widget.get_description()) for widget in widgets) if widgets else 0
         w_date = max(len(widget.get_creation_date()) for widget in widgets) if widgets else 0
 
@@ -900,26 +896,23 @@ class TrackerWidgets:
         self.deleted_button.update(f"{TXT.trash}({n_deleted})", button_color=(color, None))
 
     def update(self, window):
-        for widget in self.get_widgets_with_state(TrackerState.shown):
+        for widget in self._get_widgets_with_state(TrackerState.shown):
             widget.update(window)
 
-    def get_sorted(self, widgets):
-        return self.trackers.sort(widgets, get_tracker=lambda widget: widget.tracker)
-
-    def count_free_to_update(self):
-        shown = self.get_widgets_with_state(TrackerState.shown)
+    def _count_free_to_update(self):
+        shown = self._get_widgets_with_state(TrackerState.shown)
         return [widget.free_to_update for widget in shown].count(True)
 
     def updating_changed(self):
-        n_free_to_update = self.count_free_to_update()
+        n_free_to_update = self._count_free_to_update()
         self.refresh_button.update(disabled=n_free_to_update == 0)
 
-    def set_min_width(self, min_width):
-        for widget in self.get_widgets_with_state(TrackerState.shown):
+    def _set_min_width(self, min_width):
+        for widget in self._get_widgets_with_state(TrackerState.shown):
             widget.set_min_width(min_width)
 
     def update_window_size(self, window):
-        shown = self.get_widgets_with_state(TrackerState.shown)
+        shown = self._get_widgets_with_state(TrackerState.shown)
 
         # needed to get the actual sizes
         window.refresh()  # or visibility_changed() that produces different glitches
@@ -929,7 +922,7 @@ class TrackerWidgets:
 
         menu_w = self.widget_menu.Widget.winfo_reqwidth()
         menu_h = self.widget_menu.Widget.winfo_reqheight()
-        self.set_min_width(menu_w)
+        self._set_min_width(menu_w)
 
         # wanted size
         scrollbar = self.widgets_frame.TKColFrame.vscrollbar
