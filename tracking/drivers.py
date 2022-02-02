@@ -52,7 +52,7 @@ class _BaseHandler:
                 print(f"QUIT {self.type_txt} {i + 1}/{self._n_drivers}")
                 driver.quit()
 
-            # check if there are drivers in creation, kill those
+            # if drivers are still being created kill those
             if (n_to_kill := self._n_drivers - len(self._drivers)) > 0:
                 print(f"{n_to_kill} {self.type_txt}(s) to KILL")
                 self.driver_to_kill(n_to_kill)
@@ -114,15 +114,16 @@ class DriverHandler(_BaseHandler):
 
         for option in self.options + (self.options_V2 if USE_UC_V2 else self.options_V1):
             options.add_argument(option)
-
-        if not USE_UC_V2:  # prefs do not work on UC v2
+            
+        # prefs do not work with UC v2 at the moment
+        if not USE_UC_V2:
             for k, v in self.experimental_options.items():
                 options.add_experimental_option(k, v)
 
         return webdriver.Chrome(options=options)
 
     def _create_driver_if_needed(self):
-        # prevent not needed creation from another thread
+        # prevent concurrent creation by another thread
         with self._driver_count_ops:
             needed = self._n_drivers < self._max_drivers
             if needed:
@@ -137,7 +138,7 @@ class DriverHandler(_BaseHandler):
                     driver = self._create_driver()
             else:
                 # block till the 1st driver has been created
-                # to avoid permission error due to the 1st driver patching the chromedriver.exe
+                # to avoid permission error caused by the 1st driver being patched
                 with self._first_driver:
                     pass
                 driver = self._create_driver()
@@ -173,7 +174,7 @@ class TempBrowser(_BaseHandler):
         super().__init__("browser")
 
     def defer(self, show_func, url):
-        threading.Thread(target=self._defer, args=(show_func, url), daemon=True).start()
+        threading.Thread(target=self._defer, args=(show, url), daemon=True).start()
 
     def _defer(self, show_func, url):
         with self._driver_count_ops:
@@ -191,15 +192,15 @@ class TempBrowser(_BaseHandler):
 
             try:
                 driver.get(url)
-                show_func(driver)
+                show(driver)
 
-                # keep alive till the browser is closed
+                # keep alive till the browser manually is closed
                 while True:
                     _ = driver.window_handles
                     time.sleep(0.5)
 
             except (NoSuchWindowException, WebDriverException, SessionNotCreatedException) as e:
-                log(f"QUIT temp browser ({e})")
+                log(f"temp browser SHOW failed ({e})", error=true)
 
             except:
                 log(traceback.format_exc(), error=True)
