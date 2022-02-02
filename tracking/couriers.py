@@ -8,8 +8,7 @@ import pytz
 import requests
 import urllib3
 from dateutil.parser import ParserError, parse
-from selenium.common.exceptions import (NoSuchElementException,
-                                        TimeoutException, WebDriverException)
+from selenium.common.exceptions import NoSuchElementException, TimeoutException, WebDriverException
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -739,10 +738,9 @@ class LaPoste(Courier):
                 status_label=status_label.replace(".", ""),
             )
 
-        else:
-            error = content.get("returnMessage", "Erreur")
-            status_label = get_sentence(error, 1)
-            return events, dict(status_warn=True, status_label=status_label.replace(".", ""))
+        error = content.get("returnMessage", "Erreur")
+        status_label = get_sentence(error, 1)
+        return events, dict(status_warn=True, status_label=status_label.replace(".", ""))
 
 
 class Chronopost(Courier):

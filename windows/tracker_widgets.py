@@ -10,13 +10,20 @@ from tools.img_tool import resize_and_colorize_gif, resize_and_colorize_img
 from tracking.couriers import get_local_now
 from tracking.trackers import TrackerState
 
-import windows.popup as popup
+from windows import popup
 from windows.events import Events, Keys
 from windows.localization import TXT
 from windows.theme import TH
-from windows.widgets import (AnimatedGif, ButtonMouseOver, GraphRounded, HLine,
-                             MlineButtonsComponent, MlinePulsingComponent,
-                             TextFit, TextPulsingComponent)
+from windows.widgets import (
+    AnimatedGif,
+    ButtonMouseOver,
+    GraphRounded,
+    HLine,
+    MlineButtonsComponent,
+    MlinePulsingComponent,
+    TextFit,
+    TextPulsingComponent,
+)
 
 
 class TrackerWidget:
@@ -780,8 +787,7 @@ class TrackerWidget:
         if check_empty:
             return (False, idship) if idship else (True, TXT.no_idship)
 
-        else:
-            return idship or TXT.no_idship
+        return idship or TXT.no_idship
 
     def get_description(self):
         return self.tracker.description.strip().title() or TXT.no_description

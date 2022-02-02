@@ -237,7 +237,7 @@ class MainWindow(ShowInTaskbarWindow):
             if event in (None, Events.exit, *Shortcuts.exit):
                 return True
 
-            elif event == Events.minimize:
+            if event == Events.minimize:
                 self.minimize()
 
             elif event in (Events.log, Shortcuts.log):

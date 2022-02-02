@@ -153,8 +153,9 @@ class ButtonTxtAndImg(ButtonMouseOver):
             )
             self._width = get_img64_size(self.im_data)[0] + self.im_margin[0] * 2
             return self.im_data
-        else:
-            self._width = self.im_margin[0]
+
+        self._width = self.im_margin[0]
+        return None
 
     def _update_size(self, txt):
         wfont = tk_font.Font(self.ParentForm.TKroot, self.Font)

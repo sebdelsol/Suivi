@@ -70,6 +70,8 @@ class Popup(Window):
         if self.added_button_key and event == self.added_button_key:
             return self.added_button_key
 
+        return None
+
     def close(self):
         self.main_window.grey_all(False)
         super().close()

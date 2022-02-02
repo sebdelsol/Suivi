@@ -1,8 +1,5 @@
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 
-from windows.localization import TXT
-from windows.log import log, logger
-
 MUTI_THREADED = True
 
 COURIERS_TEST = (
@@ -41,7 +38,14 @@ else:
     N_DRIVERS = 1
 
 
-if __name__ == "__main__":
+if __name__ == "__main__" and __package__ is None:
+    from os import path, sys
+
+    sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
+
+    from windows.localization import TXT
+    from windows.log import log, logger
+
     # prevent drivers to be created in subprocess
     from tracking.couriers import CouriersHandler
 
