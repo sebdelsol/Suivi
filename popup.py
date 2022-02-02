@@ -76,9 +76,9 @@ class Popup(Window):
 
 
 class Edit(Popup):
-    def __init__(self, title, idship, description, used_couriers, couriers, main_window):
-        self.couriers = couriers
-        self.couriers_names = couriers.get_names()
+    def __init__(self, title, idship, description, used_couriers, couriers_handler, main_window):
+        self.couriers_handler = couriers_handler
+        self.couriers_names = couriers_handler.get_names()
         self.couriers_names.sort()
         layout = [
             [
@@ -106,7 +106,7 @@ class Edit(Popup):
                 k=name,
             )
             msg = sg.T(
-                f"({self.couriers.get_idship_validation_msg(name)})",
+                f"({self.couriers_handler.get_idship_validation_msg(name)})",
                 font=self.msg_font[is_checked],
                 expand_x=True,
                 justification="r",
@@ -130,10 +130,10 @@ class Edit(Popup):
         for msg, button in self.idship_widgets:
             name = button.Key[0]
 
-            valid = self.couriers.validate_idship(name, idship)
+            valid = self.couriers_handler.validate_idship(name, idship)
             msg.update(text_color=TH.ok_color if valid else TH.warn_color)
 
-            visible = valid and self.couriers.get_url_for_browser(name, idship)
+            visible = valid and self.couriers_handler.get_url_for_browser(name, idship)
             button.update(disabled=not visible, visible=visible)
 
     def event_handler(self, event):
@@ -142,7 +142,7 @@ class Edit(Popup):
 
         elif isinstance(event, tuple) and len(event) > 1 and event[1] == "button":
             name, idship = event[0], self["idship"].get()
-            self.couriers.open_in_browser(name, idship)
+            self.couriers_handler.open_in_browser(name, idship)
 
         elif event in self.couriers_names:
             is_checked = self[event].get()

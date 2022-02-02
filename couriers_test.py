@@ -21,16 +21,16 @@ COURIERS_IDSHIP = (
 
 if __name__ == "__main__":
     # prevent drivers to be created in subprocess
-    from couriers import Couriers
+    from couriers import CouriersHandler
 
     logger.print_only()
     logger.close()
 
-    couriers = Couriers(max_drivers=1)
+    couriers_handler = CouriersHandler(max_drivers=1)
     passed, failed = [], []
 
     for name, idship in sorted(COURIERS_IDSHIP, key=lambda t: t[0]):
-        result = couriers.update(name, idship)
+        result = couriers_handler.update(name, idship)
         if result and result["ok"]:
             passed.append(name)
             evt = result["events"][0]

@@ -50,7 +50,7 @@ def get_all_subclasses(cls):
     return all_subclasses
 
 
-class Couriers:
+class CouriersHandler:
     def __init__(self, splash=None, max_drivers=None):
         self.couriers = {cls.name: cls() for cls in get_all_subclasses(Courier)}
         log(f"Init Couriers {', '.join(self.couriers)}")

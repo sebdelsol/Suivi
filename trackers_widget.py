@@ -717,7 +717,7 @@ class TrackerWidget:
 
     def edit(self, window):
         trk = self.tracker
-        popup_edit = popup.Edit(TXT.edit, trk.idship, trk.description, trk.used_couriers, trk.couriers, window)
+        popup_edit = popup.Edit(TXT.edit, trk.idship, trk.description, trk.used_couriers, trk.couriers_handler, window)
         ok, idship, description, used_couriers = popup_edit.loop()
         if ok:
             self.tracker.modify(idship, description, used_couriers)
@@ -835,7 +835,7 @@ class TrackerWidgets:
             widget.update(window)
 
     def new(self, window):
-        popup_edit = popup.Edit(TXT.new, "", TXT.new, [], self.trackers.couriers, window)
+        popup_edit = popup.Edit(TXT.new, "", TXT.new, [], self.trackers.couriers_handler, window)
         ok, *tracker_params = popup_edit.loop()
         if ok:
             tracker = self.trackers.new(*tracker_params)

@@ -8,7 +8,7 @@ from collections import namedtuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from concurrent.futures.thread import _threads_queues
 
-from couriers import Couriers, get_local_now
+from couriers import CouriersHandler, get_local_now
 from jsondate import json_decode_datetime, json_encode_datetime
 from log import log
 
@@ -168,7 +168,7 @@ class Tracker:
         idship,
         description,
         used_couriers,
-        couriers,
+        couriers_handler,
         state=TrackerState.shown,
         contents=None,
         creation_date=None,
@@ -176,7 +176,7 @@ class Tracker:
         self.modify(idship, description, used_couriers)
         self.state = state
         self.creation_date = creation_date or get_local_now()
-        self.couriers = couriers
+        self.couriers_handler = couriers_handler
         self.couriers_error = {}
         self.couriers_updating = {}
 
@@ -208,9 +208,9 @@ class Tracker:
         if self.idship:
             with self.critical:
                 for courier_name in self.used_couriers:
-                    if self.couriers.exists(courier_name):
+                    if self.couriers_handler.exists(courier_name):
                         if not self.couriers_updating.get(courier_name):
-                            if self.couriers.validate_idship(courier_name, self.idship):
+                            if self.couriers_handler.validate_idship(courier_name, self.idship):
                                 self.couriers_error[courier_name] = True
                                 self.couriers_updating[courier_name] = True
                                 idle_couriers.append(courier_name)
@@ -265,7 +265,7 @@ class Tracker:
 
     def _update_courier(self, courier_name):
         try:
-            return self.couriers.update(courier_name, self.idship)
+            return self.couriers_handler.update(courier_name, self.idship)
 
         except:
             log(traceback.format_exc(), error=True)
@@ -280,8 +280,8 @@ class Tracker:
                 ok_date = self.contents.get_ok_date(courier_name)
                 error = self.couriers_error.get(courier_name, True)
                 updating = self.couriers_updating.get(courier_name, False)
-                valid_idship = self.couriers.validate_idship(courier_name, self.idship)
-                exists = self.couriers.exists(courier_name)
+                valid_idship = self.couriers_handler.validate_idship(courier_name, self.idship)
+                exists = self.couriers_handler.exists(courier_name)
 
                 status = self.CouriersStatus(courier_name, ok_date, error, updating, valid_idship, exists)
                 couriers_status.append(status)
@@ -304,10 +304,10 @@ class Tracker:
 
     def open_in_browser(self, courier_name):
         if courier_name in self.used_couriers:
-            self.couriers.open_in_browser(courier_name, self.idship)
+            self.couriers_handler.open_in_browser(courier_name, self.idship)
 
     def clean(self):
-        all_courier_names = self.couriers.get_names()
+        all_courier_names = self.couriers_handler.get_names()
         for courier_name in self.contents.clean(all_courier_names):
             log(f"CLEAN {self.description} - {self.idship}, {courier_name}")
 
@@ -325,7 +325,7 @@ class Tracker:
 class Trackers:
     def __init__(self, filename, load_as_json, splash):
         self.filename = filename
-        self.couriers = Couriers(splash)
+        self.couriers_handler = CouriersHandler(splash)
 
         if load_as_json:
 
@@ -343,7 +343,7 @@ class Trackers:
                     trk["idship"],
                     trk["description"],
                     trk["used_couriers"],
-                    self.couriers,
+                    self.couriers_handler,
                     trk["state"],
                     trk["contents"],
                     trk["creation_date"],
@@ -387,7 +387,7 @@ class Trackers:
         return sorted(objs, key=lambda obj: get_tracker(obj).creation_date, reverse=True)
 
     def new(self, idship, description, used_couriers):
-        tracker = Tracker(idship, description, used_couriers, self.couriers)
+        tracker = Tracker(idship, description, used_couriers, self.couriers_handler)
         self.trackers.append(tracker)
         return tracker
 
