@@ -1,7 +1,7 @@
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 
-from localization import TXT
-from log import log, logger
+from windows.localization import TXT
+from windows.log import log, logger
 
 MUTI_THREADED = True
 
@@ -43,7 +43,7 @@ else:
 
 if __name__ == "__main__":
     # prevent drivers to be created in subprocess
-    from couriers import CouriersHandler
+    from tracking.couriers import CouriersHandler
 
     logger.print_only()
     logger.close()

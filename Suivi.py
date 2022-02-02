@@ -4,9 +4,9 @@ import sys
 import PySimpleGUI as sg
 from packaging.specifiers import SpecifierSet
 
-from imgtool import resize_and_colorize_img
-from localization import TXT
-from theme import TH
+from tools.imgtool import resize_and_colorize_img
+from windows.localization import TXT
+from windows.theme import TH
 
 PYTHON_REQUIREMENTS = ">=3.8,<3.9"
 TRACKERS_FILENAME = "Trackers"
@@ -49,8 +49,8 @@ if __name__ == "__main__":
         splash = Splash()
         splash.update(TXT.init)
 
-        from log import logger
-        from main_window import MainWindow
+        from windows.log import logger
+        from windows.main import MainWindow
 
         main_window = MainWindow(TRACKERS_FILENAME, LOAD_AS_JSON, splash)
         main_window.addlog(logger)

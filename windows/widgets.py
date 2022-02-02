@@ -5,8 +5,7 @@ from ctypes import windll
 from tkinter import font as tk_font
 
 import PySimpleGUI as sg
-
-from imgtool import get_gif_durations, get_img64_size, resize_and_colorize_img
+from tools.imgtool import get_gif_durations, get_img64_size, resize_and_colorize_img
 
 GWL_EXSTYLE = -20
 WS_EX_APPWINDOW = 0x00040000

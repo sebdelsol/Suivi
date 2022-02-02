@@ -8,17 +8,18 @@ import pytz
 import requests
 import urllib3
 from dateutil.parser import ParserError, parse
-from selenium.common.exceptions import NoSuchElementException, TimeoutException, WebDriverException
+from selenium.common.exceptions import (NoSuchElementException,
+                                        TimeoutException, WebDriverException)
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from tzlocal import get_localzone
+from windows.localization import TXT
+from windows.log import log
 
-from api_keys import DHL_KEY, LAPOSTE_KEY
-from drivers import DriverHandler, TempBrowser
-from localization import TXT
-from log import log
+from tracking.api_keys import DHL_KEY, LAPOSTE_KEY
+from tracking.drivers import DriverHandler, TempBrowser
 
 TempBrowser = TempBrowser()
 DriverHandler = DriverHandler()

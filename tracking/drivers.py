@@ -8,10 +8,10 @@ from socket import error as SocketError
 import psutil
 from selenium.common.exceptions import NoSuchWindowException, SessionNotCreatedException, WebDriverException
 from urllib3.exceptions import ProtocolError
+from windows.localization import TXT
+from windows.log import log
 
-from config import CHROME_EXE_PATH
-from localization import TXT
-from log import log
+from tracking.config import CHROME_EXE_PATH
 
 USE_UC_V2 = True
 CREATE_DRIVER_AT_INIT = False

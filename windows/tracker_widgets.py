@@ -6,15 +6,15 @@ from tkinter import font as tk_font
 
 import PySimpleGUI as sg
 import timeago
+from tools.imgtool import resize_and_colorize_gif, resize_and_colorize_img
+from tracking.couriers import get_local_now
+from tracking.trackers import TrackerState
 
-import popup
-from couriers import get_local_now
-from events import Events, Keys
-from imgtool import resize_and_colorize_gif, resize_and_colorize_img
-from localization import TXT
-from theme import TH
-from trackers import TrackerState
-from widget import (
+import windows.popup as popup
+from windows.events import Events, Keys
+from windows.localization import TXT
+from windows.theme import TH
+from windows.widgets import (
     AnimatedGif,
     ButtonMouseOver,
     GraphRounded,
