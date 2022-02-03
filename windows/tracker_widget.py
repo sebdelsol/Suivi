@@ -13,10 +13,17 @@ from windows import popup
 from windows.events import Events
 from windows.localization import TXT
 from windows.theme import TH
-from windows.widgets import (AnimatedGif, BindToFunction, ButtonMouseOver,
-                             GraphRounded, HLine, MlineButtonsComponent,
-                             MlinePulsingComponent, TextFit,
-                             TextPulsingComponent)
+from windows.widgets import (
+    AnimatedGif,
+    BindToFunction,
+    ButtonMouseOver,
+    GraphRounded,
+    HLine,
+    MlineButtonsComponent,
+    MlinePulsingComponent,
+    TextFit,
+    TextPulsingComponent,
+)
 
 
 class EventDates:
@@ -94,10 +101,10 @@ def get_event_labels(event, tab_width):
 
 
 class EventsWidget:
-    def __init__(self, mline_kwargs, tracker, show_current_content):
+    def __init__(self, mline_kwargs, remove_new_event, remove_all_new_events):
         self.reset_size()
-        self.tracker = tracker
-        self.show_current_content = show_current_content
+        self.remove_new_event = remove_new_event
+        self.remove_all_new_events = remove_all_new_events
 
         self.n_event_font = (TH.var_font, TH.n_event_font_size)
         self.n_new_event_font = (TH.var_font_bold, TH.n_new_event_font_size)
@@ -115,7 +122,7 @@ class EventsWidget:
             button_color=(TH.remove_new_events_text_color, TH.remove_new_events_button_color),
             mouse_over_color=TH.widget_event_bg_color,
             visible=False,
-            k=self._remove_all_new_events,
+            k=self.remove_all_new_events,
         )
         self.remove_new_pin = sg.pin(self.remove_new_events_button)
 
@@ -149,7 +156,7 @@ class EventsWidget:
         buttons = MlineButtonsComponent(self.events_widget)
         buttons.init(
             mouse_over_color=TH.widget_event_mouse_over_color,
-            on_click=lambda key, window=window: self._remove_new_event(key, window),
+            on_click=lambda key, window=window: self.remove_new_event(key, window),
         )
         self.events_widget.buttons = buttons
 
@@ -287,25 +294,13 @@ class EventsWidget:
         self._update_expand_button()
         self._update_size()
 
-    def _remove_new_event(self, key, window):
-        if self.expand_events:
-            # key is event see events_widget.buttons.add_tag
-            self.tracker.remove_new_event(key)
-            self.show_current_content(window)  # show_events instead ??
-        else:
-            self.toggle_expand(window)
-
-    def _remove_all_new_events(self, window):
-        self.tracker.remove_all_new_event()
-        self.show_current_content(window)  # show_events instead ??
-
 
 class CouriersWidget:
-    def __init__(self, mline_kwargs, tracker, get_idship):
-        self.tracker = tracker
+    def __init__(self, mline_kwargs, get_idship, open_in_browser):
         self.get_idship = get_idship
-        self.n_courier_available = 0
+        self.open_in_browser = open_in_browser
 
+        self.n_courier_available = 0
         self.font = (TH.fix_font, TH.widget_courier_font_size)
         self.font_bold = (TH.fix_font_bold, TH.widget_courier_font_size)
         self.widget = sg.MLine(
@@ -317,6 +312,9 @@ class CouriersWidget:
             justification="r",
             **mline_kwargs,
         )
+
+    def is_any_courier(self):
+        return self.n_courier_available > 0
 
     def finalize(self):
         buttons = MlineButtonsComponent(self.widget)
@@ -410,10 +408,6 @@ class CouriersWidget:
             self.widget.update(TXT.no_couriers, text_color=TH.warn_color)
 
         self._update_size()
-
-    def open_in_browser(self, key):
-        # key is courier_name see couriers.buttons.add_tag
-        self.tracker.open_in_browser(key)
 
     def start_updating(self):
         self.widget.pulsing.start()
@@ -515,19 +509,19 @@ class ElapsedWidget:
     def show(self, content):
         elapsed = content.get("elapsed")
         if elapsed:
-            round_elapsed_days = elapsed.days + (
-                1 if elapsed.seconds >= 43200 else 0
-            )  # half a day in sec
-            elapsed_color = TH.elapsed_days_colors[
-                bisect(TH.elapsed_days_intervals, round_elapsed_days)
-            ]
+            round_elapsed_days = elapsed.days
+            if elapsed.seconds >= 43200:  # half a day in sec
+                round_elapsed_days += 1
+            color_index = bisect(TH.elapsed_days_intervals, round_elapsed_days)
+            elapsed_color = TH.elapsed_days_colors[color_index]
             elapsed_txt = f"{round_elapsed_days}{'j' if round_elapsed_days <= 100 else ''}"
+
         else:
             elapsed_color = TH.elapsed_days_default_color
             elapsed_txt = "?"
 
-        self.widget.erase()
         s = self.days_size
+        self.widget.erase()
         self.widget.draw_rounded_box(
             s * 0.5, s * 0.5, s, s * 0.9, s * 0.15, TH.elapsed_days_bg_color
         )
@@ -602,14 +596,14 @@ class ToolbarWidget:
 
 
 class DescriptionWidget:
-    def __init__(self, bg_color, get_description):
+    def __init__(self, get_description):
         self.get_description = get_description
         self.widget = TextFit(
             "",
             p=0,
             font=(TH.var_font, TH.widget_description_font_size),
             text_color=TH.widget_descrition_text_color,
-            background_color=bg_color,
+            background_color=TH.widget_title_bg_color,
             expand_x=True,
             justification="l",
         )
@@ -699,12 +693,12 @@ class TrackerWidget:
 
         mline_kwargs = dict(write_only=True, no_scrollbar=True, disabled=True)
 
-        self.description = DescriptionWidget(TH.widget_title_bg_color, self.get_description)
+        self.description = DescriptionWidget(self.get_description)
         self.toolbar = ToolbarWidget(self.edit, self.update, self.archive_or_delete)
         self.elapsed_widget = ElapsedWidget()
         self.idship = IdShipWidget(mline_kwargs, self.get_idship)
-        self.couriers = CouriersWidget(mline_kwargs, self.tracker, self.get_idship)
-        self.events = EventsWidget(mline_kwargs, self.tracker, self.show_current_content)
+        self.couriers = CouriersWidget(mline_kwargs, self.get_idship, self.open_in_browser)
+        self.events = EventsWidget(mline_kwargs, self.remove_new_event, self.remove_all_new_events)
         self.status = StatusWidget()
 
         idship_couriers = sg.Col(
@@ -749,27 +743,18 @@ class TrackerWidget:
             widget.grab_anywhere_include()
             widget.Widget.bindtags((str(widget.Widget), str(window.TKroot), "all"))
 
-        self.show_current_content(window)
+        self._show_current_content(window)
 
         # no more finalization needed
         self.finalized = True
         return True
 
-    def set_min_width(self, min_width):
-        self.hline.set_width(width=min_width)
-
-    def get_pixel_width(self):
-        return self.pin.Widget.winfo_reqwidth()
-
-    def get_pixel_height(self):
-        return self.pin.Widget.winfo_height()
-
-    def update_visibility(self):
+    def _update_visibility(self):
         self.layout.update(visible=self.tracker.state == TrackerState.shown)
 
-    def show_current_content(self, window):
+    def _show_current_content(self, window):
         if self.tracker.state == TrackerState.shown:
-            self.show(self.tracker.get_consolidated_content(), window)
+            self._show(self.tracker.get_consolidated_content(), window)
 
     def _show_current_courier_widget(self):
         self.couriers.show(couriers_status=self.tracker.get_couriers_status())
@@ -794,7 +779,7 @@ class TrackerWidget:
 
             else:
                 self.toolbar.disable_refresh(disabled=True)
-                self.show_current_content(window)
+                self._show_current_content(window)
 
     def _update_idle_couriers(self, window, couriers):
         for content in self.tracker.update_idle_couriers(couriers):
@@ -806,8 +791,8 @@ class TrackerWidget:
         window.trigger_event(self._update_done)
 
     def _update_one_courier_done(self, content, window):
-        self.show(content, window)
-        self.has_something_to_update = self.couriers.n_courier_available > 0
+        self._show(content, window)
+        self.has_something_to_update = self.couriers.is_any_courier()
         self.toolbar.disable_refresh(disabled=not self.has_something_to_update)
         window.trigger_event(Events.updating)
 
@@ -819,7 +804,7 @@ class TrackerWidget:
 
         window.trigger_event(Events.updating)
 
-    def show(self, content, window):
+    def _show(self, content, window):
         if self.tracker.state == TrackerState.shown:
 
             self.elapsed_widget.show(content)
@@ -829,8 +814,28 @@ class TrackerWidget:
             self.idship.show(content)
             self.events.show(content)
 
-            self.update_visibility()
+            self._update_visibility()
             window.trigger_event(Events.update_window_size)
+
+    def set_min_width(self, min_width):
+        self.hline.set_width(width=min_width)
+
+    def get_pixel_width(self):
+        return self.pin.Widget.winfo_reqwidth()
+
+    def get_pixel_height(self):
+        return self.pin.Widget.winfo_height()
+
+    def open_in_browser(self, courier_name):
+        self.tracker.open_in_browser(courier_name)
+
+    def remove_new_event(self, event, window):
+        self.tracker.remove_new_event(event)
+        self._show_current_content(window)  # show_events instead ??
+
+    def remove_all_new_events(self, window):
+        self.tracker.remove_all_new_event()
+        self._show_current_content(window)  # show_events instead ??
 
     def edit(self, window):
         trk = self.tracker
@@ -875,11 +880,11 @@ class TrackerWidget:
             if reappear:
                 if not self.finalize(window):
                     self.events.reset_size()
-                    self.show_current_content(window)
+                    self._show_current_content(window)
                 self.update(window)
 
             else:
-                self.update_visibility()
+                self._update_visibility()
                 window.trigger_event(Events.update_window_size)
 
             window.trigger_event(event)
