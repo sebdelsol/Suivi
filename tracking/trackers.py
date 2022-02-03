@@ -4,7 +4,6 @@ import os
 import pickle
 import threading
 import traceback
-from collections import namedtuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from concurrent.futures.thread import _threads_queues
 
@@ -163,17 +162,54 @@ class Contents:
                         yield courier_name
 
 
+class CouriersStatus:
+    def __init__(self, couriers_handler, idship, used_couriers):
+        self.couriers_handler = couriers_handler
+        self.critical = threading.Lock()
+        self.error = {}
+        self.updating = {}
+        self.exists = {courier_name: self.couriers_handler.exists(courier_name) for courier_name in used_couriers}
+        self.valid_idship = {
+            courier_name: self.couriers_handler.validate_idship(courier_name, idship) for courier_name in used_couriers
+        }
+
+    def start_updating(self, courier_name):
+        if self.exists.get(courier_name):
+            if self.valid_idship.get(courier_name):
+                with self.critical:
+                    if not self.updating.get(courier_name):
+                        self.error[courier_name] = True
+                        self.updating[courier_name] = True
+                        return True
+        return False
+
+    def is_updating(self, courier_name):
+        with self.critical:
+            return self.updating.get(courier_name, False)
+
+    def done_updating(self, courier_name, error):
+        with self.critical:
+            self.error[courier_name] = error
+            self.updating[courier_name] = False
+
+    def get(self, courier_name):
+        with self.critical:
+            return dict(
+                error=self.error.get(courier_name, True),
+                updating=self.updating.get(courier_name, False),
+                valid_idship=self.valid_idship.get(courier_name),
+                exists=self.exists.get(courier_name),
+            )
+
+
 class Tracker:
     def __init__(self, params, couriers_handler):
+        self.couriers_handler = couriers_handler
         self.modify(params["idship"], params["description"], params["used_couriers"])
         self.state = params.get("state", TrackerState.shown)
         self.creation_date = params.get("creation_date", get_local_now())
         self.contents = Contents(params.get("contents"))
-        self.couriers_handler = couriers_handler
 
-        self.couriers_error = {}
-        self.couriers_updating = {}
-        self.critical = threading.Lock()
         self.executor_ops = threading.Lock()
         self.executors = []
         self.closing = False
@@ -183,7 +219,15 @@ class Tracker:
         self.description = (description or "").strip().title()
         self.idship = (idship.upper() or "").strip()
 
+        self.couriers_status = CouriersStatus(self.couriers_handler, self.idship, self.used_couriers)
+
+    def _clean(self):
+        all_courier_names = self.couriers_handler.get_names()
+        for courier_name in self.contents.clean(all_courier_names):
+            log(f"CLEAN {self.description} - {self.idship}, {courier_name}")
+
     def get_to_save(self):
+        self._clean()
         return dict(
             creation_date=self.creation_date,
             description=self.description,
@@ -193,28 +237,18 @@ class Tracker:
             contents=self.contents.get(),
         )
 
-    def prepare_idle_couriers(self):
+    def start_updating_idle_couriers(self):
         idle_couriers = []
-        if self.idship:
-            with self.critical:
-                for courier_name in self.used_couriers:
-                    if self.couriers_handler.exists(courier_name):
-                        if not self.couriers_updating.get(courier_name):
-                            if self.couriers_handler.validate_idship(courier_name, self.idship):
-                                self.couriers_error[courier_name] = True
-                                self.couriers_updating[courier_name] = True
-                                idle_couriers.append(courier_name)
+        for courier_name in self.used_couriers:
+            if self.couriers_status.start_updating(courier_name):
+                idle_couriers.append(courier_name)
         return idle_couriers
 
     def is_still_updating(self):
-        if self.idship:
-            with self.critical:
-                for courier_name in self.used_couriers:
-                    if self.couriers_updating.get(courier_name):
-                        return True
-                return False
-        else:
-            return True  # as if it's updating, to prevent enabling refresh button
+        for courier_name in self.used_couriers:
+            if self.couriers_status.is_updating(courier_name):
+                return True
+        return False
 
     def update_idle_couriers(self, courier_names):
         if self.idship and courier_names:
@@ -236,10 +270,7 @@ class Tracker:
                     new_content = future.result()
                     courier_name = futures[future]
                     ok = self.contents.update(courier_name, new_content)
-                    with self.critical:
-                        self.couriers_error[courier_name] = not ok
-                        self.couriers_updating[courier_name] = False
-
+                    self.couriers_status.done_updating(courier_name, error=not ok)
                     msg = "DONE" if ok else "FAILED"
                     log(
                         f"update {msg} - {self.description} - {self.idship}, {courier_name}",
@@ -261,22 +292,15 @@ class Tracker:
             log(traceback.format_exc(), error=True)
             return None
 
-    CouriersStatus = namedtuple("CouriersStatus", "name, ok_date, error, updating, valid_idship, exists")
-
     def get_couriers_status(self):
-        with self.critical:
-            couriers_status = []
-            for courier_name in sorted(self.used_couriers):
-                ok_date = self.contents.get_ok_date(courier_name)
-                error = self.couriers_error.get(courier_name, True)
-                updating = self.couriers_updating.get(courier_name, False)
-                valid_idship = self.couriers_handler.validate_idship(courier_name, self.idship)
-                exists = self.couriers_handler.exists(courier_name)
+        couriers_status = []
+        for courier_name in sorted(self.used_couriers):
+            status = self.couriers_status.get(courier_name)
+            status["ok_date"] = self.contents.get_ok_date(courier_name)
+            status["name"] = courier_name
+            couriers_status.append(status)
 
-                status = self.CouriersStatus(courier_name, ok_date, error, updating, valid_idship, exists)
-                couriers_status.append(status)
-
-            return couriers_status
+        return couriers_status
 
     def get_consolidated_content(self):
         consolidated = self.contents.get_consolidated(self.idship, self.used_couriers)
@@ -296,11 +320,6 @@ class Tracker:
         if courier_name in self.used_couriers:
             self.couriers_handler.open_in_browser(courier_name, self.idship)
 
-    def clean(self):
-        all_courier_names = self.couriers_handler.get_names()
-        for courier_name in self.contents.clean(all_courier_names):
-            log(f"CLEAN {self.description} - {self.idship}, {courier_name}")
-
     def close(self):
         # https://stackoverflow.com/questions/49992329/the-workers-in-threadpoolexecutor-is-not-really-daemon
         # doesn't work with Python >= 3.9 ?
@@ -312,7 +331,7 @@ class Tracker:
                         del _threads_queues[thread]
 
 
-class Trackers:
+class TrackersHandler:
     def __init__(self, filename, load_as_json, splash):
         self.filename = filename
         self.couriers_handler = CouriersHandler(splash)
@@ -378,8 +397,6 @@ class Trackers:
         return len([tracker for tracker in self.trackers if tracker.state == state])
 
     def close(self):
-        for tracker in self.trackers:
-            tracker.clean()
         self.save()
         for tracker in self.trackers:
             tracker.close()

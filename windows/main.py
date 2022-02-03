@@ -2,13 +2,13 @@ import locale
 from tkinter import TclError
 
 import PySimpleGUI as sg
-from tracking.trackers import Trackers
+from tracking.trackers import TrackersHandler
 
 from windows.events import Events, Keys, Shortcuts
 from windows.localization import TXT
 from windows.log import log
 from windows.theme import TH
-from windows.tracker_widgets import TrackerWidgets
+from windows.tracker_widgets_handler import TrackerWidgetsHandler
 from windows.widgets import ButtonMouseOver, ButtonTxtAndImg, ShowInTaskbarWindow
 
 SHOW_EVENTS = False
@@ -112,8 +112,8 @@ class MainWindow(ShowInTaskbarWindow):
         super().__init__(*args, **kwargs)
 
         self[Events.recenter].bind("<Double-Button-1>", "")
-        self.trackers = Trackers(trackers_filename, load_as_json, splash)
-        self.widgets = TrackerWidgets(self, self.trackers, splash)
+        self.trackers = TrackersHandler(trackers_filename, load_as_json, splash)
+        self.widgets = TrackerWidgetsHandler(self, self.trackers, splash)
         self.set_event_to_action()
 
         self.grey_windows = [GreyWindow(self)]
