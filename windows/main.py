@@ -61,7 +61,12 @@ class GreyWindow:
             if not self.followed_window.KeepOnTop:
                 # raise the greyed window above self.followed_window if needed
                 if self.is_visible(self.window):
-                    if root.tk.eval("wm stackorder " + str(root) + " isbelow " + str(self.followed_window.TKroot)):
+                    if root.tk.eval(
+                        "wm stackorder "
+                        + str(root)
+                        + " isbelow "
+                        + str(self.followed_window.TKroot)
+                    ):
                         root.lift()
 
     def close(self):
@@ -71,7 +76,9 @@ class GreyWindow:
 
 class MainWindow(ShowInTaskbarWindow):
     def __init__(self, trackers_filename, load_as_json, splash):
-        col_kwargs = dict(p=0, expand_x=True, expand_y=True, background_color=TH.widget_event_bg_color)
+        col_kwargs = dict(
+            p=0, expand_x=True, expand_y=True, background_color=TH.widget_event_bg_color
+        )
         new_trakers = sg.Col([[]], k=Keys.new_tracker_widgets, **col_kwargs)
         old_trakers = sg.Col([[]], k=Keys.old_tracker_widgets, **col_kwargs)
         all_trackers = sg.Col(

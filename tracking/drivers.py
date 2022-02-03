@@ -6,7 +6,11 @@ import traceback
 from socket import error as SocketError
 
 import psutil
-from selenium.common.exceptions import NoSuchWindowException, SessionNotCreatedException, WebDriverException
+from selenium.common.exceptions import (
+    NoSuchWindowException,
+    SessionNotCreatedException,
+    WebDriverException,
+)
 from urllib3.exceptions import ProtocolError
 from windows.localization import TXT
 from windows.log import log

@@ -427,7 +427,9 @@ class MondialRelay(Courier):
             for event in events_by_hours:
                 elts = event.xpath("./div/p//text()")
                 hour_text, label = elts[:2]
-                date = datetime.strptime(f"{date_text} {hour_text}", "%d/%m/%Y %H:%M").replace(tzinfo=get_localzone())
+                date = datetime.strptime(f"{date_text} {hour_text}", "%d/%m/%Y %H:%M").replace(
+                    tzinfo=get_localzone()
+                )
 
                 events.append(dict(date=date, label=label))
 
@@ -450,7 +452,9 @@ class RelaisColis(Courier):
         url = self.get_url_for_browser(idship)
 
         def show(driver, idship=idship):
-            driver.execute_script(f'document.getElementById("valeur").value="{idship}";validationForm();')
+            driver.execute_script(
+                f'document.getElementById("valeur").value="{idship}";validationForm();'
+            )
 
         TempBrowser.defer(show, url)
 
@@ -489,7 +493,9 @@ class RelaisColis(Courier):
                             if (txt := relais.get(k)) is not None
                         )
 
-                events.append(dict(date=date, status=status, label=label, delivered=event_delivered))
+                events.append(
+                    dict(date=date, status=status, label=label, delivered=event_delivered)
+                )
 
         return events, dict(product=product, delivered=delivered)
 
@@ -531,9 +537,9 @@ class GLS(Courier):
                         address = event["address"]
 
                         countries.append(address["countryCode"])
-                        date = datetime.strptime(f"{event['date']} {event['time']}", "%Y-%m-%d %H:%M:%S").replace(
-                            tzinfo=get_localzone()
-                        )
+                        date = datetime.strptime(
+                            f"{event['date']} {event['time']}", "%Y-%m-%d %H:%M:%S"
+                        ).replace(tzinfo=get_localzone())
                         events.append(
                             dict(
                                 date=date,
@@ -582,7 +588,9 @@ class DPD(Courier):
 
             events.append(
                 dict(
-                    date=datetime.strptime(f"{date} {hour}", "%d/%m/%Y %H:%M").astimezone(get_localzone()),
+                    date=datetime.strptime(f"{date} {hour}", "%d/%m/%Y %H:%M").astimezone(
+                        get_localzone()
+                    ),
                     status=location,
                     label=label,
                 )
@@ -607,13 +615,17 @@ class NLPost(Courier):
     def parse_content(self, content):
         events = []
 
-        timeline = content.xpath('//tr[@class="first detail"]') + content.xpath('//tr[@class="detail"]')
+        timeline = content.xpath('//tr[@class="first detail"]') + content.xpath(
+            '//tr[@class="detail"]'
+        )
         for event in timeline:
             date, label = event.xpath("./td/text()")[:2]
 
             events.append(
                 dict(
-                    date=datetime.strptime(date.strip(), "%d-%m-%Y %H:%M").replace(tzinfo=get_localzone()),
+                    date=datetime.strptime(date.strip(), "%d-%m-%Y %H:%M").replace(
+                        tzinfo=get_localzone()
+                    ),
                     label=label,
                 )
             )
@@ -648,7 +660,9 @@ class FourPX(Courier):
 
             events.append(
                 dict(
-                    date=datetime.strptime(f"{date} {hour}", "%Y-%m-%d %H:%M").replace(tzinfo=pytz.utc),
+                    date=datetime.strptime(f"{date} {hour}", "%Y-%m-%d %H:%M").replace(
+                        tzinfo=pytz.utc
+                    ),
                     status=status.strip(),
                     label=label.strip(),
                 )
@@ -773,7 +787,9 @@ class Chronopost(Courier):
             day, hour = tds[0].xpath("./text()")
             location, label = tds[1].xpath("./text()")
             day = day.split(" ", 1)[1]  # remove full day name
-            date = datetime.strptime(f"{day} {hour}", "%d/%m/%Y %H:%M").replace(tzinfo=get_localzone())
+            date = datetime.strptime(f"{day} {hour}", "%d/%m/%Y %H:%M").replace(
+                tzinfo=get_localzone()
+            )
             location = location.replace("...", "").strip()
             events.append(dict(date=date, status=location, label=label))
 

@@ -89,12 +89,17 @@ class Edit(Popup):
             ],
             [
                 sg.T(TXT.idship, font=(TH.fix_font, TH.edit_font_size)),
-                sg.Input(idship, font=(TH.fix_font, TH.edit_font_size), enable_events=True, key="idship"),
+                sg.Input(
+                    idship, font=(TH.fix_font, TH.edit_font_size), enable_events=True, key="idship"
+                ),
             ],
         ]
 
         self.check_colors = {True: TH.edit_check_color, False: TH.edit_unchecked_color}
-        self.msg_font = {True: (TH.fix_font_bold, TH.edit_msg_font_size), False: (TH.fix_font, TH.edit_msg_font_size)}
+        self.msg_font = {
+            True: (TH.fix_font_bold, TH.edit_msg_font_size),
+            False: (TH.fix_font, TH.edit_msg_font_size),
+        }
 
         self.idship_widgets = []
         for name in self.couriers_names:
@@ -302,7 +307,12 @@ class OneChoice(Popup):
 
 class AskConfirmation(Popup):
     def __init__(self, title, text, main_window):
-        layout = [[sg.Image(filename=TH.warn_img), sg.T(text, font=(TH.fix_font, TH.ask_confirmation_font_size))]]
+        layout = [
+            [
+                sg.Image(filename=TH.warn_img),
+                sg.T(text, font=(TH.fix_font, TH.ask_confirmation_font_size)),
+            ]
+        ]
         super().__init__(f"{title.capitalize()}?", layout, main_window)
 
     def loop(self):

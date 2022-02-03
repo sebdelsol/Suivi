@@ -23,7 +23,7 @@ class TrackerState:
     shown = "shown"
 
 
-class EventsNew:
+class SyncNewEvents:
     """for keeping track of new events"""
 
     def __init__(self, contents):
@@ -64,7 +64,7 @@ class EventsNew:
 class Contents:
     def __init__(self, contents):
         self.contents = contents or {}
-        self.events = EventsNew(self.contents.values())
+        self.events = SyncNewEvents(self.contents.values())
         self.critical = threading.Lock()
 
     def update(self, courier_name, new_content):
@@ -168,9 +168,13 @@ class CouriersStatus:
         self.critical = threading.Lock()
         self.error = {}
         self.updating = {}
-        self.exists = {courier_name: self.couriers_handler.exists(courier_name) for courier_name in used_couriers}
+        self.exists = {
+            courier_name: self.couriers_handler.exists(courier_name)
+            for courier_name in used_couriers
+        }
         self.valid_idship = {
-            courier_name: self.couriers_handler.validate_idship(courier_name, idship) for courier_name in used_couriers
+            courier_name: self.couriers_handler.validate_idship(courier_name, idship)
+            for courier_name in used_couriers
         }
 
     def start_updating(self, courier_name):
@@ -219,7 +223,9 @@ class Tracker:
         self.description = (description or "").strip().title()
         self.idship = (idship.upper() or "").strip()
 
-        self.couriers_status = CouriersStatus(self.couriers_handler, self.idship, self.used_couriers)
+        self.couriers_status = CouriersStatus(
+            self.couriers_handler, self.idship, self.used_couriers
+        )
 
     def _clean(self):
         all_courier_names = self.couriers_handler.get_names()
@@ -391,7 +397,9 @@ class TrackersHandler:
         return tracker
 
     def get_not_definitly_deleted(self):
-        return [tracker for tracker in self.trackers if tracker.state != TrackerState.definitly_deleted]
+        return [
+            tracker for tracker in self.trackers if tracker.state != TrackerState.definitly_deleted
+        ]
 
     def count_state(self, state):
         return len([tracker for tracker in self.trackers if tracker.state == state])

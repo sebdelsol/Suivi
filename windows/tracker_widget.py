@@ -174,7 +174,9 @@ class EventsWidget:
         else:
             plural = TXT.events if self.n_events > 1 else TXT.event
             n_txt = f"{self.n_events} {plural}"
-            self.n_event_widget.update(n_txt, font=self.n_event_font, text_color=TH.widget_expand_color)
+            self.n_event_widget.update(
+                n_txt, font=self.n_event_font, text_color=TH.widget_expand_color
+            )
 
             self._bind_to_expand(self.events_widget, bind=True)
             self.remove_new_events_button.update(visible=False)
@@ -263,7 +265,9 @@ class EventsWidget:
                     event_status, event_labels = self._get_event_labels(event, width)
                     event_warn = event.get("warn")
                     event_delivered = event.get("delivered")
-                    event_color = TH.warn_color if event_warn else (TH.ok_color if event_delivered else None)
+                    event_color = (
+                        TH.warn_color if event_warn else (TH.ok_color if event_delivered else None)
+                    )
                     status_color = event_color or TH.event_status_color
                     label_color = event_color or TH.event_label_color
                     status_font = self.events_font_bold if event_warn or event_delivered else font
@@ -282,10 +286,14 @@ class EventsWidget:
                         start_line = self.height_events + 1
                         start_col = len(event_courier) + len(event_date)
                         end_col = start_col + len(event_new)
-                        self.events_widget.pulsing.add_tag("", f"{start_line}.{start_col}", f"{start_line}.{end_col}")
+                        self.events_widget.pulsing.add_tag(
+                            "", f"{start_line}.{start_col}", f"{start_line}.{end_col}"
+                        )
 
                         end_line = start_line + len(event_labels) - 1
-                        self.events_widget.buttons.add_tag(event, f"{start_line}.{0}", f"{end_line}.{width}")
+                        self.events_widget.buttons.add_tag(
+                            event, f"{start_line}.{0}", f"{end_line}.{width}"
+                        )
 
                     self.height_events += len(event_labels)
 
@@ -331,7 +339,9 @@ class CouriersWidget:
 
     def finalize(self):
         buttons = MlineButtonsComponent(self.widget)
-        buttons.init(mouse_over_color=TH.widget_courier_mouse_over_color, on_click=self.open_in_browser)
+        buttons.init(
+            mouse_over_color=TH.widget_courier_mouse_over_color, on_click=self.open_in_browser
+        )
         self.widget.buttons = buttons
 
         pulsing = MlinePulsingComponent(self.widget)
@@ -346,7 +356,11 @@ class CouriersWidget:
     def _get_agos(couriers_status):
         for status in couriers_status:
             if ok_date := status["ok_date"]:
-                yield (timeago.format(ok_date, get_local_now(), TXT.locale_country_code).replace(TXT.ago, "").strip())
+                yield (
+                    timeago.format(ok_date, get_local_now(), TXT.locale_country_code)
+                    .replace(TXT.ago, "")
+                    .strip()
+                )
 
             else:
                 yield TXT.never
@@ -407,7 +421,9 @@ class CouriersWidget:
                     name_chr = list(re.finditer(r"\w+", name_txt))
                     start_col = start + name_chr[0].start()
                     end_col = start + name_chr[-1].end()
-                    self.widget.buttons.add_tag(status["name"], f"{line}.{start_col}", f"{line}.{end_col}")
+                    self.widget.buttons.add_tag(
+                        status["name"], f"{line}.{start_col}", f"{line}.{end_col}"
+                    )
 
         else:
             self.widget.update(TXT.no_couriers, text_color=TH.warn_color)
@@ -518,8 +534,12 @@ class ElapsedWidget:
     def show(self, content):
         elapsed = content.get("elapsed")
         if elapsed:
-            round_elapsed_days = elapsed.days + (1 if elapsed.seconds >= 43200 else 0)  # half a day in sec
-            elapsed_color = TH.elapsed_days_colors[bisect(TH.elapsed_days_intervals, round_elapsed_days)]
+            round_elapsed_days = elapsed.days + (
+                1 if elapsed.seconds >= 43200 else 0
+            )  # half a day in sec
+            elapsed_color = TH.elapsed_days_colors[
+                bisect(TH.elapsed_days_intervals, round_elapsed_days)
+            ]
             elapsed_txt = f"{round_elapsed_days}{'j' if round_elapsed_days <= 100 else ''}"
         else:
             elapsed_color = TH.elapsed_days_default_color
@@ -527,9 +547,15 @@ class ElapsedWidget:
 
         self.widget.erase()
         s = self.days_size
-        self.widget.draw_rounded_box(s * 0.5, s * 0.5, s, s * 0.9, s * 0.15, TH.elapsed_days_bg_color)
+        self.widget.draw_rounded_box(
+            s * 0.5, s * 0.5, s, s * 0.9, s * 0.15, TH.elapsed_days_bg_color
+        )
         self.widget.draw_text(
-            elapsed_txt, (s * 0.5, s * 0.5), color=elapsed_color, font=self.days_font, text_location="center"
+            elapsed_txt,
+            (s * 0.5, s * 0.5),
+            color=elapsed_color,
+            font=self.days_font,
+            text_location="center",
         )
 
 
@@ -542,9 +568,15 @@ class ToolbarWidget:
         if not ToolbarWidget.refresh_img:
             height = TH.widget_button_size - TH.widget_button_img_margin * 2
             size = (TH.widget_button_size, TH.widget_button_size)
-            ToolbarWidget.refresh_img = resize_and_colorize_img(TH.refresh_img, height, TH.refresh_color, size)
-            ToolbarWidget.edit_img = resize_and_colorize_img(TH.edit_img, height, TH.edit_color, size)
-            ToolbarWidget.archive_img = resize_and_colorize_img(TH.archives_img, height, TH.archives_color, size)
+            ToolbarWidget.refresh_img = resize_and_colorize_img(
+                TH.refresh_img, height, TH.refresh_color, size
+            )
+            ToolbarWidget.edit_img = resize_and_colorize_img(
+                TH.edit_img, height, TH.edit_color, size
+            )
+            ToolbarWidget.archive_img = resize_and_colorize_img(
+                TH.archives_img, height, TH.archives_color, size
+            )
 
         b_colors = dict(
             button_color=TH.widget_title_bg_color,
@@ -552,10 +584,17 @@ class ToolbarWidget:
         )
         b_size = (TH.widget_button_size, TH.widget_button_size)
         edit_button = ButtonMouseOver(
-            "", image_data=self.edit_img, p=(0, TH.widget_button_pad), **b_colors, size=b_size, k=edit
+            "",
+            image_data=self.edit_img,
+            p=(0, TH.widget_button_pad),
+            **b_colors,
+            size=b_size,
+            k=edit,
         )
 
-        self.refresh_button = ButtonMouseOver("", image_data=self.refresh_img, p=0, **b_colors, size=b_size, k=update)
+        self.refresh_button = ButtonMouseOver(
+            "", image_data=self.refresh_img, p=0, **b_colors, size=b_size, k=update
+        )
 
         archive_button = ButtonMouseOver(
             "",
@@ -635,7 +674,9 @@ class StatusWidget:
 
     def show(self, content):
         if status_date := content.get("status", {}).get("date"):
-            status_ago = f"{timeago.format(status_date, get_local_now(), TXT.locale_country_code)}, "
+            status_ago = (
+                f"{timeago.format(status_date, get_local_now(), TXT.locale_country_code)}, "
+            )
             self.ago_widget.update(status_ago)
 
         else:
@@ -694,7 +735,14 @@ class TrackerWidget:
         )
 
         title_col = sg.Col(
-            [[self.elapsed_widget.widget, self.description.widget, idship_couriers, self.toolbar.widget]],
+            [
+                [
+                    self.elapsed_widget.widget,
+                    self.description.widget,
+                    idship_couriers,
+                    self.toolbar.widget,
+                ]
+            ],
             p=0,
             background_color=TH.widget_title_bg_color,
             expand_x=True,
@@ -770,7 +818,9 @@ class TrackerWidget:
     def _update_idle_couriers(self, window, couriers):
         for content in self.tracker.update_idle_couriers(couriers):
             # https://stackoverflow.com/questions/10452770/python-lambdas-binding-to-local-values
-            window.trigger_event(lambda window, content=content: self._update_one_courier_done(content, window))
+            window.trigger_event(
+                lambda window, content=content: self._update_one_courier_done(content, window)
+            )
 
         window.trigger_event(self._update_done)
 
@@ -803,7 +853,9 @@ class TrackerWidget:
 
     def edit(self, window):
         trk = self.tracker
-        popup_edit = popup.Edit(TXT.edit, trk.idship, trk.description, trk.used_couriers, trk.couriers_handler, window)
+        popup_edit = popup.Edit(
+            TXT.edit, trk.idship, trk.description, trk.used_couriers, trk.couriers_handler, window
+        )
         ok, idship, description, used_couriers = popup_edit.loop()
         if ok:
             self.tracker.modify(idship, description, used_couriers)
@@ -811,7 +863,11 @@ class TrackerWidget:
 
     def archive_or_delete(self, window):
         choices = {TXT.archive: self.archive, TXT.delete: self.delete}
-        choices_colors = {TXT.archive: TH.ok_color, TXT.delete: TH.warn_color, False: TH.unselected_color}
+        choices_colors = {
+            TXT.archive: TH.ok_color,
+            TXT.delete: TH.warn_color,
+            False: TH.unselected_color,
+        }
         popup_one_choice = popup.OneChoice(
             choices,
             choices_colors,

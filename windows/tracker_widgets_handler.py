@@ -58,20 +58,31 @@ class TrackerWidgetsHandler:
         return [widget for widget in self.widgets if widget.tracker.state == state]
 
     def show_archives(self, window):
-        exit_result, chosen = self._choose(window, TXT.unarchive, TrackerState.archived, ok_name=TXT.unarchive)
+        exit_result, chosen = self._choose(
+            window, TXT.unarchive, TrackerState.archived, ok_name=TXT.unarchive
+        )
         if exit_result:
             for widget in chosen:
                 widget.unarchive(window)
 
     def show_deleted(self, window):
         def_delete_button_key = "-definitly delete-"
-        def_delete_button = dict(txt=TXT.delete_definitly, mouse_over_color=TH.warn_color, key=def_delete_button_key)
+        def_delete_button = dict(
+            txt=TXT.delete_definitly, mouse_over_color=TH.warn_color, key=def_delete_button_key
+        )
         exit_result, chosen = self._choose(
-            window, TXT.restore, TrackerState.deleted, ok_name=TXT.restore, added_button=def_delete_button
+            window,
+            TXT.restore,
+            TrackerState.deleted,
+            ok_name=TXT.restore,
+            added_button=def_delete_button,
         )
         if exit_result == def_delete_button_key and chosen:
             w_desc = max(len(widget.get_description()) for widget in chosen)
-            txt = "\n".join(f"{widget.get_description().ljust(w_desc)} - {widget.get_idship()}" for widget in chosen)
+            txt = "\n".join(
+                f"{widget.get_description().ljust(w_desc)} - {widget.get_idship()}"
+                for widget in chosen
+            )
             popup_warn = popup.AskConfirmation(
                 TXT.delete_definitly,
                 txt,

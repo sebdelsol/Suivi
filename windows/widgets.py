@@ -134,7 +134,9 @@ class ButtonMouseOver(sg.Button):
 
 
 class ButtonTxtAndImg(ButtonMouseOver):
-    def __init__(self, *args, im_margin=0, image_filename=None, image_justify="left", im_height=20, **kwargs):
+    def __init__(
+        self, *args, im_margin=0, image_filename=None, image_justify="left", im_height=20, **kwargs
+    ):
         self.im_margin = im_margin
         self.im_height = im_height
         self.image_filename = image_filename

@@ -94,7 +94,9 @@ class _Logger(Window):
                 self.TKroot.after(self.listen_step, self.listen)
 
     def resize(self, event):
-        if self.linked and ((event.x == 0 and event.y == 0) or self.current_location() != self.wanted_pos):
+        if self.linked and (
+            (event.x == 0 and event.y == 0) or self.current_location() != self.wanted_pos
+        ):
             self.stick_to_main()
 
     def event_handler(self, event):
