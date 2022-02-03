@@ -13,16 +13,10 @@ from windows import popup
 from windows.events import Events
 from windows.localization import TXT
 from windows.theme import TH
-from windows.widgets import (
-    AnimatedGif,
-    ButtonMouseOver,
-    GraphRounded,
-    HLine,
-    MlineButtonsComponent,
-    MlinePulsingComponent,
-    TextFit,
-    TextPulsingComponent,
-)
+from windows.widgets import (AnimatedGif, BindToFunction, ButtonMouseOver,
+                             GraphRounded, HLine, MlineButtonsComponent,
+                             MlinePulsingComponent, TextFit,
+                             TextPulsingComponent)
 
 
 class EventDates:
@@ -55,6 +49,48 @@ class EventDates:
             day = f"{day.ljust(day_width)}{' ' if same_day else ','}"
             hour = f"{hour}{' ' if same_hour and same_day else ','}"
             yield f"{day}{hour} "
+
+
+def get_event_labels(event, tab_width):
+    """
+    create an event status if missing
+    wrap the label to not exceed widget_event_max_width
+    add tab spaces for each lines
+    """
+    event_status = f"{event['status']}, " if event["status"] else ""
+    event_label = f"{event['label']}."
+    if event_label:
+        if event_status:
+            event_label = event_label[0].lower() + event_label[1:]
+
+        else:
+            event_label = event_label.capitalize()
+
+    # create a fake status if missing with firstwords of label
+    status_length = 25
+    if event_label and not event_status:
+        wrap = textwrap.wrap(event_label, status_length)
+        if len(wrap) > 1:
+            event_status = f"{wrap[0]} "
+            event_label = " ".join(wrap[1:])
+
+        else:
+            event_status = event_label
+            event_label = " "
+
+    # wrap event label and align with previous line(s)
+    event_labels = textwrap.wrap(
+        event_label,
+        TH.widget_event_max_width - len(event_status),
+        drop_whitespace=False,
+    ) or [""]
+
+    if len(event_labels) > 1:
+        next_labels = textwrap.wrap("".join(event_labels[1:]), TH.widget_event_max_width)
+        event_labels[1:] = [f"{' '* tab_width}{label.strip()}" for label in next_labels]
+    event_labels[0] = event_labels[0].strip()
+
+    return event_status, event_labels
 
 
 class EventsWidget:
@@ -106,11 +142,9 @@ class EventsWidget:
         self.status_layout = [self.remove_new_pin, self.n_event_widget, self.expand_button]
 
     def finalize(self, window):
-        # toggle expand is bound with tkinter
-        # to be able to remove them without removing all binds
-        self.button1_bind_id = {}
-        self.toggle_expand_bind = lambda event, window=window: self.toggle_expand(window)
-        self.bind_to_expand(self.events_widget, self.widget, self.n_event_widget)
+        toggle_expand = lambda event, window=window: self.toggle_expand(window)
+        self.bind_to_expand = BindToFunction("<Button-1>", toggle_expand)
+        self.bind_to_expand.bind(self.events_widget, self.widget, self.n_event_widget)
 
         buttons = MlineButtonsComponent(self.events_widget)
         buttons.init(
@@ -141,33 +175,18 @@ class EventsWidget:
         self._update_size()
         window.trigger_event(Events.update_window_size)
 
-    def bind_to_expand(self, *elements):
-        for element in elements:
-            self._bind_to_expand(element, bind=True)
-
-    def _bind_to_expand(self, element, bind=True):
-        if bind:
-            if not self.button1_bind_id.get(element):
-                bind_id = element.Widget.bind("<Button-1>", self.toggle_expand_bind, add="+")
-                self.button1_bind_id[element] = bind_id
-
-        else:
-            if bind_id := self.button1_bind_id.get(element):
-                # should be : element.Widget.unbind("<Button-1>", bind_id)
-                # but there's a bug with unbind that removes all
-                binds = element.Widget.bind("<Button-1>").split("\n")
-                new_binds = [l for l in binds if l[6 : 6 + len(bind_id)] != bind_id]
-                element.Widget.bind("<Button-1>", "\n".join(new_binds))
-                self.button1_bind_id[element] = None
-
     def _update_new_event(self):
         if self.n_events > 0 and self.n_new_events > 0:
             plural = TXT.several_new if self.n_events > 1 else TXT.new
             n_txt = f"{self.n_new_events} {plural}"
             self.n_event_widget.update(n_txt, font=self.n_new_event_font)
+            if self.expand_events:
+                self.bind_to_expand.unbind(self.events_widget)
+                self.remove_new_events_button.update(visible=True)
 
-            self._bind_to_expand(self.events_widget, bind=not self.expand_events)
-            self.remove_new_events_button.update(visible=self.expand_events)
+            else:
+                self.bind_to_expand.bind(self.events_widget)
+                self.remove_new_events_button.update(visible=False)
             self.n_event_widget.pulsing.start()
             self.events_widget.pulsing.start()
 
@@ -178,7 +197,7 @@ class EventsWidget:
                 n_txt, font=self.n_event_font, text_color=TH.widget_expand_color
             )
 
-            self._bind_to_expand(self.events_widget, bind=True)
+            self.bind_to_expand.bind(self.events_widget)
             self.remove_new_events_button.update(visible=False)
             self.n_event_widget.pulsing.stop()
             self.events_widget.pulsing.stop()
@@ -194,49 +213,6 @@ class EventsWidget:
         n_events_shown = float("inf") if self.expand_events else TH.widget_min_events_shown
         height = min(n_events_shown, self.height_events)
         self.events_widget.set_size((self.width_events, height))
-
-    @staticmethod
-    def _get_event_labels(event, width):
-        event_status = f"{event['status']}, " if event["status"] else ""
-        event_label = f"{event['label']}."
-        if event_label:
-            if event_status:
-                event_label = event_label[0].lower() + event_label[1:]
-
-            else:
-                event_label = event_label.capitalize()
-
-        # create a fake status if missing with firstwords of label
-        status_length = 25
-        if event_label and not event_status:
-            wrap = textwrap.wrap(event_label, status_length)
-            if len(wrap) > 1:
-                event_status = f"{wrap[0]} "
-                event_label = " ".join(wrap[1:])
-
-            else:
-                event_status = event_label
-                event_label = " "
-
-        # wrap event label and align with previous line(s)
-        event_labels = textwrap.wrap(
-            event_label,
-            TH.widget_event_max_width - len(event_status),
-            drop_whitespace=False,
-        ) or [""]
-
-        if len(event_labels) > 1:
-            next_labels = textwrap.wrap("".join(event_labels[1:]), TH.widget_event_max_width)
-            event_labels[1:] = [f"{' '* width}{label.strip()}" for label in next_labels]
-        event_labels[0] = event_labels[0].strip()
-
-        return event_status, event_labels
-
-    def _get_event_new(self, event):
-        if event.get("new"):
-            self.n_new_events += 1
-            return f"{TXT.new} ", self.events_font_bold
-        return "", self.events_font
 
     def show(self, content):
         self.events_widget.update("")
@@ -260,9 +236,14 @@ class EventsWidget:
                 for event, event_courier in zip(events, events_couriers):
                     event_courier = event_courier.center(courier_w)
                     event_date = next(events_dates)
-                    event_new, font = self._get_event_new(event)
+                    if event.get("new"):
+                        self.n_new_events += 1
+                        event_new, font = f"{TXT.new} ", self.events_font_bold
+                    else:
+                        event_new, font = "", self.events_font
+
                     width = sum(len(txt) for txt in (event_courier, event_date, event_new))
-                    event_status, event_labels = self._get_event_labels(event, width)
+                    event_status, event_labels = get_event_labels(event, width)
                     event_warn = event.get("warn")
                     event_delivered = event.get("delivered")
                     event_color = (
@@ -761,7 +742,7 @@ class TrackerWidget:
         self.idship.finalize()
         self.couriers.finalize()
         self.events.finalize(window)
-        self.events.bind_to_expand(self.status.status_widget, self.status.ago_widget)
+        self.events.bind_to_expand.bind(self.status.status_widget, self.status.ago_widget)
 
         # grab anywher and prevent selection
         for widget in (self.idship.widget, self.events.events_widget, self.couriers.widget):

@@ -405,3 +405,24 @@ class TextPulsingComponent(_PulsingBaseComponent):
 
     def _update_color(self, key, color):
         self._element.update(text_color=color)
+
+
+class BindToFunction:
+    def __init__(self, sequence, bind_func):
+        self.bind_ids = {}
+        self.bind_func = bind_func
+        self.sequence = sequence
+
+    def bind(self, *elements):
+        for element in elements:
+            if not self.bind_ids.get(element):
+                bind_id = element.Widget.bind(self.sequence, self.bind_func, add="+")
+                self.bind_ids[element] = bind_id
+
+    def unbind(self, element):
+        if bind_id := self.bind_ids.get(element):
+            # should use unbind but it removes all existing bind
+            binds = element.Widget.bind(self.sequence).split("\n")
+            new_binds = [l for l in binds if l[6 : 6 + len(bind_id)] != bind_id]
+            element.Widget.bind(self.sequence, "\n".join(new_binds))
+            del self.bind_ids[element]
