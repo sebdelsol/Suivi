@@ -164,45 +164,34 @@ class Contents:
 
 
 class Tracker:
-    def __init__(
-        self,
-        idship,
-        description,
-        used_couriers,
-        couriers_handler,
-        state=TrackerState.shown,
-        contents=None,
-        creation_date=None,
-    ):
-        self.modify(idship, description, used_couriers)
-        self.state = state
-        self.creation_date = creation_date or get_local_now()
+    def __init__(self, params, couriers_handler):
+        self.modify(params["idship"], params["description"], params["used_couriers"])
+        self.state = params.get("state", TrackerState.shown)
+        self.creation_date = params.get("creation_date", get_local_now())
+        self.contents = Contents(params.get("contents"))
         self.couriers_handler = couriers_handler
+
         self.couriers_error = {}
         self.couriers_updating = {}
-
-        self.contents = Contents(contents)
-
         self.critical = threading.Lock()
         self.executor_ops = threading.Lock()
         self.executors = []
         self.closing = False
 
-    def get_to_save(self):
-        with self.critical:
-            return dict(
-                creation_date=self.creation_date,
-                description=self.description,
-                idship=self.idship,
-                state=self.state,
-                used_couriers=self.used_couriers,
-                contents=self.contents.get(),
-            )
-
     def modify(self, idship, description, used_couriers):
-        self.used_couriers = used_couriers or []
+        self.used_couriers = used_couriers or ()
         self.description = (description or "").strip().title()
         self.idship = (idship.upper() or "").strip()
+
+    def get_to_save(self):
+        return dict(
+            creation_date=self.creation_date,
+            description=self.description,
+            idship=self.idship,
+            state=self.state,
+            used_couriers=self.used_couriers,
+            contents=self.contents.get(),
+        )
 
     def prepare_idle_couriers(self):
         idle_couriers = []
@@ -339,18 +328,7 @@ class Trackers:
             loaded_trackers = self._load_from_file(PICKLE_EXT, "rb", pickle.load)
 
         if loaded_trackers:
-            trackers = [
-                Tracker(
-                    trk["idship"],
-                    trk["description"],
-                    trk["used_couriers"],
-                    self.couriers_handler,
-                    trk["state"],
-                    trk["contents"],
-                    trk["creation_date"],
-                )
-                for trk in loaded_trackers
-            ]
+            trackers = [Tracker(params, self.couriers_handler) for params in loaded_trackers]
 
         else:
             trackers = []
@@ -388,7 +366,8 @@ class Trackers:
         return sorted(objs, key=lambda obj: get_tracker(obj).creation_date, reverse=True)
 
     def new(self, idship, description, used_couriers):
-        tracker = Tracker(idship, description, used_couriers, self.couriers_handler)
+        params = dict(idship=idship, description=description, used_couriers=used_couriers)
+        tracker = Tracker(params, self.couriers_handler)
         self.trackers.append(tracker)
         return tracker
 
