@@ -864,20 +864,20 @@ class TrackerWidget:
         if choice:
             choices[choice](window)
 
-    def _set_state(self, state, window, ask, event, reappear=False):
+    def _set_state(self, state, window, ask, event):
         do_it = True
         if ask:
-            popup_warn = popup.AskConfirmation(
+            popup_ask = popup.AskConfirmation(
                 ask,
                 f"{self.get_description()} - {self.get_idship()}",
                 window,
             )
-            do_it = popup_warn.loop()
+            do_it = popup_ask.loop()
 
         if do_it:
             self.tracker.state = state
 
-            if reappear:
+            if state == TrackerState.shown:
                 if not self.finalize(window):
                     self.events.reset_size()
                     self._show_current_content(window)
@@ -896,13 +896,13 @@ class TrackerWidget:
         self._set_state(TrackerState.definitly_deleted, window, False, Events.trash_updated)
 
     def undelete(self, window):
-        self._set_state(TrackerState.shown, window, False, Events.trash_updated, reappear=True)
+        self._set_state(TrackerState.shown, window, False, Events.trash_updated)
 
     def archive(self, window):
         self._set_state(TrackerState.archived, window, False, Events.archives_updated)
 
     def unarchive(self, window):
-        self._set_state(TrackerState.shown, window, False, Events.archives_updated, reappear=True)
+        self._set_state(TrackerState.shown, window, False, Events.archives_updated)
 
     def get_creation_date(self):
         return f"{self.tracker.creation_date:{TXT.short_date_format}}".replace(".", "")
