@@ -322,8 +322,8 @@ class Tracker:
             self.couriers_handler.open_in_browser(courier_name, self.idship)
 
     def close(self):
-        # https://stackoverflow.com/questions/49992329/the-workers-in-threadpoolexecutor-is-not-really-daemon
-        # doesn't work with Python >= 3.9 ?
+        # prevent executors threads to join at exit and have the app hanging too long
+        # it's ok since the excutors can't corrupt any data to save
         with self.executor_ops:
             self.closing = True
             if self.executors:
