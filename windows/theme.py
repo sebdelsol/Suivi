@@ -115,6 +115,7 @@ class TH:
     widget_description_font_size = 40
     widget_description_max_width = 400
     widget_idship_font_size = 10
+    widget_status_ago_font_size = 10,
     widget_status_font_size = 15
     widget_expand_font_size = 12
     widget_expand_color = "grey50"
@@ -127,9 +128,9 @@ class TH:
     widget_min_events_shown = 1
     elapsed_days_intervals = [10, 20, 30]
     elapsed_days_colors = ["lime green", "dark orange", "red", "black"]
-    elapsed_days_default_color = "grey70"
+    elapsed_days_default_color = "grey80"
     elapsed_days_bg_color = "grey90"
-    elapsed_days_box_size = 50
+    elapsed_days_box_size = 60, 40
     elapsed_days_font_size = 15
 
     n_event_font_size = 7

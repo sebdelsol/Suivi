@@ -108,14 +108,14 @@ class EventsWidget:
 
         self.n_event_font = (TH.var_font, TH.n_event_font_size)
         self.n_new_event_font = (TH.var_font_bold, TH.n_new_event_font_size)
-        self.n_event_widget = sg.T(
+        self.n_event_text = sg.T(
             "",
             p=0,
             font=self.n_event_font,
             text_color=TH.widget_expand_color,
         )
 
-        self.remove_new_events_button = ButtonMouseOver(
+        self.remove_button = ButtonMouseOver(
             TXT.I_have_seen,
             p=(TH.remove_new_events_padx, 0),
             font=(TH.var_font_bold, TH.remove_new_events_font_size),
@@ -124,7 +124,7 @@ class EventsWidget:
             visible=False,
             k=self.remove_all_new_events,
         )
-        self.remove_new_pin = sg.pin(self.remove_new_events_button)
+        self.remove_new_pin = sg.pin(self.remove_button)
 
         self.expand_button = ButtonMouseOver(
             "",
@@ -146,12 +146,12 @@ class EventsWidget:
             **mline_kwargs,
         )
         self.widget = sg.pin(self.events_widget, expand_x=True)  # collapse when hidden
-        self.status_layout = [self.remove_new_pin, self.n_event_widget, self.expand_button]
+        self.status_layout = [self.remove_new_pin, self.n_event_text, self.expand_button]
 
     def finalize(self, window):
         toggle_expand = lambda event, window=window: self.toggle_expand(window)
         self.bind_to_expand = BindToFunction("<Button-1>", toggle_expand)
-        self.bind_to_expand.bind(self.events_widget, self.widget, self.n_event_widget)
+        self.bind_to_expand.bind(self.events_widget, self.widget, self.n_event_text)
 
         buttons = MlineButtonsComponent(self.events_widget)
         buttons.init(
@@ -164,62 +164,70 @@ class EventsWidget:
         pulsing.init(TH.event_new_color, TH.widget_event_bg_color)
         self.events_widget.pulsing = pulsing
 
-        pulsing = TextPulsingComponent(self.n_event_widget)
+        pulsing = TextPulsingComponent(self.n_event_text)
         pulsing.init(TH.event_new_color, TH.widget_event_bg_color)
-        self.n_event_widget.pulsing = pulsing
+        self.n_event_text.pulsing = pulsing
 
     def reset_size(self):
         self.n_events = 0
         self.n_new_events = 0
         self.width_events = 0
         self.height_events = 0
-        self.expand_events = False
+        self.are_events_expanded = False
 
     def toggle_expand(self, window):
-        self.expand_events = not self.expand_events
-        self._update_new_event()
+        self.are_events_expanded = not self.are_events_expanded
         self._update_expand_button()
+        self._update_remove_button_visibility()
+        self._update_bind_to_expand()
         self._update_size()
         window.trigger_event(Events.update_window_size)
 
     def _update_new_event(self):
+        visible = self.height_events > TH.widget_min_events_shown
+        self.n_event_text.update(visible=visible)
+
         if self.n_events > 0 and self.n_new_events > 0:
             plural = TXT.several_new if self.n_events > 1 else TXT.new
             n_txt = f"{self.n_new_events} {plural}"
-            self.n_event_widget.update(n_txt, font=self.n_new_event_font)
-            if self.expand_events:
-                self.bind_to_expand.unbind(self.events_widget)
-                self.remove_new_events_button.update(visible=True)
-
-            else:
-                self.bind_to_expand.bind(self.events_widget)
-                self.remove_new_events_button.update(visible=False)
-            self.n_event_widget.pulsing.start()
+            self.n_event_text.update(n_txt, font=self.n_new_event_font)
+            self.n_event_text.pulsing.start()
             self.events_widget.pulsing.start()
 
         else:
             plural = TXT.events if self.n_events > 1 else TXT.event
             n_txt = f"{self.n_events} {plural}"
-            self.n_event_widget.update(
+            self.n_event_text.update(
                 n_txt, font=self.n_event_font, text_color=TH.widget_expand_color
             )
-
-            self.bind_to_expand.bind(self.events_widget)
-            self.remove_new_events_button.update(visible=False)
-            self.n_event_widget.pulsing.stop()
+            self.n_event_text.pulsing.stop()
             self.events_widget.pulsing.stop()
 
-    def _update_expand_button(self):
-        visible = self._is_events_visible() and self.height_events > TH.widget_min_events_shown
-        self.expand_button.update("▲" if self.expand_events else "▼", visible=visible)
+    def _update_bind_to_expand(self):
+        unbind = self.are_events_expanded and self.n_events > 0 and self.n_new_events > 0
+        if unbind:
+            self.bind_to_expand.unbind(self.events_widget)
+        else:
+            self.bind_to_expand.bind(self.events_widget)
 
-    def _is_events_visible(self):
-        return self.height_events > 0
+    def _update_remove_button_visibility(self):
+        visible = self.are_events_expanded and self.n_events > 0 and self.n_new_events > 0
+        self.remove_button.update(visible=visible)
+
+    def _update_expand_button(self):
+        visible = self.height_events > TH.widget_min_events_shown
+        self.expand_button.update("▲" if self.are_events_expanded else "▼", visible=visible)
 
     def _update_size(self):
-        n_events_shown = float("inf") if self.expand_events else TH.widget_min_events_shown
-        height = min(n_events_shown, self.height_events)
+        self.events_widget.update(visible=self.height_events > 0)
+        height = self.height_events if self.are_events_expanded else TH.widget_min_events_shown
         self.events_widget.set_size((self.width_events, height))
+
+    def _get_event_new(self, event):
+        if event.get("new"):
+            self.n_new_events += 1
+            return f"{TXT.new} ", self.events_font_bold
+        return "", self.events_font
 
     def show(self, content):
         self.events_widget.update("")
@@ -243,12 +251,7 @@ class EventsWidget:
                 for event, event_courier in zip(events, events_couriers):
                     event_courier = event_courier.center(courier_w)
                     event_date = next(events_dates)
-                    if event.get("new"):
-                        self.n_new_events += 1
-                        event_new, font = f"{TXT.new} ", self.events_font_bold
-                    else:
-                        event_new, font = "", self.events_font
-
+                    event_new, font = self._get_event_new(event)
                     width = sum(len(txt) for txt in (event_courier, event_date, event_new))
                     event_status, event_labels = get_event_labels(event, width)
                     event_warn = event.get("warn")
@@ -288,10 +291,10 @@ class EventsWidget:
             if not self.n_new_events:
                 self.events_widget.buttons.remove_tags()
 
-            self._update_new_event()
-
-        self.events_widget.update(visible=self._is_events_visible())
+        self._update_new_event()
+        self._update_bind_to_expand()
         self._update_expand_button()
+        self._update_remove_button_visibility()
         self._update_size()
 
 
@@ -495,14 +498,13 @@ class IdShipWidget:
 
 class ElapsedWidget:
     def __init__(self):
-        self.days_size = TH.elapsed_days_box_size
+        self.graph_size = TH.elapsed_days_box_size
         self.days_font = (TH.fix_font_bold, TH.elapsed_days_font_size)
-        graph_size = (self.days_size, self.days_size)
         self.widget = GraphRounded(
-            canvas_size=graph_size,
+            canvas_size=self.graph_size,
             graph_bottom_left=(0, 0),
-            graph_top_right=graph_size,
-            p=(TH.widget_padx, 0),
+            graph_top_right=self.graph_size,
+            p=((0, TH.widget_padx), (0, 0)),
             background_color=TH.widget_title_bg_color,
         )
 
@@ -514,23 +516,23 @@ class ElapsedWidget:
                 round_elapsed_days += 1
             color_index = bisect(TH.elapsed_days_intervals, round_elapsed_days)
             elapsed_color = TH.elapsed_days_colors[color_index]
-            elapsed_txt = f"{round_elapsed_days}{'j' if round_elapsed_days <= 100 else ''}"
+            elapsed_txt = f"{round_elapsed_days}j"
 
         else:
             elapsed_color = TH.elapsed_days_default_color
             elapsed_txt = "?"
 
-        s = self.days_size
+        w, h = self.graph_size
         self.widget.erase()
         self.widget.draw_rounded_box(
-            s * 0.5, s * 0.5, s, s * 0.9, s * 0.15, TH.elapsed_days_bg_color
+            w * 0.5, h * 0.5, w, h, h * 0.4, TH.elapsed_days_bg_color, corner="right"
         )
         self.widget.draw_text(
             elapsed_txt,
-            (s * 0.5, s * 0.5),
+            (w * 0.5, h * 0.55),
             color=elapsed_color,
             font=self.days_font,
-            text_location="center",
+            text_location=sg.TEXT_LOCATION_CENTER,
         )
 
 
@@ -633,7 +635,7 @@ class StatusWidget:
         self.ago_widget = sg.T(
             "",
             p=0,
-            font=(TH.var_font, TH.widget_status_font_size),
+            font=(TH.var_font, TH.widget_status_ago_font_size),
             text_color=TH.widget_ago_color,
         )
 
@@ -845,6 +847,7 @@ class TrackerWidget:
         ok, idship, description, used_couriers = popup_edit.loop()
         if ok:
             self.tracker.set(idship=idship, description=description, used_couriers=used_couriers)
+            self._show_current_content(window)
             self.update(window)
 
     def archive_or_delete(self, window):
@@ -864,20 +867,20 @@ class TrackerWidget:
         if choice:
             choices[choice](window)
 
-    def _set_state(self, state, window, ask, event, reappear=False):
+    def _set_state(self, state, window, ask, event):
         do_it = True
         if ask:
-            popup_warn = popup.AskConfirmation(
+            popup_ask = popup.AskConfirmation(
                 ask,
                 f"{self.get_description()} - {self.get_idship()}",
                 window,
             )
-            do_it = popup_warn.loop()
+            do_it = popup_ask.loop()
 
         if do_it:
             self.tracker.state = state
 
-            if reappear:
+            if state == TrackerState.shown:
                 if not self.finalize(window):
                     self.events.reset_size()
                     self._show_current_content(window)
@@ -896,13 +899,13 @@ class TrackerWidget:
         self._set_state(TrackerState.definitly_deleted, window, False, Events.trash_updated)
 
     def undelete(self, window):
-        self._set_state(TrackerState.shown, window, False, Events.trash_updated, reappear=True)
+        self._set_state(TrackerState.shown, window, False, Events.trash_updated)
 
     def archive(self, window):
         self._set_state(TrackerState.archived, window, False, Events.archives_updated)
 
     def unarchive(self, window):
-        self._set_state(TrackerState.shown, window, False, Events.archives_updated, reappear=True)
+        self._set_state(TrackerState.shown, window, False, Events.archives_updated)
 
     def get_creation_date(self):
         return f"{self.tracker.creation_date:{TXT.short_date_format}}".replace(".", "")
