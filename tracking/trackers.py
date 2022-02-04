@@ -49,16 +49,12 @@ class SyncNewEvents:
                 self.events[key] = event
 
     def remove_new_event(self, event):
-        """change only self.events, they are in sync with new_content"""
         if event := self.events.get(self._get_key(event)):
             event["new"] = False
 
-    @staticmethod
-    def remove_all_new_event(contents):
-        """change only contents events, they are in sync with self.events"""
-        for content in contents:
-            for event in content["events"]:
-                event["new"] = False
+    def remove_all_new_event(self):
+        for event in self.events.values():
+            event["new"] = False
 
 
 class Contents:
@@ -151,7 +147,7 @@ class Contents:
 
     def remove_all_new_event(self):
         with self.critical:
-            self.events.remove_all_new_event(self.contents.values())
+            self.events.remove_all_new_event()
 
     def clean(self, all_courier_names):
         with self.critical:
