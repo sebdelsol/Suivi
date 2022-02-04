@@ -207,21 +207,21 @@ class CouriersStatus:
 
 
 class Tracker:
-    def __init__(self, params, couriers_handler):
+    def __init__(self, couriers_handler, **kwargs):
         self.couriers_handler = couriers_handler
-        self.modify(params["idship"], params["description"], params["used_couriers"])
-        self.state = params.get("state", TrackerState.shown)
-        self.creation_date = params.get("creation_date", get_local_now())
-        self.contents = Contents(params.get("contents"))
+        self.modify(**kwargs)
+        self.state = kwargs.get("state", TrackerState.shown)
+        self.creation_date = kwargs.get("creation_date", get_local_now())
+        self.contents = Contents(kwargs.get("contents"))
 
         self.executor_ops = threading.Lock()
         self.executors = []
         self.closing = False
 
-    def modify(self, idship, description, used_couriers):
-        self.used_couriers = used_couriers or ()
-        self.description = (description or "").strip().title()
-        self.idship = (idship.upper() or "").strip()
+    def modify(self, **kwargs):
+        self.used_couriers = kwargs.get("used_courier", ())
+        self.description = kwargs.get("description", "").strip().title()
+        self.idship = kwargs.get("idship", "").upper().strip()
 
         self.couriers_status = CouriersStatus(
             self.couriers_handler, self.idship, self.used_couriers
@@ -353,7 +353,7 @@ class TrackersHandler:
             loaded_trackers = self._load_from_file(PICKLE_EXT, "rb", pickle.load)
 
         if loaded_trackers:
-            trackers = [Tracker(params, self.couriers_handler) for params in loaded_trackers]
+            trackers = [Tracker(self.couriers_handler, **kwargs) for kwargs in loaded_trackers]
 
         else:
             trackers = []
@@ -391,8 +391,7 @@ class TrackersHandler:
         return sorted(objs, key=lambda obj: get_tracker(obj).creation_date, reverse=True)
 
     def new(self, idship, description, used_couriers):
-        params = dict(idship=idship, description=description, used_couriers=used_couriers)
-        tracker = Tracker(params, self.couriers_handler)
+        tracker = Tracker(self.couriers_handler, idship=idship, description=description, used_couriers=used_couriers)
         self.trackers.append(tracker)
         return tracker
 
