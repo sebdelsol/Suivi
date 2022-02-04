@@ -844,7 +844,7 @@ class TrackerWidget:
         )
         ok, idship, description, used_couriers = popup_edit.loop()
         if ok:
-            self.tracker.modify(idship, description, used_couriers)
+            self.tracker.set(idship=idship, description=description, used_couriers=used_couriers)
             self.update(window)
 
     def archive_or_delete(self, window):

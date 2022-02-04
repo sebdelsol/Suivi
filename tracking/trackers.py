@@ -209,7 +209,7 @@ class CouriersStatus:
 class Tracker:
     def __init__(self, couriers_handler, **kwargs):
         self.couriers_handler = couriers_handler
-        self.modify(**kwargs)
+        self.set(**kwargs)
         self.state = kwargs.get("state", TrackerState.shown)
         self.creation_date = kwargs.get("creation_date", get_local_now())
         self.contents = Contents(kwargs.get("contents"))
@@ -218,8 +218,8 @@ class Tracker:
         self.executors = []
         self.closing = False
 
-    def modify(self, **kwargs):
-        self.used_couriers = kwargs.get("used_courier", ())
+    def set(self, **kwargs):
+        self.used_couriers = kwargs.get("used_couriers", ())
         self.description = kwargs.get("description", "").strip().title()
         self.idship = kwargs.get("idship", "").upper().strip()
 
@@ -391,7 +391,12 @@ class TrackersHandler:
         return sorted(objs, key=lambda obj: get_tracker(obj).creation_date, reverse=True)
 
     def new(self, idship, description, used_couriers):
-        tracker = Tracker(self.couriers_handler, idship=idship, description=description, used_couriers=used_couriers)
+        tracker = Tracker(
+            self.couriers_handler,
+            idship=idship,
+            description=description,
+            used_couriers=used_couriers,
+        )
         self.trackers.append(tracker)
         return tracker
 
