@@ -834,7 +834,7 @@ class TrackerWidget:
         self._show_current_content(window)  # show_events instead ??
 
     def remove_all_new_events(self, window):
-        self.tracker.remove_all_new_event()
+        self.tracker.remove_all_new_events()
         self._show_current_content(window)  # show_events instead ??
 
     def edit(self, window):

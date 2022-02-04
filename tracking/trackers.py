@@ -52,7 +52,7 @@ class SyncNewEvents:
         if event := self.events.get(self._get_key(event)):
             event["new"] = False
 
-    def remove_all_new_event(self):
+    def remove_all_new_events(self):
         for event in self.events.values():
             event["new"] = False
 
@@ -145,9 +145,9 @@ class Contents:
         with self.critical:
             self.events.remove_new_event(event)
 
-    def remove_all_new_event(self):
+    def remove_all_new_events(self):
         with self.critical:
-            self.events.remove_all_new_event()
+            self.events.remove_all_new_events()
 
     def clean(self, all_courier_names):
         with self.critical:
@@ -315,8 +315,8 @@ class Tracker:
     def remove_new_event(self, event):
         self.contents.remove_new_event(event)
 
-    def remove_all_new_event(self):
-        self.contents.remove_all_new_event()
+    def remove_all_new_events(self):
+        self.contents.remove_all_new_events()
 
     def open_in_browser(self, courier_name):
         if courier_name in self.used_couriers:
