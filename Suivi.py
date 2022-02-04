@@ -57,7 +57,8 @@ if __name__ == "__main__":
         splash.close()
 
         main_window.loop()
+        print("Exiting")
         main_window.close()
         logger.close()
 
-    print("exiting")
+    print("Exit")

@@ -174,6 +174,7 @@ class _Logger(Window):
         except TclError as e:
             print(f"TCL error ({e})")
 
+        self.print_only()
         super().close()
 
 

@@ -115,7 +115,7 @@ class TH:
     widget_description_font_size = 40
     widget_description_max_width = 400
     widget_idship_font_size = 10
-    widget_status_ago_font_size = 10,
+    widget_status_ago_font_size = 10
     widget_status_font_size = 15
     widget_expand_font_size = 12
     widget_expand_color = "grey50"
