@@ -240,17 +240,16 @@ class Tracker:
         )
 
     def start_updating_idle_couriers(self):
-        idle_couriers = []
-        for courier_name in self.used_couriers:
-            if self.couriers_status.start_updating(courier_name):
-                idle_couriers.append(courier_name)
-        return idle_couriers
+        return [
+            courier_name
+            for courier_name in self.used_couriers
+            if self.couriers_status.start_updating(courier_name)
+        ]
 
     def is_still_updating(self):
-        for courier_name in self.used_couriers:
-            if self.couriers_status.is_updating(courier_name):
-                return True
-        return False
+        return any(
+            self.couriers_status.is_updating(courier_name) for courier_name in self.used_couriers
+        )
 
     def update_idle_couriers(self, courier_names):
         if self.idship and courier_names:

@@ -57,6 +57,25 @@ class TrackerWidgetsHandler:
     def _get_widgets_with_state(self, state):
         return [widget for widget in self.widgets if widget.tracker.state == state]
 
+    def _get_sorted(self, widgets):
+        return self.trackers.sort(widgets, get_tracker=lambda widget: widget.tracker)
+
+    def _choose(self, window, title, state, ok_name, added_button=None):
+        widgets = self._get_sorted(self._get_widgets_with_state(state))
+        w_desc = max(len(widget.get_description()) for widget in widgets) if widgets else 0
+        w_date = max(len(widget.get_creation_date()) for widget in widgets) if widgets else 0
+
+        choices = []
+        for widget in widgets:
+            color = TH.ok_color if widget.get_delivered() else TH.warn_color
+            date = f"{widget.get_creation_date()},".ljust(w_date + 1)
+            txt = f"{date} {widget.get_description().ljust(w_desc)} - {widget.get_idship()}"
+            choices.append((txt, color))
+
+        popup_choices = popup.Choices(choices, title, window, ok_name, added_button)
+        exit_result, chosen = popup_choices.loop()
+        return exit_result, [widgets[i] for i in chosen]
+
     def show_archives(self, window):
         exit_result, chosen = self._choose(
             window, TXT.unarchive, TrackerState.archived, ok_name=TXT.unarchive
@@ -96,25 +115,6 @@ class TrackerWidgetsHandler:
         else:
             for widget in chosen:
                 widget.undelete(window)
-
-    def _get_sorted(self, widgets):
-        return self.trackers.sort(widgets, get_tracker=lambda widget: widget.tracker)
-
-    def _choose(self, window, title, state, ok_name, added_button=None):
-        widgets = self._get_sorted(self._get_widgets_with_state(state))
-        w_desc = max(len(widget.get_description()) for widget in widgets) if widgets else 0
-        w_date = max(len(widget.get_creation_date()) for widget in widgets) if widgets else 0
-
-        choices = []
-        for widget in widgets:
-            color = TH.ok_color if widget.get_delivered() else TH.warn_color
-            date = f"{widget.get_creation_date()},".ljust(w_date + 1)
-            txt = f"{date} {widget.get_description().ljust(w_desc)} - {widget.get_idship()}"
-            choices.append((txt, color))
-
-        popup_choices = popup.Choices(choices, title, window, ok_name, added_button)
-        exit_result, chosen = popup_choices.loop()
-        return exit_result, [widgets[i] for i in chosen]
 
     def archives_updated(self):
         n_archives = self.trackers.count_state(TrackerState.archived)
