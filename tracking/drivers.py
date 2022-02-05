@@ -34,13 +34,14 @@ class _BaseHandler:
         self._drivers = []
         self.max_drivers = None
         self._in_creation = 0
+        self._creation_thread =[]
         self._driver_count_ops = threading.Lock()
         atexit.register(self._close)
 
-    def _log_creation(self, txt, no_driver, error=False):
+    def _log_creation(self, txt, n_drivers, error=False):
         msg = f"{self.name} {txt}"
         if self.max_drivers:
-            msg += f" ({no_driver}/{self.max_drivers})"
+            msg += f" ({n_drivers + 1}/{self.max_drivers})"
         log(msg, error=error)
 
     def create(self, create_driver_func):
@@ -49,20 +50,21 @@ class _BaseHandler:
             can_create = not self.max_drivers or n_drivers < self.max_drivers
             if can_create:
                 self._in_creation += 1
+                self._creation_thread.append(threading.current_thread())
 
         if can_create:
             driver = None
-            self._log_creation("start CREATION", n_drivers + 1)
+            self._log_creation("start CREATION", n_drivers)
             try:
                 driver = create_driver_func(n_drivers)
-                self._log_creation("has been CREATED", n_drivers + 1)
+                self._log_creation("has been CREATED", n_drivers)
 
                 with self._driver_count_ops:
                     self._in_creation -= 1
                     self._drivers.append(driver)
 
             except (SessionNotCreatedException, ProtocolError, SocketError) as e:
-                self._log_creation(f"creation FAILED ({e})", n_drivers + 1, error=True)
+                self._log_creation(f"creation FAILED ({e})", n_drivers, error=True)
                 with self._driver_count_ops:
                     self._in_creation -= 1
 
@@ -79,22 +81,30 @@ class _BaseHandler:
         with self._driver_count_ops:
             n_drivers = len(self._drivers)
             for i, driver in enumerate(self._drivers):
-                print(f"QUIT {self.name} {i + 1}/{n_drivers}")
+                print(f"QUIT {self.name} ({i + 1}/{n_drivers})")
                 driver.quit()
 
-        # if drivers are still being created terminate those
-        current_proc = psutil.Process()
-        while True:
-            with self._driver_count_ops:
-                if self._in_creation == 0:
-                    break
+            # if drivers are still being created terminate those
+            current_proc = psutil.Process()
+            for thread in self._creation_thread:
+                if thread.is_alive():
+                    for child in current_proc.children(recursive=True):
+                        if "chromedriver.exe" in child.name().lower():
+                            print(f"KILL {child.name()} {child.pid}")
+                            child.terminate()
 
-                for child in current_proc.children(recursive=True):
-                    if "chromedriver.exe" in child.name().lower():
-                        print(f"KILL {child.name()} {child.pid}")
-                        child.terminate()
+        # while True:
+        #     with self._driver_count_ops:
+        #         for thread self._creation_thread
+        #         if self._in_creation == 0:
+        #             break
 
-                time.sleep(0.5)
+        #         for child in current_proc.children(recursive=True):
+        #             if "chromedriver.exe" in child.name().lower():
+        #                 print(f"KILL {child.name()} {child.pid}")
+        #                 child.terminate()
+
+        #         time.sleep(0.5)
 
 
 class DriverHandler(_BaseHandler):
