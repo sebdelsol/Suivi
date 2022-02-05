@@ -9,7 +9,7 @@ class TXT:
     new = "Nouveau"
     several_new = "Nouveaux"
     refresh = "Rafraichir"
-    archives = "Archive"
+    archives = "Archives"
     trash = "Poubelle"
     exit = " X "
     minimize = " _ "
