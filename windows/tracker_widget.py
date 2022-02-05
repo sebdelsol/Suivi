@@ -252,7 +252,7 @@ class EventsWidget:
                     event_courier = event_courier.center(courier_w)
                     event_date = next(events_dates)
                     event_new, font = self._get_event_new(event)
-                    width = sum(len(txt) for txt in (event_courier, event_date, event_new))
+                    width = sum(len(txt) for txt in (event_courier, event_date))
                     event_status, event_labels = get_event_labels(event, width)
                     event_warn = event.get("warn")
                     event_delivered = event.get("delivered")
@@ -270,7 +270,7 @@ class EventsWidget:
                     for event_label in event_labels:
                         prt(event_label, font=font, t=label_color, autoscroll=False)
 
-                    width += sum(len(txt) for txt in (event_status, event_labels[0]))
+                    width += sum(len(txt) for txt in (event_new, event_status, event_labels[0]))
                     self.width_events = max(width, self.width_events)
 
                     if event_new:

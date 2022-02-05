@@ -721,8 +721,12 @@ class LaPoste(Courier):
             else:
                 fromto = None
 
-            timeline = list(filter(lambda t: t["status"], shipment.get("timeline")))
+            # timeline = list(filter(lambda t: t["status"], shipment.get("timeline")))
+            timeline = list(filter(lambda t: t["shortLabel"], shipment.get("timeline")))
             status_label = timeline[-1]["shortLabel"]
+            if date := timeline[-1]["date"]:
+                date = get_local_time(date)
+                status_label += f" {date:{TXT.long_day_format}}"
             delivered = False
 
             for event in shipment.get("event", ()):

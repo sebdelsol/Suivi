@@ -4,6 +4,7 @@ class TXT:
 
     long_date_format = "%a %d %b %y, %Hh%M"
     short_date_format = "%a %d %b %y"
+    long_day_format = "le %A %d %B"
 
     log = "Log"
     new = "Nouveau"

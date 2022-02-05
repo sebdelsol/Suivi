@@ -104,18 +104,22 @@ class GraphRounded(sg.Graph):
             self.draw_arc((x + w - r2, y + h - r2), (x + w, y + h), 90, 0, **colors)  # ne
             self.draw_arc((x - w, y - h), (x - w + r2, y - h + r2), 90, 180, **colors)  # sw
             self.draw_arc((x + w - r2, y - h), (x + w, y - h + r2), 90, 270, **colors)  # se
+
         elif corner == "top":
             self.draw_arc((x - w, y + h - r2), (x - w + r2, y + h), 90, 90, **colors)  # nw
             self.draw_arc((x + w - r2, y + h - r2), (x + w, y + h), 90, 0, **colors)  # ne
             self.draw_rectangle((x - w, y - h + r), (x + w, y - h), **rec_colors)
+
         elif corner == "bottom":
             self.draw_arc((x - w, y - h), (x - w + r2, y - h + r2), 90, 180, **colors)  # sw
             self.draw_arc((x + w - r2, y - h), (x + w, y - h + r2), 90, 270, **colors)  # se
             self.draw_rectangle((x - w, y + h), (x + w, y + h - r), **rec_colors)
+
         elif corner == "left":
             self.draw_arc((x - w, y + h - r2), (x - w + r2, y + h), 90, 90, **colors)  # nw
             self.draw_arc((x - w, y - h), (x - w + r2, y - h + r2), 90, 180, **colors)  # sw
             self.draw_rectangle((x + w, y - h), (x + w - r, y + h), **rec_colors)
+
         elif corner == "right":
             self.draw_arc((x + w - r2, y + h - r2), (x + w, y + h), 90, 0, **colors)  # ne
             self.draw_arc((x + w - r2, y - h), (x + w, y - h + r2), 90, 270, **colors)  # se
