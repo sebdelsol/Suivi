@@ -34,7 +34,7 @@ class _BaseHandler:
         self._drivers = []
         self.max_drivers = None
         self._in_creation = 0
-        self._creation_thread = []
+        self._creation_threads = []
         self._driver_count_ops = threading.Lock()
         atexit.register(self._close)
 
@@ -50,7 +50,8 @@ class _BaseHandler:
             can_create = not self.max_drivers or n_drivers < self.max_drivers
             if can_create:
                 self._in_creation += 1
-                self._creation_thread.append(threading.current_thread())
+                thread = threading.current_thread()
+                self._creation_threads.append(thread)
 
         if can_create:
             driver = None
@@ -59,14 +60,15 @@ class _BaseHandler:
                 driver = create_driver_func(n_drivers)
                 self._log_creation("has been CREATED", n_drivers)
 
-                with self._driver_count_ops:
-                    self._in_creation -= 1
-                    self._drivers.append(driver)
-
             except (SessionNotCreatedException, ProtocolError, SocketError) as e:
                 self._log_creation(f"creation FAILED ({e})", n_drivers, error=True)
+
+            finally:
                 with self._driver_count_ops:
+                    self._creation_threads.remove(thread)
                     self._in_creation -= 1
+                    if driver:
+                        self._drivers.append(driver)
 
             return driver
         return None
@@ -77,20 +79,20 @@ class _BaseHandler:
             self._drivers.remove(driver)
 
     def _close(self):
-        print(f"CLOSE {self.name}s")
+        log(f"CLOSING {self.name}s")
         with self._driver_count_ops:
             n_drivers = len(self._drivers)
             for i, driver in enumerate(self._drivers):
-                print(f"QUIT {self.name} ({i + 1}/{n_drivers})")
+                log(f"QUIT {self.name} ({i + 1}/{n_drivers})")
                 driver.quit()
 
             # if drivers are still being created terminate those
             current_proc = psutil.Process()
-            for thread in self._creation_thread:
+            for thread in self._creation_threads:
                 if thread.is_alive():
                     for child in current_proc.children(recursive=True):
                         if "chromedriver.exe" in child.name().lower():
-                            print(f"KILL {child.name()} {child.pid}")
+                            log(f"KILL {child.name()} {child.pid}")
                             child.terminate()
 
 

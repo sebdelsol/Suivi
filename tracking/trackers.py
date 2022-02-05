@@ -331,7 +331,7 @@ class Tracker:
             self.couriers_handler.open_in_browser(courier_name, self.idship)
 
     def close(self):
-        # prevent executors threads to join at exit and have the app hanging too long
+        # make executors threads bhaves as daemon and delay the program exit
         # it's ok since the excutors can't corrupt any data to save
         with self.executor_ops:
             self.closing = True
