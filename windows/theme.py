@@ -127,7 +127,7 @@ class TH:
     widget_event_max_width = 90
     widget_min_events_shown = 1
     elapsed_days_intervals = [10, 20, 30]
-    elapsed_days_colors = ["lime green", "dark orange", "red", "black"]
+    elapsed_days_colors = ["lime green", "dark orange", "red", "purple"]
     elapsed_days_default_color = "grey80"
     elapsed_days_bg_color = "grey90"
     elapsed_days_box_size = 60, 40
