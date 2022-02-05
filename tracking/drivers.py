@@ -79,7 +79,7 @@ class _DriversHandler:
             self._drivers.remove(driver)
 
     def _close(self):
-        log(f"CLOSING {self.name}s")
+        log(f"CLOSING {self.name}")
         with self._driver_count_ops:
             n_drivers = len(self._drivers)
             for i, driver in enumerate(self._drivers):
@@ -97,7 +97,7 @@ class _DriversHandler:
 
 class DriversToScrape(_DriversHandler):
     max_drivers = 2
-    name = "chrome driver"
+    name = "chromedriver to scrape"
 
     experimental_options = dict(
         prefs={
@@ -178,10 +178,10 @@ class DriversToScrape(_DriversHandler):
 
 
 class DriversToShow(_DriversHandler):
-    name = "temp browser"
+    name = "chromedriver to show"
 
     @staticmethod
-    def _create_driver():
+    def _create_driver(n_driver):
         options = webdriver.ChromeOptions()
         options.binary_location = CHROME_EXE_PATH
         options.add_argument("--start-maximized")
