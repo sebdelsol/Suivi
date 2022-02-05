@@ -38,7 +38,7 @@ else:
     N_DRIVERS = 2
 
 
-if __name__ == "__main__" and __package__ is None:
+if __name__ == "__main__":
     from os import path, sys
 
     sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
