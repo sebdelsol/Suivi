@@ -190,18 +190,24 @@ class DriversToShow(_DriversHandler):
     def defer(self, show, url):
         threading.Thread(target=self._defer, args=(show, url), daemon=True).start()
 
+    @staticmethod
+    def _wait_browser_closed(driver):
+        disconnected_msg = (
+            "disconnected: not connected to DevTools"
+        )
+        while True:
+            if msg := driver.get_log("driver"):
+                if disconnected_msg in msg[-1]["message"]:
+                    log("Chrome window closed by user")
+                    break
+
     def _defer(self, show, url):
-        driver = self.create(self._create_driver)
-        if driver:
+        if driver := self.create(self._create_driver):
             log(f"SHOW in {self.name}")
             try:
                 driver.get(url)
                 show(driver)
-
-                # keep alive till the browser manually is closed
-                while True:
-                    _ = driver.window_handles
-                    time.sleep(0.5)
+                self._wait_browser_closed(driver)
 
             except (
                 NoSuchWindowException,
