@@ -28,43 +28,78 @@ else:
 
 
 class _BaseHandler:
-    @staticmethod
-    def _driver_to_kill(n_to_kill):
-        n_killed = 0
-        current_proc = psutil.Process()
-        while n_killed < n_to_kill:
-            for child in current_proc.children(recursive=True):
-                if "chromedriver.exe" in child.name().lower():
-                    print(f"KILL ({n_killed + 1}/{n_to_kill}) {child.name()} {child.pid}")
-                    child.terminate()
-                    n_killed += 1
-                    break
-            else:
-                time.sleep(0.5)
+    name = None
 
-    def __init__(self, type_txt):
-        self.type_txt = type_txt
+    def __init__(self):
         self._drivers = []
-        self._n_drivers = 0
+        self.max_drivers = None
+        self._in_creation = 0
         self._driver_count_ops = threading.Lock()
         atexit.register(self._close)
 
-    def _close(self):
-        print(f"CLOSE {self.type_txt}s")
+    def _log_creation(self, txt, no_driver, error=False):
+        msg = f"{self.name} {txt}"
+        if self.max_drivers:
+            msg += f" ({no_driver}/{self.max_drivers})"
+        log(msg, error=error)
+
+    def create(self, create_driver_func):
         with self._driver_count_ops:
+            n_drivers = len(self._drivers) + self._in_creation
+            can_create = not self.max_drivers or n_drivers < self.max_drivers
+            if can_create:
+                self._in_creation += 1
+
+        if can_create:
+            driver = None
+            self._log_creation("start CREATION", n_drivers + 1)
+            try:
+                driver = create_driver_func(n_drivers)
+                self._log_creation("has been CREATED", n_drivers + 1)
+
+                with self._driver_count_ops:
+                    self._in_creation -= 1
+                    self._drivers.append(driver)
+
+            except (SessionNotCreatedException, ProtocolError, SocketError) as e:
+                self._log_creation(f"creation FAILED ({e})", n_drivers + 1, error=True)
+                with self._driver_count_ops:
+                    self._in_creation -= 1
+
+            return driver
+        return None
+
+    def destroy(self, driver):
+        with self._driver_count_ops:
+            driver.quit()
+            self._drivers.remove(driver)
+
+    def _close(self):
+        print(f"CLOSE {self.name}s")
+        with self._driver_count_ops:
+            n_drivers = len(self._drivers)
             for i, driver in enumerate(self._drivers):
-                print(f"QUIT {self.type_txt} {i + 1}/{self._n_drivers}")
+                print(f"QUIT {self.name} {i + 1}/{n_drivers}")
                 driver.quit()
 
-            # if drivers are still being created kill those
-            if (n_to_kill := self._n_drivers - len(self._drivers)) > 0:
-                print(f"{n_to_kill} {self.type_txt}(s) to KILL")
-                self._driver_to_kill(n_to_kill)
-        print(f"DONE CLOSE {self.type_txt}s")
+        # if drivers are still being created terminate those
+        current_proc = psutil.Process()
+        while True:
+            with self._driver_count_ops:
+                if self._in_creation == 0:
+                    break
+
+                for child in current_proc.children(recursive=True):
+                    if "chromedriver.exe" in child.name().lower():
+                        print(f"KILL {child.name()} {child.pid}")
+                        child.terminate()
+
+                time.sleep(0.5)
 
 
 class DriverHandler(_BaseHandler):
-    _max_drivers = 2
+    max_drivers = 2
+    name = "chrome driver"
 
     experimental_options = dict(
         prefs={
@@ -96,22 +131,18 @@ class DriverHandler(_BaseHandler):
         "--blink-settings=imagesEnabled=false",
     )
 
-    def __init__(self):
+    def start(self, splash, max_drivers=None):
         self._drivers_available = queue.Queue()
         self._first_driver = threading.Lock()
-        super().__init__("driver")
-
-    def start(self, splash, max_drivers=None):
-        if max_drivers:
-            self._max_drivers = max_drivers
+        self.max_drivers = max_drivers or DriverHandler.max_drivers
 
         if CREATE_DRIVER_AT_INIT:
-            for i in range(self._max_drivers):
+            for i in range(self.max_drivers):
                 if splash:
-                    splash.update(f"{TXT.driver_creation} {i + 1}/{self._max_drivers}")
-                self._create_driver_if_needed()
+                    splash.update(f"{TXT.driver_creation} {i + 1}/{self.max_drivers}")
+                self.create(self._create_driver)
 
-    def _create_driver(self):
+    def _create_driver(self, n_drivers):
         options = webdriver.ChromeOptions()
         options.headless = True
         options.binary_location = CHROME_EXE_PATH
@@ -124,38 +155,22 @@ class DriverHandler(_BaseHandler):
             for k, v in self.experimental_options.items():
                 options.add_experimental_option(k, v)
 
-        return webdriver.Chrome(options=options)
+        if n_drivers == 0:
+            with self._first_driver:
+                driver = webdriver.Chrome(options=options)
 
-    def _create_driver_if_needed(self):
-        # prevent concurrent creation by another thread
-        with self._driver_count_ops:
-            needed = self._n_drivers < self._max_drivers
-            if needed:
-                is_first = self._n_drivers == 0
-                self._n_drivers += 1
-                n_driver = self._n_drivers
+        else:
+            # block till the 1st driver has been created
+            # to avoid permission error caused by the 1st driver being patched
+            with self._first_driver:
+                pass
+            driver = webdriver.Chrome(options=options)
 
-        if needed:
-            log(f"CREATING driver ({n_driver}/{self._max_drivers})")
-            if is_first:
-                with self._first_driver:
-                    driver = self._create_driver()
-            else:
-                # block till the 1st driver has been created
-                # to avoid permission error caused by the 1st driver being patched
-                with self._first_driver:
-                    pass
-                driver = self._create_driver()
-
-            log(f"driver ({n_driver}/{self._max_drivers}) has been CREATED")
-
-            self._drivers_available.put(driver)
-
-            with self._driver_count_ops:
-                self._drivers.append(driver)
+        self._drivers_available.put(driver)
+        return driver
 
     def get(self):
-        self._create_driver_if_needed()
+        self.create(self._create_driver)  # done till max_drivers is reached
         return self._drivers_available.get()
 
     def dispose(self, driver):
@@ -163,37 +178,22 @@ class DriverHandler(_BaseHandler):
 
 
 class TempBrowser(_BaseHandler):
+    name = "temp browser"
+
     @staticmethod
     def _create_driver():
-        try:
-            options = webdriver.ChromeOptions()
-            options.binary_location = CHROME_EXE_PATH
-            options.add_argument("--start-maximized")
-            return webdriver.Chrome(options=options)
-
-        except (SessionNotCreatedException, ProtocolError, SocketError):
-            return None
-
-    def __init__(self):
-        super().__init__("browser")
+        options = webdriver.ChromeOptions()
+        options.binary_location = CHROME_EXE_PATH
+        options.add_argument("--start-maximized")
+        return webdriver.Chrome(options=options)
 
     def defer(self, show, url):
         threading.Thread(target=self._defer, args=(show, url), daemon=True).start()
 
     def _defer(self, show, url):
-        with self._driver_count_ops:
-            self._n_drivers += 1
-
-        log("temp browser CREATION")
-        driver = self._create_driver()
-        log("temp browser CREATED")
-
+        driver = self.create(self._create_driver)
         if driver:
-            with self._driver_count_ops:
-                self._drivers.append(driver)
-
-            log("SHOW in temp browser")
-
+            log(f"SHOW in {self.name}")
             try:
                 driver.get(url)
                 show(driver)
@@ -204,16 +204,10 @@ class TempBrowser(_BaseHandler):
                     time.sleep(0.5)
 
             except (NoSuchWindowException, WebDriverException, SessionNotCreatedException) as e:
-                log(f"temp browser SHOW failed ({e})", error=True)
+                log(f"{self.name} SHOW failed ({e})", error=True)
 
             except:
                 log(traceback.format_exc(), error=True)
 
             finally:
-                with self._driver_count_ops:
-                    driver.quit()
-                    self._drivers.remove(driver)
-                    self._n_drivers -= 1
-        else:
-            with self._driver_count_ops:
-                self._n_drivers -= 1
+                self.destroy(driver)

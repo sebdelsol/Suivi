@@ -115,7 +115,7 @@ class TH:
     widget_description_font_size = 40
     widget_description_max_width = 400
     widget_idship_font_size = 10
-    widget_status_ago_font_size = 10
+    widget_status_ago_font_size = 11
     widget_status_font_size = 15
     widget_expand_font_size = 12
     widget_expand_color = "grey50"
@@ -137,7 +137,7 @@ class TH:
     n_new_event_font_size = 10
 
     event_date_color = "grey"
-    event_courier_color = "grey70"
+    event_courier_color = "#9090FF"  # grey70"
     event_status_color = "black"
     event_label_color = "grey50"
 

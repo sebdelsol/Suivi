@@ -216,7 +216,7 @@ class Tracker:
 
     def set(self, **kwargs):
         self.used_couriers = kwargs.get("used_couriers", ())
-        self.description = kwargs.get("description", "").strip().title()
+        self.description = kwargs.get("description", "").strip() #.capitalize()
         self.idship = kwargs.get("idship", "").upper().strip()
 
         self.couriers_status = CouriersStatus(

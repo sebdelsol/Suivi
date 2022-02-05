@@ -44,7 +44,7 @@ class TXT:
     idship = "N° de suivi"
     description = "Description"
 
-    unknown_status = "Status inconnu"
+    unknown_status = "Aucune information"
     status_error = "Erreur"
     default_product = "Envoi"
 

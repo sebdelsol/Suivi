@@ -918,7 +918,7 @@ class TrackerWidget:
         return idship or TXT.no_idship
 
     def get_description(self):
-        return self.tracker.description.strip().title() or TXT.no_description
+        return self.tracker.description.strip() or TXT.no_description
 
     def get_delivered(self):
         return self.tracker.get_delivered()
