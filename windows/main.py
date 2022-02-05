@@ -31,7 +31,9 @@ class GreyWindow:
         kwargs["keep_on_top"] = self.followed_window.KeepOnTop
         self.window = sg.Window("", [[]], size=(0, 0), location=(0, 0), **kwargs)
         self.window.disable()
-        self.followed_window.TKroot.bind("<Configure>", self.followed_window_changed, add="+")
+        self.followed_window.TKroot.bind(
+            "<Configure>", self.followed_window_changed, add="+"
+        )
 
     @staticmethod
     def is_visible(window):
@@ -39,7 +41,9 @@ class GreyWindow:
 
     def enable(self, enable):
         if enable:
-            if not self.is_visible(self.window) and self.is_visible(self.followed_window):
+            if not self.is_visible(self.window) and self.is_visible(
+                self.followed_window
+            ):
                 if not self.followed_window.KeepOnTop:
                     root = self.window.TKroot
                     root.lower()
@@ -252,11 +256,15 @@ class MainWindow(ShowInTaskbarWindow):
     def set_event_to_action(self):
         self.event_to_action = {
             Events.minimize: self.minimize,
-            Events.recenter: lambda window=self: self.widgets.recenter(window, force=True),
+            Events.recenter: lambda window=self: self.widgets.recenter(
+                window, force=True
+            ),
             Events.updating: self.widgets.updating_changed,
             Events.archives_updated: self.widgets.archives_updated,
             Events.trash_updated: self.widgets.deleted_updated,
-            Events.update_window_size: lambda window=self: self.widgets.update_window_size(window),
+            Events.update_window_size: lambda window=self: self.widgets.update_window_size(
+                window
+            ),
             Events.new: lambda window=self: self.widgets.new(window),
             Events.refresh: lambda window=self: self.widgets.update(window),
             Events.archives: lambda window=self: self.widgets.show_archives(window),
@@ -289,4 +297,6 @@ class MainWindow(ShowInTaskbarWindow):
                 action()
 
         else:
-            return window.event_handler(event) if event else False  # exit, see Popup.loop
+            return (
+                window.event_handler(event) if event else False
+            )  # exit, see Popup.loop

@@ -58,7 +58,9 @@ if __name__ == "__main__" and __package__ is None:
 
     with ThreadPoolExecutor(max_workers=len(couriers_test)) as executor:
         futures = {
-            executor.submit(couriers_handler.update, courier_name, id_ship): courier_name
+            executor.submit(
+                couriers_handler.update, courier_name, id_ship
+            ): courier_name
             for courier_name, id_ship in couriers_test
         }
 

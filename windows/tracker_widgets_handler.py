@@ -48,7 +48,9 @@ class TrackerWidgetsHandler:
             widget.update(window)
 
     def new(self, window):
-        popup_edit = popup.Edit(TXT.new, "", TXT.new, [], self.trackers.couriers_handler, window)
+        popup_edit = popup.Edit(
+            TXT.new, "", TXT.new, [], self.trackers.couriers_handler, window
+        )
         ok, *tracker_params = popup_edit.loop()
         if ok:
             tracker = self.trackers.new(*tracker_params)
@@ -62,8 +64,12 @@ class TrackerWidgetsHandler:
 
     def _choose(self, window, title, state, ok_name, added_button=None):
         widgets = self._get_sorted(self._get_widgets_with_state(state))
-        w_desc = max(len(widget.get_description()) for widget in widgets) if widgets else 0
-        w_date = max(len(widget.get_creation_date()) for widget in widgets) if widgets else 0
+        w_desc = (
+            max(len(widget.get_description()) for widget in widgets) if widgets else 0
+        )
+        w_date = (
+            max(len(widget.get_creation_date()) for widget in widgets) if widgets else 0
+        )
 
         choices = []
         for widget in widgets:
@@ -87,7 +93,9 @@ class TrackerWidgetsHandler:
     def show_deleted(self, window):
         def_delete_button_key = "-definitly delete-"
         def_delete_button = dict(
-            txt=TXT.delete_definitly, mouse_over_color=TH.warn_color, key=def_delete_button_key
+            txt=TXT.delete_definitly,
+            mouse_over_color=TH.warn_color,
+            key=def_delete_button_key,
         )
         exit_result, chosen = self._choose(
             window,
@@ -119,12 +127,16 @@ class TrackerWidgetsHandler:
     def archives_updated(self):
         n_archives = self.trackers.count_state(TrackerState.archived)
         color = TH.archives_color if n_archives else TH.archives_color_empty
-        self.archives_button.update(f"{TXT.archives}({n_archives})", button_color=(color, None))
+        self.archives_button.update(
+            f"{TXT.archives}({n_archives})", button_color=(color, None)
+        )
 
     def deleted_updated(self):
         n_deleted = self.trackers.count_state(TrackerState.deleted)
         color = TH.trash_color if n_deleted else TH.trash_color_empty
-        self.deleted_button.update(f"{TXT.trash}({n_deleted})", button_color=(color, None))
+        self.deleted_button.update(
+            f"{TXT.trash}({n_deleted})", button_color=(color, None)
+        )
 
     def update(self, window):
         for widget in self._get_widgets_with_state(TrackerState.shown):
@@ -181,7 +193,9 @@ class TrackerWidgetsHandler:
             # needed to set height because the scrollbar missing prevents the right height computation in pySimpleGUI
             window.size = (
                 menu_w,
-                menu_h + self.its_empty.Widget.winfo_reqheight() + self.its_empty.Pad[1] * 2,
+                menu_h
+                + self.its_empty.Widget.winfo_reqheight()
+                + self.its_empty.Pad[1] * 2,
             )
 
             # add spaces in its_empty to fit w

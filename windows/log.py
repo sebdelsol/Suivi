@@ -37,7 +37,9 @@ class _Logger(Window):
             expand_x=True,
             expand_y=True,
         )
-        output_col = sg.Col([[self.output]], p=0, background_color=TH.widget_title_bg_color)
+        output_col = sg.Col(
+            [[self.output]], p=0, background_color=TH.widget_title_bg_color
+        )
         self.link_button = ButtonMouseOver(
             self.link_txt,
             p=0,
@@ -73,7 +75,9 @@ class _Logger(Window):
         self.main_window = main_window
 
         self.TKroot.bind("<Configure>", self.resize)
-        self.main_window.TKroot.bind("<Configure>", lambda evt: self.stick_to_main(), add="+")
+        self.main_window.TKroot.bind(
+            "<Configure>", lambda evt: self.stick_to_main(), add="+"
+        )
 
         self.listen()
 
@@ -95,7 +99,8 @@ class _Logger(Window):
 
     def resize(self, event):
         if self.linked and (
-            (event.x == 0 and event.y == 0) or self.current_location() != self.wanted_pos
+            (event.x == 0 and event.y == 0)
+            or self.current_location() != self.wanted_pos
         ):
             self.stick_to_main()
 
@@ -116,7 +121,9 @@ class _Logger(Window):
 
             else:
                 # invisible selection
-                self.output.Widget.configure(selectbackground=self.output.Widget.cget("bg"))
+                self.output.Widget.configure(
+                    selectbackground=self.output.Widget.cget("bg")
+                )
 
                 self.grab_any_where_on()
                 self.output.grab_anywhere_include()
@@ -166,7 +173,11 @@ class _Logger(Window):
             while True:
                 event = self.read()[0]
 
-                if event in (None, "Link") or len(event) == 1 or re.match(r"\w+\:\d+", event):
+                if (
+                    event in (None, "Link")
+                    or len(event) == 1
+                    or re.match(r"\w+\:\d+", event)
+                ):
                     break
 
         try:

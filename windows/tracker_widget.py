@@ -93,7 +93,9 @@ def get_event_labels(event, tab_width):
     ) or [""]
 
     if len(event_labels) > 1:
-        next_labels = textwrap.wrap("".join(event_labels[1:]), TH.widget_event_max_width)
+        next_labels = textwrap.wrap(
+            "".join(event_labels[1:]), TH.widget_event_max_width
+        )
         event_labels[1:] = [f"{' '* tab_width}{label.strip()}" for label in next_labels]
     event_labels[0] = event_labels[0].strip()
 
@@ -119,7 +121,10 @@ class EventsWidget:
             TXT.I_have_seen,
             p=(TH.remove_new_events_padx, 0),
             font=(TH.var_font_bold, TH.remove_new_events_font_size),
-            button_color=(TH.remove_new_events_text_color, TH.remove_new_events_button_color),
+            button_color=(
+                TH.remove_new_events_text_color,
+                TH.remove_new_events_button_color,
+            ),
             mouse_over_color=TH.widget_event_bg_color,
             visible=False,
             k=self.remove_all_new_events,
@@ -146,7 +151,11 @@ class EventsWidget:
             **mline_kwargs,
         )
         self.widget = sg.pin(self.events_widget, expand_x=True)  # collapse when hidden
-        self.status_layout = [self.remove_new_pin, self.n_event_text, self.expand_button]
+        self.status_layout = [
+            self.remove_new_pin,
+            self.n_event_text,
+            self.expand_button,
+        ]
 
     def finalize(self, window):
         toggle_expand = lambda event, window=window: self.toggle_expand(window)
@@ -204,23 +213,33 @@ class EventsWidget:
             self.events_widget.pulsing.stop()
 
     def _update_bind_to_expand(self):
-        unbind = self.are_events_expanded and self.n_events > 0 and self.n_new_events > 0
+        unbind = (
+            self.are_events_expanded and self.n_events > 0 and self.n_new_events > 0
+        )
         if unbind:
             self.bind_to_expand.unbind(self.events_widget)
         else:
             self.bind_to_expand.bind(self.events_widget)
 
     def _update_remove_button_visibility(self):
-        visible = self.are_events_expanded and self.n_events > 0 and self.n_new_events > 0
+        visible = (
+            self.are_events_expanded and self.n_events > 0 and self.n_new_events > 0
+        )
         self.remove_button.update(visible=visible)
 
     def _update_expand_button(self):
         visible = self.height_events > TH.widget_min_events_shown
-        self.expand_button.update("▲" if self.are_events_expanded else "▼", visible=visible)
+        self.expand_button.update(
+            "▲" if self.are_events_expanded else "▼", visible=visible
+        )
 
     def _update_size(self):
         self.events_widget.update(visible=self.height_events > 0)
-        height = self.height_events if self.are_events_expanded else TH.widget_min_events_shown
+        height = (
+            self.height_events
+            if self.are_events_expanded
+            else TH.widget_min_events_shown
+        )
         self.events_widget.set_size((self.width_events, height))
 
     def _get_event_new(self, event):
@@ -257,11 +276,15 @@ class EventsWidget:
                     event_warn = event.get("warn")
                     event_delivered = event.get("delivered")
                     event_color = (
-                        TH.warn_color if event_warn else (TH.ok_color if event_delivered else None)
+                        TH.warn_color
+                        if event_warn
+                        else (TH.ok_color if event_delivered else None)
                     )
                     status_color = event_color or TH.event_status_color
                     label_color = event_color or TH.event_label_color
-                    status_font = self.events_font_bold if event_warn or event_delivered else font
+                    status_font = (
+                        self.events_font_bold if event_warn or event_delivered else font
+                    )
 
                     prt(event_date, font=font, t=TH.event_date_color, **prt_kw)
                     prt(event_courier, font=font, t=TH.event_courier_color, **prt_kw)
@@ -270,7 +293,9 @@ class EventsWidget:
                     for event_label in event_labels:
                         prt(event_label, font=font, t=label_color, autoscroll=False)
 
-                    width += sum(len(txt) for txt in (event_new, event_status, event_labels[0]))
+                    width += sum(
+                        len(txt) for txt in (event_new, event_status, event_labels[0])
+                    )
                     self.width_events = max(width, self.width_events)
 
                     if event_new:
@@ -322,7 +347,8 @@ class CouriersWidget:
     def finalize(self):
         buttons = MlineButtonsComponent(self.widget)
         buttons.init(
-            mouse_over_color=TH.widget_courier_mouse_over_color, on_click=self.open_in_browser
+            mouse_over_color=TH.widget_courier_mouse_over_color,
+            on_click=self.open_in_browser,
         )
         self.widget.buttons = buttons
 
@@ -396,7 +422,9 @@ class CouriersWidget:
                 if status["updating"]:
                     # https://stackoverflow.com/questions/14786507/how-to-change-the-color-of-certain-words-in-the-tkinter-text-widget/30339009
                     end_col = len(update_msg) + len(name_txt)
-                    self.widget.pulsing.add_tag(status["name"], f"{line}.0", f"{line}.{end_col}")
+                    self.widget.pulsing.add_tag(
+                        status["name"], f"{line}.0", f"{line}.{end_col}"
+                    )
 
                 if status["valid_idship"]:
                     start = len(update_msg) + len(error_msg)
@@ -624,7 +652,9 @@ class DescriptionWidget:
         self._fit_text()
 
         if content.get("ok"):
-            self.widget.update(text_color=status_color or TH.widget_descrition_text_color)
+            self.widget.update(
+                text_color=status_color or TH.widget_descrition_text_color
+            )
 
         else:
             self.widget.update(text_color=TH.widget_descrition_error_text_color)
@@ -651,9 +681,7 @@ class StatusWidget:
 
     def show(self, content):
         if status_date := content.get("status", {}).get("date"):
-            status_ago = (
-                f"{timeago.format(status_date, get_local_now(), TXT.locale_country_code)}, "
-            )
+            status_ago = f"{timeago.format(status_date, get_local_now(), TXT.locale_country_code)}, "
             self.ago_widget.update(status_ago)
 
         else:
@@ -663,8 +691,14 @@ class StatusWidget:
             status_warn = content["status"].get("warn", False)
             status_delivered = content["status"].get("delivered", False)
             status_label = content["status"]["label"].replace(".", "")
-            color = TH.warn_color if status_warn else (TH.ok_color if status_delivered else None)
-            self.status_widget.update(status_label, text_color=color or TH.widget_status_text_color)
+            color = (
+                TH.warn_color
+                if status_warn
+                else (TH.ok_color if status_delivered else None)
+            )
+            self.status_widget.update(
+                status_label, text_color=color or TH.widget_status_text_color
+            )
 
         else:
             color = None
@@ -699,8 +733,12 @@ class TrackerWidget:
         self.toolbar = ToolbarWidget(self.edit, self.update, self.archive_or_delete)
         self.elapsed_widget = ElapsedWidget()
         self.idship = IdShipWidget(mline_kwargs, self.get_idship)
-        self.couriers = CouriersWidget(mline_kwargs, self.get_idship, self.open_in_browser)
-        self.events = EventsWidget(mline_kwargs, self.remove_new_event, self.remove_all_new_events)
+        self.couriers = CouriersWidget(
+            mline_kwargs, self.get_idship, self.open_in_browser
+        )
+        self.events = EventsWidget(
+            mline_kwargs, self.remove_new_event, self.remove_all_new_events
+        )
         self.status = StatusWidget()
 
         idship_couriers = sg.Col(
@@ -725,7 +763,9 @@ class TrackerWidget:
             expand_x=True,
         )
 
-        status_col = sg.Col([self.status.layout + self.events.status_layout], p=0, expand_x=True)
+        status_col = sg.Col(
+            [self.status.layout + self.events.status_layout], p=0, expand_x=True
+        )
         event_col = sg.Col(
             [[status_col], [self.events.widget]],
             p=(TH.widget_padx, TH.widget_event_pady),
@@ -738,10 +778,16 @@ class TrackerWidget:
         self.idship.finalize()
         self.couriers.finalize()
         self.events.finalize(window)
-        self.events.bind_to_expand.bind(self.status.status_widget, self.status.ago_widget)
+        self.events.bind_to_expand.bind(
+            self.status.status_widget, self.status.ago_widget
+        )
 
         # grab anywher and prevent selection
-        for widget in (self.idship.widget, self.events.events_widget, self.couriers.widget):
+        for widget in (
+            self.idship.widget,
+            self.events.events_widget,
+            self.couriers.widget,
+        ):
             widget.grab_anywhere_include()
             widget.Widget.bindtags((str(widget.Widget), str(window.TKroot), "all"))
 
@@ -787,7 +833,9 @@ class TrackerWidget:
         for content in self.tracker.update_idle_couriers(couriers):
             # https://stackoverflow.com/questions/10452770/python-lambdas-binding-to-local-values
             window.trigger_event(
-                lambda window, content=content: self._update_one_courier_done(content, window)
+                lambda window, content=content: self._update_one_courier_done(
+                    content, window
+                )
             )
 
         window.trigger_event(self._update_done)
@@ -842,11 +890,18 @@ class TrackerWidget:
     def edit(self, window):
         trk = self.tracker
         popup_edit = popup.Edit(
-            TXT.edit, trk.idship, trk.description, trk.used_couriers, trk.couriers_handler, window
+            TXT.edit,
+            trk.idship,
+            trk.description,
+            trk.used_couriers,
+            trk.couriers_handler,
+            window,
         )
         ok, idship, description, used_couriers = popup_edit.loop()
         if ok:
-            self.tracker.set(idship=idship, description=description, used_couriers=used_couriers)
+            self.tracker.set(
+                idship=idship, description=description, used_couriers=used_couriers
+            )
             self._show_current_content(window)
             self.update(window)
 
@@ -896,7 +951,9 @@ class TrackerWidget:
         self._set_state(TrackerState.deleted, window, TXT.delete, Events.trash_updated)
 
     def definitly_delete(self, window):
-        self._set_state(TrackerState.definitly_deleted, window, False, Events.trash_updated)
+        self._set_state(
+            TrackerState.definitly_deleted, window, False, Events.trash_updated
+        )
 
     def undelete(self, window):
         self._set_state(TrackerState.shown, window, False, Events.trash_updated)

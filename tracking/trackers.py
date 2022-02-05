@@ -106,7 +106,9 @@ class Contents:
         consolidated = {}
         if len(contents_ok) > 0:
             # consolidated is the content with the most recent date status
-            consolidated = max(contents_ok, key=lambda content: content["status"]["date"])
+            consolidated = max(
+                contents_ok, key=lambda content: content["status"]["date"]
+            )
 
             # merge all events
             events = sum((content["events"] for content in contents_ok), [])
@@ -123,7 +125,9 @@ class Contents:
             else:
                 consolidated["elapsed"] = None
 
-            consolidated["status"]["date"] = self._no_future(consolidated["status"]["date"])
+            consolidated["status"]["date"] = self._no_future(
+                consolidated["status"]["date"]
+            )
 
         return consolidated
 
@@ -216,7 +220,7 @@ class Tracker:
 
     def set(self, **kwargs):
         self.used_couriers = kwargs.get("used_couriers", ())
-        self.description = kwargs.get("description", "").strip() #.capitalize()
+        self.description = kwargs.get("description", "").strip()  # .capitalize()
         self.idship = kwargs.get("idship", "").upper().strip()
 
         self.couriers_status = CouriersStatus(
@@ -248,19 +252,24 @@ class Tracker:
 
     def is_still_updating(self):
         return any(
-            self.couriers_status.is_updating(courier_name) for courier_name in self.used_couriers
+            self.couriers_status.is_updating(courier_name)
+            for courier_name in self.used_couriers
         )
 
     def update_idle_couriers(self, courier_names):
         if self.idship and courier_names:
-            log(f'update START - {self.description} - {self.idship}, {" - ".join(courier_names)}')
+            log(
+                f'update START - {self.description} - {self.idship}, {" - ".join(courier_names)}'
+            )
 
             # create threads with executor
             with self.executor_ops:
                 if not self.closing:
                     executor = ThreadPoolExecutor(max_workers=len(courier_names))
                     futures = {
-                        executor.submit(self._update_courier, courier_name): courier_name
+                        executor.submit(
+                            self._update_courier, courier_name
+                        ): courier_name
                         for courier_name in courier_names
                     }
                     self.executors.append(executor)
@@ -348,7 +357,9 @@ class TrackersHandler:
             loaded_trackers = self._load_from_file(PICKLE_EXT, "rb", pickle.load)
 
         if loaded_trackers:
-            trackers = [Tracker(self.couriers_handler, **kwargs) for kwargs in loaded_trackers]
+            trackers = [
+                Tracker(self.couriers_handler, **kwargs) for kwargs in loaded_trackers
+            ]
 
         else:
             trackers = []
@@ -383,7 +394,9 @@ class TrackersHandler:
 
     @staticmethod
     def sort(objs, get_tracker=lambda obj: obj):
-        return sorted(objs, key=lambda obj: get_tracker(obj).creation_date, reverse=True)
+        return sorted(
+            objs, key=lambda obj: get_tracker(obj).creation_date, reverse=True
+        )
 
     def new(self, idship, description, used_couriers):
         tracker = Tracker(
@@ -397,7 +410,9 @@ class TrackersHandler:
 
     def get_not_definitly_deleted(self):
         return [
-            tracker for tracker in self.trackers if tracker.state != TrackerState.definitly_deleted
+            tracker
+            for tracker in self.trackers
+            if tracker.state != TrackerState.definitly_deleted
         ]
 
     def count_state(self, state):

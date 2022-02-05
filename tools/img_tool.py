@@ -23,7 +23,9 @@ def resize_and_colorize_gif(image64, height, color):
 
     try:
         while True:
-            frame = ImageOps.colorize(ImageOps.grayscale(im), white="white", black=color)
+            frame = ImageOps.colorize(
+                ImageOps.grayscale(im), white="white", black=color
+            )
             frame = frame.convert("RGBA")
             frame.thumbnail(resize_to)
             frames.append(frame)

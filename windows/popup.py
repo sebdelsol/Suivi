@@ -78,19 +78,28 @@ class Popup(Window):
 
 
 class Edit(Popup):
-    def __init__(self, title, idship, description, used_couriers, couriers_handler, main_window):
+    def __init__(
+        self, title, idship, description, used_couriers, couriers_handler, main_window
+    ):
         self.couriers_handler = couriers_handler
         self.couriers_names = couriers_handler.get_names()
         self.couriers_names.sort()
         layout = [
             [
                 sg.T(TXT.description, font=(TH.fix_font, TH.edit_font_size)),
-                sg.Input(description, font=(TH.fix_font, TH.edit_font_size), key="description"),
+                sg.Input(
+                    description,
+                    font=(TH.fix_font, TH.edit_font_size),
+                    key="description",
+                ),
             ],
             [
                 sg.T(TXT.idship, font=(TH.fix_font, TH.edit_font_size)),
                 sg.Input(
-                    idship, font=(TH.fix_font, TH.edit_font_size), enable_events=True, key="idship"
+                    idship,
+                    font=(TH.fix_font, TH.edit_font_size),
+                    enable_events=True,
+                    key="idship",
                 ),
             ],
         ]
@@ -193,7 +202,9 @@ class Choices(Popup):
             rows.append(Row(cb, t))
 
         if self.rows:
-            col = sg.Col(rows, scrollable=len(rows) > self.max_lines, vertical_scroll_only=True)
+            col = sg.Col(
+                rows, scrollable=len(rows) > self.max_lines, vertical_scroll_only=True
+            )
             layout = [[col]]
 
         else:
@@ -235,19 +246,25 @@ class Choices(Popup):
         self[self.ok_key].update(f"{self.ok_name} ({n_selected})")
 
         if self.added_button_key:
-            self[self.added_button_key].update(f"{self.added_button_txt} ({n_selected})")
+            self[self.added_button_key].update(
+                f"{self.added_button_txt} ({n_selected})"
+            )
 
     def event_handler(self, event):
         if "cb_choice" in event:
             cb_widget, txt_widget = self[event], self[event.replace("cb", "txt")]
-            txt_widget.update(font=self.selected_font if cb_widget.get() else self.unselected_font)
+            txt_widget.update(
+                font=self.selected_font if cb_widget.get() else self.unselected_font
+            )
             self.update_ok_name()
 
         elif "txt_choice" in event:
             cb_widget, txt_widget = self[event.replace("txt", "cb")], self[event]
             toggle_check = not cb_widget.get()
             cb_widget.update(value=toggle_check)
-            txt_widget.update(font=self.selected_font if toggle_check else self.unselected_font)
+            txt_widget.update(
+                font=self.selected_font if toggle_check else self.unselected_font
+            )
             self.update_ok_name()
 
         else:

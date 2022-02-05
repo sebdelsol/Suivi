@@ -8,7 +8,11 @@ import pytz
 import requests
 import urllib3
 from dateutil.parser import ParserError, parse
-from selenium.common.exceptions import NoSuchElementException, TimeoutException, WebDriverException
+from selenium.common.exceptions import (
+    NoSuchElementException,
+    TimeoutException,
+    WebDriverException,
+)
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -133,10 +137,14 @@ class Courier:
     def __init__(self):
         # compile re
         self.idship_validation = re.compile(self.idship_validation).match
-        self.delivered_searchs = [re.compile(pattern).search for pattern in self.delivered_searchs]
+        self.delivered_searchs = [
+            re.compile(pattern).search for pattern in self.delivered_searchs
+        ]
 
         self.subs = self.additional_subs + self.subs
-        self.subs = [(re.compile(pattern).sub, replace) for (pattern, replace) in self.subs]
+        self.subs = [
+            (re.compile(pattern).sub, replace) for (pattern, replace) in self.subs
+        ]
 
     def log(self, *args, **kwargs):
         args = list(args)
@@ -187,7 +195,9 @@ class Courier:
 
         # remove duplicate events
         # https://stackoverflow.com/questions/9427163/remove-duplicate-dict-in-list-in-python
-        events = [dict(evt_tuple) for evt_tuple in {tuple(evt.items()) for evt in events}]
+        events = [
+            dict(evt_tuple) for evt_tuple in {tuple(evt.items()) for evt in events}
+        ]
 
         # sort by date
         events.sort(key=lambda evt: evt["date"], reverse=True)
@@ -218,7 +228,9 @@ class Courier:
             ok = False
 
         status_date = infos.get("status_date", events[0]["date"] if events else None)
-        status_label = infos.get("status_label", events[0]["label"] if events else TXT.status_error)
+        status_label = infos.get(
+            "status_label", events[0]["label"] if events else TXT.status_error
+        )
         status_warn = infos.get("status_warn", not events)
 
         status = dict(
@@ -328,9 +340,13 @@ class Cainiao(Courier):
         if not is_data:
             self.log(f"driver WAIT slider - {idship}")
             slider_locator = (By.XPATH, '//span[@class="nc_iconfont btn_slide"]')
-            slider = self.handler.wait(driver, EC.element_to_be_clickable(slider_locator))
+            slider = self.handler.wait(
+                driver, EC.element_to_be_clickable(slider_locator)
+            )
 
-            slide = driver.find_element(By.XPATH, '//div[@class="scale_text slidetounlock"]/span')
+            slide = driver.find_element(
+                By.XPATH, '//div[@class="scale_text slidetounlock"]/span'
+            )
             action = ActionChains(driver)
             action.drag_and_drop_by_offset(slider, slide.size["width"], 0).perform()
 
@@ -390,7 +406,9 @@ class Asendia(Courier):
                 if country not in location:
                     location = ", ".join((location, country))
 
-                date = datetime.utcfromtimestamp(event["date"] / 1000).replace(tzinfo=pytz.utc)
+                date = datetime.utcfromtimestamp(event["date"] / 1000).replace(
+                    tzinfo=pytz.utc
+                )
 
                 events.append(dict(date=date, status=location, label=label))
 
@@ -427,9 +445,9 @@ class MondialRelay(Courier):
             for event in events_by_hours:
                 elts = event.xpath("./div/p//text()")
                 hour_text, label = elts[:2]
-                date = datetime.strptime(f"{date_text} {hour_text}", "%d/%m/%Y %H:%M").replace(
-                    tzinfo=get_localzone()
-                )
+                date = datetime.strptime(
+                    f"{date_text} {hour_text}", "%d/%m/%Y %H:%M"
+                ).replace(tzinfo=get_localzone())
 
                 events.append(dict(date=date, label=label))
 
@@ -459,7 +477,9 @@ class RelaisColis(Courier):
         TempBrowser.defer(show, url)
 
     def get_content(self, idship):
-        r = self.handler.request("POST", self.url, data={"valeur": idship, "typeRecherche": "EXP"})
+        r = self.handler.request(
+            "POST", self.url, data={"valeur": idship, "typeRecherche": "EXP"}
+        )
         if r.status_code == 200:
             return r.json()
 
@@ -494,7 +514,9 @@ class RelaisColis(Courier):
                         )
 
                 events.append(
-                    dict(date=date, status=status, label=label, delivered=event_delivered)
+                    dict(
+                        date=date, status=status, label=label, delivered=event_delivered
+                    )
                 )
 
         return events, dict(product=product, delivered=delivered)
@@ -582,15 +604,17 @@ class DPD(Courier):
 
         timeline = content.xpath('//tr[contains(@id, "ligneTableTrace")]')
         for evt in timeline:
-            txts = [stxt for txt in evt.xpath("./td//text()") if (stxt := txt.strip()) != ""]
+            txts = [
+                stxt for txt in evt.xpath("./td//text()") if (stxt := txt.strip()) != ""
+            ]
             date, hour, label = txts[:3]
             location = txts[3] if len(txts) == 4 else None
 
             events.append(
                 dict(
-                    date=datetime.strptime(f"{date} {hour}", "%d/%m/%Y %H:%M").astimezone(
-                        get_localzone()
-                    ),
+                    date=datetime.strptime(
+                        f"{date} {hour}", "%d/%m/%Y %H:%M"
+                    ).astimezone(get_localzone()),
                     status=location,
                     label=label,
                 )
@@ -654,7 +678,8 @@ class FourPX(Courier):
             date, hour, label = [
                 stxt
                 for txt in event.xpath(".//text()")
-                if (stxt := re.sub(r"[\n\t]", "", txt).strip().replace("\xa0", "")) != ""
+                if (stxt := re.sub(r"[\n\t]", "", txt).strip().replace("\xa0", ""))
+                != ""
             ]
             status, label = label.split("/", 1) if "/" in label else ("", label)
 
@@ -717,14 +742,16 @@ class LaPoste(Courier):
 
             ctx = shipment.get("contextData")
             if ctx:
-                fromto = f"{ctx['originCountry']}{Courier.r_arrow}{ctx['arrivalCountry']}"
+                fromto = (
+                    f"{ctx['originCountry']}{Courier.r_arrow}{ctx['arrivalCountry']}"
+                )
             else:
                 fromto = None
 
             # timeline = list(filter(lambda t: t["status"], shipment.get("timeline")))
             timeline = list(filter(lambda t: t["shortLabel"], shipment.get("timeline")))
             status_label = timeline[-1]["shortLabel"]
-            if date := timeline[-1]["date"]:
+            if date := timeline[-1].get("date"):
                 date = get_local_time(date)
                 status_label += f" {date:{TXT.long_day_format}}"
             delivered = False
@@ -758,7 +785,9 @@ class LaPoste(Courier):
 
         error = content.get("returnMessage", "Erreur")
         status_label = get_sentence(error, 1)
-        return events, dict(status_warn=True, status_label=status_label.replace(".", ""))
+        return events, dict(
+            status_warn=True, status_label=status_label.replace(".", "")
+        )
 
 
 class Chronopost(Courier):
@@ -777,7 +806,9 @@ class Chronopost(Courier):
             driver.get(url)
             self.log(f"driver WAIT timeline - {idship}")
             timeline_locator = (By.XPATH, self.timeline_xpath)
-            self.handler.wait(driver, EC.presence_of_all_elements_located(timeline_locator))
+            self.handler.wait(
+                driver, EC.presence_of_all_elements_located(timeline_locator)
+            )
             return lxml.html.fromstring(driver.page_source)
 
         else:
@@ -814,12 +845,19 @@ class DHL(Courier):
         url = self.get_url_for_browser(idship)
 
         def show(driver):
-            rgpd_locator = (By.XPATH, '//button[contains(@class, "save-preference-btn")]')
-            btn_rgpd = WebDriverWait(driver, 15).until(EC.element_to_be_clickable(rgpd_locator))
+            rgpd_locator = (
+                By.XPATH,
+                '//button[contains(@class, "save-preference-btn")]',
+            )
+            btn_rgpd = WebDriverWait(driver, 15).until(
+                EC.element_to_be_clickable(rgpd_locator)
+            )
             btn_rgpd.click()
 
             submit_locator = (By.XPATH, '//button[contains(@class, "tracking-input")]')
-            submit = WebDriverWait(driver, 15).until(EC.element_to_be_clickable(submit_locator))
+            submit = WebDriverWait(driver, 15).until(
+                EC.element_to_be_clickable(submit_locator)
+            )
             submit.click()
 
         TempBrowser.defer(show, url)

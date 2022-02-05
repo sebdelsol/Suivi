@@ -92,38 +92,40 @@ class ShowInTaskbarWindow(Window):
 
 class GraphRounded(sg.Graph):
     def draw_rounded_box(self, x, y, w, h, r, color, corner="all"):
+        draw_arc = self.draw_arc
+        draw_rectangle = self.draw_rectangle
         w, h, r2 = w * 0.5, h * 0.5, r * 2
         rec_colors = dict(fill_color=color, line_color=color)
         # cross
-        self.draw_rectangle((x - w, y + h - r), (x + w, y - h + r), **rec_colors)
-        self.draw_rectangle((x - w + r, y + h), (x + w - r, y - h), **rec_colors)
+        draw_rectangle((x - w, y + h - r), (x + w, y - h + r), **rec_colors)
+        draw_rectangle((x - w + r, y + h), (x + w - r, y - h), **rec_colors)
         # corners
         colors = dict(fill_color=color, arc_color=color)
         if corner == "all":
-            self.draw_arc((x - w, y + h - r2), (x - w + r2, y + h), 90, 90, **colors)  # nw
-            self.draw_arc((x + w - r2, y + h - r2), (x + w, y + h), 90, 0, **colors)  # ne
-            self.draw_arc((x - w, y - h), (x - w + r2, y - h + r2), 90, 180, **colors)  # sw
-            self.draw_arc((x + w - r2, y - h), (x + w, y - h + r2), 90, 270, **colors)  # se
+            draw_arc((x - w, y + h - r2), (x - w + r2, y + h), 90, 90, **colors)  # nw
+            draw_arc((x + w - r2, y + h - r2), (x + w, y + h), 90, 0, **colors)  # ne
+            draw_arc((x - w, y - h), (x - w + r2, y - h + r2), 90, 180, **colors)  # sw
+            draw_arc((x + w - r2, y - h), (x + w, y - h + r2), 90, 270, **colors)  # se
 
         elif corner == "top":
-            self.draw_arc((x - w, y + h - r2), (x - w + r2, y + h), 90, 90, **colors)  # nw
-            self.draw_arc((x + w - r2, y + h - r2), (x + w, y + h), 90, 0, **colors)  # ne
-            self.draw_rectangle((x - w, y - h + r), (x + w, y - h), **rec_colors)
+            draw_arc((x - w, y + h - r2), (x - w + r2, y + h), 90, 90, **colors)  # nw
+            draw_arc((x + w - r2, y + h - r2), (x + w, y + h), 90, 0, **colors)  # ne
+            draw_rectangle((x - w, y - h + r), (x + w, y - h), **rec_colors)
 
         elif corner == "bottom":
-            self.draw_arc((x - w, y - h), (x - w + r2, y - h + r2), 90, 180, **colors)  # sw
-            self.draw_arc((x + w - r2, y - h), (x + w, y - h + r2), 90, 270, **colors)  # se
-            self.draw_rectangle((x - w, y + h), (x + w, y + h - r), **rec_colors)
+            draw_arc((x - w, y - h), (x - w + r2, y - h + r2), 90, 180, **colors)  # sw
+            draw_arc((x + w - r2, y - h), (x + w, y - h + r2), 90, 270, **colors)  # se
+            draw_rectangle((x - w, y + h), (x + w, y + h - r), **rec_colors)
 
         elif corner == "left":
-            self.draw_arc((x - w, y + h - r2), (x - w + r2, y + h), 90, 90, **colors)  # nw
-            self.draw_arc((x - w, y - h), (x - w + r2, y - h + r2), 90, 180, **colors)  # sw
-            self.draw_rectangle((x + w, y - h), (x + w - r, y + h), **rec_colors)
+            draw_arc((x - w, y + h - r2), (x - w + r2, y + h), 90, 90, **colors)  # nw
+            draw_arc((x - w, y - h), (x - w + r2, y - h + r2), 90, 180, **colors)  # sw
+            draw_rectangle((x + w, y - h), (x + w - r, y + h), **rec_colors)
 
         elif corner == "right":
-            self.draw_arc((x + w - r2, y + h - r2), (x + w, y + h), 90, 0, **colors)  # ne
-            self.draw_arc((x + w - r2, y - h), (x + w, y - h + r2), 90, 270, **colors)  # se
-            self.draw_rectangle((x - w + r, y - h), (x - w, y + h), **rec_colors)
+            draw_arc((x + w - r2, y + h - r2), (x + w, y + h), 90, 0, **colors)  # ne
+            draw_arc((x + w - r2, y - h), (x + w, y - h + r2), 90, 270, **colors)  # se
+            draw_rectangle((x - w + r, y - h), (x - w, y + h), **rec_colors)
 
 
 class ButtonMouseOver(sg.Button):
@@ -156,7 +158,13 @@ class ButtonMouseOver(sg.Button):
 
 class ButtonTxtAndImg(ButtonMouseOver):
     def __init__(
-        self, *args, im_margin=0, image_filename=None, image_justify="left", im_height=20, **kwargs
+        self,
+        *args,
+        im_margin=0,
+        image_filename=None,
+        image_justify="left",
+        im_height=20,
+        **kwargs,
     ):
         self.im_margin = im_margin
         self.im_height = im_height
@@ -219,7 +227,9 @@ class TextFit(sg.Text):
 
 class HLine(sg.Col):
     def __init__(self, p=0, color="black", thickness=1):
-        super().__init__([[]], p=p, s=(None, thickness), background_color=color, expand_x=True)
+        super().__init__(
+            [[]], p=p, s=(None, thickness), background_color=color, expand_x=True
+        )
 
     def set_width(self, width):
         self.Widget.canvas.config(width=width)
@@ -290,7 +300,9 @@ class MlineButtonsComponent(Component):
         if event.type.name == "Leave":
             self.pointed_button_key = None
             for tag in self.tags:
-                self._element.Widget.tag_configure(tag, background=self.mouse_leave_color)
+                self._element.Widget.tag_configure(
+                    tag, background=self.mouse_leave_color
+                )
 
     def _on_click(self, event):
         if self.pointed_button_key and self.on_click_callback:
@@ -345,7 +357,9 @@ class _PulsingBaseComponent(Component):
 
     @staticmethod
     def _blend_rgb_colors(color1, color2, t):
-        return tuple(map(lambda color: color[0] * (1 - t) + color[1] * t, zip(color1, color2)))
+        return tuple(
+            map(lambda color: color[0] * (1 - t) + color[1] * t, zip(color1, color2))
+        )
 
     @staticmethod
     def _get_color_array(color_start, color_end):
@@ -353,7 +367,9 @@ class _PulsingBaseComponent(Component):
         colors = []
         for x in range(array_size):
             t = 0.5 * (1 + math.cos((2 * math.pi * (x % array_size)) / array_size))
-            r, g, b = _PulsingBaseComponent._blend_rgb_colors(color_start, color_end, 1 - t)
+            r, g, b = _PulsingBaseComponent._blend_rgb_colors(
+                color_start, color_end, 1 - t
+            )
             colors.append(f"#{round(r):02x}{round(g):02x}{round(b):02x}")
         return colors
 

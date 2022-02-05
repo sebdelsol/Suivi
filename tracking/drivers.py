@@ -147,7 +147,9 @@ class DriverHandler(_BaseHandler):
         options.headless = True
         options.binary_location = CHROME_EXE_PATH
 
-        for option in self.options + (self.options_V2 if USE_UC_V2 else self.options_V1):
+        for option in self.options + (
+            self.options_V2 if USE_UC_V2 else self.options_V1
+        ):
             options.add_argument(option)
 
         # prefs do not work with UC v2 at the moment
@@ -203,7 +205,11 @@ class TempBrowser(_BaseHandler):
                     _ = driver.window_handles
                     time.sleep(0.5)
 
-            except (NoSuchWindowException, WebDriverException, SessionNotCreatedException) as e:
+            except (
+                NoSuchWindowException,
+                WebDriverException,
+                SessionNotCreatedException,
+            ) as e:
                 log(f"{self.name} SHOW failed ({e})", error=True)
 
             except:
