@@ -27,7 +27,7 @@ else:
     import undetected_chromedriver._compat as webdriver
 
 
-class _BaseHandler:
+class _DriversHandler:
     name = None
 
     def __init__(self):
@@ -88,15 +88,14 @@ class _BaseHandler:
 
             # if drivers are still being created terminate those
             current_proc = psutil.Process()
-            for thread in self._creation_threads:
-                if thread.is_alive():
-                    for child in current_proc.children(recursive=True):
-                        if "chromedriver.exe" in child.name().lower():
-                            log(f"KILL {child.name()} {child.pid}")
-                            child.terminate()
+            if any(thread.is_alive() for thread in self._creation_threads):
+                for child in current_proc.children(recursive=True):
+                    if "chromedriver.exe" in child.name().lower():
+                        log(f"TERMINATE {child.name()} {child.pid}")
+                        child.terminate()
 
 
-class DriverHandler(_BaseHandler):
+class DriversToScrape(_DriversHandler):
     max_drivers = 2
     name = "chrome driver"
 
@@ -133,7 +132,7 @@ class DriverHandler(_BaseHandler):
     def start(self, splash, max_drivers=None):
         self._drivers_available = queue.Queue()
         self._first_driver = threading.Lock()
-        self.max_drivers = max_drivers or DriverHandler.max_drivers
+        self.max_drivers = max_drivers or DriversToScrape.max_drivers
 
         if CREATE_DRIVER_AT_INIT:
             for i in range(self.max_drivers):
@@ -178,7 +177,7 @@ class DriverHandler(_BaseHandler):
         self._drivers_available.put(driver)
 
 
-class TempBrowser(_BaseHandler):
+class DriversToShow(_DriversHandler):
     name = "temp browser"
 
     @staticmethod

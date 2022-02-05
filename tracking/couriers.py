@@ -22,10 +22,10 @@ from windows.localization import TXT
 from windows.log import log
 
 from tracking.api_keys import DHL_KEY, LAPOSTE_KEY
-from tracking.drivers import DriverHandler, TempBrowser
+from tracking.drivers import DriversToScrape, DriversToShow
 
-TempBrowser = TempBrowser()
-DriverHandler = DriverHandler()
+DriversToShow = DriversToShow()
+DriversToScrape = DriversToScrape()
 
 
 def get_sentence(txt, n=-1):
@@ -59,7 +59,7 @@ class CouriersHandler:
         self.couriers = {cls.name: cls() for cls in get_all_subclasses(Courier)}
         log(f"Init Couriers {', '.join(self.couriers)}")
 
-        DriverHandler.start(splash, max_drivers)
+        DriversToScrape.start(splash, max_drivers)
 
     def exists(self, name):
         return bool(self.couriers.get(name))
@@ -294,7 +294,7 @@ class SeleniumHandler:
         return WebDriverWait(driver, self.wait_elt_timeout).until(until)
 
     def get_content(self, courier, idship):
-        driver = DriverHandler.get()
+        driver = DriversToScrape.get()
 
         if driver:
             try:
@@ -305,7 +305,7 @@ class SeleniumHandler:
                 error = type(e).__name__
 
             finally:
-                DriverHandler.dispose(driver)
+                DriversToScrape.dispose(driver)
 
         else:
             error = "no driver available"
@@ -474,7 +474,7 @@ class RelaisColis(Courier):
                 f'document.getElementById("valeur").value="{idship}";validationForm();'
             )
 
-        TempBrowser.defer(show, url)
+        DriversToShow.defer(show, url)
 
     def get_content(self, idship):
         r = self.handler.request(
@@ -860,7 +860,7 @@ class DHL(Courier):
             )
             submit.click()
 
-        TempBrowser.defer(show, url)
+        DriversToShow.defer(show, url)
 
     def get_content(self, idship):
         url = f"https://api-eu.dhl.com/track/shipments?trackingNumber={idship}&language=FR"
