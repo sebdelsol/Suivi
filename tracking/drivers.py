@@ -34,7 +34,7 @@ class _BaseHandler:
         self._drivers = []
         self.max_drivers = None
         self._in_creation = 0
-        self._creation_thread =[]
+        self._creation_thread = []
         self._driver_count_ops = threading.Lock()
         atexit.register(self._close)
 
@@ -92,19 +92,6 @@ class _BaseHandler:
                         if "chromedriver.exe" in child.name().lower():
                             print(f"KILL {child.name()} {child.pid}")
                             child.terminate()
-
-        # while True:
-        #     with self._driver_count_ops:
-        #         for thread self._creation_thread
-        #         if self._in_creation == 0:
-        #             break
-
-        #         for child in current_proc.children(recursive=True):
-        #             if "chromedriver.exe" in child.name().lower():
-        #                 print(f"KILL {child.name()} {child.pid}")
-        #                 child.terminate()
-
-        #         time.sleep(0.5)
 
 
 class DriverHandler(_BaseHandler):
