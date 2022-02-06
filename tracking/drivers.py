@@ -58,13 +58,17 @@ def get_chrome_main_version():
 def patch_driver(version):
     """patch chromedriver then lock it to avoid further patching and permission errors"""
 
-    log(f"PATCH chromedriver {version=}")
+    log(f"PATCHING chromedriver {version=}")
     patcher = webdriver.Patcher(version_main=version)
     # unlock chromdriver.exe and patch it
-    os.chmod(patcher.executable_path, stat.S_IREAD + stat.S_IWRITE)
+    if os.path.exists(patcher.executable_path):
+        os.chmod(patcher.executable_path, stat.S_IWRITE)
     patcher.auto()
     # lock chromedriver.exe to prevent any further patch
     os.chmod(patcher.executable_path, stat.S_IREAD)
+    # prevent further file op on chromedriver.exe by the patcher
+    webdriver.Patcher.is_binary_patched = lambda self: True
+    log("chromedriver PATCHED")
 
 
 class _DriversHandler:
@@ -84,7 +88,8 @@ class _DriversHandler:
 
     def _log_creation(self, txt, n_drivers, error=False):
         msg = f"{self.name} {txt}"
-        msg += f" ({n_drivers + 1}/{self.max_drivers})"
+        n_max = "∞" if repr(self.max_drivers) == "inf" else self.max_drivers
+        msg += f" ({n_drivers + 1}/{n_max})"
         log(msg, error=error)
 
     @classmethod
@@ -108,12 +113,12 @@ class _DriversHandler:
 
         if can_create:
             driver = None
-            self._log_creation("start CREATION", n_drivers)
+            self._log_creation("CREATION", n_drivers)
             try:
                 _DriversHandler._patch_driver()
                 options = self.get_driver_options()
                 driver = webdriver.Chrome(options=options)
-                self._log_creation("has been CREATED", n_drivers)
+                self._log_creation("CREATED", n_drivers)
 
             except (SessionNotCreatedException, ProtocolError, SocketError) as e:
                 self._log_creation(f"creation FAILED ({e})", n_drivers, error=True)

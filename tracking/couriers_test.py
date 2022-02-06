@@ -35,7 +35,7 @@ if not MUTI_THREADED:
     N_DRIVERS = 1
 
 else:
-    N_DRIVERS = 2
+    N_DRIVERS = 3
 
 
 if __name__ == "__main__":
