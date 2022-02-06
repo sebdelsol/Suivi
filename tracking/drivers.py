@@ -7,16 +7,14 @@ import traceback
 from socket import error as SocketError
 
 import psutil
+import undetected_chromedriver as webdriver
 from selenium.common.exceptions import (
     NoSuchWindowException,
     SessionNotCreatedException,
     WebDriverException,
 )
-
-import undetected_chromedriver as webdriver
 from urllib3.exceptions import ProtocolError
 from win32com.client import Dispatch
-
 from windows.localization import TXT
 from windows.log import log
 
