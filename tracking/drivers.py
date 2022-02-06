@@ -22,14 +22,14 @@ from windows.log import log
 CREATE_DRIVER_AT_INIT = False
 
 
-def find_chrome_executable():
+def fix_find_chrome_executable():
     """fix find_chrome_executable for x86 Windows"""
 
     candidates = set()
     for item in map(
         os.environ.get, ("PROGRAMFILES", "PROGRAMFILES(X86)", "LOCALAPPDATA")
     ):
-        if item:
+        if item:  # it happens to be None
             for subitem in (
                 "Google/Chrome/Application",
                 "Google/Chrome Beta/Application",
@@ -42,7 +42,7 @@ def find_chrome_executable():
 
 
 # monkey patch it
-webdriver.find_chrome_executable = find_chrome_executable
+webdriver.find_chrome_executable = fix_find_chrome_executable
 
 
 def get_chrome_main_version():
