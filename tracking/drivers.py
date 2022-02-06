@@ -81,7 +81,6 @@ class _DriversHandler:
         self._n_in_creation = 0
         self._drivers = []
         self._drivers_available = queue.Queue()
-        self._creation_threads = []
         self._driver_count_ops = threading.Lock()
         atexit.register(self._close)
 
@@ -107,8 +106,6 @@ class _DriversHandler:
             n_drivers = len(self._drivers) + self._n_in_creation
             if can_create := n_drivers < self.max_drivers:
                 self._n_in_creation += 1
-                thread = threading.current_thread()
-                self._creation_threads.append(thread)
 
         if can_create:
             driver = None
@@ -124,7 +121,6 @@ class _DriversHandler:
 
             finally:
                 with self._driver_count_ops:
-                    self._creation_threads.remove(thread)
                     self._n_in_creation -= 1
                     if driver:
                         self._drivers.append(driver)
@@ -167,11 +163,10 @@ class _DriversHandler:
 
             # if drivers are still being created terminate those
             current_proc = psutil.Process()
-            if any(thread.is_alive() for thread in self._creation_threads):
-                for child in current_proc.children(recursive=True):
-                    if "chromedriver.exe" in child.name().lower():
-                        log(f"TERMINATE {child.name()} {child.pid}")
-                        child.terminate()
+            for child in current_proc.children(recursive=True):
+                if "chromedriver.exe" in child.name().lower():
+                    log(f"TERMINATE {child.name()} {child.pid}")
+                    child.terminate()
 
 
 class DriversToScrape(_DriversHandler):
