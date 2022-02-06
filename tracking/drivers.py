@@ -151,8 +151,8 @@ class _DriversHandler:
 
     def destroy(self, driver):
         with self._driver_count_ops:
-            driver.quit()
             log(f"QUIT {self.name}")
+            driver.quit()
             self._drivers.remove(driver)
 
     def _close(self):
