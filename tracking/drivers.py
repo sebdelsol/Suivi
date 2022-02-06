@@ -3,6 +3,7 @@ import os
 import queue
 import stat
 import threading
+import time
 import traceback
 from socket import error as SocketError
 
@@ -223,6 +224,7 @@ class DriversToShow(_DriversHandler):
     def _wait_browser_closed(driver):
         disconnected_msg = "disconnected: not connected to DevTools"
         while True:
+            time.sleep(0.5)
             if msg := driver.get_log("driver"):
                 if disconnected_msg in msg[-1]["message"]:
                     log("Chrome window closed by user")
