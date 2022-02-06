@@ -59,7 +59,7 @@ def patch_driver(version):
 
     log(f"PATCHING chromedriver {version=}")
     patcher = webdriver.Patcher(version_main=version)
-    # unlock chromdriver.exe and patch it
+    # unlock chromedriver.exe and patch it
     if os.path.exists(patcher.executable_path):
         os.chmod(patcher.executable_path, stat.S_IWRITE)
     patcher.auto()
