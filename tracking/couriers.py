@@ -159,12 +159,10 @@ class Courier:
             webbrowser.open(url)
 
     def get_url_for_browser(self, idship):
-        self.log("get_url_for_browser function is missing", error=True)
-        return None
+        raise NotImplementedError("get_url_for_browser method is missing")
 
     def parse_content(self, content):
-        self.log("parse_content function is missing", error=True)
-        return None
+        raise NotImplementedError("parse_content method is missing")
 
     def update(self, idship):
         if not self.name:
