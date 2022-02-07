@@ -104,7 +104,7 @@ def get_event_labels(event, tab_width):
 
 class EventsWidget:
     def __init__(self, mline_kwargs, remove_new_event, remove_all_new_events):
-        self.reset_size()
+        self.reset()
         self.remove_new_event = remove_new_event
         self.remove_all_new_events = remove_all_new_events
 
@@ -177,11 +177,14 @@ class EventsWidget:
         pulsing.init(TH.event_new_color, TH.widget_event_bg_color)
         self.n_event_text.pulsing = pulsing
 
-    def reset_size(self):
+    def _reset_events(self):
         self.n_events = 0
         self.n_new_events = 0
         self.width_events = 0
         self.height_events = 0
+
+    def reset(self):
+        self._reset_events()
         self.are_events_expanded = False
 
     def toggle_expand(self, window):
@@ -250,11 +253,7 @@ class EventsWidget:
 
     def show(self, content):
         self.events_widget.update("")
-
-        self.width_events = 0
-        self.height_events = 0
-        self.n_events = 0
-        self.n_new_events = 0
+        self._reset_events()
 
         if content.get("ok"):
             if events := content["events"]:
@@ -937,7 +936,7 @@ class TrackerWidget:
 
             if state == TrackerState.shown:
                 if not self.finalize(window):
-                    self.events.reset_size()
+                    self.events.reset()
                     self._show_current_content(window)
                 self.update(window)
 
