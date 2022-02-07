@@ -206,10 +206,6 @@ class DriversToScrape(_DriversHandler):
 class DriversToShow(_DriversHandler):
     name = "Chromedriver (browser)"
 
-    def __init__(self):
-        self._drivers_available = queue.Queue()
-        super().__init__()
-
     def get_driver_options(self):
         options = webdriver.ChromeOptions()
         options.add_argument("--start-maximized")
