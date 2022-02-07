@@ -4,7 +4,6 @@ import queue
 import stat
 import threading
 import time
-import traceback
 from socket import error as SocketError
 
 import psutil
@@ -15,7 +14,7 @@ from selenium.common.exceptions import (
     WebDriverException,
 )
 from urllib3.exceptions import ProtocolError
-from win32com.client import Dispatch
+from win32api import HIWORD, GetFileVersionInfo
 from windows.localization import TXT
 from windows.log import log
 
@@ -48,9 +47,9 @@ webdriver.find_chrome_executable = fix_find_chrome_executable
 def get_chrome_main_version():
     """get installed Chrome main version number"""
     filename = fix_find_chrome_executable()
-    parser = Dispatch("Scripting.FileSystemObject")
-    version = parser.GetFileVersion(filename)
-    return version.split(".")[0]
+    # https://stackoverflow.com/a/1237635
+    info = GetFileVersionInfo(filename, "\\")
+    return HIWORD(info["FileVersionMS"])
 
 
 def patch_driver(version):
@@ -75,7 +74,6 @@ class DriversHandler:
     name = None
     _patching_lock = threading.Lock()
     _patching_done = False
-    _chrome_main_version = get_chrome_main_version()
 
     def __init__(self):
         self.max_drivers = float("inf")
@@ -96,7 +94,7 @@ class DriversHandler:
         """patch chromedriver only once, thread safe"""
         with cls._patching_lock:
             if not cls._patching_done:
-                patch_driver(cls._chrome_main_version)
+                patch_driver(get_chrome_main_version())
                 cls._patching_done = True
 
     def get_driver_options(self):
@@ -238,9 +236,6 @@ class DriversToShow(DriversHandler):
                 SessionNotCreatedException,
             ) as e:
                 log(f"{self.name} SHOW failed ({e})", error=True)
-
-            except:
-                log(traceback.format_exc(), error=True)
 
             finally:
                 self.destroy(driver)

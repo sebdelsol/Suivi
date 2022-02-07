@@ -167,6 +167,7 @@ class Edit(Popup):
 
         else:
             return super().event_handler(event)
+        return None
 
     def loop(self):
         ok, idship, description, used_couriers = False, None, None, None
@@ -269,6 +270,7 @@ class Choices(Popup):
 
         else:
             return super().event_handler(event)
+        return None
 
     def loop(self):
         return_chosen = (True, self.added_button_key)
@@ -310,12 +312,13 @@ class OneChoice(Popup):
 
         else:
             return super().event_handler(event)
+        return None
 
     def loop(self):
         choice = None
 
         if super().loop():
-            # https://stackoverflow.com/questions/2361426/get-the-first-item-from-an-iterable-that-matches-a-condition
+            # https://stackoverflow.com/a/2364277
             choice = next(choice for choice in self.choices if self[choice].get())
 
         self.close()

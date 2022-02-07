@@ -23,10 +23,11 @@ COURIERS_TEST = (
 if not MUTI_THREADED:
 
     class MockThreadPoolExecutor(ThreadPoolExecutor):
-        def submit(self, f, *args, **kwargs):
-            future = Future()
-            future.set_result(f(*args, **kwargs))
-            return future
+        def submit(self, *args, **kwargs):
+            function, *args = args
+            future_ = Future()
+            future_.set_result(function(*args, **kwargs))
+            return future_
 
         def shutdown(self, wait=True):
             pass

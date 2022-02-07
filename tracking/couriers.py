@@ -192,7 +192,7 @@ class Courier:
                 events, infos = result
 
         # remove duplicate events
-        # https://stackoverflow.com/questions/9427163/remove-duplicate-dict-in-list-in-python
+        # https://stackoverflow.com/a/9427216
         events = [
             dict(evt_tuple) for evt_tuple in {tuple(evt.items()) for evt in events}
         ]
@@ -388,6 +388,7 @@ class Asendia(Courier):
         )
         if r.status_code == 200:
             return r.json()
+        return None
 
     def parse_content(self, content):
         events = []
@@ -430,6 +431,7 @@ class MondialRelay(Courier):
         r = self.handler.request("GET", url)
         if r.status_code == 200:
             return lxml.html.fromstring(r.content)
+        return None
 
     def parse_content(self, content):
         events = []
@@ -480,6 +482,7 @@ class RelaisColis(Courier):
         )
         if r.status_code == 200:
             return r.json()
+        return None
 
     def parse_content(self, content):
         events = []
@@ -532,6 +535,7 @@ class GLS(Courier):
         r = self.handler.request("GET", url)
         if r.status_code == 200:
             return r.json()
+        return None
 
     def parse_content(self, content):
         events = []
@@ -589,6 +593,7 @@ class DPD(Courier):
         r = self.handler.request("GET", url)
         if r.status_code == 200:
             return lxml.html.fromstring(r.content)
+        return None
 
     def parse_content(self, content):
         events = []
@@ -633,6 +638,7 @@ class NLPost(Courier):
         r = self.handler.request("GET", url)
         if r.status_code == 200:
             return lxml.html.fromstring(r.content)
+        return None
 
     def parse_content(self, content):
         events = []
@@ -667,6 +673,7 @@ class FourPX(Courier):
         r = self.handler.request("GET", url)
         if r.status_code == 200:
             return lxml.html.fromstring(r.content)
+        return None
 
     def parse_content(self, content):
         events = []
@@ -730,6 +737,7 @@ class LaPoste(Courier):
         r = self.handler.request("GET", url, headers=self.headers)
         if r.status_code == 200:
             return r.json()
+        return None
 
     def parse_content(self, content):
         events = []
@@ -809,8 +817,8 @@ class Chronopost(Courier):
             )
             return lxml.html.fromstring(driver.page_source)
 
-        else:
-            self.log(f"FAILURE - can't find url for {idship}", error=True)
+        self.log(f"FAILURE - can't find url for {idship}", error=True)
+        return None
 
     def parse_content(self, content):
         events = []
@@ -850,12 +858,14 @@ class DHL(Courier):
             btn_rgpd = WebDriverWait(driver, 15).until(
                 EC.element_to_be_clickable(rgpd_locator)
             )
+            print("rgpd")
             btn_rgpd.click()
 
             submit_locator = (By.XPATH, '//button[contains(@class, "tracking-input")]')
             submit = WebDriverWait(driver, 15).until(
                 EC.element_to_be_clickable(submit_locator)
             )
+            print("submit")
             submit.click()
 
         DriversToShow.defer(show, url)
@@ -895,6 +905,7 @@ class DHL(Courier):
                 events.append(dict(date=date, status=status, label=label, warn=warn))
 
             return events, dict(product=product)
+        return None
 
 
 class USPS(Courier):

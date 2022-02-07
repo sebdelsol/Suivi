@@ -80,6 +80,7 @@ class GreyWindow:
 
 class MainWindow(ShowInTaskbarWindow):
     def __init__(self, trackers_filename, load_as_json, splash):
+        self.log = None
         col_kwargs = dict(
             p=0, expand_x=True, expand_y=True, background_color=TH.widget_event_bg_color
         )
@@ -225,10 +226,10 @@ class MainWindow(ShowInTaskbarWindow):
         )
         return layout
 
-    def addlog(self, log):
-        self.log = log
-        log.link_to(self)
-        self.grey_windows.append(GreyWindow(log))
+    def addlog(self, log_):
+        self.log = log_
+        log_.link_to(self)
+        self.grey_windows.append(GreyWindow(log_))
 
     def close(self):
         for grey_window in self.grey_windows:
@@ -291,7 +292,8 @@ class MainWindow(ShowInTaskbarWindow):
                 return True
 
             if event in (Events.log, Shortcuts.log):
-                self.log.toggle()
+                if self.log:
+                    self.log.toggle()
 
             elif action := self.event_to_action.get(event):
                 action()
@@ -300,3 +302,4 @@ class MainWindow(ShowInTaskbarWindow):
             return (
                 window.event_handler(event) if event else False
             )  # exit, see Popup.loop
+        return None

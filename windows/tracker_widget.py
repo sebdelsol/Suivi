@@ -420,7 +420,7 @@ class CouriersWidget:
 
                 line = i + 1
                 if status["updating"]:
-                    # https://stackoverflow.com/questions/14786507/how-to-change-the-color-of-certain-words-in-the-tkinter-text-widget/30339009
+                    # https://stackoverflow.com/a/14786570
                     end_col = len(update_msg) + len(name_txt)
                     self.widget.pulsing.add_tag(
                         status["name"], f"{line}.0", f"{line}.{end_col}"
@@ -831,7 +831,7 @@ class TrackerWidget:
 
     def _update_idle_couriers(self, window, couriers):
         for content in self.tracker.update_idle_couriers(couriers):
-            # https://stackoverflow.com/questions/10452770/python-lambdas-binding-to-local-values
+            # https://stackoverflow.com/a/10452819
             window.trigger_event(
                 lambda window, content=content: self._update_one_courier_done(
                     content, window
