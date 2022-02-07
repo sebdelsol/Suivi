@@ -21,7 +21,7 @@ from windows.log import log
 CREATE_DRIVER_AT_INIT = False
 
 
-def fix_find_chrome_executable():
+def find_chrome_executable():
     """fix find_chrome_executable for x86 Windows"""
     candidates = set()
     for item in map(
@@ -41,12 +41,12 @@ def fix_find_chrome_executable():
 
 
 # monkey patch it
-webdriver.find_chrome_executable = fix_find_chrome_executable
+webdriver.find_chrome_executable = find_chrome_executable
 
 
 def get_chrome_main_version():
     """get installed Chrome main version number"""
-    filename = fix_find_chrome_executable()
+    filename = find_chrome_executable()
     # https://stackoverflow.com/a/1237635
     info = GetFileVersionInfo(filename, "\\")
     return HIWORD(info["FileVersionMS"])

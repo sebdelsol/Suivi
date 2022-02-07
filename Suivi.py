@@ -15,8 +15,12 @@ LOAD_AS_JSON = True
 
 class Splash:
     def __init__(self):
-        self.log = sg.T("", font=(TH.var_font, TH.splash_font_size), text_color=TH.splash_color)
-        img_data = resize_and_colorize_img(TH.mail_img, TH.splash_img_height, TH.splash_color)
+        self.log = sg.T(
+            "", font=(TH.var_font, TH.splash_font_size), text_color=TH.splash_color
+        )
+        img_data = resize_and_colorize_img(
+            TH.mail_img, TH.splash_img_height, TH.splash_color
+        )
         layout = [[sg.Image(data=img_data)], [self.log]]
         args, kwargs = TH.get_window_params(layout)
         self.window = sg.Window(*args, **kwargs)
@@ -49,16 +53,22 @@ if __name__ == "__main__":
         splash = Splash()
         splash.update(TXT.init)
 
+        from tracking.drivers import find_chrome_executable
         from windows.log import logger
         from windows.main import MainWindow
 
-        main_window = MainWindow(TRACKERS_FILENAME, LOAD_AS_JSON, splash)
-        main_window.addlog(logger)
-        splash.close()
+        if not find_chrome_executable():
+            print("this app needs chrome")
+            splash.close()
 
-        main_window.loop()
-        print("Exiting")
-        main_window.close()
-        logger.close()
+        else:
+            main_window = MainWindow(TRACKERS_FILENAME, LOAD_AS_JSON, splash)
+            main_window.addlog(logger)
+            splash.close()
+            main_window.loop()
+
+            print("Exiting")
+            main_window.close()
+            logger.close()
 
     print("Exit")
