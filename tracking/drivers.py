@@ -24,7 +24,6 @@ CREATE_DRIVER_AT_INIT = False
 
 def fix_find_chrome_executable():
     """fix find_chrome_executable for x86 Windows"""
-
     candidates = set()
     for item in map(
         os.environ.get, ("PROGRAMFILES", "PROGRAMFILES(X86)", "LOCALAPPDATA")
@@ -47,7 +46,6 @@ webdriver.find_chrome_executable = fix_find_chrome_executable
 
 def get_chrome_main_version():
     """get installed Chrome main version number"""
-
     filename = fix_find_chrome_executable()
     parser = Dispatch("Scripting.FileSystemObject")
     version = parser.GetFileVersion(filename)
@@ -59,7 +57,6 @@ def patch_driver(version):
     patch chromedriver then prevent any further patching,
     driver patching is not thread safe
     """
-
     log(f"PATCHING chromedriver {version=}")
     patcher = webdriver.Patcher(version_main=version)
     # unlock chromedriver.exe and patch it
@@ -133,7 +130,10 @@ class _DriversHandler:
         return None
 
     def get(self):
-        """try to get an available driver. if not try to create a driver then wait for an available one"""
+        """
+        try to get an available driver.
+        if not try to create a driver then wait for an available one
+        """
         try:
             if driver := self._drivers_available.get(block=False):
                 return driver
