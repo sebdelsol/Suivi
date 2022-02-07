@@ -72,6 +72,7 @@ def patch_driver(version):
 
 class DriversHandler:
     name = None
+    _terminate_lock = threading.Lock()
     _patching_lock = threading.Lock()
     _patching_done = False
 
@@ -162,12 +163,23 @@ class DriversHandler:
                 log(f"QUIT {self.name} ({i + 1}/{n_drivers})")
                 driver.quit()
 
-            # if drivers are still being created terminate those
+            DriversHandler._terminate()
+
+    @classmethod
+    def _terminate(cls):
+        """if drivers are still being created terminate those"""
+        with cls._terminate_lock:
+            terminated = []
             current_proc = psutil.Process()
             for child in current_proc.children(recursive=True):
                 if "chromedriver.exe" in child.name().lower():
                     log(f"TERMINATE {child.name()} {child.pid}")
                     child.terminate()
+                    terminated.append(child)
+            # wait for actual termination to avoid collisions
+            # from _terminate in different threads
+            for proc in terminated:
+                proc.wait(2)
 
 
 class DriversToScrape(DriversHandler):
