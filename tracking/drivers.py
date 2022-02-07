@@ -64,7 +64,7 @@ def patch_driver(version):
         os.chmod(patcher.executable_path, stat.S_IWRITE)
     patcher.auto()
     # lock chromedriver.exe & monkey patch Patcher
-    # to prevent the patcher from reading or writing it
+    # to prevent the patcher from reading or writing on the driver
     os.chmod(patcher.executable_path, stat.S_IREAD)
     webdriver.Patcher.is_binary_patched = lambda self: True
     log("chromedriver PATCHED")
