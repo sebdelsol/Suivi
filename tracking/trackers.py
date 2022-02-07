@@ -298,7 +298,7 @@ class Tracker:
         try:
             return self.couriers_handler.update(courier_name, self.idship)
 
-        except:
+        except:  # pylint: disable=bare-except
             log(traceback.format_exc(), error=True)
             return None
 
@@ -337,6 +337,7 @@ class Tracker:
             self.closing = True
             if self.executors:
                 for executor in self.executors:
+                    # pylint: disable=protected-access
                     for thread in executor._threads:
                         del _threads_queues[thread]
 
@@ -351,7 +352,9 @@ class TrackersHandler:
             def json_load(f):
                 return json.load(f, object_hook=json_decode_datetime)
 
-            loaded_trackers = self._load_from_file(JSON_EXT, "r", json_load)
+            loaded_trackers = self._load_from_file(
+                JSON_EXT, "r", json_load, encoding="utf8"
+            )
 
         else:
             loaded_trackers = self._load_from_file(PICKLE_EXT, "rb", pickle.load)
@@ -373,22 +376,24 @@ class TrackersHandler:
         self._save_to_file(to_save_trackers, PICKLE_EXT, "wb", pickle.dump)
 
         def json_save(obj, f):
-            json.dump(obj, f, default=json_encode_datetime, indent=4)
+            json.dump(
+                obj, f, default=json_encode_datetime, indent=4, ensure_ascii=False
+            )
 
-        self._save_to_file(to_save_trackers, JSON_EXT, "w", json_save)
+        self._save_to_file(to_save_trackers, JSON_EXT, "w", json_save, encoding="utf8")
 
-    def _load_from_file(self, ext, mode, load):
+    def _load_from_file(self, ext, mode, load, encoding=None):
         filename = self.filename + ext
         if os.path.exists(filename):
-            with open(filename, mode) as f:
+            with open(filename, mode, encoding=encoding) as f:
                 obj = load(f)
             log(f'trackers LOADED from "{filename}"')
             return obj
         return None
 
-    def _save_to_file(self, obj, ext, mode, save):
+    def _save_to_file(self, obj, ext, mode, save, encoding=None):
         filename = self.filename + ext
-        with open(filename, mode) as f:
+        with open(filename, mode, encoding=encoding) as f:
             save(obj, f)
         log(f'trackers SAVED to "{filename}"')
 
