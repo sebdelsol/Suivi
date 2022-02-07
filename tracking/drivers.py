@@ -55,7 +55,10 @@ def get_chrome_main_version():
 
 
 def patch_driver(version):
-    """patch chromedriver then lock it to avoid further patching and permission errors"""
+    """
+    patch chromedriver then prevent any further patching, 
+    driver patching is not thread safe
+    """
 
     log(f"PATCHING chromedriver {version=}")
     patcher = webdriver.Patcher(version_main=version)
