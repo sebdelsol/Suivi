@@ -140,10 +140,10 @@ class _DriversHandler:
         except queue.Empty:
             pass
 
-        # create a driver till max_drivers is reached
+        # try to create a driver
         self.create_driver()
-        # wait for an available driver
-        # since the creation might fail or the driver could be stolen by another thread
+        # wait for an available driver since the creation might have failed
+        # or the created driver might have be stolen by another thread
         return self._drivers_available.get()
 
     def dispose(self, driver):
