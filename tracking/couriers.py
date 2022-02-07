@@ -191,14 +191,12 @@ class Courier:
             if result := self.parse_content(content):
                 events, infos = result
 
-        # remove duplicate events
-        # https://stackoverflow.com/a/9427216
-        events = [
-            dict(evt_tuple) for evt_tuple in {tuple(evt.items()) for evt in events}
-        ]
+        # remove duplicate events while keeping insertion order
+        # we keep reading order in case date are identical
+        events = {tuple(evt.items()): evt for evt in events}.values()
 
         # sort by date
-        events.sort(key=lambda evt: evt["date"], reverse=True)
+        events = sorted(events, key=lambda evt: evt["date"], reverse=True)
 
         # add couriers and check for delivery & errors events
         delivered = infos.get("delivered", False)
@@ -697,6 +695,31 @@ class FourPX(Courier):
                     label=label.strip(),
                 )
             )
+
+        return events, {}
+
+
+class ColisPrive(Courier):
+    name = "Colis Privé"
+    handler = RequestHandler()
+
+    def get_url_for_browser(self, idship):
+        return f"https://www.colisprive.com/moncolis/pages/detailColis.aspx?numColis={idship}"
+
+    def get_content(self, idship):
+        url = self.get_url_for_browser(idship)
+        r = self.handler.request("GET", url)
+        if r.status_code == 200:
+            return lxml.html.fromstring(r.content)
+        return None
+
+    def parse_content(self, content):
+        events = []
+
+        timeline = content.xpath('//tr[@class="bandeauText"]')
+        for event in timeline:
+            date, label = event.xpath("./td/text()")
+            events.append(dict(date=get_local_time(date), label=label.strip()))
 
         return events, {}
 

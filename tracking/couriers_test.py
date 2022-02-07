@@ -3,6 +3,7 @@ from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 MUTI_THREADED = True
 
 COURIERS_TEST = (
+    ("Colis Privé", "52630055086334170"),
     ("USPS", "LZ596462615US"),
     ("DHL", "JVGL084127362550620461415537"),
     # ('DHL', '1234567890'),
