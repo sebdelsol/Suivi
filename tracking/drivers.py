@@ -38,6 +38,7 @@ def fix_find_chrome_executable():
     for candidate in candidates:
         if os.path.exists(candidate) and os.access(candidate, os.X_OK):
             return os.path.normpath(candidate)
+    return None
 
 
 # monkey patch it
@@ -70,7 +71,7 @@ def patch_driver(version):
     log("chromedriver PATCHED")
 
 
-class _DriversHandler:
+class DriversHandler:
     name = None
     _patching_lock = threading.Lock()
     _patching_done = False
@@ -111,7 +112,7 @@ class _DriversHandler:
             driver = None
             self._log_creation("CREATION", n_drivers)
             try:
-                _DriversHandler._patch_driver()
+                DriversHandler._patch_driver()
                 options = self.get_driver_options()
                 driver = webdriver.Chrome(options=options)
                 self._log_creation("CREATED", n_drivers)
@@ -132,7 +133,7 @@ class _DriversHandler:
     def get(self):
         """
         try to get an available driver.
-        if not try to create a driver then wait for an available one
+        if not try to create a driver & wait for an available one
         """
         try:
             if driver := self._drivers_available.get(block=False):
@@ -140,7 +141,6 @@ class _DriversHandler:
         except queue.Empty:
             pass
 
-        # try to create a driver
         self.create_driver()
         # wait for an available driver since the creation might have failed
         # or the created driver might have be stolen by another thread
@@ -172,7 +172,7 @@ class _DriversHandler:
                     child.terminate()
 
 
-class DriversToScrape(_DriversHandler):
+class DriversToScrape(DriversHandler):
     max_drivers = 2
     name = "Chromedriver (scrapper)"
 
@@ -203,7 +203,7 @@ class DriversToScrape(_DriversHandler):
         return options
 
 
-class DriversToShow(_DriversHandler):
+class DriversToShow(DriversHandler):
     name = "Chromedriver (browser)"
 
     def get_driver_options(self):
