@@ -48,7 +48,7 @@ webdriver.find_chrome_executable = fix_find_chrome_executable
 def get_chrome_main_version():
     """get installed Chrome main version number"""
 
-    filename = find_chrome_executable()
+    filename = fix_find_chrome_executable()
     parser = Dispatch("Scripting.FileSystemObject")
     version = parser.GetFileVersion(filename)
     return version.split(".")[0]
@@ -56,7 +56,7 @@ def get_chrome_main_version():
 
 def patch_driver(version):
     """
-    patch chromedriver then prevent any further patching, 
+    patch chromedriver then prevent any further patching,
     driver patching is not thread safe
     """
 
@@ -66,7 +66,7 @@ def patch_driver(version):
     if os.path.exists(patcher.executable_path):
         os.chmod(patcher.executable_path, stat.S_IWRITE)
     patcher.auto()
-    # lock chromedriver.exe & monkey patch Patcher 
+    # lock chromedriver.exe & monkey patch Patcher
     # to prevent the patcher from reading or writing it
     os.chmod(patcher.executable_path, stat.S_IREAD)
     webdriver.Patcher.is_binary_patched = lambda self: True
