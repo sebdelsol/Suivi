@@ -1,16 +1,17 @@
 Fast **tracking** for:
-- [4PX :cn:](http://en.4px.com/)
-- [Asendia :cn: :fr: :switzerland:](https://www.asendia.fr/)
-- [Cainiao :cn:](https://global.cainiao.com/)
-- [Chronopost :fr:](https://www.chronopost.fr/)
-- [DPD :eu: :fr:](https://www.dpd.com/)
-- [DHL :eu: :de:](https://www.dhl.com/)
-- [GLS :eu: :netherlands:](https://gls-group.eu/)
-- [La Poste :fr:](https://www.laposte.fr/)
-- [Mondial Relay :fr:](https://www.mondialrelay.fr/)
-- [NL Post :netherlands:](https://postnl.post/)
-- [Relais Colis :fr:](https://www.relaiscolis.com/)
-- [USPS :us:](https://www.usps.com/)
+- [4PX](http://en.4px.com/) :cn:
+- [Asendia](https://www.asendia.fr/) :cn: :fr: :switzerland:
+- [Cainiao](https://global.cainiao.com/) :cn:
+- [Chronopost](https://www.chronopost.fr/) :fr:
+- [Colis Privé](https://www.colisprive.fr/) :fr:
+- [DPD](https://www.dpd.com/) :eu: :fr:
+- [DHL](https://www.dhl.com/) :eu: :de:
+- [GLS](https://gls-group.eu/) :eu: :netherlands:
+- [La Poste](https://www.laposte.fr/) :fr:
+- [Mondial Relay](https://www.mondialrelay.fr/) :fr:
+- [NL Post](https://postnl.post/) :netherlands:
+- [Relais Colis](https://www.relaiscolis.com/) :fr:
+- [USPS](https://www.usps.com/) :us:
 
 
 **sloc** [here](https://api.codetabs.com/v1/loc/?github=sebdelsol/suivi)
