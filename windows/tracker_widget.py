@@ -196,7 +196,7 @@ class EventsWidget:
         window.trigger_event(Events.update_window_size)
 
     def _update_new_event(self):
-        visible = self.height_events > TH.widget_min_events_shown
+        visible = self.height_events > 0
         self.n_event_text.update(visible=visible)
 
         if self.n_events > 0 and self.n_new_events > 0:
@@ -225,8 +225,11 @@ class EventsWidget:
             self.bind_to_expand.bind(self.events_widget)
 
     def _update_remove_button_visibility(self):
+        no_need_to_expand = self.height_events <= TH.widget_min_events_shown
         visible = (
-            self.are_events_expanded and self.n_events > 0 and self.n_new_events > 0
+            (self.are_events_expanded or no_need_to_expand)
+            and self.n_events > 0
+            and self.n_new_events > 0
         )
         self.remove_button.update(visible=visible)
 
