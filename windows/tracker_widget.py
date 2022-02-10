@@ -502,7 +502,7 @@ class IdShipWidget:
     def show(self, content):
         self.widget.update("")
 
-        product = content.get("product", TXT.default_product)
+        product = content.get("product") or TXT.default_product
         fromto = content.get("fromto")
         fromto = f" {fromto.lower()} " if fromto else " "
         empty, idship = self.get_idship(check_empty=True)

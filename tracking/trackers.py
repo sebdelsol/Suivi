@@ -129,6 +129,8 @@ class Contents:
                 consolidated["status"]["date"]
             )
 
+            # get the 1st non None product 'in updated date order)
+            contents_ok.sort(key=lambda content: content["status"]["date"])
             consolidated["product"] = next(
                 (
                     product
@@ -137,7 +139,12 @@ class Contents:
                 ),
                 None,
             )
-
+            # get the longer fromto
+            consolidated["fromto"] = max(
+                (fromto for content in contents_ok if (fromto := content["fromto"])),
+                key=len,
+                default=None,
+            )
         return consolidated
 
     def get(self):
