@@ -129,6 +129,15 @@ class Contents:
                 consolidated["status"]["date"]
             )
 
+            consolidated["product"] = next(
+                (
+                    product
+                    for content in contents_ok
+                    if (product := content.get("product"))
+                ),
+                None,
+            )
+
         return consolidated
 
     def get(self):

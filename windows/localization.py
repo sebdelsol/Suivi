@@ -48,6 +48,7 @@ class TXT:
     unknown_status = "Aucune information"
     status_error = "Erreur"
     default_product = "Envoi"
+    package_product = "Colis"
 
     digits = "chiffres"
     letters = "lettres"
