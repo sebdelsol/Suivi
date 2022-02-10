@@ -104,8 +104,7 @@ def get_simple_validation(_min, _max=None):
 
 class Courier:
     r_arrow = "→"
-    product = TXT.default_product
-    fromto = ""
+    fromto = None
 
     idship_validation, idship_validation_msg = get_simple_validation(8, 20)
 
@@ -239,7 +238,7 @@ class Courier:
 
         return dict(
             ok=ok,
-            product=infos.get("product", self.product),
+            product=infos.get("product"),
             idship=idship,
             fromto=infos.get("fromto", self.fromto),
             status=status,
@@ -415,8 +414,6 @@ class Asendia(Courier):
 class MondialRelay(Courier):
     name = "Mondial Relay"
     handler = RequestHandler()
-    product = "Colis"
-    fromto = f"FR{Courier.r_arrow}FR"
     idship_validation = r"^\d{8}(\d{2})?(\d{2})?\-\d{5}$"
     idship_validation_msg = f"8, 10 {TXT.or_} 12 {TXT.digits}-{TXT.zipcode}"
 
@@ -455,24 +452,19 @@ class MondialRelay(Courier):
 class RelaisColis(Courier):
     name = "Relais Colis"
     handler = RequestHandler()
-    product = "Colis"
-    fromto = f"FR{Courier.r_arrow}FR"
     idship_validation, idship_validation_msg = get_simple_validation(10, 16)
     url = "https://www.relaiscolis.com/suivi-de-colis/index/tracking/"
 
     def get_url_for_browser(self, idship):
         return "https://www.relaiscolis.com/suivi-de-colis/"
 
-    # it's a post request, need selenium
-    def open_in_browser(self, idship):
+    @DriversToShow.get_and_defer_show()
+    def open_in_browser(self, idship, driver):
         url = self.get_url_for_browser(idship)
-
-        def show(driver, idship=idship):
-            driver.execute_script(
-                f'document.getElementById("valeur").value="{idship}";validationForm();'
-            )
-
-        DriversToShow.defer(show, url)
+        driver.get(url)
+        driver.execute_script(
+            f'document.getElementById("valeur").value="{idship}";validationForm();'
+        )
 
     def get_content(self, idship):
         r = self.handler.request(
@@ -491,7 +483,7 @@ class RelaisColis(Courier):
         if shipment:
             vendor = shipment.get("Enseigne")
             if vendor:
-                product = f"{self.product} {vendor.capitalize()}"
+                product = f"{TXT.package_product} {vendor.capitalize()}"
 
             timeline = shipment.get("ListEvenements", {}).get("Evenement", ())
             for event in timeline:
@@ -599,7 +591,7 @@ class DPD(Courier):
         infos = content.xpath('//ul[@class="tableInfosAR"]//text()')
         infos = [info for info in infos if info.replace("\n", "").strip() != ""]
         infos = dict((k, v) for k, v in zip(infos[::2], infos[1::2]))
-        product = "Colis"
+        product = TXT.package_product
         if weight := infos.get("Poids du colis"):
             product += f" {weight}"
 
@@ -831,17 +823,11 @@ class Chronopost(Courier):
     #  do not return any selenium objects, the driver is disposed after
     def get_content(self, driver, idship):
         url = self.get_url_for_browser(idship)
-        if url:
-            driver.get(url)
-            self.log(f"driver WAIT timeline - {idship}")
-            timeline_locator = (By.XPATH, self.timeline_xpath)
-            self.handler.wait(
-                driver, EC.presence_of_all_elements_located(timeline_locator)
-            )
-            return lxml.html.fromstring(driver.page_source)
-
-        self.log(f"FAILURE - can't find url for {idship}", error=True)
-        return None
+        driver.get(url)
+        self.log(f"driver WAIT timeline - {idship}")
+        timeline_locator = (By.XPATH, self.timeline_xpath)
+        self.handler.wait(driver, EC.presence_of_all_elements_located(timeline_locator))
+        return lxml.html.fromstring(driver.page_source)
 
     def parse_content(self, content):
         events = []
@@ -870,28 +856,20 @@ class DHL(Courier):
         return f"https://www.dhl.com/fr-en/home/our-divisions/parcel/private-customers/tracking-parcel.html?tracking-id={idship}"
 
     # force submit button
-    def open_in_browser(self, idship):
+    @DriversToShow.get_and_defer_show(page_load_timeout=10, wait_elt_timeout=15)
+    def open_in_browser(self, idship, driver):
         url = self.get_url_for_browser(idship)
+        driver.get(url)
+        rgpd_locator = (
+            By.XPATH,
+            '//button[contains(@class, "save-preference-btn")]',
+        )
+        btn_rgpd = driver.wait_until(EC.element_to_be_clickable(rgpd_locator))
+        btn_rgpd.click()
 
-        def show(driver):
-            rgpd_locator = (
-                By.XPATH,
-                '//button[contains(@class, "save-preference-btn")]',
-            )
-            btn_rgpd = WebDriverWait(driver, 15).until(
-                EC.element_to_be_clickable(rgpd_locator)
-            )
-            print("rgpd")
-            btn_rgpd.click()
-
-            submit_locator = (By.XPATH, '//button[contains(@class, "tracking-input")]')
-            submit = WebDriverWait(driver, 15).until(
-                EC.element_to_be_clickable(submit_locator)
-            )
-            print("submit")
-            submit.click()
-
-        DriversToShow.defer(show, url)
+        submit_locator = (By.XPATH, '//button[contains(@class, "tracking-input")]')
+        submit = driver.wait_until(EC.element_to_be_clickable(submit_locator))
+        submit.click()
 
     def get_content(self, idship):
         url = f"https://api-eu.dhl.com/track/shipments?trackingNumber={idship}&language=FR"

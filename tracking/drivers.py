@@ -13,6 +13,7 @@ from selenium.common.exceptions import (
     SessionNotCreatedException,
     WebDriverException,
 )
+from selenium.webdriver.support.ui import WebDriverWait
 from urllib3.exceptions import ProtocolError
 from win32api import HIWORD, GetFileVersionInfo
 from windows.localization import TXT
@@ -221,25 +222,30 @@ class DriversToShow(DriversHandler):
         options.add_argument("--start-maximized")
         return options
 
-    def defer(self, show, url):
-        threading.Thread(target=self._defer, args=(show, url), daemon=True).start()
+    def get_and_defer_show(self, page_load_timeout=10, wait_elt_timeout=15):
+        """decorator to give the decorated function a driver
+        and handle the deferred show with timeouts"""
 
-    @staticmethod
-    def _wait_browser_closed(driver):
-        disconnected_msg = "disconnected: not connected to DevTools"
-        while True:
-            time.sleep(0.5)
-            if msg := driver.get_log("driver"):
-                if disconnected_msg in msg[-1]["message"]:
-                    log("Chrome window closed by user")
-                    break
+        def inner(show):
+            def wrapper(*args):
+                args = (show, page_load_timeout, wait_elt_timeout) + args
+                threading.Thread(target=self._defer, args=args, daemon=True).start()
 
-    def _defer(self, show, url):
+            return wrapper
+
+        return inner
+
+    def _defer(self, show, page_load_timeout, wait_elt_timeout, *args):
         if driver := self.get():
             log(f"SHOW in {self.name}")
             try:
-                driver.get(url)
-                show(driver)
+
+                def wait_until(until):
+                    return WebDriverWait(driver, wait_elt_timeout).until(until)
+
+                driver.wait_until = wait_until
+                driver.set_page_load_timeout(page_load_timeout)
+                show(*args, driver)
                 self._wait_browser_closed(driver)
 
             except (
@@ -251,3 +257,13 @@ class DriversToShow(DriversHandler):
 
             finally:
                 self.destroy(driver)
+
+    @staticmethod
+    def _wait_browser_closed(driver):
+        disconnected_msg = "disconnected: not connected to DevTools"
+        while True:
+            time.sleep(0.5)
+            if msg := driver.get_log("driver"):
+                if disconnected_msg in msg[-1]["message"]:
+                    log("Chrome window closed by user")
+                    break
