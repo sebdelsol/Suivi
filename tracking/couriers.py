@@ -1,11 +1,9 @@
 import re
-import time
 import webbrowser
 from datetime import datetime, timedelta
 
 import lxml.html
 import pytz
-import requests
 from dateutil.parser import ParserError, parse
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.action_chains import ActionChains
@@ -15,6 +13,7 @@ from tzlocal import get_localzone
 from windows.localization import TXT
 from windows.log import log
 
+from requests_handler import RequestsHandler
 from tracking.api_keys import DHL_KEY, LAPOSTE_KEY
 from tracking.drivers import DriversToScrape, DriversToShow
 
@@ -242,38 +241,6 @@ class Courier:
         )
 
 
-class RequestHandler:
-    """decorator to give the decorated function a request handler
-    and retry get_content with timeouts"""
-
-    def __init__(self, request_timeout=5, max_retry=1, time_between_retry=1):
-        self.request_timeout = request_timeout
-        self.max_retry = max_retry
-        self.time_between_retry = time_between_retry
-
-    def request(self, method, *args, **kwargs):
-        return requests.request(method, *args, timeout=self.request_timeout, **kwargs)
-
-    def __call__(self, get_content):
-        def wrapper(courier, idship):
-            n_retry = self.max_retry
-            while True:
-                try:
-                    content = get_content(courier, idship, self)
-
-                except requests.exceptions.Timeout:
-                    courier.log(f"request TIMEOUT for {idship}", error=True)
-                    content = None
-
-                if n_retry <= 0 or content is not None:
-                    return content
-
-                n_retry -= 1
-                time.sleep(self.time_between_retry)
-
-        return wrapper
-
-
 class Cainiao(Courier):
     name = "Cainiao"
     fromto = f"CN{Courier.r_arrow}FR"
@@ -338,7 +305,7 @@ class Asendia(Courier):
     def get_url_for_browser(self, idship):
         return f"https://tracking.asendia.com/tracking/{idship}"
 
-    @RequestHandler(max_retry=1)
+    @RequestsHandler(max_retry=1)
     def get_content(self, idship, request):
         r = request.request(
             "POST",
@@ -383,7 +350,7 @@ class MondialRelay(Courier):
         number, zip_code = idship.split("-")
         return f"https://www.mondialrelay.fr/suivi-de-colis?numeroExpedition={number}&codePostal={zip_code}"
 
-    @RequestHandler()
+    @RequestsHandler()
     def get_content(self, idship, request):
         url = self.get_url_for_browser(idship)
         r = request.request("GET", url)
@@ -425,7 +392,7 @@ class RelaisColis(Courier):
             f'document.getElementById("valeur").value="{idship}";validationForm();'
         )
 
-    @RequestHandler()
+    @RequestsHandler()
     def get_content(self, idship, request):
         r = request.request(
             "POST", self.url, data={"valeur": idship, "typeRecherche": "EXP"}
@@ -479,7 +446,7 @@ class GLS(Courier):
     def get_url_for_browser(self, idship):
         return f"https://gls-group.eu/FR/fr/suivi-colis.html?match={idship}"
 
-    @RequestHandler()
+    @RequestsHandler()
     def get_content(self, idship, request):
         url = f"https://gls-group.eu/app/service/open/rest/FR/fr/rstt001?match={idship}"
         r = request.request("GET", url)
@@ -535,7 +502,7 @@ class DPD(Courier):
     def get_url_for_browser(self, idship):
         return f"https://trace.dpd.fr/fr/trace/{idship}"
 
-    @RequestHandler()
+    @RequestsHandler()
     def get_content(self, idship, request):
         url = self.get_url_for_browser(idship)
         r = request.request("GET", url)
@@ -578,7 +545,7 @@ class NLPost(Courier):
     def get_url_for_browser(self, idship):
         return f"https://postnl.post/Details?barcode={idship}"
 
-    @RequestHandler()
+    @RequestsHandler()
     def get_content(self, idship, request):
         url = self.get_url_for_browser(idship)
         r = request.request("GET", url)
@@ -611,7 +578,7 @@ class FourPX(Courier):
     def get_url_for_browser(self, idship):
         return f"http://track.4px.com/query/{idship}?"
 
-    @RequestHandler()
+    @RequestsHandler()
     def get_content(self, idship, request):
         url = self.get_url_for_browser(idship)
         r = request.request("GET", url)
@@ -649,7 +616,7 @@ class ColisPrive(Courier):
     def get_url_for_browser(self, idship):
         return f"https://www.colisprive.com/moncolis/pages/detailColis.aspx?numColis={idship}"
 
-    @RequestHandler()
+    @RequestsHandler()
     def get_content(self, idship, request):
         url = self.get_url_for_browser(idship)
         r = request.request("GET", url)
@@ -698,7 +665,7 @@ class LaPoste(Courier):
     def get_url_for_browser(self, idship):
         return f"https://www.laposte.fr/outils/suivre-vos-envois?code={idship}"
 
-    @RequestHandler()
+    @RequestsHandler()
     def get_content(self, idship, request):
         url = f"https://api.laposte.fr/suivi/v2/idships/{idship}?lang=fr_FR"
         r = request.request("GET", url, headers=self.headers)
@@ -819,7 +786,7 @@ class DHL(Courier):
         submit = driver.wait_until(EC.element_to_be_clickable(submit_locator))
         submit.click()
 
-    @RequestHandler()
+    @RequestsHandler()
     def get_content(self, idship, request):
         url = f"https://api-eu.dhl.com/track/shipments?trackingNumber={idship}&language=FR"
         r = request.request("GET", url, headers=self.headers)
