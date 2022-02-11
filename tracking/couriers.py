@@ -6,17 +6,11 @@ from datetime import datetime, timedelta
 import lxml.html
 import pytz
 import requests
-import urllib3
 from dateutil.parser import ParserError, parse
-from selenium.common.exceptions import (
-    NoSuchElementException,
-    TimeoutException,
-    WebDriverException,
-)
+from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
 from tzlocal import get_localzone
 from windows.localization import TXT
 from windows.log import log
@@ -130,7 +124,6 @@ class Courier:
 
     additional_subs = ()
 
-    handler = None
     name = None
 
     def __init__(self):
@@ -163,13 +156,12 @@ class Courier:
     def parse_content(self, content):
         raise NotImplementedError("parse_content method is missing")
 
+    def get_content(self, idship):
+        raise NotImplementedError("parse_content method is missing")
+
     def update(self, idship):
         if not self.name:
             log(f"courier {type(self).__name__} miss a name", error=True)
-            return None
-
-        if not self.handler:
-            self.log("courier miss a handler", error=True)
             return None
 
         if not self.validate_idship(idship):
@@ -183,7 +175,7 @@ class Courier:
 
         events = []
         infos = {}
-        content = self.handler.get_content(self, idship)
+        content = self.get_content(idship)
 
         if ok := content is not None:
             self.log(f"PARSE - {idship}")
@@ -247,6 +239,9 @@ class Courier:
 
 
 class RequestHandler:
+    """decorator to give the decorated function a request handler
+    and retry get_content with timeouts"""
+
     def __init__(self, request_timeout=5, max_retry=1, time_between_retry=1):
         self.request_timeout = request_timeout
         self.max_retry = max_retry
@@ -255,70 +250,36 @@ class RequestHandler:
     def request(self, method, *args, **kwargs):
         return requests.request(method, *args, timeout=self.request_timeout, **kwargs)
 
-    def get_content(self, courier, idship):
-        n_retry = self.max_retry
-        while True:
-            try:
-                content = courier.get_content(idship)
+    def __call__(self, get_content):
+        def wrapper(courier, idship):
+            n_retry = self.max_retry
+            while True:
+                try:
+                    content = get_content(courier, idship, self)
 
-            except requests.exceptions.Timeout:
-                courier.log(f"request TIMEOUT for {idship}", error=True)
-                content = None
+                except requests.exceptions.Timeout:
+                    courier.log(f"request TIMEOUT for {idship}", error=True)
+                    content = None
 
-            if n_retry <= 0 or content is not None:
-                return content
+                if n_retry <= 0 or content is not None:
+                    return content
 
-            n_retry -= 1
-            time.sleep(self.time_between_retry)
+                n_retry -= 1
+                time.sleep(self.time_between_retry)
 
-
-class SeleniumHandler:
-    exceptions_catched = (
-        WebDriverException,
-        TimeoutException,
-        urllib3.exceptions.ProtocolError,
-        urllib3.exceptions.NewConnectionError,
-        urllib3.exceptions.MaxRetryError,
-    )
-
-    def __init__(self, page_load_timeout=100, wait_elt_timeout=30):
-        self.page_load_timeout = page_load_timeout
-        self.wait_elt_timeout = wait_elt_timeout
-
-    def wait(self, driver, until):
-        return WebDriverWait(driver, self.wait_elt_timeout).until(until)
-
-    def get_content(self, courier, idship):
-        driver = DriversToScrape.get()
-
-        if driver:
-            try:
-                driver.set_page_load_timeout(self.page_load_timeout)
-                return courier.get_content(driver, idship)
-
-            except self.exceptions_catched as e:
-                error = type(e).__name__
-
-            finally:
-                DriversToScrape.dispose(driver)
-
-        else:
-            error = "no driver available"
-
-        courier.log(f"driver FAILURE - {error} for {idship}", error=True)
-        return None
+        return wrapper
 
 
 class Cainiao(Courier):
     name = "Cainiao"
-    handler = SeleniumHandler(wait_elt_timeout=30)
     fromto = f"CN{Courier.r_arrow}FR"
 
     def get_url_for_browser(self, idship):
         return f"https://global.cainiao.com/detail.htm?mailNoList={idship}&lang=zh"
 
     #  do not return any selenium objects, the driver is disposed after
-    def get_content(self, driver, idship):
+    @DriversToScrape.get(wait_elt_timeout=30)
+    def get_content(self, idship, driver):
         url = self.get_url_for_browser(idship)
         driver.get(url)
 
@@ -335,9 +296,7 @@ class Cainiao(Courier):
         if not is_data:
             self.log(f"driver WAIT slider - {idship}")
             slider_locator = (By.XPATH, '//span[@class="nc_iconfont btn_slide"]')
-            slider = self.handler.wait(
-                driver, EC.element_to_be_clickable(slider_locator)
-            )
+            slider = driver.wait_until(EC.element_to_be_clickable(slider_locator))
 
             slide = driver.find_element(
                 By.XPATH, '//div[@class="scale_text slidetounlock"]/span'
@@ -350,7 +309,7 @@ class Cainiao(Courier):
                 By.XPATH,
                 f'//p[@class="waybill-num"][contains(text(),"{idship}")]',
             )
-            self.handler.wait(driver, EC.visibility_of_element_located(data_locator))
+            driver.wait_until(EC.visibility_of_element_located(data_locator))
 
         return lxml.html.fromstring(driver.page_source)
 
@@ -368,7 +327,6 @@ class Cainiao(Courier):
 
 class Asendia(Courier):
     name = "Asendia"
-    handler = RequestHandler(max_retry=1)
     fromto = f"CN{Courier.r_arrow}FR"
     headers = {"Content-Type": "application/json", "Accept-Language": "fr"}
     url = "https://tracking.asendia.com/alliot/items/references"
@@ -376,8 +334,9 @@ class Asendia(Courier):
     def get_url_for_browser(self, idship):
         return f"https://tracking.asendia.com/tracking/{idship}"
 
-    def get_content(self, idship):
-        r = self.handler.request(
+    @RequestHandler(max_retry=1)
+    def get_content(self, idship, request):
+        r = request.request(
             "POST",
             self.url,
             json={"criteria": [idship], "shipped": False},
@@ -413,7 +372,6 @@ class Asendia(Courier):
 
 class MondialRelay(Courier):
     name = "Mondial Relay"
-    handler = RequestHandler()
     idship_validation = r"^\d{8}(\d{2})?(\d{2})?\-\d{5}$"
     idship_validation_msg = f"8, 10 {TXT.or_} 12 {TXT.digits}-{TXT.zipcode}"
 
@@ -421,9 +379,10 @@ class MondialRelay(Courier):
         number, zip_code = idship.split("-")
         return f"https://www.mondialrelay.fr/suivi-de-colis?numeroExpedition={number}&codePostal={zip_code}"
 
-    def get_content(self, idship):
+    @RequestHandler()
+    def get_content(self, idship, request):
         url = self.get_url_for_browser(idship)
-        r = self.handler.request("GET", url)
+        r = request.request("GET", url)
         if r.status_code == 200:
             return lxml.html.fromstring(r.content)
         return None
@@ -451,14 +410,13 @@ class MondialRelay(Courier):
 
 class RelaisColis(Courier):
     name = "Relais Colis"
-    handler = RequestHandler()
     idship_validation, idship_validation_msg = get_simple_validation(10, 16)
     url = "https://www.relaiscolis.com/suivi-de-colis/index/tracking/"
 
     def get_url_for_browser(self, idship):
         return "https://www.relaiscolis.com/suivi-de-colis/"
 
-    @DriversToShow.get_and_defer_show()
+    @DriversToShow.get()
     def open_in_browser(self, idship, driver):
         url = self.get_url_for_browser(idship)
         driver.get(url)
@@ -466,8 +424,9 @@ class RelaisColis(Courier):
             f'document.getElementById("valeur").value="{idship}";validationForm();'
         )
 
-    def get_content(self, idship):
-        r = self.handler.request(
+    @RequestHandler()
+    def get_content(self, idship, request):
+        r = request.request(
             "POST", self.url, data={"valeur": idship, "typeRecherche": "EXP"}
         )
         if r.status_code == 200:
@@ -515,14 +474,14 @@ class RelaisColis(Courier):
 
 class GLS(Courier):
     name = "GLS"
-    handler = RequestHandler()
 
     def get_url_for_browser(self, idship):
         return f"https://gls-group.eu/FR/fr/suivi-colis.html?match={idship}"
 
-    def get_content(self, idship):
+    @RequestHandler()
+    def get_content(self, idship, request):
         url = f"https://gls-group.eu/app/service/open/rest/FR/fr/rstt001?match={idship}"
-        r = self.handler.request("GET", url)
+        r = request.request("GET", url)
         if r.status_code == 200:
             return r.json()
         return None
@@ -572,15 +531,15 @@ class GLS(Courier):
 
 class DPD(Courier):
     name = "DPD"
-    handler = RequestHandler()
     additional_subs = ((r"Predict vous informe : \n", ""), (r"Instruction :", ""))
 
     def get_url_for_browser(self, idship):
         return f"https://trace.dpd.fr/fr/trace/{idship}"
 
-    def get_content(self, idship):
+    @RequestHandler()
+    def get_content(self, idship, request):
         url = self.get_url_for_browser(idship)
-        r = self.handler.request("GET", url)
+        r = request.request("GET", url)
         if r.status_code == 200:
             return lxml.html.fromstring(r.content)
         return None
@@ -618,14 +577,14 @@ class DPD(Courier):
 
 class NLPost(Courier):
     name = "NL Post"
-    handler = RequestHandler()
 
     def get_url_for_browser(self, idship):
         return f"https://postnl.post/Details?barcode={idship}"
 
-    def get_content(self, idship):
+    @RequestHandler()
+    def get_content(self, idship, request):
         url = self.get_url_for_browser(idship)
-        r = self.handler.request("GET", url)
+        r = request.request("GET", url)
         if r.status_code == 200:
             return lxml.html.fromstring(r.content)
         return None
@@ -653,14 +612,14 @@ class NLPost(Courier):
 
 class FourPX(Courier):
     name = "4PX"
-    handler = RequestHandler()
 
     def get_url_for_browser(self, idship):
         return f"http://track.4px.com/query/{idship}?"
 
-    def get_content(self, idship):
+    @RequestHandler()
+    def get_content(self, idship, request):
         url = self.get_url_for_browser(idship)
-        r = self.handler.request("GET", url)
+        r = request.request("GET", url)
         if r.status_code == 200:
             return lxml.html.fromstring(r.content)
         return None
@@ -693,14 +652,14 @@ class FourPX(Courier):
 
 class ColisPrive(Courier):
     name = "Colis Privé"
-    handler = RequestHandler()
 
     def get_url_for_browser(self, idship):
         return f"https://www.colisprive.com/moncolis/pages/detailColis.aspx?numColis={idship}"
 
-    def get_content(self, idship):
+    @RequestHandler()
+    def get_content(self, idship, request):
         url = self.get_url_for_browser(idship)
-        r = self.handler.request("GET", url)
+        r = request.request("GET", url)
         if r.status_code == 200:
             return lxml.html.fromstring(r.content)
         return None
@@ -718,7 +677,6 @@ class ColisPrive(Courier):
 
 class LaPoste(Courier):
     name = "La Poste"
-    handler = RequestHandler()
     idship_validation, idship_validation_msg = get_simple_validation(11, 15)
     headers = {"X-Okapi-Key": LAPOSTE_KEY, "Accept": "application/json"}
 
@@ -747,9 +705,10 @@ class LaPoste(Courier):
     def get_url_for_browser(self, idship):
         return f"https://www.laposte.fr/outils/suivre-vos-envois?code={idship}"
 
-    def get_content(self, idship):
+    @RequestHandler()
+    def get_content(self, idship, request):
         url = f"https://api.laposte.fr/suivi/v2/idships/{idship}?lang=fr_FR"
-        r = self.handler.request("GET", url, headers=self.headers)
+        r = request.request("GET", url, headers=self.headers)
         if r.status_code == 200:
             return r.json()
         return None
@@ -769,7 +728,6 @@ class LaPoste(Courier):
             else:
                 fromto = None
 
-            # timeline = list(filter(lambda t: t["status"], shipment.get("timeline")))
             timeline = list(filter(lambda t: t["shortLabel"], shipment.get("timeline")))
             status_label = timeline[-1]["shortLabel"]
             if date := timeline[-1].get("date"):
@@ -813,7 +771,6 @@ class LaPoste(Courier):
 
 class Chronopost(Courier):
     name = "Chronopost"
-    handler = SeleniumHandler(wait_elt_timeout=10)
     timeline_xpath = '//tr[@class="toggleElmt show"]'
 
     # use La Poste API to find out the url
@@ -821,12 +778,13 @@ class Chronopost(Courier):
         return f"https://www.chronopost.fr/tracking-no-cms/suivi-page?listeNumerosLT={idship}"
 
     #  do not return any selenium objects, the driver is disposed after
-    def get_content(self, driver, idship):
+    @DriversToScrape.get(wait_elt_timeout=10)
+    def get_content(self, idship, driver):
         url = self.get_url_for_browser(idship)
         driver.get(url)
         self.log(f"driver WAIT timeline - {idship}")
         timeline_locator = (By.XPATH, self.timeline_xpath)
-        self.handler.wait(driver, EC.presence_of_all_elements_located(timeline_locator))
+        driver.wait_until(EC.presence_of_all_elements_located(timeline_locator))
         return lxml.html.fromstring(driver.page_source)
 
     def parse_content(self, content):
@@ -848,7 +806,6 @@ class Chronopost(Courier):
 
 class DHL(Courier):
     name = "DHL"
-    handler = RequestHandler()
     idship_validation, idship_validation_msg = get_simple_validation(10, 39)
     headers = {"Accept": "application/json", "DHL-API-Key": DHL_KEY}
 
@@ -856,7 +813,7 @@ class DHL(Courier):
         return f"https://www.dhl.com/fr-en/home/our-divisions/parcel/private-customers/tracking-parcel.html?tracking-id={idship}"
 
     # force submit button
-    @DriversToShow.get_and_defer_show(page_load_timeout=10, wait_elt_timeout=15)
+    @DriversToShow.get(page_load_timeout=10, wait_elt_timeout=15)
     def open_in_browser(self, idship, driver):
         url = self.get_url_for_browser(idship)
         driver.get(url)
@@ -871,9 +828,10 @@ class DHL(Courier):
         submit = driver.wait_until(EC.element_to_be_clickable(submit_locator))
         submit.click()
 
-    def get_content(self, idship):
+    @RequestHandler()
+    def get_content(self, idship, request):
         url = f"https://api-eu.dhl.com/track/shipments?trackingNumber={idship}&language=FR"
-        r = self.handler.request("GET", url, headers=self.headers)
+        r = request.request("GET", url, headers=self.headers)
         return r.status_code == 200, r.json()
 
     def parse_content(self, content):
@@ -911,7 +869,6 @@ class DHL(Courier):
 
 class USPS(Courier):
     name = "USPS"
-    handler = SeleniumHandler(wait_elt_timeout=10)
     timeline_xpath = '//div[contains(@id, "trackingHistory")]'
 
     @staticmethod
@@ -922,12 +879,13 @@ class USPS(Courier):
     def get_url_for_browser(self, idship):
         return f"https://tools.usps.com/go/TrackConfirmAction?tLabels={idship}"
 
-    def get_content(self, driver, idship):
+    @DriversToScrape.get(wait_elt_timeout=10)
+    def get_content(self, idship, driver):
         url = self.get_url_for_browser(idship)
         driver.get(url)
         self.log(f"driver WAIT timeline - {idship}")
         timeline_locator = (By.XPATH, self.timeline_xpath)
-        self.handler.wait(driver, EC.presence_of_all_elements_located(timeline_locator))
+        driver.wait_until(EC.presence_of_all_elements_located(timeline_locator))
         return lxml.html.fromstring(driver.page_source)
 
     def parse_content(self, content):

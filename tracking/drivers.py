@@ -8,9 +8,11 @@ from socket import error as SocketError
 
 import psutil
 import undetected_chromedriver as webdriver
+import urllib3
 from selenium.common.exceptions import (
     NoSuchWindowException,
     SessionNotCreatedException,
+    TimeoutException,
     WebDriverException,
 )
 from selenium.webdriver.support.ui import WebDriverWait
@@ -102,7 +104,7 @@ class DriversHandler:
     def get_driver_options(self):
         raise NotImplementedError("a driver needs options")
 
-    def create_driver(self):
+    def _create_driver(self):
         with self._driver_count_ops:
             n_drivers = len(self._drivers) + self._n_in_creation
             if can_create := n_drivers < self.max_drivers:
@@ -130,7 +132,7 @@ class DriversHandler:
             return driver
         return None
 
-    def get(self):
+    def _get(self):
         """
         try to get an available driver.
         if not try to create a driver & wait for an available one
@@ -141,15 +143,15 @@ class DriversHandler:
         except queue.Empty:
             pass
 
-        self.create_driver()
+        self._create_driver()
         # wait for an available driver since the creation might have failed
         # or the created driver might have be stolen by another thread
         return self._drivers_available.get()
 
-    def dispose(self, driver):
+    def _dispose(self, driver):
         self._drivers_available.put(driver)
 
-    def destroy(self, driver):
+    def _destroy(self, driver):
         with self._driver_count_ops:
             log(f"QUIT {self.name}")
             driver.quit()
@@ -203,7 +205,7 @@ class DriversToScrape(DriversHandler):
             for i in range(self.max_drivers):
                 if splash:
                     splash.update(f"{TXT.driver_creation} {i + 1}/{self.max_drivers}")
-                self.create_driver()
+                self._create_driver()
 
     def get_driver_options(self):
         options = webdriver.ChromeOptions()
@@ -212,6 +214,46 @@ class DriversToScrape(DriversHandler):
             options.add_argument(option)
 
         return options
+
+    def get(self, page_load_timeout=100, wait_elt_timeout=30):
+        """decorator to give the decorated function a driver
+        and handle get_content with timeouts"""
+
+        def inner(get_content):
+            def wrapper(courier, idship):
+                driver = self._get()
+
+                if driver:
+                    try:
+
+                        def wait_until(until):
+                            return WebDriverWait(driver, wait_elt_timeout).until(until)
+
+                        driver.wait_until = wait_until
+                        driver.set_page_load_timeout(page_load_timeout)
+                        return get_content(courier, idship, driver)
+
+                    except (
+                        WebDriverException,
+                        TimeoutException,
+                        urllib3.exceptions.ProtocolError,
+                        urllib3.exceptions.NewConnectionError,
+                        urllib3.exceptions.MaxRetryError,
+                    ) as e:
+                        error = type(e).__name__
+
+                    finally:
+                        self._dispose(driver)
+
+                else:
+                    error = "no driver available"
+
+                courier.log(f"driver FAILURE - {error} for {idship}", error=True)
+                return None
+
+            return wrapper
+
+        return inner
 
 
 class DriversToShow(DriversHandler):
@@ -222,21 +264,21 @@ class DriversToShow(DriversHandler):
         options.add_argument("--start-maximized")
         return options
 
-    def get_and_defer_show(self, page_load_timeout=10, wait_elt_timeout=15):
+    def get(self, page_load_timeout=10, wait_elt_timeout=15):
         """decorator to give the decorated function a driver
         and handle the deferred show with timeouts"""
 
         def inner(show):
-            def wrapper(*args):
-                args = (show, page_load_timeout, wait_elt_timeout) + args
+            def wrapper(courier, idship):
+                args = (courier, idship, show, page_load_timeout, wait_elt_timeout)
                 threading.Thread(target=self._defer, args=args, daemon=True).start()
 
             return wrapper
 
         return inner
 
-    def _defer(self, show, page_load_timeout, wait_elt_timeout, *args):
-        if driver := self.get():
+    def _defer(self, courier, idship, show, page_load_timeout, wait_elt_timeout):
+        if driver := self._get():
             log(f"SHOW in {self.name}")
             try:
 
@@ -245,7 +287,7 @@ class DriversToShow(DriversHandler):
 
                 driver.wait_until = wait_until
                 driver.set_page_load_timeout(page_load_timeout)
-                show(*args, driver)
+                show(courier, idship, driver)
                 self._wait_browser_closed(driver)
 
             except (
@@ -256,7 +298,7 @@ class DriversToShow(DriversHandler):
                 log(f"{self.name} SHOW failed ({e})", error=True)
 
             finally:
-                self.destroy(driver)
+                self._destroy(driver)
 
     @staticmethod
     def _wait_browser_closed(driver):
