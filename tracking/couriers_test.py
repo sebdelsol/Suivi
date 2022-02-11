@@ -49,7 +49,7 @@ if __name__ == "__main__":
     from windows.log import log, logger
 
     # prevent drivers to be created in subprocess
-    from tracking.couriers import CouriersHandler
+    from tracking.couriers_handler import CouriersHandler
 
     logger.print_only()
     logger.close()

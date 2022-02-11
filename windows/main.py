@@ -124,7 +124,7 @@ class MainWindow(ShowInTaskbarWindow):
         super().__init__(*args, **kwargs)
 
         self[Events.recenter].bind("<Double-Button-1>", "")
-        self.trackers = TrackersHandler(trackers_filename, load_as_json, splash)
+        self.trackers = TrackersHandler(trackers_filename, load_as_json)
         self.widgets = TrackerWidgetsHandler(self, self.trackers, splash)
         self.set_event_to_action()
 

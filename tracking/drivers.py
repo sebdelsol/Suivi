@@ -18,10 +18,7 @@ from selenium.common.exceptions import (
 from selenium.webdriver.support.ui import WebDriverWait
 from urllib3.exceptions import ProtocolError
 from win32api import HIWORD, GetFileVersionInfo
-from windows.localization import TXT
 from windows.log import log
-
-CREATE_DRIVER_AT_INIT = False
 
 
 def find_chrome_executable():
@@ -79,8 +76,8 @@ class DriversHandler:
     _patching_lock = threading.Lock()
     _patching_done = False
 
-    def __init__(self):
-        self.max_drivers = float("inf")
+    def __init__(self, max_drivers=None):
+        self.max_drivers = max_drivers or float("inf")
         self._n_in_creation = 0
         self._drivers = []
         self._drivers_available = queue.Queue()
@@ -186,7 +183,6 @@ class DriversHandler:
 
 
 class DriversToScrape(DriversHandler):
-    max_drivers = 2
     name = "Chromedriver (scrapper)"
 
     options = (
@@ -198,14 +194,8 @@ class DriversToScrape(DriversHandler):
         "--blink-settings=imagesEnabled=false",
     )
 
-    def start(self, splash, max_drivers=None):
-        self.max_drivers = max_drivers or DriversToScrape.max_drivers
-
-        if CREATE_DRIVER_AT_INIT:
-            for i in range(self.max_drivers):
-                if splash:
-                    splash.update(f"{TXT.driver_creation} {i + 1}/{self.max_drivers}")
-                self._create_driver()
+    def set_max_drivers(self, max_drivers):
+        self.max_drivers = max_drivers
 
     def get_driver_options(self):
         options = webdriver.ChromeOptions()

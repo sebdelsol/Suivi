@@ -7,10 +7,11 @@ import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from concurrent.futures.thread import _threads_queues
 
+from tracking.courier import get_local_now
 from tools.json_date import json_decode_datetime, json_encode_datetime
 from windows.log import log
 
-from tracking.couriers import CouriersHandler, get_local_now
+from tracking.couriers_handler import CouriersHandler
 
 JSON_EXT = ".json"
 PICKLE_EXT = ".trck"
@@ -359,9 +360,9 @@ class Tracker:
 
 
 class TrackersHandler:
-    def __init__(self, filename, load_as_json, splash):
+    def __init__(self, filename, load_as_json):
         self.filename = filename
-        self.couriers_handler = CouriersHandler(splash)
+        self.couriers_handler = CouriersHandler()
 
         if load_as_json:
 
