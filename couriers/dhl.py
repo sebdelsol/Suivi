@@ -1,8 +1,12 @@
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from tracking.api_keys import DHL_KEY
-from tracking.courier import Courier, get_local_time, get_simple_validation
-from tracking.requests_handler import RequestsHandler
+from tracking.courier import (
+    Courier,
+    RequestsHandler,
+    get_local_time,
+    get_simple_validation,
+)
 
 
 class DHL(Courier):

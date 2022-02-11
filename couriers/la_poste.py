@@ -1,13 +1,12 @@
 from tracking.api_keys import LAPOSTE_KEY
-from tracking.requests_handler import RequestsHandler
-from windows.localization import TXT
-
 from tracking.courier import (
     Courier,
+    RequestsHandler,
     get_local_time,
     get_sentence,
     get_simple_validation,
 )
+from windows.localization import TXT
 
 
 class LaPoste(Courier):

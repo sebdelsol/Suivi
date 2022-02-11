@@ -1,8 +1,6 @@
 import lxml.html
-from tracking.requests_handler import RequestsHandler
+from tracking.courier import Courier, RequestsHandler, get_local_time
 from windows.localization import TXT
-
-from tracking.courier import Courier, get_local_time
 
 
 class MondialRelay(Courier):

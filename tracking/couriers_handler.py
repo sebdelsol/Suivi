@@ -1,16 +1,10 @@
-from importlib import import_module
-from pathlib import Path
-from pkgutil import iter_modules
-
+# pylint: disable=unused-import
+# couriers is needed to populate Couriers_classes,
+# check couriers.__init__.py
+import couriers
 from windows.log import log
 
 from tracking.courier import Courier, Couriers_classes
-
-# import all modules in the couriers package so that Couriers_classes is populated
-COURIERS_PACKAGE = "couriers"
-package_dir = Path(__file__).parent.parent.joinpath(COURIERS_PACKAGE)
-for (_, module_name, _) in iter_modules([package_dir]):
-    module = import_module(f"{COURIERS_PACKAGE}.{module_name}")
 
 
 class CouriersHandler:
