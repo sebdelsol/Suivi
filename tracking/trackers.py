@@ -129,7 +129,7 @@ class Contents:
                 consolidated["status"]["date"]
             )
 
-            # get the 1st non None product 'in updated date order)
+            # get the 1st non None product in updated date order
             contents_ok.sort(key=lambda content: content["status"]["date"])
             consolidated["product"] = next(
                 (
