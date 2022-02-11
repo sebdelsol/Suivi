@@ -27,7 +27,11 @@ def get_sentence(txt, n=-1):
 
 
 def get_local_time(date):
-    return parse(date).astimezone(get_localzone())
+    return round_minute(parse(date).astimezone(get_localzone()))
+
+
+def get_utc_time(date):
+    return round_minute(parse(date).replace(tzinfo=pytz.utc))
 
 
 def get_local_now():
@@ -320,7 +324,7 @@ class Cainiao(Courier):
         for li in timeline:
             txts = li.xpath("./p/text()")
             label, date = txts[:2]
-            events.append(dict(date=parse(date).replace(tzinfo=pytz.utc), label=label))
+            events.append(dict(date=get_utc_time(date), label=label))
 
         return events, {}
 
@@ -399,10 +403,7 @@ class MondialRelay(Courier):
             for event in events_by_hours:
                 elts = event.xpath("./div/p//text()")
                 hour_text, label = elts[:2]
-                date = datetime.strptime(
-                    f"{date_text} {hour_text}", "%d/%m/%Y %H:%M"
-                ).replace(tzinfo=get_localzone())
-
+                date = get_local_time(f"{date_text} {hour_text}")
                 events.append(dict(date=date, label=label))
 
         return events, {}
@@ -510,9 +511,7 @@ class GLS(Courier):
                         address = event["address"]
 
                         countries.append(address["countryCode"])
-                        date = datetime.strptime(
-                            f"{event['date']} {event['time']}", "%Y-%m-%d %H:%M:%S"
-                        ).replace(tzinfo=get_localzone())
+                        date = get_local_time(f"{event['date']} {event['time']}")
                         events.append(
                             dict(
                                 date=date,
@@ -564,9 +563,7 @@ class DPD(Courier):
 
             events.append(
                 dict(
-                    date=datetime.strptime(
-                        f"{date} {hour}", "%d/%m/%Y %H:%M"
-                    ).astimezone(get_localzone()),
+                    date=get_local_time(f"{date} {hour}"),
                     status=location,
                     label=label,
                 )
@@ -600,9 +597,7 @@ class NLPost(Courier):
 
             events.append(
                 dict(
-                    date=datetime.strptime(date.strip(), "%d-%m-%Y %H:%M").replace(
-                        tzinfo=get_localzone()
-                    ),
+                    date=get_local_time(date.strip()),
                     label=label,
                 )
             )
@@ -639,9 +634,7 @@ class FourPX(Courier):
 
             events.append(
                 dict(
-                    date=datetime.strptime(f"{date} {hour}", "%Y-%m-%d %H:%M").replace(
-                        tzinfo=pytz.utc
-                    ),
+                    date=get_local_time(f"{date} {hour}"),
                     status=status.strip(),
                     label=label.strip(),
                 )
@@ -795,9 +788,7 @@ class Chronopost(Courier):
             day, hour = tds[0].xpath("./text()")
             location, label = tds[1].xpath("./text()")
             day = day.split(" ", 1)[1]  # remove full day name
-            date = datetime.strptime(f"{day} {hour}", "%d/%m/%Y %H:%M").replace(
-                tzinfo=get_localzone()
-            )
+            date = get_local_time(f"{day} {hour}")
             location = location.replace("...", "").strip()
             events.append(dict(date=date, status=location, label=label))
 
@@ -852,7 +843,7 @@ class DHL(Courier):
                     warn = code == "failure"
 
                 # round dates to minute to better find duplicate
-                date = round_minute(get_local_time(event["timestamp"]))
+                date = get_local_time(event["timestamp"])
 
                 status = None
                 location = event.get("location")
@@ -897,7 +888,7 @@ class USPS(Courier):
             if txt:
                 try:
                     # is it a date ?
-                    date = parse(txt).replace(tzinfo=get_localzone())
+                    date = get_local_time(txt)
                     event = dict(date=date)
                     events.append(event)
 
