@@ -13,9 +13,9 @@ from tzlocal import get_localzone
 from windows.localization import TXT
 from windows.log import log
 
-from requests_handler import RequestsHandler
 from tracking.api_keys import DHL_KEY, LAPOSTE_KEY
 from tracking.drivers import DriversToScrape, DriversToShow
+from tracking.requests_handler import RequestsHandler
 
 DriversToShow = DriversToShow()
 DriversToScrape = DriversToScrape()
