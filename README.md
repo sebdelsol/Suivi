@@ -1,5 +1,6 @@
 Fast **tracking** for:
 - [4PX](http://en.4px.com/) :cn:
+- [Amazon](https://www.amazon.fr/) :fr:
 - [Asendia](https://www.asendia.fr/) :cn: :fr: :switzerland:
 - [Cainiao](https://global.cainiao.com/) :cn:
 - [Chronopost](https://www.chronopost.fr/) :fr:
