@@ -15,6 +15,7 @@ from selenium.common.exceptions import (
     TimeoutException,
     WebDriverException,
 )
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from urllib3.exceptions import ProtocolError
 from win32api import HIWORD, GetFileVersionInfo
@@ -154,6 +155,18 @@ class DriversHandler:
             driver.quit()
             self._drivers.remove(driver)
 
+    @staticmethod
+    def add_tools_to_driver(driver, wait_elt_timeout):
+        def wait_until(until):
+            return WebDriverWait(driver, wait_elt_timeout).until(until)
+
+        def wait_for(xpath, expected_condition):
+            locator = (By.XPATH, xpath)
+            return driver.wait_until(expected_condition(locator))
+
+        driver.wait_until = wait_until
+        driver.wait_for = wait_for
+
     def _close(self):
         log(f"CLOSING {self.name}")
 
@@ -215,11 +228,7 @@ class DriversToScrape(DriversHandler):
 
                 if driver:
                     try:
-
-                        def wait_until(until):
-                            return WebDriverWait(driver, wait_elt_timeout).until(until)
-
-                        driver.wait_until = wait_until
+                        self.add_tools_to_driver(driver, wait_elt_timeout)
                         driver.set_page_load_timeout(page_load_timeout)
                         return get_content(courier, idship, driver)
 
@@ -271,11 +280,7 @@ class DriversToShow(DriversHandler):
         if driver := self._get():
             log(f"SHOW in {self.name}")
             try:
-
-                def wait_until(until):
-                    return WebDriverWait(driver, wait_elt_timeout).until(until)
-
-                driver.wait_until = wait_until
+                self.add_tools_to_driver(driver, wait_elt_timeout)
                 driver.set_page_load_timeout(page_load_timeout)
                 show(courier, idship, driver)
                 self._wait_browser_closed(driver)
