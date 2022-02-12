@@ -2,7 +2,7 @@ import locale
 from tkinter import TclError
 
 import PySimpleGUI as sg
-from tracking.trackers import TrackersHandler
+from tracking.trackers_handler import TrackersHandler
 
 from windows.events import Events, Keys, Shortcuts
 from windows.localization import TXT

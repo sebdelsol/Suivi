@@ -1,7 +1,7 @@
 from tkinter import font as tk_font
 
 import PySimpleGUI as sg
-from tracking.trackers import TrackerState
+from tracking.tracker import TrackerState
 
 from windows import popup
 from windows.events import Events, Keys
