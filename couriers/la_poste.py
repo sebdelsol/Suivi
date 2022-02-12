@@ -1,4 +1,3 @@
-from tracking.api_keys import LAPOSTE_KEY
 from tracking.courier import (
     Courier,
     RequestsHandler,
@@ -6,6 +5,7 @@ from tracking.courier import (
     get_sentence,
     get_simple_validation,
 )
+from tracking.secrets import LAPOSTE_KEY
 from windows.localization import TXT
 
 

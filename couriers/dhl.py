@@ -1,6 +1,6 @@
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from tracking.api_keys import DHL_KEY
+from tracking.secrets import DHL_KEY
 from tracking.courier import (
     Courier,
     RequestsHandler,

@@ -2,25 +2,6 @@ from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 
 MUTI_THREADED = True
 
-COURIERS_TEST = (
-    ("Colis Privé", "52630055086334170"),
-    ("USPS", "LZ596462615US"),
-    ("DHL", "JVGL084127362550620461415537"),
-    # ('DHL', '1234567890'),
-    # ('DHL', '6294166480'),
-    ("Relais Colis", "VD3410033223"),
-    ("4PX", "LZ074882152FR"),
-    ("Asendia", "LZ074882152FR"),
-    ("Cainiao", "LZ074882152FR"),
-    ("Chronopost", "DT201253687FR"),
-    # ("DPD", "250063801848433"),
-    ("DPD", "250092101363956"),
-    ("GLS", "676411719238"),
-    ("La Poste", "LZ074882152FR"),
-    ("Mondial Relay", "11150623-34920"),
-    ("NL Post", "LT666174269NL"),
-)
-
 if not MUTI_THREADED:
 
     class MockThreadPoolExecutor(ThreadPoolExecutor):
@@ -50,6 +31,7 @@ if __name__ == "__main__":
 
     # prevent drivers to be created in subprocess
     from tracking.couriers_handler import CouriersHandler
+    from tracking.secrets import COURIERS_TEST
 
     logger.print_only()
     logger.close()

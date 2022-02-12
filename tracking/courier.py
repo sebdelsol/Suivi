@@ -1,3 +1,5 @@
+import calendar
+import locale
 import re
 import time
 import webbrowser
@@ -5,12 +7,23 @@ from datetime import datetime, timedelta
 
 import pytz
 import requests
-from dateutil.parser import parse
+from dateutil import parser
 from tzlocal import get_localzone
 from windows.localization import TXT
 from windows.log import log
 
 from tracking.drivers import DriversToScrape, DriversToShow
+
+# locale parser info if needed
+locale.setlocale(locale.LC_TIME, TXT.locale_setting)  # date in correct language
+
+
+class _LocaleParserInfo(parser.parserinfo):
+    WEEKDAYS = list(zip(calendar.day_abbr, calendar.day_name))
+    MONTHS = list(zip(calendar.month_abbr, calendar.month_name))[1:]
+
+
+LocaleParserInfo = _LocaleParserInfo()
 
 # auto register allcourier subclasses
 Couriers_classes = []
@@ -20,12 +33,18 @@ def get_sentence(txt, n=-1):
     return "".join(re.split(r"[.!]", txt)[:n])
 
 
-def get_local_time(date):
-    return round_minute(parse(date).astimezone(get_localzone()))
+def get_local_time(date, use_locale_parser=False):
+    parserinfo = LocaleParserInfo if use_locale_parser else None
+    return round_minute(
+        parser.parse(date, parserinfo=parserinfo).astimezone(get_localzone())
+    )
 
 
-def get_utc_time(date):
-    return round_minute(parse(date).replace(tzinfo=pytz.utc))
+def get_utc_time(date, use_locale_parser=False):
+    parserinfo = LocaleParserInfo if use_locale_parser else None
+    return round_minute(
+        parser.parse(date, parserinfo=parserinfo).replace(tzinfo=pytz.utc)
+    )
 
 
 def get_local_now():
@@ -99,7 +118,7 @@ class Courier:
     error_words = ("error", "erreur")
 
     subs = (
-        (r"\.$", ""),  # remove ending .
+        (r"[\.\,]$", ""),  # remove ending . or ,
         (r" +", " "),  # remove extra spaces
         (r"[\n\r]", ""),  # remove line return
         (r"^\W", ""),  # remove leading non alphanumeric char
