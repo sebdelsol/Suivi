@@ -29,8 +29,7 @@ class Chronopost(Courier):
             tds = tr.xpath("./td")
             day, hour = tds[0].xpath("./text()")
             location, label = tds[1].xpath("./text()")
-            day = day.split(" ", 1)[1]  # remove full day name
-            date = get_local_time(f"{day} {hour}")
+            date = get_local_time(f"{day} {hour}", use_locale_parser=True)
             location = location.replace("...", "").strip()
             events.append(dict(date=date, status=location, label=label))
 
