@@ -78,7 +78,7 @@ class Amazon(Courier):
     def get_txt(elt, xpath):
         try:
             return elt.xpath(xpath)[0].xpath("normalize-space()")
-        
+
         except IndexError:
             return None
 
@@ -98,9 +98,12 @@ class Amazon(Courier):
             day = self.get_txt(by_day, day_loc)
             for evt in by_day.xpath(event_loc):
                 hour = self.get_txt(evt, hour_loc)
-                date = get_local_time(f"{day} {hour}", use_locale_parser=True)
-                label = self.get_txt(evt, label_loc)
-                status = self.get_txt(evt, status_loc).title()
-                events.append(dict(date=date, label=label, status=status))
+                events.append(
+                    dict(
+                        date=get_local_time(f"{day} {hour}", use_locale_parser=True),
+                        label=self.get_txt(evt, label_loc),
+                        status=self.get_txt(evt, status_loc).title(),
+                    )
+                )
 
         return events, dict(product=product)
