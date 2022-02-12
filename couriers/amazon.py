@@ -76,7 +76,11 @@ class Amazon(Courier):
 
     @staticmethod
     def get_txt(elt, xpath):
-        return elt.xpath(xpath)[0].xpath("normalize-space()")
+        try:
+            return elt.xpath(xpath)[0].xpath("normalize-space()")
+        
+        except IndexError:
+            return None
 
     def parse_content(self, content):
         events = []
@@ -96,11 +100,7 @@ class Amazon(Courier):
                 hour = self.get_txt(evt, hour_loc)
                 date = get_local_time(f"{day} {hour}", use_locale_parser=True)
                 label = self.get_txt(evt, label_loc)
-                try:
-                    status = self.get_txt(evt, status_loc).title()
-                except IndexError:
-                    status = None
-
+                status = self.get_txt(evt, status_loc).title()
                 events.append(dict(date=date, label=label, status=status))
 
         return events, dict(product=product)
