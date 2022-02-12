@@ -57,11 +57,7 @@ if __name__ == "__main__":
         from windows.log import logger
         from windows.main import MainWindow
 
-        if not find_chrome_executable():
-            print("this app needs chrome")
-            splash.close()
-
-        else:
+        if find_chrome_executable():
             main_window = MainWindow(TRACKERS_FILENAME, LOAD_AS_JSON, splash)
             main_window.addlog(logger)
             splash.close()
@@ -70,5 +66,9 @@ if __name__ == "__main__":
             print("Exiting")
             main_window.close()
             logger.close()
+
+        else:
+            print("this app needs chrome")
+            splash.close()
 
     print("Exit")
