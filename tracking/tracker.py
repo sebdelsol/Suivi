@@ -1,8 +1,7 @@
+import atexit
+import concurrent.futures
 import copy
 import threading
-import traceback
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from concurrent.futures.thread import _threads_queues
 
 from windows.log import log
 
@@ -225,7 +224,6 @@ class Tracker:
 
         self.executor_ops = threading.Lock()
         self.executors = []
-        self.closing = False
 
     def set(self, **kwargs):
         self.used_couriers = kwargs.get("used_couriers", ())
@@ -273,42 +271,40 @@ class Tracker:
 
             # create threads with executor
             with self.executor_ops:
-                if not self.closing:
-                    executor = ThreadPoolExecutor(max_workers=len(courier_names))
-                    futures = {
-                        executor.submit(
-                            self._update_courier, courier_name
-                        ): courier_name
-                        for courier_name in courier_names
-                    }
-                    self.executors.append(executor)
+                executor = concurrent.futures.ThreadPoolExecutor(
+                    max_workers=len(courier_names)
+                )
+                futures = {
+                    executor.submit(self._update_courier, courier_name): courier_name
+                    for courier_name in courier_names
+                }
+                self.executors.append(executor)
 
-            # handle threads
-            if executor:
-                for future in as_completed(futures):
-                    new_content = future.result()
-                    courier_name = futures[future]
-                    ok = self.contents.update(courier_name, new_content)
-                    self.couriers_status.done_updating(courier_name, error=not ok)
-                    msg = "DONE" if ok else "FAILED"
-                    log(
-                        f"update {msg} - {self.description} - {self.idship}, {courier_name}",
-                        error=not ok,
-                    )
+            # handle threads results
+            for future in concurrent.futures.as_completed(futures):
+                new_content = future.result()
+                courier_name = futures[future]
+                ok = self.contents.update(courier_name, new_content)
+                self.couriers_status.done_updating(courier_name, error=not ok)
+                msg = "DONE" if ok else "FAILED"
+                log(
+                    f"update {msg} - {self.description} - {self.idship}, {courier_name}",
+                    error=not ok,
+                )
 
-                    yield self.get_consolidated_content()
+                yield self.get_consolidated_content()
 
-                # dispose executor
-                with self.executor_ops:
-                    executor.shutdown()
-                    self.executors.remove(executor)
+            # dispose executor
+            with self.executor_ops:
+                executor.shutdown()
+                self.executors.remove(executor)
 
     def _update_courier(self, courier_name):
         try:
             return self.couriers_handler.update(courier_name, self.idship)
 
-        except:  # pylint: disable=bare-except
-            log(traceback.format_exc(), error=True)
+        except Exception as e:  # pylint: disable=broad-except
+            log(e.with_traceback(), error=True)
             return None
 
     def get_couriers_status(self):
@@ -340,12 +336,12 @@ class Tracker:
             self.couriers_handler.open_in_browser(courier_name, self.idship)
 
     def close(self):
-        # make executors threads bhaves as daemon and delay the program exit
-        # it's ok since the excutors can't corrupt any data to save
+        # pylint: disable=protected-access
+        # prevent executors from joining threads at program exit and delay it
+        # it's ok since the executors can't corrupt any data to save
+        atexit.unregister(concurrent.futures.thread._python_exit)
+
         with self.executor_ops:
-            self.closing = True
             if self.executors:
                 for executor in self.executors:
-                    # pylint: disable=protected-access
-                    for thread in executor._threads:
-                        del _threads_queues[thread]
+                    executor.shutdown(wait=False)  # no join
