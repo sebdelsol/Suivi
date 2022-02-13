@@ -12,8 +12,8 @@ class Fedex(Courier):
 
     url = "https://www.fedex.com/trackingCal/track"
     headers = {
-        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/59.0.3071.115 Safari/537.36",
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko)"
+        " Chrome/59.0.3071.115 Safari/537.36",
         "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
         "X-Requested-With": "XMLHttpRequest",
         "Referer": "https://www.fedex.com/apps/fedextrack/?tracknumbers=&locale=fr_FR",
@@ -40,7 +40,7 @@ class Fedex(Courier):
                 "trackingInfoList": [
                     {
                         "trackNumberInfo": {
-                            "trackingNumber": f"{idship}",
+                            "trackingNumber": idship,
                             "trackingQualifier": "",
                             "trackingCarrier": "",
                         }
