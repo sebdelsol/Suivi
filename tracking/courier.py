@@ -52,7 +52,9 @@ def get_local_now():
 
 
 def round_minute(dt):
-    return dt.replace(second=0, microsecond=0) + timedelta(minutes=dt.second // 30)
+    return dt.replace(second=0, microsecond=0) + timedelta(
+        minutes=(dt.second + dt.microsecond * 0.001) // 30
+    )
 
 
 def get_simple_validation(_min, _max=None):
