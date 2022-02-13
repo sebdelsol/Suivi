@@ -1,4 +1,3 @@
-from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from tracking.courier import (
     Courier,
@@ -22,15 +21,13 @@ class DHL(Courier):
     def open_in_browser(self, idship, driver):
         url = self.get_url_for_browser(idship)
         driver.get(url)
-        rgpd_locator = (
-            By.XPATH,
-            '//button[contains(@class, "save-preference-btn")]',
-        )
-        btn_rgpd = driver.wait_until(EC.element_to_be_clickable(rgpd_locator))
+
+        rgpd_locator = '//button[contains(@class, "save-preference-btn")]'
+        btn_rgpd = driver.wait_for(rgpd_locator, EC.element_to_be_clickable)
         btn_rgpd.click()
 
-        submit_locator = (By.XPATH, '//button[contains(@class, "tracking-input")]')
-        submit = driver.wait_until(EC.element_to_be_clickable(submit_locator))
+        submit_locator = '//button[contains(@class, "tracking-input")]'
+        submit = driver.wait_for(submit_locator, EC.element_to_be_clickable)
         submit.click()
 
     @RequestsHandler()
