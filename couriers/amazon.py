@@ -24,19 +24,18 @@ class Amazon(Courier):
         clickable = EC.element_to_be_clickable
 
         email_loc = '//input[@type="email"]'
-        continue_loc = '//input[@id="continue"]'
-        password_loc = '//input[@id="ap_password"]'
-        identify_loc = '//input[@id="signInSubmit"]'
-
         email = driver.wait_for(email_loc, clickable)
         driver.execute_script(f"arguments[0].value = '{AMAZON_ID}';", email)
 
+        continue_loc = '//input[@id="continue"]'
         continue_button = driver.find_element(By.XPATH, continue_loc)
         continue_button.click()
 
+        password_loc = '//input[@id="ap_password"]'
         password = driver.wait_for(password_loc, clickable)
         driver.execute_script(f"arguments[0].value = '{AMAZON_PASSWORD}';", password)
 
+        identify_loc = '//input[@id="signInSubmit"]'
         identify = driver.wait_for(identify_loc, clickable)
         identify.click()
 
@@ -46,26 +45,25 @@ class Amazon(Courier):
         url = f"https://www.amazon.fr/gp/your-account/order-history/ref=ppx_yo_dt_b_search?opt=ab&search={idship}"
         driver.get(url)
 
-        login_loc = '//*[@id="nav-link-accountList"]'
-        track_loc = '//*[contains(@class,"track-package-button")]'
-        details_loc = '//*[contains(@class,"tracker-seeDetailsLink")]'
-        events_loc = '//*[@id="tracking-events-container"]'
-
         # already logged in ?
         try:
+            login_loc = '//*[@id="nav-link-accountList"]'
             driver.find_element(By.XPATH, login_loc)
 
         except NoSuchElementException:
             self.login(idship, driver)
 
+        track_loc = '//*[contains(@class,"track-package-button")]'
         track = driver.wait_for(track_loc, EC.element_to_be_clickable)
         track.click()
 
         self.log(f"driver get DETAILS - {idship}")
+        details_loc = '//*[contains(@class,"tracker-seeDetailsLink")]'
         details = driver.wait_for(details_loc, EC.element_to_be_clickable)
         details.click()
 
         self.log(f"driver get SHIPMENT - {idship}")
+        events_loc = '//*[@id="tracking-events-container"]'
         driver.wait_for(events_loc, EC.visibility_of_element_located)
 
     #  do not return any selenium objects, the driver is disposed after
