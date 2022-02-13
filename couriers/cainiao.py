@@ -53,8 +53,8 @@ class Cainiao(Courier):
         events = []
 
         timeline = content.xpath('//ol[@class="waybill-path"]/li')
-        for li in timeline:
-            txts = li.xpath("./p/text()")
+        for event in timeline:
+            txts = event.xpath("./p/text()")
             label, date = txts[:2]
             events.append(dict(date=get_utc_time(date), label=label))
 
