@@ -7,6 +7,7 @@ Fast **tracking** for:
 - [Colis Privé](https://www.colisprive.fr/) :fr:
 - [DPD](https://www.dpd.com/) :eu: :fr:
 - [DHL](https://www.dhl.com/) :eu: :de:
+- [Fedex](https://www.fedex.com/) :us: :eu:
 - [GLS](https://gls-group.eu/) :eu: :netherlands:
 - [La Poste](https://www.laposte.fr/) :fr:
 - [Mondial Relay](https://www.mondialrelay.fr/) :fr:
