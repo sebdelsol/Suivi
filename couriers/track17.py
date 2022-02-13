@@ -1,12 +1,13 @@
 import lxml.html
 from selenium.webdriver.support import expected_conditions as EC
 from tracking.courier import Courier, get_local_time, get_sentence
+from windows.localization import TXT
 
 
 class Track17(Courier):
     name = "Track17"
     idship_validation = r".+"
-    idship_validation_msg = ""
+    idship_validation_msg = TXT.no_validation
 
     timeline_loc = '//*[@class="ori-block"]/dd'
 

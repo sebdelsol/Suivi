@@ -50,6 +50,7 @@ class TXT:
     default_product = "Envoi"
     package_product = "Colis"
 
+    no_validation = "Pas de validation"
     digit = "chiffre"
     digits = "chiffres"
     letter = "lettre"
