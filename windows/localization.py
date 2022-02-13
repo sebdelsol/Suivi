@@ -50,7 +50,9 @@ class TXT:
     default_product = "Envoi"
     package_product = "Colis"
 
+    digit = "chiffre"
     digits = "chiffres"
+    letter = "lettre"
     letters = "lettres"
     zipcode = "code postal"
     from_ = "de"
