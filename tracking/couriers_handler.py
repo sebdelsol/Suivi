@@ -9,7 +9,7 @@ from tracking.courier import Courier, Couriers_classes
 class CouriersHandler:
     def __init__(self, max_drivers=2):
         self.couriers = {cls.name: cls() for cls in Couriers_classes}
-        log(f"CREATE Couriers: {', '.join(sorted(self.couriers))}")
+        log(f"CREATE Couriers: {' . '.join(sorted(self.couriers))}")
 
         Courier.set_max_scrape_drivers(max_drivers)
 
