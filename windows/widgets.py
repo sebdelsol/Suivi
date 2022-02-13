@@ -250,7 +250,7 @@ class AnimatedGif(sg.Image):
 
     def _animate(self, reset=False):
         if self.visible:
-            now = time.time()
+            now = time.perf_counter()
             if reset:
                 self.last_time = now
                 self.frame_index = 0
@@ -399,7 +399,7 @@ class _PulsingBaseComponent(Component):
 
     def _pulse(self):
         if self._is_pulsing:
-            now = time.time()
+            now = time.perf_counter()
             colors = self.colors[self.colors_key]
             array_size = _PulsingBaseComponent.color_array_size
             with self._lock:
