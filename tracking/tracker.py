@@ -1,11 +1,17 @@
 import atexit
 import concurrent.futures
+import concurrent.futures.thread
 import copy
 import threading
 
 from windows.log import log
 
 from tracking.courier import get_local_now
+
+# pylint: disable=protected-access
+# prevent executors from joining threads at program exit and delay it
+# it's ok since the executors can't corrupt any data to save
+atexit.unregister(concurrent.futures.thread._python_exit)
 
 
 class TrackerState:
@@ -336,11 +342,6 @@ class Tracker:
             self.couriers_handler.open_in_browser(courier_name, self.idship)
 
     def close(self):
-        # pylint: disable=protected-access
-        # prevent executors from joining threads at program exit and delay it
-        # it's ok since the executors can't corrupt any data to save
-        atexit.unregister(concurrent.futures.thread._python_exit)
-
         with self.executor_ops:
             if self.executors:
                 for executor in self.executors:
