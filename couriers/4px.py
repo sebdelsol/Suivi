@@ -1,4 +1,4 @@
-# module name is ok since it's auto-imported with import_module
+# weird module name is ok since it's auto-imported with import_module
 # pylint: disable=invalid-name
 import re
 
