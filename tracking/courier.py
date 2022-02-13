@@ -29,7 +29,7 @@ LocaleParserInfo = _LocaleParserInfo()
 Couriers_classes = []
 
 
-def get_sentence(txt, n=-1):
+def get_sentences(txt, n=1):
     return "".join(re.split(r"[.!]", txt)[:n])
 
 

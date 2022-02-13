@@ -1,6 +1,6 @@
 import lxml.html
 from selenium.webdriver.support import expected_conditions as EC
-from tracking.courier import Courier, get_local_time, get_sentence
+from tracking.courier import Courier, get_local_time, get_sentences
 from windows.localization import TXT
 
 
@@ -30,6 +30,6 @@ class Track17(Courier):
         for event in timeline:
             date = self.get_txt(event, ".//time")
             label = self.get_txt(event, ".//p")
-            events.append(dict(date=get_local_time(date), label=get_sentence(label, 1)))
+            events.append(dict(date=get_local_time(date), label=get_sentences(label)))
 
         return events, {}

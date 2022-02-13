@@ -2,7 +2,7 @@ from tracking.courier import (
     Courier,
     RequestsHandler,
     get_local_time,
-    get_sentence,
+    get_sentences,
     get_simple_validation,
 )
 from tracking.secrets import LAPOSTE_KEY
@@ -75,7 +75,7 @@ class LaPoste(Courier):
                 delivered |= event_delivered
 
                 status, warn = self.codes.get(code, "?")
-                label = f"{get_sentence(event['label'], 1)}"
+                label = f"{get_sentences(event['label'])}"
 
                 events.append(
                     dict(
@@ -97,7 +97,7 @@ class LaPoste(Courier):
             )
 
         error = content.get("returnMessage", "Erreur")
-        status_label = get_sentence(error, 1)
+        status_label = get_sentences(error)
         return events, dict(
             status_warn=True, status_label=status_label.replace(".", "")
         )
