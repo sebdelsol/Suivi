@@ -31,8 +31,9 @@ class Cainiao(Courier):
 
         if not is_data:
             self.log(f"driver WAIT slider - {idship}")
-            slider_locator = (By.XPATH, '//span[@class="nc_iconfont btn_slide"]')
-            slider = driver.wait_until(EC.element_to_be_clickable(slider_locator))
+            slider = driver.wait_for(
+                '//span[@class="nc_iconfont btn_slide"]', EC.element_to_be_clickable
+            )
 
             slide = driver.find_element(
                 By.XPATH, '//div[@class="scale_text slidetounlock"]/span'
@@ -41,11 +42,10 @@ class Cainiao(Courier):
             action.drag_and_drop_by_offset(slider, slide.size["width"], 0).perform()
 
             self.log(f"driver WAIT datas - {idship}")
-            data_locator = (
-                By.XPATH,
+            driver.wait_for(
                 f'//p[@class="waybill-num"][contains(text(),"{idship}")]',
+                EC.visibility_of_element_located,
             )
-            driver.wait_until(EC.visibility_of_element_located(data_locator))
 
         return lxml.html.fromstring(driver.page_source)
 
