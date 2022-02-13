@@ -31,21 +31,21 @@ if __name__ == "__main__":
 
     # prevent drivers to be created in subprocess
     from tracking.couriers_handler import CouriersHandler
-    from tracking.secrets import COURIERS_TEST
+
+    # list of tuples (courier_name, idship)
+    from tracking.secrets import Couriers_to_test
 
     logger.print_only()
     logger.close()
 
     passed, failed = [], []
     couriers_handler = CouriersHandler(max_drivers=N_DRIVERS)
-    couriers_test = sorted(COURIERS_TEST, key=lambda c: c[0])
+    couriers_to_test = sorted(Couriers_to_test, key=lambda c: c[0])
 
-    with ThreadPoolExecutor(max_workers=len(couriers_test)) as executor:
+    with ThreadPoolExecutor(max_workers=len(couriers_to_test)) as executor:
         futures = {
-            executor.submit(
-                couriers_handler.update, courier_name, id_ship
-            ): courier_name
-            for courier_name, id_ship in couriers_test
+            executor.submit(couriers_handler.update, courier_name, idship): courier_name
+            for courier_name, idship in couriers_to_test
         }
 
         for future in as_completed(futures):
@@ -63,13 +63,15 @@ if __name__ == "__main__":
                 failed.append(courier_name)
                 log(f"FAIL test - {courier_name} !!")
 
-        def get_list_of_names(type_):
-            if not type_:
-                return "NONE"
-            txt = "ALL " if len(type_) == len(couriers_test) else ""
-            return f"{txt}{len(type_)} ({', '.join(type_)})"
+        def get_couriers_names(a_list):
+            if a_list:
+                txt = "ALL " if len(a_list) == len(couriers_to_test) else ""
+                names = (f"\n . {name}" for name in sorted(a_list))
+                return f"{txt}{len(a_list)}{''.join(names)}"
+            return "NONE"
 
         log()
-        log(f"Passed: {get_list_of_names(passed)}")
-        log(f"Failed: {get_list_of_names(failed)}")
+        log(f"Passed: {get_couriers_names(passed)}")
+        log()
+        log(f"Failed: {get_couriers_names(failed)}")
         log()
