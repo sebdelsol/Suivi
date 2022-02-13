@@ -1,12 +1,12 @@
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from tracking.secrets import DHL_KEY
 from tracking.courier import (
     Courier,
     RequestsHandler,
     get_local_time,
     get_simple_validation,
 )
+from tracking.secrets import DHL_KEY
 
 
 class DHL(Courier):
@@ -37,12 +37,14 @@ class DHL(Courier):
     def get_content(self, idship, request):
         url = f"https://api-eu.dhl.com/track/shipments?trackingNumber={idship}&language=FR"
         r = request.request("GET", url, headers=self.headers)
-        return r.status_code == 200, r.json()
+        if r.status_code == 200:
+            return r.json()
+        return None
 
     def parse_content(self, content):
         events = []
 
-        shipments = content[1].get("shipments")
+        shipments = content.get("shipments")
         if shipments:
             shipment = shipments[0]
             product = f"DHL {shipment['service']}"
