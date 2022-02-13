@@ -219,8 +219,10 @@ class DriversToScrape(DriversHandler):
         return options
 
     def get(self, page_load_timeout=100, wait_elt_timeout=30):
-        """decorator to give the decorated function a driver
-        and handle get_content with timeouts"""
+        """
+        decorator to give the decorated function a driver
+        and handle get_content with timeouts
+        """
 
         def inner(get_content):
             def wrapper(courier, idship):
@@ -262,8 +264,10 @@ class DriversToShow(DriversHandler):
         return options
 
     def get(self, page_load_timeout=10, wait_elt_timeout=15):
-        """decorator to give the decorated function a driver
-        and handle the deferred show with timeouts"""
+        """
+        decorator to give the decorated function a driver
+        and handle the deferred show with timeouts
+        """
 
         def inner(show):
             def wrapper(courier, idship):
