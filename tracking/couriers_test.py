@@ -55,13 +55,13 @@ if __name__ == "__main__":
             if result and result["ok"]:
                 passed.append(courier_name)
                 evt = result["events"][0]
-                log(f"PASS test - {courier_name}", end="")
+                log(f". test PASS - {courier_name}", end="")
                 status = f"{evt['status']}, " if evt["status"] else ""
                 log(f" - {evt['date']:{TXT.long_date_format}} - {status}{evt['label']}")
 
             else:
                 failed.append(courier_name)
-                log(f"FAIL test - {courier_name} !!")
+                log(f". test FAIL - {courier_name} !!")
 
         def get_couriers_names(a_list):
             if a_list:

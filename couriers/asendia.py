@@ -34,11 +34,8 @@ class Asendia(Courier):
             location = event["location"]["name"]
 
             if label and location:
-                # location = location.replace("Hong Kong", "HK")
                 country = event["location"]["countryCode"]
-
-                if country not in location:
-                    location = ", ".join((location, country))
+                location = ", ".join((location, country))
 
                 date = datetime.utcfromtimestamp(event["date"] / 1000).replace(
                     tzinfo=pytz.utc
