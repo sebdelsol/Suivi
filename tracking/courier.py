@@ -104,7 +104,6 @@ class Courier:
     driversToScrape = DriversToScrape()
     r_arrow = "→"
     fromto = None
-
     idship_validation, idship_validation_msg = get_simple_validation(8, 20)
 
     delivered_searchs = (
@@ -120,11 +119,11 @@ class Courier:
     error_words = ("error", "erreur")
 
     subs = (
-        (r"[\.\,]$", ""),  # remove ending . or ,
+        (r"[\.\,]$", ""),  # remove ending '.' or ','
         (r" +", " "),  # remove extra spaces
         (r"[\n\r]", ""),  # remove line return
         (r"^\W", ""),  # remove leading non alphanumeric char
-        (r"(\w):(\w)", r"\1: \2"),  # add space after :
+        (r"(\w):(\w)", r"\1: \2"),  # add space after ':'
     )
 
     additional_subs = ()
@@ -203,8 +202,7 @@ class Courier:
             if result := self.parse_content(content):
                 events, infos = result
 
-        # remove duplicate events while keeping insertion order
-        # we keep reading order in case date are identical
+        # remove duplicate events while keeping insertion order, won't work with a set
         events = {tuple(evt.items()): evt for evt in events}.values()
 
         # sort by date
@@ -220,6 +218,7 @@ class Courier:
                 event["label"] = sub(replace, event["label"].strip())
                 event["status"] = sub(replace, event["status"].strip())
 
+            # delivered ?
             whole_txt = " ".join((event["status"], event["label"]))
             event["delivered"] = event.get("delivered", False) or any(
                 search(whole_txt.lower()) for search in self.delivered_searchs
@@ -228,6 +227,7 @@ class Courier:
             if event["delivered"]:
                 delivered = True
 
+            # warn ?
             event["warn"] = event.get("warn", False) or any(
                 error_word in whole_txt.lower() for error_word in self.error_words
             )
