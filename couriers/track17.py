@@ -19,6 +19,7 @@ class Track17(Courier):
     def get_content(self, idship, driver):
         url = self.get_url_for_browser(idship)
         driver.get(url)
+        self.log(f"driver WAIT timeline - {idship}")
         driver.wait_for(self.timeline_loc, EC.visibility_of_element_located)
         return lxml.html.fromstring(driver.page_source)
 
