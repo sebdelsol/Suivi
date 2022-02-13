@@ -8,7 +8,7 @@ from tools.img_tool import resize_and_colorize_img
 from windows.localization import TXT
 from windows.theme import TH
 
-PYTHON_REQUIREMENTS = ">=3.8,<3.9"
+PYTHON_REQUIREMENTS = ">=3.8"
 TRACKERS_FILENAME = "Trackers"
 LOAD_AS_JSON = True
 
