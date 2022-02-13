@@ -1,6 +1,5 @@
 # pylint: disable=unused-import
 # couriers is needed to populate Couriers_classes,
-# check couriers.__init__.py
 import couriers
 from windows.log import log
 
