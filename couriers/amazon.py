@@ -74,14 +74,6 @@ class Amazon(Courier):
         self.find_shipment(idship, driver)
         return lxml.html.fromstring(driver.page_source)
 
-    @staticmethod
-    def get_txt(elt, xpath):
-        try:
-            return elt.xpath(xpath)[0].xpath("normalize-space()")
-
-        except IndexError:
-            return None
-
     def parse_content(self, content):
         events = []
 

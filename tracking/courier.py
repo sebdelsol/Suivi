@@ -170,6 +170,14 @@ class Courier:
     def get_content(self, idship):
         raise NotImplementedError("parse_content method is missing")
 
+    @staticmethod
+    def get_txt(elt, xpath):
+        try:
+            return elt.xpath(xpath)[0].xpath("normalize-space()")
+
+        except IndexError:
+            return None
+
     def update(self, idship):
         if not self.name:
             log(f"courier {type(self).__name__} miss a name", error=True)
