@@ -25,7 +25,7 @@ class _LocaleParserInfo(parser.parserinfo):
 
 LocaleParserInfo = _LocaleParserInfo()
 
-# auto register allcourier subclasses
+# auto register all Courier subclasses
 Couriers_classes = []
 
 
