@@ -34,7 +34,7 @@ class Asendia(Courier):
             location = event["location"]["name"]
 
             if label and location:
-                location = location.replace("Hong Kong", "HK")
+                # location = location.replace("Hong Kong", "HK")
                 country = event["location"]["countryCode"]
 
                 if country not in location:
