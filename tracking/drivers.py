@@ -224,9 +224,7 @@ class DriversToScrape(DriversHandler):
 
         def inner(get_content):
             def wrapper(courier, idship):
-                driver = self._get()
-
-                if driver:
+                if driver := self._get():
                     try:
                         self.add_tools_to_driver(driver, wait_elt_timeout)
                         driver.set_page_load_timeout(page_load_timeout)
