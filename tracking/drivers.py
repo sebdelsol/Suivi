@@ -130,16 +130,17 @@ class DriversHandler:
             return driver
         return None
 
-    def _get(self):
+    def _get(self, always_create=False):
         """
         try to get an available driver.
         if not try to create a driver & wait for an available one
         """
-        try:
-            if driver := self._drivers_available.get(block=False):
-                return driver
-        except queue.Empty:
-            pass
+        if not always_create:
+            try:
+                if driver := self._drivers_available.get(block=False):
+                    return driver
+            except queue.Empty:
+                pass
 
         self._create_driver()
         # wait for an available driver since the creation might have failed
@@ -279,7 +280,7 @@ class DriversToShow(DriversHandler):
         return inner
 
     def _defer(self, courier, idship, show, page_load_timeout, wait_elt_timeout):
-        if driver := self._get():
+        if driver := self._get(always_create=True):
             log(f"SHOW in {self.name}")
             try:
                 self.add_tools_to_driver(driver, wait_elt_timeout)
