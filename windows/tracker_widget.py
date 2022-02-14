@@ -298,6 +298,9 @@ class EventsWidget:
                     width += sum(
                         len(txt) for txt in (event_new, event_status, event_labels[0])
                     )
+                    if len(event_labels) > 1:
+                        width = max(width, max(len(txt) for txt in event_labels[1:]))
+
                     self.width_events = max(width, self.width_events)
 
                     if event_new:
