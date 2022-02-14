@@ -1,5 +1,5 @@
 import lxml.html
-from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from tracking.courier import Courier, get_local_time
 from windows.localization import TXT
@@ -18,25 +18,23 @@ class PostNord(Courier):
         url = self.get_url_for_browser(idship)
         driver.get(url)
 
-        # rgpd ?
-        try:
-            rgpd_loc = '//*[@id="onetrust-accept-btn-handler"]'
-            rgpd = driver.wait_for(rgpd_loc, EC.element_to_be_clickable, timeout=2)
-            rgpd.click()
-            self.log(f"driver PASS rgpd - {idship}")
-
-        except TimeoutException:
-            pass
-
-        # wait for tracking (hidden in a shadow-root)
+        # wait for the parent of a shadow-root where the tracking is hidden
         self.log(f"driver WAIT for timeline - {idship}")
         tracking_loc = "//postnord-widget-tracking"
         tracking = driver.wait_for(tracking_loc, EC.element_to_be_clickable)
 
+        # wait for the timeline hidden in the shadow-root
+        def timeline_present(driver):  # pylint: disable=unused-argument
+            shadow_root = tracking.shadow_root
+            timeline_loc = (By.CSS_SELECTOR, "app-delivery-route")
+            return shadow_root.find_element(*timeline_loc)
+
+        driver.wait_until(timeline_present)
+
         # click all <p> in the shadow-root to expand infos
         self.log(f"driver EXPAND timeline - {idship}")
         click_all_p = (
-            '[...arguments[0].shadowRoot.querySelectorAll("p")].forEach(a => a.click())'
+            '[...arguments[0].shadowRoot.querySelectorAll("p")].forEach(p => p.click())'
         )
         driver.execute_script(click_all_p, tracking)
 
@@ -55,10 +53,13 @@ class PostNord(Courier):
 
         timeline = content.xpath("///app-delivery-route//li")
         for event in timeline:
-            location = self.get_txt(event, ".//h3")
             date = self.get_txt(event, ".//div/p")
-            label = self.get_txt(event, ".//div/following-sibling::p")
-
-            events.append(dict(date=get_local_time(date), status=location, label=label))
+            events.append(
+                dict(
+                    date=get_local_time(date),
+                    status=self.get_txt(event, ".//h3"),
+                    label=self.get_txt(event, ".//div/following-sibling::p"),
+                )
+            )
 
         return events, dict(product=product)
