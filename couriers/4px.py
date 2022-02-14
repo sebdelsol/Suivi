@@ -1,6 +1,5 @@
 # weird module name is ok since it's auto-imported with import_module
 # pylint: disable=invalid-name
-import re
 
 import lxml.html
 from tracking.courier import Courier, RequestsHandler, get_local_time
@@ -27,9 +26,8 @@ class FourPX(Courier):
         for event in timeline:
             date, hour, label = [
                 stxt
-                for txt in event.xpath(".//text()")
-                if (stxt := re.sub(r"[\n\t]", "", txt).strip().replace("\xa0", ""))
-                != ""
+                for txt in event.xpath(".//*")
+                if (stxt := txt.xpath("normalize-space()")) != ""
             ]
             status, label = label.split("/", 1) if "/" in label else ("", label)
 

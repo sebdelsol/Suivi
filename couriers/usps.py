@@ -1,5 +1,3 @@
-import re
-
 import lxml.html
 from dateutil.parser import ParserError
 from selenium.webdriver.support import expected_conditions as EC
@@ -9,11 +7,6 @@ from tracking.courier import Courier, get_local_time
 class USPS(Courier):
     name = "USPS"
     timeline_xpath = '//div[contains(@id, "trackingHistory")]'
-
-    @staticmethod
-    def clean(txt):
-        txt = txt.replace("\xa0", " ")
-        return re.sub(r"[\n\t]+", " ", txt).strip()
 
     def get_url_for_browser(self, idship):
         return f"https://tools.usps.com/go/TrackConfirmAction?tLabels={idship}"
@@ -30,10 +23,9 @@ class USPS(Courier):
     def parse_content(self, content):
         events = []
 
-        txts = content.xpath(self.timeline_xpath + "//span//text()")
-        for txt in txts:
-            txt = self.clean(txt)
-            if txt:
+        spans = content.xpath(self.timeline_xpath + "//span")
+        for span in spans:
+            if txt := span.xpath("normalize-space()"):
                 try:
                     # is it a date ?
                     date = get_local_time(txt)
