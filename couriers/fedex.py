@@ -71,14 +71,14 @@ class Fedex(Courier):
         if product := package.get("trackingCarrierDesc"):
             if weight := package.get("displayPkgKgsWgt"):
                 product += f" {weight}"
-       
+
         from_ = package.get("shipperCntryCD", "")
         to_ = package.get("recipientCntryCD", "")
         if from_ or to_:
             fromto = f"{from_}{Courier.r_arrow}{to_}"
-            
+
         else:
-            fromto = None 
+            fromto = None
 
         status_label = package.get("statusWithDetails")
 
