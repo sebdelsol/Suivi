@@ -3,6 +3,7 @@ import concurrent.futures
 import concurrent.futures.thread
 import copy
 import threading
+import traceback
 
 from windows.log import log
 
@@ -309,9 +310,9 @@ class Tracker:
         try:
             return self.couriers_handler.update(courier_name, self.idship)
 
-        except Exception as e:  # pylint: disable=broad-except
+        except Exception:  # pylint: disable=broad-except
             # catch all to keep the flow
-            log(e.with_traceback(), error=True)
+            log(traceback.format_exc(), error=True)
             return None
 
     def get_couriers_status(self):
