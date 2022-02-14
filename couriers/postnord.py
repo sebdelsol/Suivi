@@ -1,7 +1,7 @@
 import lxml.html
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from tracking.courier import Courier, get_local_time
+from tracking.courier import Courier, get_local_time, get_sentences
 from windows.localization import TXT
 
 
@@ -47,18 +47,20 @@ class PostNord(Courier):
     def parse_content(self, content):
         events = []
 
-        product = TXT.package_product
+        product = self.get_txt(content, '//*[@id="itemType"]')
         if weight := self.get_txt(content, '//*[@id="itemWeight"]'):
+            product = product or TXT.package_product
             product += f" {weight}"
 
         timeline = content.xpath("///app-delivery-route//li")
         for event in timeline:
             date = self.get_txt(event, ".//div/p")
+            label = self.get_txt(event, ".//div/following-sibling::p")
             events.append(
                 dict(
                     date=get_local_time(date),
                     status=self.get_txt(event, ".//h3"),
-                    label=self.get_txt(event, ".//div/following-sibling::p"),
+                    label=get_sentences(label),
                 )
             )
 
