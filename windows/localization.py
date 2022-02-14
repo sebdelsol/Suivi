@@ -1,6 +1,7 @@
 class TXT:
     locale_setting = "French_France.1252"
     locale_country_code = "fr"
+    locale_dayfirst = True
 
     long_date_format = "%a %d %b %y, %Hh%M"
     short_date_format = "%a %d %b %y"

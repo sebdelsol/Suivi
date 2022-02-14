@@ -23,7 +23,7 @@ class _LocaleParserInfo(parser.parserinfo):
     MONTHS = list(zip(calendar.month_abbr, calendar.month_name))[1:]
 
 
-LocaleParserInfo = _LocaleParserInfo()
+LocaleParserInfo = _LocaleParserInfo(dayfirst=TXT.locale_dayfirst)
 
 # auto register all Courier subclasses
 Couriers_classes = []
