@@ -21,25 +21,27 @@ class PostNord(Courier):
         # rgpd ?
         try:
             rgpd_loc = '//*[@id="onetrust-accept-btn-handler"]'
-            rgpd = driver.wait_for(rgpd_loc, EC.element_to_be_clickable, timeout=1)
+            rgpd = driver.wait_for(rgpd_loc, EC.element_to_be_clickable, timeout=2)
             rgpd.click()
+            self.log(f"driver PASS rgpd - {idship}")
 
         except TimeoutException:
             pass
 
         # wait for tracking (hidden in a shadow-root)
+        self.log(f"driver WAIT for timeline - {idship}")
         tracking_loc = "//postnord-widget-tracking"
         tracking = driver.wait_for(tracking_loc, EC.element_to_be_clickable)
 
         # click all <p> in the shadow-root to expand infos
-        self.log(f"driver EXPAND events - {idship}")
+        self.log(f"driver EXPAND timeline - {idship}")
         click_all_p = (
             '[...arguments[0].shadowRoot.querySelectorAll("p")].forEach(a => a.click())'
         )
         driver.execute_script(click_all_p, tracking)
 
         # get innerHTML in the shadow-root
-        self.log(f"driver COLLECT events - {idship}")
+        self.log(f"driver COLLECT timeline - {idship}")
         get_shadow_html = "return arguments[0].shadowRoot.innerHTML"
         tracking_html = driver.execute_script(get_shadow_html, tracking)
         return lxml.html.fromstring(tracking_html)

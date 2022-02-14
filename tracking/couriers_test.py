@@ -54,10 +54,13 @@ if __name__ == "__main__":
 
             if result and result["ok"]:
                 passed.append(courier_name)
-                evt = result["events"][0]
-                log(f". test PASS - {courier_name}")
-                status = f"{evt['status']}, " if evt["status"] else ""
-                log(f". {evt['date']:{TXT.long_date_format}} - {status}{evt['label']}")
+                events = result["events"]
+                event = events[0]
+                log(f". test PASS - {courier_name} - {len(events)} event(s)")
+                status = f"{event['status']}, " if event["status"] else ""
+                log(
+                    f". {event['date']:{TXT.long_date_format}} - {status}{event['label']}"
+                )
 
             else:
                 failed.append(courier_name)
