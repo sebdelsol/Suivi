@@ -12,6 +12,7 @@ Fast **tracking** for:
 - [La Poste](https://www.laposte.fr/) :fr:
 - [Mondial Relay](https://www.mondialrelay.fr/) :fr:
 - [NL Post](https://postnl.post/) :netherlands:
+- [Postnord](https://postnord.se/) :sweden: :denmark: :norway: :finland:
 - [Relais Colis](https://www.relaiscolis.com/) :fr:
 - [Track17](https://www.17track.net/) :cn:
 - [USPS](https://www.usps.com/) :us:
