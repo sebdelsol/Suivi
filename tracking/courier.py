@@ -93,6 +93,7 @@ class RequestsHandler:
                 if n_retry <= 0 or content is not None:
                     return content
 
+                courier.log(f"RETRY request for {idship}", error=True)
                 n_retry -= 1
                 time.sleep(self.time_between_retry)
 
