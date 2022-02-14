@@ -158,12 +158,12 @@ class DriversHandler:
 
     @staticmethod
     def add_tools_to_driver(driver, wait_elt_timeout):
-        def wait_until(until):
-            return WebDriverWait(driver, wait_elt_timeout).until(until)
+        def wait_until(until, timeout=None):
+            return WebDriverWait(driver, timeout or wait_elt_timeout).until(until)
 
-        def wait_for(xpath, expected_condition):
+        def wait_for(xpath, expected_condition, timeout=None):
             locator = (By.XPATH, xpath)
-            return driver.wait_until(expected_condition(locator))
+            return driver.wait_until(expected_condition(locator), timeout)
 
         driver.wait_until = wait_until
         driver.wait_for = wait_for
