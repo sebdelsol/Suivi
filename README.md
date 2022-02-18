@@ -14,6 +14,7 @@ Fast **tracking** for:
 - [NL Post](https://postnl.post/) :netherlands:
 - [Postnord](https://postnord.se/) :sweden: :denmark: :norway: :finland:
 - [Relais Colis](https://www.relaiscolis.com/) :fr:
+- [Swiss Post](https://www.post.ch/) :switzerland:
 - [Track17](https://www.17track.net/) :cn:
 - [UPS](https://www.ups.com/) :us:
 - [USPS](https://www.usps.com/) :us:
