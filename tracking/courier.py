@@ -180,6 +180,18 @@ class Courier:
         except IndexError:
             return None
 
+    @staticmethod
+    def get_clean_txt(elt, xpath):
+        try:
+            return " ".join(
+                txt_clean
+                for txt in elt.xpath(xpath + "/text()")
+                if (txt_clean := txt.replace("\n", "").strip())
+            )
+
+        except IndexError:
+            return None
+
     def update(self, idship):
         if not self.name:
             log(f"courier {type(self).__name__} miss a name", error=True)
