@@ -51,4 +51,4 @@ class UPS(Courier):
                 )
             )
 
-        return events, {}
+        return events, dict(product=product)
