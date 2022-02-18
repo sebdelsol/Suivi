@@ -1,5 +1,4 @@
 import lxml.html
-from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from tracking.courier import Courier, get_local_time
 from windows.localization import TXT
@@ -17,49 +16,38 @@ class UPS(Courier):
         url = self.get_url_for_browser(idship)
         driver.get(url)
 
-        rgpd_locator = '//div[@class="privacy_prompt_content"]'
-        if driver.find_element(By.XPATH, rgpd_locator):
-            radio_locator = rgpd_locator + '//div[@class="option_explicit"]/label'
-            radio = driver.wait_for(radio_locator, EC.element_to_be_clickable)
-            radio.click()
-
-            button_locator = (
-                rgpd_locator + '//div[@class="privacy_prompt_buttons_explicit"]/button'
-            )
-            button = driver.wait_for(button_locator, EC.element_to_be_clickable)
-            button.click()
-
-        details_locator = "//modal-shipment-view-details"
+        details_locator = "//modal-shipment-view-details/button"
         details = driver.wait_for(details_locator, EC.element_to_be_clickable)
-        details.click()
+        driver.execute_script("arguments[0].click();", details)
 
-        timeline_locator = '//div[@class="ups-simplified_tracking_wrap-inner"]'
+        timeline_locator = '//*[@class="ups-simplified_tracking_wrap-inner"]'
         driver.wait_for(timeline_locator, EC.element_to_be_clickable)
         return lxml.html.fromstring(driver.page_source)
 
     def parse_content(self, content):
         events = []
 
-        product = self.get_txt(
-            content, '//*[contains(@id,"txtAdditionalInfoShipmentCat")]'
-        )
+        product_locator = '//*[contains(@id,"txtAdditionalInfoShipmentCat")]'
+        weight_locator = '//*[contains(@id,"InfoserviceWeight")]'
+        timeline_locator = '//*[contains(@id,"activitydetails_row")]'
+
+        product = self.get_txt(content, product_locator)
         if not product:
             product = TXT.default_product
-        if weight := self.get_txt(content, '//*[contains(@id,"InfoserviceWeight")]'):
+        if weight := self.get_txt(content, weight_locator):
             product += f" {weight}"
 
-        timeline = content.xpath('//*[contains(@id,"activitydetails_row")]')
+        timeline = content.xpath(timeline_locator)
         for event in timeline:
-            day, hour = event.xpath('.//*[contains(@id,"activitiesdateTime")]/text()')
-            label = self.get_txt(event, './/*[contains(@id, "milestoneName")]')
-            location = self.get_clean_txt(
-                event, './/*[contains(@id, "milestoneActivityLocation")]'
-            )
+            location_locator = './/*[contains(@id, "milestoneActivityLocation")]'
+            label_locator = './/*[contains(@id, "milestoneName")]'
+            day_hour = './/*[contains(@id,"activitiesdateTime")]/text()'
+            day, hour = event.xpath(day_hour)
             events.append(
                 dict(
                     date=get_local_time(f"{day} {hour}", use_locale_parser=True),
-                    label=label,
-                    status=location,
+                    label=self.get_txt(event, label_locator),
+                    status=self.get_clean_txt(event, location_locator),
                 )
             )
 
