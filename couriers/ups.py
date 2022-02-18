@@ -16,10 +16,12 @@ class UPS(Courier):
         url = self.get_url_for_browser(idship)
         driver.get(url)
 
+        self.log(f"driver get DETAILS - {idship}")
         details_locator = "//modal-shipment-view-details/button"
         details = driver.wait_for(details_locator, EC.element_to_be_clickable)
         driver.execute_script("arguments[0].click();", details)
 
+        self.log(f"driver get TIMELINE - {idship}")
         timeline_locator = '//*[@class="ups-simplified_tracking_wrap-inner"]'
         driver.wait_for(timeline_locator, EC.element_to_be_clickable)
         return lxml.html.fromstring(driver.page_source)
@@ -39,7 +41,7 @@ class UPS(Courier):
 
         timeline = content.xpath(timeline_locator)
         for event in timeline:
-            location_locator = './/*[contains(@id, "milestoneActivityLocation")]'
+            location_locator = './/*[contains(@id, "milestoneActivityLocation")]/text()'
             label_locator = './/*[contains(@id, "milestoneName")]'
             day_hour = './/*[contains(@id,"activitiesdateTime")]/text()'
             day, hour = event.xpath(day_hour)
@@ -47,7 +49,7 @@ class UPS(Courier):
                 dict(
                     date=get_local_time(f"{day} {hour}", use_locale_parser=True),
                     label=self.get_txt(event, label_locator),
-                    status=self.get_clean_txt(event, location_locator),
+                    status=self.clean_txt(event, location_locator),
                 )
             )
 

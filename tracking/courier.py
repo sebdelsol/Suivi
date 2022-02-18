@@ -181,11 +181,11 @@ class Courier:
             return None
 
     @staticmethod
-    def get_clean_txt(elt, xpath):
+    def clean_txt(elt, xpath):
         try:
             return " ".join(
                 txt_clean
-                for txt in elt.xpath(xpath + "/text()")
+                for txt in elt.xpath(xpath)
                 if (txt_clean := txt.replace("\n", "").strip())
             )
 
