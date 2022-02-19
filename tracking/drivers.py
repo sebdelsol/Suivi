@@ -8,7 +8,6 @@ from socket import error as SocketError
 
 import psutil
 import undetected_chromedriver as webdriver
-import urllib3
 from selenium.common.exceptions import (
     NoSuchWindowException,
     SessionNotCreatedException,
@@ -17,7 +16,7 @@ from selenium.common.exceptions import (
 )
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
-from urllib3.exceptions import ProtocolError
+from urllib3.exceptions import MaxRetryError, NewConnectionError, ProtocolError
 from windows.log import log
 
 from .chrome import find_chrome_executable, get_chrome_main_version
@@ -209,9 +208,9 @@ class DriversToScrape(DriversHandler):
                     except (
                         WebDriverException,
                         TimeoutException,
-                        urllib3.exceptions.ProtocolError,
-                        urllib3.exceptions.NewConnectionError,
-                        urllib3.exceptions.MaxRetryError,
+                        ProtocolError,
+                        NewConnectionError,
+                        MaxRetryError,
                     ) as e:
                         error = type(e).__name__
 
