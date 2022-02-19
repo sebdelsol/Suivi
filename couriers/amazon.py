@@ -77,16 +77,15 @@ class Amazon(Courier):
 
         product_loc = '//*[contains(@class,"tracking-event-carrier-header")]'
         by_day_loc = '//div[@id="tracking-events-container"]/div/div[@class="a-row"]'
-        day_loc = './/div[contains(@class,"tracking-event-date-header")]'
-        event_loc = './/div[contains(@class,"a-spacing-large")]'
-        hour_loc = './/*[@class="tracking-event-time"]'
-        label_loc = './/*[@class="tracking-event-message"]'
-        status_loc = './/*[@class="tracking-event-location"]'
-
         product = self.get_txt(content, product_loc)
         for by_day in content.xpath(by_day_loc):
+            day_loc = './/div[contains(@class,"tracking-event-date-header")]'
+            event_loc = './/div[contains(@class,"a-spacing-large")]'
             day = self.get_txt(by_day, day_loc)
             for evt in by_day.xpath(event_loc):
+                hour_loc = './/*[@class="tracking-event-time"]'
+                label_loc = './/*[@class="tracking-event-message"]'
+                status_loc = './/*[@class="tracking-event-location"]'
                 hour = self.get_txt(evt, hour_loc)
                 events.append(
                     dict(
