@@ -34,6 +34,7 @@ def get_chrome_main_version():
 
 
 def check_chrome():
+    "check chrome exists and is a good enough version"
     if find_chrome_executable():
         if (version := get_chrome_main_version()) >= CHROME_MIN_VERSION:
             print(f"found chrome {version}")
