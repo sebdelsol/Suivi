@@ -5,12 +5,11 @@ import PySimpleGUI as sg
 from packaging.specifiers import SpecifierSet
 
 from tools.img_tool import resize_and_colorize_img
-from tracking.chrome import find_chrome_executable, get_chrome_main_version
+from tracking.chrome import check_chrome
 from windows.localization import TXT
 from windows.theme import TH
 
 PYTHON_REQUIREMENTS = ">=3.8"
-CHROME_MIN_VERSION = 96  # needed for new shadow-root handling
 TRACKERS_FILENAME = "Trackers"
 LOAD_AS_JSON = True
 
@@ -50,18 +49,8 @@ def check_python(requirements):
     return False
 
 
-def check_chrome(min_version):
-    if find_chrome_executable():
-        if (version := get_chrome_main_version()) >= min_version:
-            print(f"found chrome {version}")
-            return True
-
-    print(f"this app needs chrome >={min_version}")
-    return False
-
-
 if __name__ == "__main__":
-    if check_python(PYTHON_REQUIREMENTS) and check_chrome(CHROME_MIN_VERSION):
+    if check_python(PYTHON_REQUIREMENTS) and check_chrome():
         sg.theme(TH.theme)
 
         # create splash before importing to reduce startup time

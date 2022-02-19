@@ -2,6 +2,9 @@ import os
 
 from win32api import HIWORD, GetFileVersionInfo
 
+# needed for being compliant with W3C webdriver shadow-root specs
+CHROME_MIN_VERSION = 96
+
 
 def find_chrome_executable():
     """fix find_chrome_executable for x86 Windows"""
@@ -28,3 +31,13 @@ def get_chrome_main_version():
     # https://stackoverflow.com/a/1237635
     info = GetFileVersionInfo(filename, "\\")
     return HIWORD(info["FileVersionMS"])
+
+
+def check_chrome():
+    if find_chrome_executable():
+        if (version := get_chrome_main_version()) >= CHROME_MIN_VERSION:
+            print(f"found chrome {version}")
+            return True
+
+    print(f"this app needs chrome >={CHROME_MIN_VERSION}")
+    return False
