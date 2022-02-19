@@ -5,10 +5,12 @@ import PySimpleGUI as sg
 from packaging.specifiers import SpecifierSet
 
 from tools.img_tool import resize_and_colorize_img
+from tracking.chrome import find_chrome_executable, get_chrome_main_version
 from windows.localization import TXT
 from windows.theme import TH
 
 PYTHON_REQUIREMENTS = ">=3.8"
+CHROME_MIN_VERSION = 98
 TRACKERS_FILENAME = "Trackers"
 LOAD_AS_JSON = True
 
@@ -29,11 +31,14 @@ class Splash:
         self.log.update(f"{txt.capitalize()} ...")
         self.window.refresh()  # needed since there's no window loop
 
-    def close(self):
+    def __enter__(self):
+        return self
+
+    def __exit__(self, atype, value, traceback):
         self.window.close()
 
 
-def check_python_version(requirements):
+def check_python(requirements):
     current_version = ".".join(str(n) for n in sys.version_info[:3])
     print(f"Python {current_version} running")
 
@@ -45,30 +50,33 @@ def check_python_version(requirements):
     return False
 
 
+def check_chrome(min_version):
+    if find_chrome_executable():
+        if (version := get_chrome_main_version()) >= min_version:
+            print(f"found chrome {version}")
+            return True
+
+    print(f"this app needs chrome >={min_version}")
+    return False
+
+
 if __name__ == "__main__":
-    if check_python_version(PYTHON_REQUIREMENTS):
+    if check_python(PYTHON_REQUIREMENTS) and check_chrome(CHROME_MIN_VERSION):
         sg.theme(TH.theme)
 
         # create splash before importing to reduce startup time
-        splash = Splash()
-        splash.update(TXT.init)
+        with Splash() as splash:
+            splash.update(TXT.init)
 
-        from tracking.drivers import find_chrome_executable
-        from windows.log import logger
-        from windows.main import MainWindow
+            from windows.log import logger
+            from windows.main import MainWindow
 
-        if find_chrome_executable():
             main_window = MainWindow(TRACKERS_FILENAME, LOAD_AS_JSON, splash)
             main_window.addlog(logger)
-            splash.close()
-            main_window.loop()
 
-            print("Exiting")
-            main_window.close()
-            logger.close()
-
-        else:
-            print("this app needs chrome")
-            splash.close()
+        main_window.loop()
+        print("Exiting")
+        main_window.close()
+        logger.close()
 
     print("Exit")

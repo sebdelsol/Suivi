@@ -18,39 +18,12 @@ from selenium.common.exceptions import (
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from urllib3.exceptions import ProtocolError
-from win32api import HIWORD, GetFileVersionInfo
 from windows.log import log
 
+from tracking.chrome import find_chrome_executable, get_chrome_main_version
 
-def find_chrome_executable():
-    """fix find_chrome_executable for x86 Windows"""
-    candidates = set()
-    for item in map(
-        os.environ.get, ("PROGRAMFILES", "PROGRAMFILES(X86)", "LOCALAPPDATA")
-    ):
-        if item:  # it happens to be None
-            for subitem in (
-                "Google/Chrome/Application",
-                "Google/Chrome Beta/Application",
-                "Google/Chrome Canary/Application",
-            ):
-                candidates.add(os.sep.join((item, subitem, "chrome.exe")))
-    for candidate in candidates:
-        if os.path.exists(candidate) and os.access(candidate, os.X_OK):
-            return os.path.normpath(candidate)
-    return None
-
-
-# monkey patch it
+# monkey patch buggy find_chrome_executable
 webdriver.find_chrome_executable = find_chrome_executable
-
-
-def get_chrome_main_version():
-    """get installed Chrome main version number"""
-    filename = find_chrome_executable()
-    # https://stackoverflow.com/a/1237635
-    info = GetFileVersionInfo(filename, "\\")
-    return HIWORD(info["FileVersionMS"])
 
 
 def patch_driver(version):
