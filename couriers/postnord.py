@@ -21,7 +21,7 @@ class PostNord(Courier):
         # wait for the parent of a shadow-root where the tracking is hidden
         self.log(f"driver WAIT for timeline - {idship}")
         tracking_loc = "//postnord-widget-tracking"
-        tracking = driver.wait_for(tracking_loc, EC.element_to_be_clickable)
+        tracking = driver.wait_for(tracking_loc, EC.visibility_of_element_located)
 
         # wait for the timeline hidden in the shadow-root
         def timeline_present(driver):  # pylint: disable=unused-argument
