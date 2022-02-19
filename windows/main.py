@@ -4,12 +4,12 @@ from tkinter import TclError
 import PySimpleGUI as sg
 from tracking.trackers_handler import TrackersHandler
 
-from windows.events import Events, Keys, Shortcuts
-from windows.localization import TXT
-from windows.log import log
-from windows.theme import TH
-from windows.tracker_widgets_handler import TrackerWidgetsHandler
-from windows.widgets import ButtonMouseOver, ButtonTxtAndImg, ShowInTaskbarWindow
+from .events import Events, Keys, Shortcuts
+from .localization import TXT
+from .log import log
+from .theme import TH
+from .tracker_widgets_handler import TrackerWidgetsHandler
+from .widgets import ButtonMouseOver, ButtonTxtAndImg, ShowInTaskbarWindow
 
 SHOW_EVENTS = False
 

@@ -5,8 +5,8 @@ import pickle
 from tools.json_date import json_decode_datetime, json_encode_datetime
 from windows.log import log
 
-from tracking.couriers_handler import CouriersHandler
-from tracking.tracker import Tracker, TrackerState
+from .couriers_handler import CouriersHandler
+from .tracker import Tracker, TrackerState
 
 JSON_EXT = ".json"
 PICKLE_EXT = ".trck"

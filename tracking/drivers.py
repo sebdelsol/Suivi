@@ -20,7 +20,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from urllib3.exceptions import ProtocolError
 from windows.log import log
 
-from tracking.chrome import find_chrome_executable, get_chrome_main_version
+from .chrome import find_chrome_executable, get_chrome_main_version
 
 # monkey patch buggy find_chrome_executable
 webdriver.find_chrome_executable = find_chrome_executable

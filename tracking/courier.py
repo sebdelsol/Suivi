@@ -12,7 +12,7 @@ from tzlocal import get_localzone
 from windows.localization import TXT
 from windows.log import log
 
-from tracking.drivers import DriversToScrape, DriversToShow
+from .drivers import DriversToScrape, DriversToShow
 
 # locale parser info if needed
 locale.setlocale(locale.LC_TIME, TXT.locale_setting)  # date in correct language

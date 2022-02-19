@@ -3,7 +3,7 @@
 import couriers
 from windows.log import log
 
-from tracking.courier import Courier, Couriers_classes
+from .courier import Courier, Couriers_classes
 
 
 class CouriersHandler:

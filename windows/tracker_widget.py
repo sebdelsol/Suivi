@@ -9,11 +9,11 @@ from tools.img_tool import resize_and_colorize_gif, resize_and_colorize_img
 from tracking.courier import get_local_now
 from tracking.tracker import TrackerState
 
-from windows import popup
-from windows.events import Events
-from windows.localization import TXT
-from windows.theme import TH
-from windows.widgets import (
+from . import popup
+from .events import Events
+from .localization import TXT
+from .theme import TH
+from .widgets import (
     AnimatedGif,
     BindToFunction,
     ButtonMouseOver,

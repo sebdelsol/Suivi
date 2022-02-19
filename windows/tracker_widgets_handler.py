@@ -3,11 +3,11 @@ from tkinter import font as tk_font
 import PySimpleGUI as sg
 from tracking.tracker import TrackerState
 
-from windows import popup
-from windows.events import Events, Keys
-from windows.localization import TXT
-from windows.theme import TH
-from windows.tracker_widget import TrackerWidget
+from . import popup
+from .events import Events, Keys
+from .localization import TXT
+from .theme import TH
+from .tracker_widget import TrackerWidget
 
 
 class TrackerWidgetsHandler:

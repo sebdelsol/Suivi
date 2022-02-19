@@ -5,10 +5,10 @@ from tkinter import TclError
 
 import PySimpleGUI as sg
 
-from windows.events import Shortcuts
-from windows.localization import TXT
-from windows.theme import TH
-from windows.widgets import ButtonMouseOver, Window
+from .events import Shortcuts
+from .localization import TXT
+from .theme import TH
+from .widgets import ButtonMouseOver, Window
 
 
 class _Logger(Window):
