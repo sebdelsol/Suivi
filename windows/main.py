@@ -55,7 +55,7 @@ class GreyWindow:
         elif self.is_visible(self.window):
             self.window.set_alpha(0)
 
-    def followed_window_changed(self, event):
+    def followed_window_changed(self, event):  # pylint: disable=unused-argument
         if self.window.TKroot:
             w, h = self.followed_window.size
             x, y = self.followed_window.current_location()

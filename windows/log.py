@@ -25,6 +25,7 @@ class _Logger(Window):
         self.visible = False
         self.log_font_bold = (TH.fix_font_bold, TH.log_font_size)
         self.button_font_bold = (TH.var_font_bold, TH.log_button_font_size)
+        self.main_window = None
 
         self.output = sg.MLine(
             "",
