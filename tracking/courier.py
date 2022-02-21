@@ -1,5 +1,3 @@
-import calendar
-import locale
 import re
 import time
 import webbrowser
@@ -14,17 +12,6 @@ from windows.log import log
 
 from .drivers import DriversToScrape, DriversToShow
 from .locale_parsers import locale_parsers
-
-# # locale parser info if needed
-# locale.setlocale(locale.LC_TIME, TXT.locale_setting)  # date in correct language
-
-
-# class _LocaleParserInfo(parser.parserinfo):
-#     WEEKDAYS = list(zip(calendar.day_abbr, calendar.day_name))
-#     MONTHS = list(zip(calendar.month_abbr, calendar.month_name))[1:]
-
-
-# LocaleParserInfo = _LocaleParserInfo(dayfirst=TXT.locale_dayfirst)
 
 # auto register all Courier subclasses
 Couriers_classes = []
