@@ -1,3 +1,4 @@
+import locale
 from tkinter import font as tk_font
 
 import PySimpleGUI as sg
@@ -8,6 +9,9 @@ from .events import Events, Keys
 from .localization import TXT
 from .theme import TH
 from .tracker_widget import TrackerWidget
+
+# locale parser info for printing date
+locale.setlocale(locale.LC_TIME, TXT.locale_setting)  # date in correct language
 
 
 class TrackerWidgetsHandler:

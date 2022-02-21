@@ -1,6 +1,7 @@
 import lxml.html
 from selenium.webdriver.support import expected_conditions as EC
 from tracking.courier import Courier, get_local_time
+from windows.localization import TXT
 
 
 class Chronopost(Courier):
@@ -28,7 +29,9 @@ class Chronopost(Courier):
             tds = tr.xpath("./td")
             day, hour = tds[0].xpath("./text()")
             location, label = tds[1].xpath("./text()")
-            date = get_local_time(f"{day} {hour}", use_locale_parser=True)
+            date = get_local_time(
+                f"{day} {hour}", locale_country=TXT.locale_country_code
+            )
             location = location.replace("...", "").strip()
             events.append(dict(date=date, status=location, label=label))
 

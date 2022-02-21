@@ -47,7 +47,9 @@ class UPS(Courier):
             day, hour = event.xpath(day_hour)
             events.append(
                 dict(
-                    date=get_local_time(f"{day} {hour}", use_locale_parser=True),
+                    date=get_local_time(
+                        f"{day} {hour}", locale_country=TXT.locale_country_code
+                    ),
                     label=self.get_txt(event, label_locator),
                     status=self.clean_txt(event, location_locator),
                 )

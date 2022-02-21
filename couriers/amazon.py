@@ -9,8 +9,10 @@ from windows.localization import TXT
 
 class Amazon(Courier):
     name = "Amazon"
-    idship_validation = r"^\d{3}\-\d{7}\-\d{7}$"
-    idship_validation_msg = f"3 {TXT.digits}-7 {TXT.digits}-7 {TXT.digits}"
+    idship_validation = r"^\d{3}\-\d{7}\-\d{7}(\.\w{2,3})?$"
+    idship_validation_msg = (
+        f"3 {TXT.digits}-7 {TXT.digits}-7 {TXT.digits}(.{TXT.domain})"
+    )
 
     def get_url_for_browser(self, idship):
         return True  # so that show button is displayed
@@ -39,10 +41,22 @@ class Amazon(Courier):
         identify = driver.wait_for(identify_loc, clickable)
         identify.click()
 
+    @staticmethod
+    def _get_domain(idship):
+        try:
+            idship, domain = idship.lower().split(".")
+        except ValueError:
+            domain = TXT.locale_country_code
+        return idship, domain
+
     def find_shipment(self, idship, driver):
         self.log(f"driver get ORDER - {idship}")
 
-        url = f"https://www.amazon.fr/gp/your-account/order-history/ref=ppx_yo_dt_b_search?opt=ab&search={idship}"
+        idship, domain = self._get_domain(idship)
+        url = (
+            f"https://www.amazon.{domain}/gp/your-account/order-history/"
+            f"ref=ppx_yo_dt_b_search?opt=ab&search={idship}"
+        )
         driver.get(url)
 
         # already logged in ?
@@ -66,19 +80,23 @@ class Amazon(Courier):
         events_loc = '//*[@id="tracking-events-container"]'
         driver.wait_for(events_loc, EC.visibility_of_element_located)
 
+        return domain
+
     #  do not return any selenium objects, the driver is disposed after
     @Courier.driversToScrape.get(wait_elt_timeout=30)
     def get_content(self, idship, driver):
-        self.find_shipment(idship, driver)
-        return lxml.html.fromstring(driver.page_source)
+        domain = self.find_shipment(idship, driver)
+        return domain, lxml.html.fromstring(driver.page_source)
 
     def parse_content(self, content):
         events = []
 
+        domain, tree = content
+
         product_loc = '//*[contains(@class,"tracking-event-carrier-header")]'
         by_day_loc = '//div[@id="tracking-events-container"]/div/div[@class="a-row"]'
-        product = self.get_txt(content, product_loc)
-        for by_day in content.xpath(by_day_loc):
+        product = self.get_txt(tree, product_loc)
+        for by_day in tree.xpath(by_day_loc):
             day_loc = './/div[contains(@class,"tracking-event-date-header")]'
             event_loc = './/div[contains(@class,"a-spacing-large")]'
             day = self.get_txt(by_day, day_loc)
@@ -89,7 +107,7 @@ class Amazon(Courier):
                 hour = self.get_txt(evt, hour_loc)
                 events.append(
                     dict(
-                        date=get_local_time(f"{day} {hour}", use_locale_parser=True),
+                        date=get_local_time(f"{day} {hour}", locale_country=domain),
                         label=self.get_txt(evt, label_loc),
                         status=self.get_txt(evt, status_loc).title(),
                     )

@@ -26,6 +26,8 @@ if __name__ == "__main__":
 
     sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 
+    import locale
+
     from windows.localization import TXT
     from windows.log import log, logger
 
@@ -35,6 +37,7 @@ if __name__ == "__main__":
     # list of tuples (courier_name, idship)
     from tracking.secrets import Couriers_to_test
 
+    locale.setlocale(locale.LC_TIME, TXT.locale_setting)  # date in correct language
     logger.print_only()
     logger.close()
 

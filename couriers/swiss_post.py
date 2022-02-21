@@ -84,7 +84,9 @@ class SwissPost(Courier):
                 hour = self.get_txt(event, hour_locator)
                 events.append(
                     dict(
-                        date=get_local_time(f"{day} {hour}", use_locale_parser=True),
+                        date=get_local_time(
+                            f"{day} {hour}", locale_country=TXT.locale_country_code
+                        ),
                         label=self.clean_txt(event, label_locator),
                     )
                 )

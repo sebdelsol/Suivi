@@ -33,7 +33,7 @@ class MondialRelay(Courier):
                 elts = event.xpath("./div/p//text()")
                 hour_text, label = elts[:2]
                 date = get_local_time(
-                    f"{date_text} {hour_text}", use_locale_parser=True
+                    f"{date_text} {hour_text}", locale_country=TXT.locale_country_code
                 )
                 events.append(dict(date=date, label=label))
 

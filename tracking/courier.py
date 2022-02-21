@@ -13,17 +13,18 @@ from windows.localization import TXT
 from windows.log import log
 
 from .drivers import DriversToScrape, DriversToShow
+from .locale_parsers import locale_parsers
 
-# locale parser info if needed
-locale.setlocale(locale.LC_TIME, TXT.locale_setting)  # date in correct language
-
-
-class _LocaleParserInfo(parser.parserinfo):
-    WEEKDAYS = list(zip(calendar.day_abbr, calendar.day_name))
-    MONTHS = list(zip(calendar.month_abbr, calendar.month_name))[1:]
+# # locale parser info if needed
+# locale.setlocale(locale.LC_TIME, TXT.locale_setting)  # date in correct language
 
 
-LocaleParserInfo = _LocaleParserInfo(dayfirst=TXT.locale_dayfirst)
+# class _LocaleParserInfo(parser.parserinfo):
+#     WEEKDAYS = list(zip(calendar.day_abbr, calendar.day_name))
+#     MONTHS = list(zip(calendar.month_abbr, calendar.month_name))[1:]
+
+
+# LocaleParserInfo = _LocaleParserInfo(dayfirst=TXT.locale_dayfirst)
 
 # auto register all Courier subclasses
 Couriers_classes = []
@@ -33,15 +34,15 @@ def get_sentences(txt, n=1):
     return "".join(re.split(r"[.!]", txt)[:n])
 
 
-def get_local_time(date, use_locale_parser=False):
-    parserinfo = LocaleParserInfo if use_locale_parser else None
+def get_local_time(date, locale_country=None):
+    parserinfo = locale_parsers.get(locale_country) if locale_country else None
     return round_minute(
         parser.parse(date, parserinfo=parserinfo).astimezone(get_localzone())
     )
 
 
-def get_utc_time(date, use_locale_parser=False):
-    parserinfo = LocaleParserInfo if use_locale_parser else None
+def get_utc_time(date, locale_country=None):
+    parserinfo = locale_parsers.get(locale_country) if locale_country else None
     return round_minute(
         parser.parse(date, parserinfo=parserinfo).replace(tzinfo=pytz.utc)
     )
