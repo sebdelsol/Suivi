@@ -17,6 +17,7 @@ from selenium.common.exceptions import (
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from urllib3.exceptions import MaxRetryError, NewConnectionError, ProtocolError
+from windows.localization import TXT
 from windows.log import log
 
 from .chrome import find_chrome_executable, get_chrome_main_version
@@ -172,10 +173,9 @@ class DriversToScrape(DriversHandler):
     name = "Chromedriver (scrapper)"
 
     options = (
-        "--no-first-run",
         "--no-service-autorun",
         "--password-store=basic",
-        "--lang=fr",
+        f"--lang={TXT.locale_driver_country_code}",
         "--excludeSwitches --enable-logging",
         "--blink-settings=imagesEnabled=false",
     )
