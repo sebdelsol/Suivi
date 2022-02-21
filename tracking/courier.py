@@ -64,7 +64,6 @@ def translate(txt, from_, to_=TXT.locale_country_code):
         r = requests.get(url, params=params)
         if r.status_code == 200:
             rjson = r.json()
-            print(txt, rjson["responseStatus"])
             if rjson["responseStatus"] == 200:
                 return html.unescape(rjson["responseData"].get("translatedText", txt))
     return txt
