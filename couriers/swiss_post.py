@@ -1,6 +1,5 @@
 import lxml.html
-from selenium.common.exceptions import NoSuchElementException
-from selenium.webdriver.common.by import By
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support import expected_conditions as EC
 from tracking.courier import Courier, get_local_time
 from windows.localization import TXT
@@ -45,9 +44,9 @@ class SwissPost(Courier):
 
         try:
             more_locator = details_locator + '//*[contains(@class, "moreEvents")]'
-            more = driver.find_element(By.XPATH, more_locator)
+            more = driver.wait_for(more_locator, EC.element_to_be_clickable, 2)
             more.click()
-        except NoSuchElementException:
+        except TimeoutException:
             pass
 
         return details
