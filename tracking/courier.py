@@ -1,3 +1,4 @@
+import html
 import re
 import time
 import webbrowser
@@ -12,6 +13,7 @@ from windows.log import log
 
 from .drivers import DriversToScrape, DriversToShow
 from .locale_parsers import locale_parsers
+from .secrets import VALID_EMAIL
 
 # auto register all Courier subclasses
 Couriers_classes = []
@@ -53,6 +55,19 @@ def get_simple_validation(_min, _max=None):
         rf"^\w{{{_min},{_max}}}$",
         f"{TXT.from_} {_min} {TXT.to_} {_max} {TXT.letters} {TXT.or_} {TXT.digits}",
     )
+
+
+def translate(txt, from_, to_=TXT.locale_country_code):
+    if txt and from_ != to_:
+        url = "https://api.mymemory.translated.net/get?"
+        params = dict(q=txt, langpair=f"{from_}|{to_}", de=VALID_EMAIL)
+        r = requests.get(url, params=params)
+        if r.status_code == 200:
+            rjson = r.json()
+            print(txt, rjson["responseStatus"])
+            if rjson["responseStatus"] == 200:
+                return html.unescape(rjson["responseData"].get("translatedText", txt))
+    return txt
 
 
 class RequestsHandler:
