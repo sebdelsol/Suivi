@@ -2,7 +2,7 @@ import lxml.html
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from tracking.courier import Courier, get_local_time, translate
+from tracking.courier import Courier, get_local_time
 from tracking.secrets import AMAZON_ID, AMAZON_PASSWORD
 from windows.localization import TXT
 
@@ -95,7 +95,7 @@ class Amazon(Courier):
 
         product_loc = '//*[contains(@class,"tracking-event-carrier-header")]'
         by_day_loc = '//div[@id="tracking-events-container"]/div/div[@class="a-row"]'
-        product = translate(self.get_txt(tree, product_loc), domain)
+        product = self.get_txt(tree, product_loc)
         for by_day in tree.xpath(by_day_loc):
             day_loc = './/div[contains(@class,"tracking-event-date-header")]'
             event_loc = './/div[contains(@class,"a-spacing-large")]'
@@ -108,8 +108,8 @@ class Amazon(Courier):
                 events.append(
                     dict(
                         date=get_local_time(f"{day} {hour}", locale_country=domain),
-                        label=translate(self.get_txt(evt, label_loc), domain),
-                        status=translate(self.get_txt(evt, status_loc), domain).title(),
+                        label=self.get_txt(evt, label_loc),
+                        status=self.get_txt(evt, status_loc).title(),
                     )
                 )
 
