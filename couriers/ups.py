@@ -29,9 +29,12 @@ class UPS(Courier):
     def parse_content(self, content):
         events = []
 
+        status_locator = "//track-details-estimation"
         product_locator = '//*[contains(@id,"txtAdditionalInfoShipmentCat")]'
         weight_locator = '//*[contains(@id,"InfoserviceWeight")]'
         timeline_locator = '//*[contains(@id,"activitydetails_row")]'
+
+        status_label = self.get_txt(content, status_locator)
 
         product = self.get_txt(content, product_locator)
         if not product:
@@ -55,4 +58,4 @@ class UPS(Courier):
                 )
             )
 
-        return events, dict(product=product)
+        return events, dict(product=product, status_label=status_label)
