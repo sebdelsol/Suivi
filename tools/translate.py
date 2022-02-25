@@ -2,9 +2,8 @@ import html
 from os import environ
 
 import requests
+from tracking.secrets import GOOGLE_CREDENTIAL_PATH, GOOGLE_PROJECT_ID, VALID_EMAIL
 from windows.localization import TXT
-
-from .secrets import GOOGLE_CREDENTIAL_PATH, GOOGLE_PROJECT_ID, VALID_EMAIL
 
 USE_GOOGLE = True
 

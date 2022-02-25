@@ -6,13 +6,13 @@ from datetime import datetime, timedelta
 import pytz
 import requests
 from dateutil import parser
+from tools.translate import translate
 from tzlocal import get_localzone
 from windows.localization import TXT
 from windows.log import log
 
 from .drivers import DriversToScrape, DriversToShow
 from .locale_parsers import locale_parsers
-from .translate import translate
 
 # auto register all Courier subclasses
 Couriers_classes = []
