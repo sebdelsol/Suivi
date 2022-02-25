@@ -313,7 +313,7 @@ class EventsWidget:
 
                         end_line = start_line + len(event_labels) - 1
                         self.events_widget.buttons.add_tag(
-                            event, f"{start_line}.{0}", f"{end_line}.{width}"
+                            event["key"], f"{start_line}.{0}", f"{end_line}.{width}"
                         )
 
                     self.height_events += len(event_labels)
@@ -884,8 +884,8 @@ class TrackerWidget:
     def open_in_browser(self, courier_name):
         self.tracker.open_in_browser(courier_name)
 
-    def remove_new_event(self, event, window):
-        self.tracker.remove_new_event(event)
+    def remove_new_event(self, event_key, window):
+        self.tracker.remove_new_event(event_key)
         self._show_current_content(window)  # show_events instead ??
 
     def remove_all_new_events(self, window):

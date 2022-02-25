@@ -29,10 +29,10 @@ class SyncNewEvents:
         self.events = {}
         for content in contents:
             for event in content["events"]:
-                self.events[self._get_key(event)] = event
+                self.events[self.get_key(event)] = event
 
     @staticmethod
-    def _get_key(event):
+    def get_key(event):
         """get a key by removing 'new' from the event dict"""
         return tuple((k, v) for k, v in event.items() if k != "new")
 
@@ -40,15 +40,15 @@ class SyncNewEvents:
         """keep self.events and new_content["events"] in sync"""
         if new_content:
             for event in new_content["events"]:
-                key = self._get_key(event)
+                key = self.get_key(event)
                 if key in self.events:
                     event["new"] = self.events[key].get("new", False)
                 else:
                     event["new"] = True
                 self.events[key] = event
 
-    def remove_new_event(self, event):
-        if event := self.events.get(self._get_key(event)):
+    def remove_new_event(self, event_key):
+        if event := self.events.get(event_key):
             event["new"] = False
 
     def remove_all_new_events(self):
@@ -153,6 +153,7 @@ class Contents:
                 consolidated["status"]["label"]
             )
             for event in events:
+                event["key"] = self.events.get_key(event)
                 event["label"] = self.translation.get(event["label"])
                 # if event["status"]:
                 #     event["status"] = self.translation.get(event["status"])
@@ -173,9 +174,9 @@ class Contents:
             content = self.contents.get(courier_name)
             return self._no_future(content and content.get("status", {}).get("ok_date"))
 
-    def remove_new_event(self, event):
+    def remove_new_event(self, event_key):
         with self.critical:
-            self.events.remove_new_event(event)
+            self.events.remove_new_event(event_key)
 
     def remove_all_new_events(self):
         with self.critical:
@@ -346,8 +347,8 @@ class Tracker:
     def get_delivered(self):
         return self.contents.get_delivered(self.idship, self.used_couriers)
 
-    def remove_new_event(self, event):
-        self.contents.remove_new_event(event)
+    def remove_new_event(self, event_key):
+        self.contents.remove_new_event(event_key)
 
     def remove_all_new_events(self):
         self.contents.remove_all_new_events()
