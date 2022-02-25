@@ -6,7 +6,6 @@ from datetime import datetime, timedelta
 import pytz
 import requests
 from dateutil import parser
-from tools.translate import translate
 from tzlocal import get_localzone
 from windows.localization import TXT
 from windows.log import log
@@ -214,11 +213,7 @@ class Courier:
         delivered = infos.get("delivered", False)
         for event in events:
             event["courier"] = self.name
-
             event["status"] = event.get("status") or ""
-
-            event["label"] = translate(event["label"])
-            # event["status"] = translate(event["status"])
 
             # clean label
             for sub, replace in self.subs:
@@ -251,14 +246,14 @@ class Courier:
         status = dict(
             date=status_date,
             ok_date=status_date if ok else None,
-            label=translate(status_label),
+            label=status_label,
             warn=status_warn,
             delivered=delivered,
         )
 
         return dict(
             ok=ok,
-            product=translate(infos.get("product")),
+            product=infos.get("product"),
             idship=idship,
             fromto=infos.get("fromto", self.fromto),
             status=status,

@@ -57,7 +57,8 @@ class SyncNewEvents:
 
 
 class Contents:
-    def __init__(self, contents):
+    def __init__(self, translation_handler, contents):
+        self.translation = translation_handler
         self.contents = contents or {}
         self.events = SyncNewEvents(self.contents.values())
         self.critical = threading.Lock()
@@ -145,6 +146,17 @@ class Contents:
                 key=len,
                 default=None,
             )
+
+            # translation
+            consolidated["product"] = self.translation.get(consolidated["product"])
+            consolidated["status"]["label"] = self.translation.get(
+                consolidated["status"]["label"]
+            )
+            for event in events:
+                event["label"] = self.translation.get(event["label"])
+                # if event["status"]:
+                #     event["status"] = self.translation.get(event["status"])
+
         return consolidated
 
     def get(self):
@@ -223,12 +235,12 @@ class CouriersStatus:
 
 
 class Tracker:
-    def __init__(self, couriers_handler, **kwargs):
+    def __init__(self, couriers_handler, translation_handler, **kwargs):
         self.couriers_handler = couriers_handler
         self.set(**kwargs)
         self.state = kwargs.get("state", TrackerState.shown)
         self.creation_date = kwargs.get("creation_date", get_local_now())
-        self.contents = Contents(kwargs.get("contents"))
+        self.contents = Contents(translation_handler, kwargs.get("contents"))
 
         self.executor_ops = threading.Lock()
         self.executors = []

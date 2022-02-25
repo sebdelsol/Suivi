@@ -1,5 +1,6 @@
 from tools.save_handler import SaveHandler
-from windows.log import log
+from tools.translate import TranslationHandler
+from windows.localization import TXT
 
 from .couriers_handler import CouriersHandler
 from .tracker import Tracker, TrackerState
@@ -10,14 +11,16 @@ PICKLE_EXT = ".trck"
 
 class TrackersHandler:
     def __init__(self, filename, load_as_json):
-        self.filename = filename
         self.save_handler = SaveHandler(filename, load_as_json)
         self.couriers_handler = CouriersHandler()
+        self.translation_handler = TranslationHandler(TXT.locale_country_code)
 
         trackers = []
         if loaded_trackers := self.save_handler.load():
             for kwargs in loaded_trackers:
-                trackers.append(Tracker(self.couriers_handler, **kwargs))
+                trackers.append(
+                    Tracker(self.couriers_handler, self.translation_handler, **kwargs)
+                )
 
         self.trackers = self.sort(trackers)
 
@@ -35,6 +38,7 @@ class TrackersHandler:
     def new(self, idship, description, used_couriers):
         tracker = Tracker(
             self.couriers_handler,
+            self.translation_handler,
             idship=idship,
             description=description,
             used_couriers=used_couriers,
@@ -54,5 +58,6 @@ class TrackersHandler:
 
     def close(self):
         self.save()
+        self.translation_handler.save()
         for tracker in self.trackers:
             tracker.close()

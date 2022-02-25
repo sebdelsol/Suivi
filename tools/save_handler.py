@@ -29,9 +29,10 @@ class SaveHandler:
     def load_as_binary(self):
         return self._load_from_file(PICKLE_EXT, "rb", pickle.load)
 
-    def save(self, obj):
+    def save(self, obj, save_only_json=False):
         self._save_to_file(obj, JSON_EXT, "w", self.json_save, encoding="utf8")
-        self._save_to_file(obj, PICKLE_EXT, "wb", pickle.dump)
+        if not save_only_json:
+            self._save_to_file(obj, PICKLE_EXT, "wb", pickle.dump)
 
     def _load_from_file(self, ext, mode, load, encoding=None):
         filename = self.filename + ext
