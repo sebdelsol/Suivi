@@ -1,8 +1,4 @@
-import json
-import os
-import pickle
-
-from tools.json_date import json_decode_datetime, json_encode_datetime
+from tools.save_handler import SaveHandler
 from windows.log import log
 
 from .couriers_handler import CouriersHandler
@@ -15,57 +11,20 @@ PICKLE_EXT = ".trck"
 class TrackersHandler:
     def __init__(self, filename, load_as_json):
         self.filename = filename
+        self.save_handler = SaveHandler(filename, load_as_json)
         self.couriers_handler = CouriersHandler()
 
-        if load_as_json:
-
-            def json_load(f):
-                return json.load(f, object_hook=json_decode_datetime)
-
-            loaded_trackers = self._load_from_file(
-                JSON_EXT, "r", json_load, encoding="utf8"
-            )
-
-        else:
-            loaded_trackers = self._load_from_file(PICKLE_EXT, "rb", pickle.load)
-
-        if loaded_trackers:
-            trackers = [
-                Tracker(self.couriers_handler, **kwargs) for kwargs in loaded_trackers
-            ]
-
-        else:
-            trackers = []
+        trackers = []
+        if loaded_trackers := self.save_handler.load():
+            for kwargs in loaded_trackers:
+                trackers.append(Tracker(self.couriers_handler, **kwargs))
 
         self.trackers = self.sort(trackers)
 
     def save(self):
         trackers = self.sort(self.get_not_definitly_deleted())
         to_save_trackers = [tracker.get_to_save() for tracker in trackers]
-
-        self._save_to_file(to_save_trackers, PICKLE_EXT, "wb", pickle.dump)
-
-        def json_save(obj, f):
-            json.dump(
-                obj, f, default=json_encode_datetime, indent=4, ensure_ascii=False
-            )
-
-        self._save_to_file(to_save_trackers, JSON_EXT, "w", json_save, encoding="utf8")
-
-    def _load_from_file(self, ext, mode, load, encoding=None):
-        filename = self.filename + ext
-        if os.path.exists(filename):
-            with open(filename, mode, encoding=encoding) as f:
-                obj = load(f)
-            log(f'trackers LOADED from "{filename}"')
-            return obj
-        return None
-
-    def _save_to_file(self, obj, ext, mode, save, encoding=None):
-        filename = self.filename + ext
-        with open(filename, mode, encoding=encoding) as f:
-            save(obj, f)
-        log(f'trackers SAVED to "{filename}"')
+        self.save_handler.save(to_save_trackers)
 
     @staticmethod
     def sort(objs, get_tracker=lambda obj: obj):
