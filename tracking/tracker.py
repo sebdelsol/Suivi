@@ -102,11 +102,12 @@ class Contents:
             get_ok = self._get_ok(idship, courier_names)
             contents_ok = [copy.deepcopy(content) for content in get_ok]
 
+        now = get_local_now()
         consolidated = {}
         if len(contents_ok) > 0:
             # consolidated is the content with the most recent date status
             consolidated = max(
-                contents_ok, key=lambda content: content["status"]["date"]
+                contents_ok, key=lambda content: content["status"]["date"] or now
             )
 
             # merge all events
@@ -118,7 +119,7 @@ class Contents:
             consolidated["status"]["delivered"] = delivered
 
             if events:
-                last_date = events[0]["date"] if delivered else get_local_now()
+                last_date = events[0]["date"] if delivered else now
                 consolidated["elapsed"] = last_date - events[-1]["date"]
 
             else:
@@ -129,7 +130,7 @@ class Contents:
             )
 
             # get the 1st non None product in updated date order
-            contents_ok.sort(key=lambda content: content["status"]["date"])
+            contents_ok.sort(key=lambda content: content["status"]["date"] or now)
             consolidated["product"] = next(
                 (
                     product
