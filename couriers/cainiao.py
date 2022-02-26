@@ -19,12 +19,9 @@ class Cainiao(Courier):
         url = self.get_url_for_browser(idship)
         driver.get(url)
 
-        data_locator = (
-            By.XPATH,
-            f'//p[@class="waybill-num"][contains(text(),"{idship}")]',
-        )
+        data_locator = f'//p[@class="waybill-num"][contains(text(),"{idship}")]'
         try:
-            is_data = driver.find_elements(*data_locator)
+            is_data = driver.find_elements(By.XPATH, data_locator)
 
         except NoSuchElementException:
             is_data = None
@@ -44,10 +41,7 @@ class Cainiao(Courier):
             action.release().perform()
 
             self.log(f"driver WAIT datas - {idship}")
-            driver.wait_for(
-                f'//p[@class="waybill-num"][contains(text(),"{idship}")]',
-                EC.visibility_of_element_located,
-            )
+            driver.wait_for(data_locator, EC.visibility_of_element_located)
 
         return lxml.html.fromstring(driver.page_source)
 
