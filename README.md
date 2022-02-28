@@ -3,6 +3,7 @@ _Very fast **tracking**_ for:
 - [Amazon](https://www.amazon.fr/) :fr: :it:
 - [Asendia](https://www.asendia.fr/) :cn: :fr: :switzerland:
 - [Cainiao](https://global.cainiao.com/) :cn:
+- [China Post](http://yjcx.ems.com.cn/qps/english/yjcx) :cn:
 - [Chronopost](https://www.chronopost.fr/) :fr:
 - [Colis Privé](https://www.colisprive.fr/) :fr:
 - [DPD](https://www.dpd.com/) :eu: :fr:

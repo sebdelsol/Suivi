@@ -3,7 +3,7 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from tracking.courier import Courier, get_utc_time
+from tracking.courier import Courier, get_utc_time, smooth_move_mouse
 
 
 class Cainiao(Courier):
@@ -37,7 +37,7 @@ class Cainiao(Courier):
             )
             action = ActionChains(driver)
             action.click_and_hold(slider)
-            self.smooth_move_mouse(action, slide.size["width"], 0)
+            smooth_move_mouse(action, slide.size["width"], 0)
             action.release().perform()
 
             self.log(f"driver WAIT datas - {idship}")
@@ -56,13 +56,3 @@ class Cainiao(Courier):
             events.append(dict(date=get_utc_time(date), label=label))
 
         return events, dict(status_label=status_label)
-
-    @staticmethod
-    def smooth_move_mouse(action, dx, dy, n_step=50):
-        # no pause
-        # pylint: disable=protected-access
-        action.w3c_actions.pointer_action._duration = 1
-        ddx = dx / n_step
-        ddy = dy / n_step
-        for _ in range(n_step):
-            action.w3c_actions.pointer_action.move_by(ddx, ddy)

@@ -177,7 +177,6 @@ class DriversToScrape(DriversHandler):
         "--password-store=basic",
         f"--lang={TXT.locale_driver_country_code}",
         "--excludeSwitches --enable-logging",
-        "--blink-settings=imagesEnabled=false",
     )
 
     def set_max_drivers(self, max_drivers):
