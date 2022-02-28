@@ -46,7 +46,7 @@ class ChinaPost(Courier):
             x = self.find_hole_x_pos(image) or 1
             action = ActionChains(driver)
             action.click_and_hold(slider)
-            smooth_move_mouse(action, x, 0)
+            smooth_move_mouse(action, x - 5, 0)
             action.release().perform()
 
             try:
@@ -57,7 +57,7 @@ class ChinaPost(Courier):
                 return timeline
             except TimeoutException:
                 nb_retry -= 1
-                time.sleep(1)
+                time.sleep(2)
 
         return None
 
