@@ -1,8 +1,15 @@
 from tools.save_handler import SaveHandler
 
-USE_GOOGLE = True
 
-if USE_GOOGLE:
+class TranslateServices:
+    deepl = "deepl"
+    google = "google"
+    mymemory = "mymerory"
+
+
+TRANSLATE_SERVICE = TranslateServices.deepl
+
+if TRANSLATE_SERVICE == TranslateServices.google:
     import os
 
     from google.cloud import translate as google_translate
@@ -25,7 +32,7 @@ if USE_GOOGLE:
                 return translation.translated_text
         return None
 
-else:
+elif TRANSLATE_SERVICE == TranslateServices.mymemory:
     import html
 
     import langid
@@ -33,11 +40,9 @@ else:
     from tracking.secrets import VALID_EMAIL
 
     def translate(txt, from_lang, to_lang):
-        if not from_lang:
-            from_lang = langid.classify(txt)[0]
-
+        from_lang = from_lang or langid.classify(txt)[0]
         if from_lang != to_lang:
-            url = "https://api.mymemory.translated.net/get?"
+            url = "https://api.mymemory.translated.net/get"
             params = dict(q=txt, langpair=f"{from_lang}|{to_lang}", de=VALID_EMAIL)
             r = requests.get(url, params=params)
             if r.status_code == 200:
@@ -46,7 +51,21 @@ else:
                     return html.unescape(
                         rjson["responseData"].get("translatedText", txt)
                     )
+        return None
 
+elif TRANSLATE_SERVICE == TranslateServices.deepl:
+    import requests
+    from tracking.secrets import DEEPL_KEY
+
+    def translate(txt, from_lang, to_lang):
+        if from_lang != to_lang:
+            url = "https://api-free.deepl.com/v2/translate"
+            params = dict(
+                text=txt, source_lang=from_lang, target_lang=to_lang, auth_key=DEEPL_KEY
+            )
+            r = requests.get(url, params=params)
+            if r.status_code == 200:
+                return r.json()["translations"][0]["text"]
         return None
 
 
