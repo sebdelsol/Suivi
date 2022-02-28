@@ -121,6 +121,7 @@ class Courier:
         r"mis à disposition",
         r"livraison effectuée",
         r"est disponible dans",
+        r"consegnato",
     )
 
     error_words = ("error", "erreur")
