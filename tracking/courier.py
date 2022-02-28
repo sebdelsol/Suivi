@@ -246,7 +246,7 @@ class Courier:
         status = dict(
             date=status_date,
             ok_date=status_date if ok else None,
-            label=status_label,
+            label=get_sentences(status_label),
             warn=status_warn,
             delivered=delivered,
         )
