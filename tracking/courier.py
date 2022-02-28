@@ -44,6 +44,7 @@ def round_minute(dt):
         minutes=(dt.second + dt.microsecond * 0.001) // 30
     )
 
+
 def smooth_move_mouse(action, dx, dy, n_step=50):
     # no pause
     # pylint: disable=protected-access
@@ -125,6 +126,7 @@ class Courier:
     error_words = ("error", "erreur")
 
     subs = (
+        (r"[\(\[].*?[\)\]]", ""),  # remove () and []
         (r"[\.\,]$", ""),  # remove ending '.' or ','
         (r" +", " "),  # remove extra spaces
         (r"[\n\r]", ""),  # remove line return
