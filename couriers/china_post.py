@@ -36,7 +36,7 @@ class ChinaPost(Courier):
         slider_locator = '//div[@class="yz-control-btn"]'
         slider = driver.wait_for(slider_locator, EC.element_to_be_clickable)
 
-        nb_retry = 1
+        nb_retry = 2
         while nb_retry >= 0:
             self.log(f"driver RESOLVE captcha - {idship}")
             img_locator = '//*[@class="yz-bg-img"]//img'
@@ -52,7 +52,7 @@ class ChinaPost(Courier):
             try:
                 timeline_locator = '//div[@class="package_container"]'
                 timeline = driver.wait_for(
-                    timeline_locator, EC.visibility_of_element_located, 2
+                    timeline_locator, EC.visibility_of_element_located, 3
                 )
                 return timeline
             except TimeoutException:
