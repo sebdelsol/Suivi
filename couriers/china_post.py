@@ -22,47 +22,48 @@ class ChinaPost(Courier):
 
     @staticmethod
     def find_hole_x_pos(image, luma_threshold):
-        # the hole is what's above threshold
+        # highlight the hole
         image = image.convert("L").point(lambda l: l >= luma_threshold)
         # remove noise
         image = image.filter(ImageFilter.MinFilter(5))
-        # crop to get x pos of hole
+        # crop the resulting image to get the x of the hole
         return image.getbbox()[0]
 
     @retry(TimeoutException, tries=3, delay=2)
     def solve_captcha(self, slider, idship, driver):
         self.log(f"driver RESOLVE captcha - {idship}")
-        img_locator = '//*[@class="yz-bg-img"]//img'
-        img = driver.wait_for(img_locator, EC.visibility_of_element_located)
-        data = img.get_attribute("src").split(",")[1]
+
+        img_loc = '//*[@class="yz-bg-img"]//img'
+        img = driver.wait_for(img_loc, EC.visibility_of_element_located)
+        _, data = img.get_attribute("src").split(",")
         image = load_img64(data)
         x = self.find_hole_x_pos(image, luma_threshold=255) or 0
+
         action = EnhancedActionChains(driver)
         action.click_and_hold(slider)
         action.smooth_move_mouse(x - 5, 0)
         action.release().perform()
 
-        timeline_locator = '//div[@class="package_container"]'
-        timeline = driver.wait_for(
-            timeline_locator, EC.visibility_of_element_located, 3
-        )
+        timeline_loc = '//div[@class="package_container"]'
+        timeline = driver.wait_for(timeline_loc, EC.visibility_of_element_located, 3)
         return timeline
 
     def get_timeline(self, idship, driver):
+        self.log(f"driver get SHIPMENT - {idship}")
+
         url = "http://yjcx.ems.com.cn/qps/english/yjcx"
         driver.get(url)
 
-        self.log(f"driver get SHIPMENT - {idship}")
-        input_locator = '//div[@class="mailquery_container"]//textarea'
-        input_ = driver.wait_for(input_locator, EC.element_to_be_clickable)
+        input_loc = '//div[@class="mailquery_container"]//textarea'
+        input_ = driver.wait_for(input_loc, EC.element_to_be_clickable)
         input_.send_keys(idship)
 
-        submit_locator = '//button[@id="buttonSub"]'
-        submit = driver.wait_for(submit_locator, EC.element_to_be_clickable)
+        submit_loc = '//button[@id="buttonSub"]'
+        submit = driver.wait_for(submit_loc, EC.element_to_be_clickable)
         submit.click()
 
-        slider_locator = '//div[@class="yz-control-btn"]'
-        slider = driver.wait_for(slider_locator, EC.element_to_be_clickable)
+        slider_loc = '//div[@class="yz-control-btn"]'
+        slider = driver.wait_for(slider_loc, EC.element_to_be_clickable)
 
         return self.solve_captcha(slider, idship, driver)
 

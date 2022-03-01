@@ -38,7 +38,7 @@ class Cainiao(Courier):
             )
             action = EnhancedActionChains(driver)
             action.click_and_hold(slider)
-            action.smooth_move_mouse(slide.size["width"], 0)
+            action.smooth_move_mouse(slide.size["width"] + 10, 0)
             action.release().perform()
 
             self.log(f"driver WAIT datas - {idship}")
