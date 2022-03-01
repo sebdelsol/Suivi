@@ -27,9 +27,7 @@ if TRANSLATE_SERVICE == TranslateServices.google:
                 mime_type="text/plain",
                 parent=f"projects/{GOOGLE_PROJECT_ID}",
             )
-            translation = response.translations[0]
-            if translation.detected_language_code != to_lang:
-                return translation.translated_text
+            return response.translations[0].translated_text
         return None
 
 elif TRANSLATE_SERVICE == TranslateServices.mymemory:
@@ -65,7 +63,9 @@ elif TRANSLATE_SERVICE == TranslateServices.deepl:
             )
             r = requests.get(url, params=params)
             if r.status_code == 200:
-                return r.json()["translations"][0]["text"]
+                if translations := r.json().get("translations"):
+                    if len(translations) > 0:
+                        return translations[0]["text"]
         return None
 
 
