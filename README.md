@@ -12,8 +12,7 @@
 • [_DPD_](https://www.dpd.com/)
 • [_DHL_](https://www.dhl.com/)
 • [_Fedex_](https://www.fedex.com/)
-
-[_GLS_](https://gls-group.eu/)
+• [_GLS_](https://gls-group.eu/)
 • [_La Poste_](https://www.laposte.fr/)
 • [_Mondial Relay_](https://www.mondialrelay.fr/) 
 • [_NL Post_](https://postnl.post/)
