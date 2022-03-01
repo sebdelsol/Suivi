@@ -1,7 +1,6 @@
-import time
-
 import lxml.html
 from PIL import ImageFilter
+from retry import retry
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support import expected_conditions as EC
 from tools.actions_chain import EnhancedActionChains
@@ -21,6 +20,34 @@ class ChinaPost(Courier):
     def open_in_browser(self, idship, driver):
         self.get_timeline(idship, driver)
 
+    @staticmethod
+    def find_hole_x_pos(image, luma_threshold):
+        # the hole is what's above threshold
+        image = image.convert("L").point(lambda l: l >= luma_threshold)
+        # remove noise
+        image = image.filter(ImageFilter.MinFilter(5))
+        # crop to get x pos of hole
+        return image.getbbox()[0]
+
+    @retry(TimeoutException, tries=3, delay=2)
+    def solve_captcha(self, slider, idship, driver):
+        self.log(f"driver RESOLVE captcha - {idship}")
+        img_locator = '//*[@class="yz-bg-img"]//img'
+        img = driver.wait_for(img_locator, EC.visibility_of_element_located)
+        data = img.get_attribute("src").split(",")[1]
+        image = load_img64(data)
+        x = self.find_hole_x_pos(image, luma_threshold=255) or 1
+        action = EnhancedActionChains(driver)
+        action.click_and_hold(slider)
+        action.smooth_move_mouse(x - 5, 0)
+        action.release().perform()
+
+        timeline_locator = '//div[@class="package_container"]'
+        timeline = driver.wait_for(
+            timeline_locator, EC.visibility_of_element_located, 3
+        )
+        return timeline
+
     def get_timeline(self, idship, driver):
         url = "http://yjcx.ems.com.cn/qps/english/yjcx"
         driver.get(url)
@@ -37,30 +64,7 @@ class ChinaPost(Courier):
         slider_locator = '//div[@class="yz-control-btn"]'
         slider = driver.wait_for(slider_locator, EC.element_to_be_clickable)
 
-        nb_retry = 2
-        while nb_retry >= 0:
-            self.log(f"driver RESOLVE captcha - {idship}")
-            img_locator = '//*[@class="yz-bg-img"]//img'
-            img = driver.wait_for(img_locator, EC.visibility_of_element_located)
-            data = img.get_attribute("src").split(",")[1]
-            image = load_img64(data)
-            x = self.find_hole_x_pos(image) or 1
-            action = EnhancedActionChains(driver)
-            action.click_and_hold(slider)
-            action.smooth_move_mouse(x - 5, 0)
-            action.release().perform()
-
-            try:
-                timeline_locator = '//div[@class="package_container"]'
-                timeline = driver.wait_for(
-                    timeline_locator, EC.visibility_of_element_located, 3
-                )
-                return timeline
-            except TimeoutException:
-                nb_retry -= 1
-                time.sleep(2)
-
-        return None
+        return self.solve_captcha(slider, idship, driver)
 
     @Courier.driversToScrape.get(wait_elt_timeout=15)
     def get_content(self, idship, driver):
@@ -85,12 +89,3 @@ class ChinaPost(Courier):
             )
 
         return events, {}
-
-    @staticmethod
-    def find_hole_x_pos(image):
-        # hole threshold
-        image = image.convert("L").point(lambda x: 255 if x >= 255 else 0)
-        # remove noise
-        image = image.filter(ImageFilter.MinFilter)
-        # crop and get x pos of hole
-        return image.getbbox()[0]
