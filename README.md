@@ -1,4 +1,4 @@
-# Fast tracking with GUI
+## Fast tracking with GUI
 - [4PX](http://en.4px.com/) 
 . [Amazon](https://www.amazon.fr/)
 . [Asendia](https://www.asendia.fr/)
@@ -24,4 +24,4 @@
 - Localization [here](https://github.com/sebdelsol/Suivi/blob/a3363a8791f45714099bf5765edc3ba2b565205d/windows/localization.py)
 - [_SLOC_](https://api.codetabs.com/v1/loc/?github=sebdelsol/suivi)
 
-<img src="https://i.imgur.com/v6LZNJ3.jpg" width="600">
+[<img src="https://i.imgur.com/2H9jU5w.jpeg" width="600">](https://i.imgur.com/v6LZNJ3.jpeg)
