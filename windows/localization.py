@@ -61,4 +61,3 @@ class TXT:
     from_ = "de"
     to_ = "à"
     or_ = "ou"
-    domain = "domaine"

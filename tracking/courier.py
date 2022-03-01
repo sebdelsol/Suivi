@@ -141,7 +141,8 @@ class Courier:
 
     def __init_subclass__(cls):
         """register subclasses"""
-        Couriers_classes.append(cls)
+        if cls.name:
+            Couriers_classes.append(cls)
 
     @classmethod
     def set_max_scrape_drivers(cls, max_drivers):
