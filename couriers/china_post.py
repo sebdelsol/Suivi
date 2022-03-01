@@ -36,7 +36,7 @@ class ChinaPost(Courier):
         img = driver.wait_for(img_locator, EC.visibility_of_element_located)
         data = img.get_attribute("src").split(",")[1]
         image = load_img64(data)
-        x = self.find_hole_x_pos(image, luma_threshold=255) or 1
+        x = self.find_hole_x_pos(image, luma_threshold=255) or 0
         action = EnhancedActionChains(driver)
         action.click_and_hold(slider)
         action.smooth_move_mouse(x - 5, 0)
