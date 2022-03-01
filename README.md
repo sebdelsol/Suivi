@@ -29,4 +29,6 @@
 • [_MyMemory_](https://mymemory.translated.net/doc/spec.php)
 
 [^1]: [What does Suivi mean ?](https://www.linguee.com/english-french/search?source=auto&query=suivi)
-[^2]: [UI _localization_](https://github.com/sebdelsol/Suivi/blob/a3363a8791f45714099bf5765edc3ba2b565205d/windows/localization.py)  •  [sloc](https://api.codetabs.com/v1/loc/?github=sebdelsol/suivi)
+[^2]: [Add courier](couriers) 
+• [UI localization](https://github.com/sebdelsol/Suivi/blob/a3363a8791f45714099bf5765edc3ba2b565205d/windows/localization.py) 
+• [Sloc](https://api.codetabs.com/v1/loc/?github=sebdelsol/suivi)
