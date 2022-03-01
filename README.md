@@ -1,5 +1,5 @@
 # Fast tracking with GUI
-<img src="https://i.imgur.com/v6LZNJ3.jpg" width="650" align="right">
+<img src="https://i.imgur.com/v6LZNJ3.jpg" width="400" align="right">
 
 *Courier* | from | using
 :---| :--- | :---
