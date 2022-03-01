@@ -1,4 +1,6 @@
-_Very fast **tracking**_ for:
+# Fast tracking with GUI
+<img src="https://i.imgur.com/v6LZNJ3.jpg" width="650" align="right">
+
 *Courier* | from | using
 :---| :--- | :---
 [**4PX**](http://en.4px.com/) | :cn: | <sub>requests</sub>
@@ -22,6 +24,7 @@ _Very fast **tracking**_ for:
 [**UPS**](https://www.ups.com/) | :us: | <sub>chrome driver</sub>
 [**USPS**](https://www.usps.com/) | :us: | <sub>chrome driver</sub>
 
-Translation with [DeepL](https://www.deepl.com/en/docs-api/) _or_ [Google Cloud](https://cloud.google.com/translate) _or_ [MyMemory](https://mymemory.translated.net/doc/spec.php)
-
-**sloc** [here](https://api.codetabs.com/v1/loc/?github=sebdelsol/suivi)
+# Misc.
+- Translation with [DeepL](https://www.deepl.com/en/docs-api/) _or_ [Google Cloud](https://cloud.google.com/translate) _or_ [MyMemory](https://mymemory.translated.net/doc/spec.php)
+- Localization [here](https://github.com/sebdelsol/Suivi/blob/a3363a8791f45714099bf5765edc3ba2b565205d/windows/localization.py)
+- [_SLOC_](https://api.codetabs.com/v1/loc/?github=sebdelsol/suivi)
