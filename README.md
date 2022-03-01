@@ -1,5 +1,5 @@
 _Very fast **tracking**_ for:
-Courier | for | using
+Courier | from | using
 :---:| :---: | :---:
 [4PX](http://en.4px.com/) | :cn: | <sub>requests</sub>
 [Amazon](https://www.amazon.fr/) | :fr: :it: | <sub>chrome driver</sub>
