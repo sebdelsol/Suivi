@@ -131,7 +131,7 @@ class Courier:
             )
             return None
 
-        self.log(f"LOAD - {idship}")
+        self.log(f"GET - {idship}")
 
         events = []
         infos = {}

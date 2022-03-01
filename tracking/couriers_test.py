@@ -55,20 +55,20 @@ if __name__ == "__main__":
             result = future.result()
             courier_name = futures[future]
 
+            msg = f". {courier_name}"
             if result and result["ok"]:
                 passed.append(courier_name)
                 events = result["events"]
                 event = events[0]
-                log(f". test PASS - {courier_name} - {len(events)} event(s)")
                 status = f"{event['status']}, " if event["status"] else ""
-                log(
-                    f". {event['date']:{TXT.long_date_format}} - {status}{event['label']}"
-                )
+                msg += f" - PASS - {len(events)} event(s)\n"
+                msg += f". {event['date']:{TXT.long_date_format}} - {status}{event['label']}"
 
             else:
                 failed.append(courier_name)
-                log(f". test FAIL - {courier_name}")
-                log(". !!!!!!!!!!!!!!!!!!!!!!!")
+                msg += " - FAIL\n"
+                msg += ". !!!!!!!!!!!!!!!!!!!!!!!"
+            log(f"\n{msg}\n")
 
         def get_couriers_names(a_list):
             if a_list:
@@ -77,8 +77,6 @@ if __name__ == "__main__":
                 return f"{txt}{len(a_list)}{''.join(names)}"
             return "NONE"
 
-        log()
-        log(f"Passed: {get_couriers_names(passed)}")
-        log()
-        log(f"Failed: {get_couriers_names(failed)}")
+        log(f"\nPassed: {get_couriers_names(passed)}")
+        log(f"\nFailed: {get_couriers_names(failed)}")
         log()
