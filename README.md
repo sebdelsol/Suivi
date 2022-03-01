@@ -1,5 +1,8 @@
-## Fast tracking with GUI
-Tracking with [_4PX_](http://en.4px.com/) 
+## Fast tracking with GUI[^1]
+[<img src="https://i.imgur.com/2H9jU5w.jpeg" width="500">](https://i.imgur.com/v6LZNJ3.jpeg)
+
+### Tracking
+[_4PX_](http://en.4px.com/) 
 • [_Amazon_](https://www.amazon.fr/) 
 • [_Asendia_](https://www.asendia.fr/)
 • [_Cainiao_](https://global.cainiao.com/)
@@ -9,7 +12,8 @@ Tracking with [_4PX_](http://en.4px.com/)
 • [_DPD_](https://www.dpd.com/)
 • [_DHL_](https://www.dhl.com/)
 • [_Fedex_](https://www.fedex.com/)
-• [_GLS_](https://gls-group.eu/)
+
+[_GLS_](https://gls-group.eu/)
 • [_La Poste_](https://www.laposte.fr/)
 • [_Mondial Relay_](https://www.mondialrelay.fr/) 
 • [_NL Post_](https://postnl.post/)
@@ -20,10 +24,10 @@ Tracking with [_4PX_](http://en.4px.com/)
 • [_UPS_](https://www.ups.com/)
 • [_USPS_](https://www.usps.com/)
 
-Translation with [_DeepL_](https://www.deepl.com/en/docs-api/) • [_Google Cloud_](https://cloud.google.com/translate) • [_MyMemory_](https://mymemory.translated.net/doc/spec.php). 
+### Translation
+[_DeepL_](https://www.deepl.com/en/docs-api/) 
+• [_Google Cloud_](https://cloud.google.com/translate) 
+• [_MyMemory_](https://mymemory.translated.net/doc/spec.php)
 
-[<img src="https://i.imgur.com/2H9jU5w.jpeg" width="600">](https://i.imgur.com/v6LZNJ3.jpeg)
-
-UI Localization [here](https://github.com/sebdelsol/Suivi/blob/a3363a8791f45714099bf5765edc3ba2b565205d/windows/localization.py)
-
-[_SLOC_](https://api.codetabs.com/v1/loc/?github=sebdelsol/suivi)
+### SLOC [here](https://api.codetabs.com/v1/loc/?github=sebdelsol/suivi)
+[^1]: UI [_localization_](https://github.com/sebdelsol/Suivi/blob/a3363a8791f45714099bf5765edc3ba2b565205d/windows/localization.py)
