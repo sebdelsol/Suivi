@@ -1,7 +1,7 @@
-## Fast tracking with GUI[^1]
+### Fast tracking with GUI[^1]
 [<img src="https://i.imgur.com/2H9jU5w.jpeg" width="500">](https://i.imgur.com/v6LZNJ3.jpeg)
 
-### Tracking
+### Couriers
 [_4PX_](http://en.4px.com/) 
 • [_Amazon_](https://www.amazon.fr/) 
 • [_Asendia_](https://www.asendia.fr/)
@@ -29,5 +29,4 @@
 • [_Google Cloud_](https://cloud.google.com/translate) 
 • [_MyMemory_](https://mymemory.translated.net/doc/spec.php)
 
-### SLOC [here](https://api.codetabs.com/v1/loc/?github=sebdelsol/suivi)
-[^1]: UI [_localization_](https://github.com/sebdelsol/Suivi/blob/a3363a8791f45714099bf5765edc3ba2b565205d/windows/localization.py)
+[^1]: [UI _localization_](https://github.com/sebdelsol/Suivi/blob/a3363a8791f45714099bf5765edc3ba2b565205d/windows/localization.py)  •  [sloc](https://api.codetabs.com/v1/loc/?github=sebdelsol/suivi)
