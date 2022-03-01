@@ -1,10 +1,6 @@
 from selenium.webdriver.support import expected_conditions as EC
-from tracking.courier import (
-    Courier,
-    RequestsHandler,
-    get_local_time,
-    get_simple_validation,
-)
+from tools.date_parser import get_local_time
+from tracking.courier import Courier, RequestsHandler, get_simple_validation
 from tracking.secrets import DHL_KEY
 
 

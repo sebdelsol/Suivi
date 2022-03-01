@@ -1,9 +1,5 @@
-from tracking.courier import (
-    Courier,
-    RequestsHandler,
-    get_local_time,
-    get_simple_validation,
-)
+from tools.date_parser import get_local_time
+from tracking.courier import Courier, RequestsHandler, get_simple_validation
 from windows.localization import TXT
 
 

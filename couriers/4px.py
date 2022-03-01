@@ -2,7 +2,8 @@
 # pylint: disable=invalid-name
 
 import lxml.html
-from tracking.courier import Courier, RequestsHandler, get_local_time
+from tools.date_parser import get_local_time
+from tracking.courier import Courier, RequestsHandler
 
 
 class FourPX(Courier):

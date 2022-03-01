@@ -3,7 +3,8 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from tracking.courier import Courier, get_utc_time, smooth_move_mouse
+from tools.date_parser import get_utc_time
+from tracking.courier import Courier, smooth_move_mouse
 
 
 class Cainiao(Courier):

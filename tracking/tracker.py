@@ -5,9 +5,8 @@ import copy
 import threading
 import traceback
 
+from tools.date_parser import get_local_now
 from windows.log import log
-
-from .courier import get_local_now
 
 # pylint: disable=protected-access
 # prevent executors from joining threads at program exit and delay it

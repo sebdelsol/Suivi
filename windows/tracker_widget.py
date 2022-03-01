@@ -6,7 +6,7 @@ from bisect import bisect
 import PySimpleGUI as sg
 import timeago
 from tools.img_tool import resize_and_colorize_gif, resize_and_colorize_img
-from tracking.courier import get_local_now
+from tools.date_parser import get_local_now
 from tracking.tracker import TrackerState
 
 from . import popup

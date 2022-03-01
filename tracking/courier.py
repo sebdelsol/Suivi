@@ -1,17 +1,12 @@
 import re
 import time
 import webbrowser
-from datetime import datetime, timedelta
 
-import pytz
 import requests
-from dateutil import parser
-from tzlocal import get_localzone
 from windows.localization import TXT
 from windows.log import log
 
 from .drivers import DriversToScrape, DriversToShow
-from .locale_parsers import locale_parsers
 
 # auto register all Courier subclasses
 Couriers_classes = []
@@ -19,30 +14,6 @@ Couriers_classes = []
 
 def get_sentences(txt, n=1):
     return "".join(re.split(r"[.!]", txt)[:n])
-
-
-def get_local_time(date, locale_country=None):
-    parserinfo = locale_parsers.get(locale_country) if locale_country else None
-    return round_minute(
-        parser.parse(date, parserinfo=parserinfo).astimezone(get_localzone())
-    )
-
-
-def get_utc_time(date, locale_country=None):
-    parserinfo = locale_parsers.get(locale_country) if locale_country else None
-    return round_minute(
-        parser.parse(date, parserinfo=parserinfo).replace(tzinfo=pytz.utc)
-    )
-
-
-def get_local_now():
-    return datetime.now().astimezone(get_localzone())
-
-
-def round_minute(dt):
-    return dt.replace(second=0, microsecond=0) + timedelta(
-        minutes=(dt.second + dt.microsecond * 0.001) // 30
-    )
 
 
 def smooth_move_mouse(action, dx, dy, n_step=50):

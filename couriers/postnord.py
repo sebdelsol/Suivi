@@ -1,7 +1,8 @@
 import lxml.html
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from tracking.courier import Courier, get_local_time, get_sentences
+from tools.date_parser import get_local_time
+from tracking.courier import Courier, get_sentences
 from windows.localization import TXT
 
 
