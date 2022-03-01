@@ -1,10 +1,10 @@
 import lxml.html
 from selenium.common.exceptions import NoSuchElementException
-from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
+from tools.actions_chain import EnhancedActionChains
 from tools.date_parser import get_utc_time
-from tracking.courier import Courier, smooth_move_mouse
+from tracking.courier import Courier
 
 
 class Cainiao(Courier):
@@ -36,9 +36,9 @@ class Cainiao(Courier):
                 '//div[@class="scale_text slidetounlock"]/span[contains(text(),"slide")]',
                 EC.element_to_be_clickable,
             )
-            action = ActionChains(driver)
+            action = EnhancedActionChains(driver)
             action.click_and_hold(slider)
-            smooth_move_mouse(action, slide.size["width"], 0)
+            action.smooth_move_mouse(slide.size["width"], 0)
             action.release().perform()
 
             self.log(f"driver WAIT datas - {idship}")

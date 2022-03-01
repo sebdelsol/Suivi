@@ -3,11 +3,11 @@ import time
 import lxml.html
 from PIL import ImageFilter
 from selenium.common.exceptions import TimeoutException
-from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
-from tools.img_tool import load_img64
+from tools.actions_chain import EnhancedActionChains
 from tools.date_parser import get_utc_time
-from tracking.courier import Courier, smooth_move_mouse
+from tools.img_tool import load_img64
+from tracking.courier import Courier
 
 
 class ChinaPost(Courier):
@@ -45,9 +45,9 @@ class ChinaPost(Courier):
             data = img.get_attribute("src").split(",")[1]
             image = load_img64(data)
             x = self.find_hole_x_pos(image) or 1
-            action = ActionChains(driver)
+            action = EnhancedActionChains(driver)
             action.click_and_hold(slider)
-            smooth_move_mouse(action, x - 5, 0)
+            action.smooth_move_mouse(x - 5, 0)
             action.release().perform()
 
             try:

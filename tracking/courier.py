@@ -16,24 +16,6 @@ def get_sentences(txt, n=1):
     return "".join(re.split(r"[.!]", txt)[:n])
 
 
-def smooth_move_mouse(action, dx, dy, n_step=50):
-    # no pause
-    # pylint: disable=protected-access
-    action.w3c_actions.pointer_action._duration = 1
-
-    def get_displacement():
-        step_x = dx / n_step
-        step_y = dy / n_step
-        for i in range(n_step):
-            yield (
-                round((i + 1) * step_x) - round(i * step_x),
-                round((i + 1) * step_y) - round(i * step_y),
-            )
-
-    for ddx, ddy in get_displacement():
-        action.w3c_actions.pointer_action.move_by(ddx, ddy)
-
-
 def get_simple_validation(_min, _max=None):
     if _max is None:
         return rf"^\w{{{_min}}}$", f"{_min} {TXT.letters} {TXT.or_} {TXT.digits}"
