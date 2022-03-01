@@ -22,6 +22,6 @@ _Very fast **tracking**_ for:
 [**UPS**](https://www.ups.com/) | :us: | <sub>chrome driver</sub>
 [**USPS**](https://www.usps.com/) | :us: | <sub>chrome driver</sub>
 
-translation with [DeepL](https://www.deepl.com/en/docs-api/) _or_ [Google Cloud](https://cloud.google.com/translate) _or_ [MyMemory](https://mymemory.translated.net/doc/spec.php)
+Translation with [DeepL](https://www.deepl.com/en/docs-api/) _or_ [Google Cloud](https://cloud.google.com/translate) _or_ [MyMemory](https://mymemory.translated.net/doc/spec.php)
 
 **sloc** [here](https://api.codetabs.com/v1/loc/?github=sebdelsol/suivi)
