@@ -1,7 +1,8 @@
 from datetime import datetime
 
 import pytz
-from tracking.courier import Courier, RequestsHandler
+from tracking.courier import Courier
+from tracking.requests_handler import RequestsHandler
 
 
 class Asendia(Courier):
