@@ -1,6 +1,6 @@
 _Very fast **tracking**_ for:
-Courier | from | using
-:---:| :---: | :---:
+*Courier* | from | using
+:---| :--- | :---
 [**4PX**](http://en.4px.com/) | :cn: | <sub>requests</sub>
 [**Amazon**](https://www.amazon.fr/) | :fr: :it: | <sub>chrome driver</sub>
 [**Asendia**](https://www.asendia.fr/) | :cn: :fr: :switzerland: | <sub>requests</sub>
