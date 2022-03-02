@@ -21,13 +21,13 @@ class ChinaPost(Courier):
         self.get_timeline(idship, driver)
 
     @staticmethod
-    def get_x_of_missing_piece(image, luma_threshold):
-        # highlight the missing piece
-        image = image.convert("L").point(lambda l: l >= luma_threshold)
-        # remove noise
-        image = image.filter(ImageFilter.MinFilter(5))
-        # get missing piece's bounding box
-        return image.getbbox()[0]
+    def get_missing_piece_x_pos(image, luma_threshold):
+        return (
+            image.convert("L")  # grayscale
+            .point(lambda l: l >= luma_threshold)  # higlight
+            .filter(ImageFilter.MinFilter(5))  # remove noise
+            .getbbox()[0]  # bbox is (left, upper, right, lower)
+        )
 
     @retry(TimeoutException, tries=3, delay=2)
     def solve_captcha(self, slider, idship, driver):
@@ -35,14 +35,14 @@ class ChinaPost(Courier):
 
         img_loc = '//*[@class="yz-bg-img"]//img'
         img = driver.wait_for(img_loc, EC.visibility_of_element_located)
-        _, data = img.get_attribute("src").split(",")
-        image = load_img64(data)
-        x = self.get_x_of_missing_piece(image, luma_threshold=255)
+        # src = "data:image/[format];base64,[base64 encoded data]"
+        # where format is intentionally wrong !
+        data64 = img.get_attribute("src").split(",")[1]
+        image = load_img64(data64)
+        x = self.get_missing_piece_x_pos(image, luma_threshold=255)
 
         action = EnhancedActionChains(driver)
-        action.click_and_hold(slider)
-        action.smooth_move_mouse(x - 5, 0)
-        action.release().perform()
+        action.click_and_hold(slider).smooth_move_mouse(x - 5, 0).release().perform()
 
         timeline_loc = '//div[@class="package_container"]'
         timeline = driver.wait_for(timeline_loc, EC.visibility_of_element_located, 3)
