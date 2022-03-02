@@ -9,9 +9,19 @@ from tools.img_tool import load_img64
 from tracking.courier import Courier
 
 
+def _get_missing_piece_x_pos(image, luma_threshold):
+    return (
+        image.convert("L")  # grayscale
+        .point(lambda l: l >= luma_threshold)  # higlight
+        .filter(ImageFilter.MinFilter(5))  # remove noise using a big kernel
+        .getbbox()[0]  # bbox is (left, upper, right, lower)
+    )
+
 class ChinaPost(Courier):
     name = "China Post"
-    fromto = f"CN{Courier.r_arrow}FR"
+    fromto = f"CN{Courier.r_arrow}"
+
+    url = "http://yjcx.ems.com.cn/qps/english/yjcx"
 
     def get_url_for_browser(self, idship):
         return True
@@ -20,17 +30,8 @@ class ChinaPost(Courier):
     def open_in_browser(self, idship, driver):
         self.get_timeline(idship, driver)
 
-    @staticmethod
-    def get_missing_piece_x_pos(image, luma_threshold):
-        return (
-            image.convert("L")  # grayscale
-            .point(lambda l: l >= luma_threshold)  # higlight
-            .filter(ImageFilter.MinFilter(5))  # remove noise
-            .getbbox()[0]  # bbox is (left, upper, right, lower)
-        )
-
     @retry(TimeoutException, tries=3, delay=2)
-    def solve_captcha(self, slider, idship, driver):
+    def solve_captcha(self, slider, idship, driver, elt_to_wait):
         self.log(f"driver RESOLVE captcha - {idship}")
 
         img_loc = '//*[@class="yz-bg-img"]//img'
@@ -39,20 +40,17 @@ class ChinaPost(Courier):
         # where format is intentionally wrong !
         data64 = img.get_attribute("src").split(",")[1]
         image = load_img64(data64)
-        x = self.get_missing_piece_x_pos(image, luma_threshold=255)
+        x = _get_missing_piece_x_pos(image, luma_threshold=255)
 
         action = EnhancedActionChains(driver)
         action.click_and_hold(slider).smooth_move_mouse(x - 5, 0).release().perform()
 
-        timeline_loc = '//div[@class="package_container"]'
-        timeline = driver.wait_for(timeline_loc, EC.visibility_of_element_located, 3)
-        return timeline
+        return driver.wait_for(elt_to_wait, EC.visibility_of_element_located, 3)
 
     def get_timeline(self, idship, driver):
         self.log(f"driver get SHIPMENT - {idship}")
 
-        url = "http://yjcx.ems.com.cn/qps/english/yjcx"
-        driver.get(url)
+        driver.get(self.url)
 
         input_loc = '//div[@class="mailquery_container"]//textarea'
         input_ = driver.wait_for(input_loc, EC.element_to_be_clickable)
@@ -65,7 +63,8 @@ class ChinaPost(Courier):
         slider_loc = '//div[@class="yz-control-btn"]'
         slider = driver.wait_for(slider_loc, EC.element_to_be_clickable)
 
-        return self.solve_captcha(slider, idship, driver)
+        timeline_loc = '//div[@class="package_container"]'
+        return self.solve_captcha(slider, idship, driver, timeline_loc)
 
     @Courier.driversToScrape.get(wait_elt_timeout=15)
     def get_content(self, idship, driver):
@@ -75,12 +74,11 @@ class ChinaPost(Courier):
 
     def parse_content(self, content):
         events = []
+        day = ""
         timeline = content.xpath('//ul[@class="package_list"]/li')
-        last_day = ""
         for event in timeline:
-            day = self.get_txt(event, './/span[@class="data"]') or last_day
+            day = self.get_txt(event, './/span[@class="data"]') or day
             hour = self.get_txt(event, './/span[@class="time"]')
-            last_day = day
             events.append(
                 dict(
                     date=get_utc_time(f"{day} {hour}"),
