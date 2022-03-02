@@ -17,6 +17,7 @@ def _get_missing_piece_x_pos(image, luma_threshold):
         .getbbox()[0]  # bbox is (left, upper, right, lower)
     )
 
+
 class ChinaPost(Courier):
     name = "China Post"
     fromto = f"CN{Courier.r_arrow}"
@@ -28,10 +29,10 @@ class ChinaPost(Courier):
 
     @Courier.driversToShow.get(page_load_timeout=10, wait_elt_timeout=15)
     def open_in_browser(self, idship, driver):
-        self.get_timeline(idship, driver)
+        self._get_timeline(idship, driver)
 
     @retry(TimeoutException, tries=3, delay=2)
-    def solve_captcha(self, slider, idship, driver, elt_to_wait):
+    def _solve_captcha(self, slider, idship, driver, elt_to_wait):
         self.log(f"driver RESOLVE captcha - {idship}")
 
         img_loc = '//*[@class="yz-bg-img"]//img'
@@ -47,7 +48,7 @@ class ChinaPost(Courier):
 
         return driver.wait_for(elt_to_wait, EC.visibility_of_element_located, 3)
 
-    def get_timeline(self, idship, driver):
+    def _get_timeline(self, idship, driver):
         self.log(f"driver get SHIPMENT - {idship}")
 
         driver.get(self.url)
@@ -64,11 +65,11 @@ class ChinaPost(Courier):
         slider = driver.wait_for(slider_loc, EC.element_to_be_clickable)
 
         timeline_loc = '//div[@class="package_container"]'
-        return self.solve_captcha(slider, idship, driver, timeline_loc)
+        return self._solve_captcha(slider, idship, driver, timeline_loc)
 
     @Courier.driversToScrape.get(wait_elt_timeout=15)
     def get_content(self, idship, driver):
-        if timeline := self.get_timeline(idship, driver):
+        if timeline := self._get_timeline(idship, driver):
             return lxml.html.fromstring(timeline.get_attribute("innerHTML"))
         return None
 
