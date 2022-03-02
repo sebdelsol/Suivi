@@ -21,12 +21,12 @@ class ChinaPost(Courier):
         self.get_timeline(idship, driver)
 
     @staticmethod
-    def find_hole_x_pos(image, luma_threshold):
-        # highlight the hole
+    def get_x_of_missing_piece(image, luma_threshold):
+        # highlight the missing piece
         image = image.convert("L").point(lambda l: l >= luma_threshold)
         # remove noise
         image = image.filter(ImageFilter.MinFilter(5))
-        # crop the resulting image to get the x of the hole
+        # get missing piece's bounding box
         return image.getbbox()[0]
 
     @retry(TimeoutException, tries=3, delay=2)
@@ -37,7 +37,7 @@ class ChinaPost(Courier):
         img = driver.wait_for(img_loc, EC.visibility_of_element_located)
         _, data = img.get_attribute("src").split(",")
         image = load_img64(data)
-        x = self.find_hole_x_pos(image, luma_threshold=255) or 0
+        x = self.get_x_of_missing_piece(image, luma_threshold=255)
 
         action = EnhancedActionChains(driver)
         action.click_and_hold(slider)
