@@ -42,7 +42,7 @@ class Cainiao(Courier):
             action.release().perform()
 
             self.log(f"driver WAIT datas - {idship}")
-            driver.wait_for(data_locator, EC.visibility_of_element_located)
+            driver.wait_for(data_locator, EC.visibility_of_element_located, 5)
 
         return lxml.html.fromstring(driver.page_source)
 
