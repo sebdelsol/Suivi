@@ -12,7 +12,7 @@ class Cainiao(Courier):
     fromto = f"CN{Courier.r_arrow}FR"
 
     def get_url_for_browser(self, idship):
-        return f"https://global.cainiao.com/detail.htm?mailNoList={idship}&lang=zh"
+        return f"https://global.cainiao.com/detail.htm?mailNoList={idship}&lang=en"
 
     #  do not return any selenium objects, the driver is disposed after
     @Courier.driversToScrape.get(wait_elt_timeout=15)
