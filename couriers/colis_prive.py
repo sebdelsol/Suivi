@@ -2,6 +2,7 @@ import lxml.html
 from tools.date_parser import get_local_time
 from tracking.courier import Courier, get_sentences
 from tracking.requests_handler import RequestsHandler
+from windows.localization import TXT
 
 
 class ColisPrive(Courier):
@@ -25,6 +26,11 @@ class ColisPrive(Courier):
         for event in timeline:
             date, label = event.xpath("./td/text()")
             label = get_sentences(label)
-            events.append(dict(date=get_local_time(date), label=label.strip()))
+            events.append(
+                dict(
+                    date=get_local_time(date, locale_country=TXT.locale_country_code),
+                    label=label.strip(),
+                )
+            )
 
         return events, {}
