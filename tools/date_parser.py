@@ -28,17 +28,22 @@ def _round_minute(dt):
     )
 
 
-def get_local_time(date, locale_country=None):
+def _get_time(date, locale_country=None):
+    # today at noon
+    default = datetime.now().replace(hour=12, minute=00, second=0, microsecond=0)
     parserinfo = _locale_parsers.get(locale_country) if locale_country else None
-    return _round_minute(
-        parser.parse(date, parserinfo=parserinfo).astimezone(get_localzone())
-    )
+    return _round_minute(parser.parse(date, parserinfo=parserinfo, default=default))
+
+
+def get_local_time(date, locale_country=None):
+    return _get_time(date, locale_country).astimezone(get_localzone())
 
 
 def get_utc_time(date, locale_country=None):
-    parserinfo = _locale_parsers.get(locale_country) if locale_country else None
-    return _round_minute(
-        parser.parse(date, parserinfo=parserinfo).replace(tzinfo=pytz.utc)
+    return (
+        _get_time(date, locale_country)
+        .replace(tzinfo=pytz.utc)
+        .astimezone(get_localzone())
     )
 
 
