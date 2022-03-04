@@ -20,10 +20,7 @@ from urllib3.exceptions import MaxRetryError, NewConnectionError, ProtocolError
 from windows.localization import TXT
 from windows.log import log
 
-from .chrome import find_chrome_executable, get_chrome_main_version
-
-# monkey patch buggy find_chrome_executable
-webdriver.find_chrome_executable = find_chrome_executable
+from .chrome import get_chrome_main_version
 
 
 def patch_driver(version):
