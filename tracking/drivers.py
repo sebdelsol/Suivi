@@ -221,19 +221,22 @@ class DriversToScrape(DriversHandler):
     options = (
         # "--no-service-autorun",
         "--start-maximized",
+        # "--excludeSwitches --enable-logging",
         f"--lang={TXT.locale_driver_country_code}",
-        "--excludeSwitches --enable-logging",
     )
 
     prefs = {
-        "translate_whitelists": {
-            "zh": TXT.locale_country_code,
-            "und": TXT.locale_country_code,
-        },
-        "translate": {"enabled": True},
+        # auto translation
+        "translate.enabled": True,
+        "intl.accept_languages": f"{TXT.locale_country_code},{TXT.locale_driver_country_code}",
+        "translate_language_blacklist": [],
+        "translate_blocked_languages": [],
+        "translate_site_blacklist": [],
+        # no password popup
         "credentials_enable_service": False,
         "profile.password_manager_enabled": False,
     }
+    lang_allow_list = ("en", "de", "es", "it", "und", "zh", "zh-CN")
 
     def set_max_drivers(self, max_drivers):
         self.max_drivers = max_drivers
@@ -244,6 +247,10 @@ class DriversToScrape(DriversHandler):
         for option in self.options:
             options.add_argument(option)
 
+        self.prefs["translate_allowlists"] = {
+            lang: TXT.locale_country_code for lang in self.lang_allow_list
+        }
+        self.prefs["translate_whitelists"] = self.prefs["translate_allowlists"]
         options.add_experimental_option("prefs", self.prefs)
         return options
 
