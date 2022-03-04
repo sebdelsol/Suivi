@@ -1,9 +1,12 @@
 import atexit
+import json
 import os
 import queue
 import stat
+import tempfile
 import threading
 import time
+from functools import reduce
 from socket import error as SocketError
 
 import psutil
@@ -39,6 +42,52 @@ def patch_driver(version):
     os.chmod(patcher.executable_path, stat.S_IREAD)
     webdriver.Patcher.is_binary_patched = lambda self: True
     log("chromedriver PATCHED")
+
+
+class ChromeWithPrefs(webdriver.Chrome):
+    def __init__(self, *args, options=None, **kwargs):
+        if options:
+            self._handle_prefs(options)
+
+        super().__init__(*args, options=options, **kwargs)
+
+        # remove the user_data_dir when quitting
+        self.keep_user_data_dir = False
+
+    @staticmethod
+    def _handle_prefs(options):
+        if prefs := options.experimental_options.get("prefs"):
+            # turn a (dotted key, value) into a proper nested dict
+            def undot_key(key, value):
+                if "." in key:
+                    key, rest = key.split(".", 1)
+                    value = undot_key(rest, value)
+                return {key: value}
+
+            # undot prefs dict keys
+            undot_prefs = reduce(
+                lambda d1, d2: {**d1, **d2},  # merge dicts
+                (undot_key(key, value) for key, value in prefs.items()),
+            )
+
+            # create an user_data_dir and add its path to the options
+            user_data_dir = os.path.normpath(tempfile.mkdtemp())
+            options.add_argument(f"--user-data-dir={user_data_dir}")
+
+            # create the preferences json file in its default directory
+            default_dir = os.path.join(user_data_dir, "Default")
+            os.mkdir(default_dir)
+
+            prefs_file = os.path.join(default_dir, "Preferences")
+            with open(prefs_file, encoding="latin1", mode="w") as f:
+                json.dump(undot_prefs, f)
+
+            # remove the "what's new" tab that appears when using a preferences file
+            options.add_argument("--disable-features=ChromeWhatsNewUI")
+
+            # pylint: disable=protected-access
+            # remove the experimental_options to avoid an error
+            del options._experimental_options["prefs"]
 
 
 class DriversHandler:
@@ -84,7 +133,7 @@ class DriversHandler:
             try:
                 DriversHandler._patch_driver()
                 options = self.get_driver_options()
-                driver = webdriver.Chrome(options=options)
+                driver = ChromeWithPrefs(options=options)
                 self._log_creation("CREATED", n_drivers)
 
             except (SessionNotCreatedException, ProtocolError, SocketError) as e:
@@ -170,11 +219,21 @@ class DriversToScrape(DriversHandler):
     name = "Chromedriver (scrapper)"
 
     options = (
-        "--no-service-autorun",
-        "--password-store=basic",
+        # "--no-service-autorun",
+        "--start-maximized",
         f"--lang={TXT.locale_driver_country_code}",
         "--excludeSwitches --enable-logging",
     )
+
+    prefs = {
+        "translate_whitelists": {
+            "zh": TXT.locale_country_code,
+            "und": TXT.locale_country_code,
+        },
+        "translate": {"enabled": True},
+        "credentials_enable_service": False,
+        "profile.password_manager_enabled": False,
+    }
 
     def set_max_drivers(self, max_drivers):
         self.max_drivers = max_drivers
@@ -185,6 +244,7 @@ class DriversToScrape(DriversHandler):
         for option in self.options:
             options.add_argument(option)
 
+        options.add_experimental_option("prefs", self.prefs)
         return options
 
     def get(self, page_load_timeout=100, wait_elt_timeout=30):
