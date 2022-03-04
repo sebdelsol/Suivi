@@ -6,9 +6,9 @@ from win32api import HIWORD, GetFileVersionInfo
 # needed for being compliant with W3C webdriver shadow-root specs
 CHROME_MIN_VERSION = 96
 
-# fix UC.find_chrome_executable()
+# fix webdriver.find_chrome_executable()
 # in case PROGRAMFILES(X86) is None on x86 Windows
-if not os.environ.get("PROGRAMFILES(X86)"):
+if "PROGRAMFILES(X86)" not in os.environ:
     os.environ["PROGRAMFILES(X86)"] = ""
 
 
