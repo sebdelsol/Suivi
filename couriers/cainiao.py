@@ -3,7 +3,7 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from tools.actions_chain import EnhancedActionChains
-from tools.date_parser import get_utc_time
+from tools.date_parser import get_local_time
 from tracking.courier import Courier
 
 
@@ -54,6 +54,6 @@ class Cainiao(Courier):
         for event in timeline:
             txts = event.xpath("./p/text()")
             label, date = txts[:2]
-            events.append(dict(date=get_utc_time(date), label=label))
+            events.append(dict(date=get_local_time(date), label=label))
 
         return events, dict(status_label=status_label)
