@@ -16,7 +16,7 @@ class Amazon(Courier):
     def get_url_for_browser(self, idship):
         return True  # so that show button is displayed
 
-    @Courier.driversToShow.get(page_load_timeout=10, wait_elt_timeout=15)
+    @Courier.driversToShow.get(wait_elt_timeout=15)
     def open_in_browser(self, idship, driver):
         self.find_shipment(idship, driver)
 
