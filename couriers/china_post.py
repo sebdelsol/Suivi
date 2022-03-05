@@ -27,7 +27,7 @@ class ChinaPost(Courier):
     def get_url_for_browser(self, idship):
         return True
 
-    @Courier.driversToShow.get(page_load_timeout=10, wait_elt_timeout=15)
+    @Courier.driversToShow.get(wait_elt_timeout=15)
     def open_in_browser(self, idship, driver):
         self._get_timeline(idship, driver)
 
@@ -46,7 +46,7 @@ class ChinaPost(Courier):
         action = EnhancedActionChains(driver)
         action.click_and_hold(slider).smooth_move_mouse(x - 5, 0).release().perform()
 
-        return driver.wait_for(elt_to_wait, EC.visibility_of_element_located, 3)
+        return driver.wait_for(elt_to_wait, EC.visibility_of_element_located, 4)
 
     def _get_timeline(self, idship, driver):
         self.log(f"driver get SHIPMENT - {idship}")
@@ -70,6 +70,7 @@ class ChinaPost(Courier):
     @Courier.driversToScrape.get(wait_elt_timeout=15)
     def get_content(self, idship, driver):
         if timeline := self._get_timeline(idship, driver):
+            # driver.wait_for_translation()
             return lxml.html.fromstring(timeline.get_attribute("innerHTML"))
         return None
 
