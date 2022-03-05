@@ -12,12 +12,14 @@ from socket import error as SocketError
 import psutil
 import undetected_chromedriver as webdriver
 from selenium.common.exceptions import (
+    NoSuchElementException,
     NoSuchWindowException,
     SessionNotCreatedException,
     TimeoutException,
     WebDriverException,
 )
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from urllib3.exceptions import MaxRetryError, NewConnectionError, ProtocolError
 from windows.localization import TXT
@@ -44,7 +46,7 @@ def patch_driver(version):
     log("chromedriver PATCHED")
 
 
-class ChromeWithPrefs(webdriver.Chrome):
+class ChromeWithPrefsAndTools(webdriver.Chrome):
     def __init__(self, *args, options=None, **kwargs):
         if options:
             self._handle_prefs(options)
@@ -53,6 +55,7 @@ class ChromeWithPrefs(webdriver.Chrome):
 
         # remove the user_data_dir when quitting
         self.keep_user_data_dir = False
+        self._wait_elt_timeout = 0
 
     @staticmethod
     def _handle_prefs(options):
@@ -82,16 +85,85 @@ class ChromeWithPrefs(webdriver.Chrome):
             with open(prefs_file, encoding="latin1", mode="w") as f:
                 json.dump(undot_prefs, f)
 
-            # remove the "what's new" tab that appears when using a preferences file
-            options.add_argument("--disable-features=ChromeWhatsNewUI")
-
             # pylint: disable=protected-access
             # remove the experimental_options to avoid an error
             del options._experimental_options["prefs"]
 
+    # wait tools
+    def set_timeouts(self, page_load_timeout, wait_elt_timeout):
+        self.set_page_load_timeout(page_load_timeout)
+        self._wait_elt_timeout = wait_elt_timeout
+
+    def wait_until(self, until, timeout=None):
+        return WebDriverWait(self, timeout or self._wait_elt_timeout).until(until)
+
+    def wait_for(self, xpath, expected_condition, timeout=None):
+        locator = (By.XPATH, xpath)
+        return self.wait_until(expected_condition(locator), timeout)
+
+    def wait_for_translation(self):
+        """detect if it's needed to wait for an automatic translation"""
+        try:
+            translation_loc = '//*[@class="goog-te-spinner-pos"]'
+            if self.find_elements(By.XPATH, translation_loc):
+                lang_loc = '/html[contains(@class,"translated")]'
+                self.wait_for(lang_loc, EC.presence_of_element_located)
+
+        except NoSuchElementException:
+            pass
+
+
+class Options(webdriver.ChromeOptions):
+    default_options = (
+        "--no-service-autorun",
+        "--start-maximized",
+        # "--excludeSwitches --enable-logging",
+        # "--excludeSwitches --enable-automation",
+        # "--disable-gpu",
+        f"--lang={TXT.locale_driver_country_code}",
+    )
+
+    default_prefs = {  # no password popup
+        "credentials_enable_service": False,
+        "profile.password_manager_enabled": False,
+    }
+
+    translate_prefs = {  # auto translation
+        # "useAutomationExtension": True,
+        # "translate.enabled": True,
+        # "intl.accept_languages": f"{TXT.locale_country_code},{TXT.locale_driver_country_code}",
+        "translate_language_blacklist": [],
+        "translate_blocked_languages": [],
+        "translate_site_blacklist": [],
+        "translate_allowlists": {
+            lang: TXT.locale_country_code
+            for lang in ("en", "de", "es", "it", "it-it", "und", "zh", "zh-CN")
+        },
+    }
+
+    def __init__(
+        self,
+        headless=False,
+        auto_translate=False,
+    ):
+        super().__init__()
+        self.headless = headless
+
+        for option in self.default_options:
+            self.add_argument(option)
+
+        if auto_translate:
+            self.default_prefs.update(self.translate_prefs)
+        self.add_experimental_option("prefs", self.default_prefs)
+
 
 class DriversHandler:
     name = None
+    headless = False
+    auto_translate = True
+    options = ()
+    prefs = {}
+
     _terminate_lock = threading.Lock()
     _patching_lock = threading.Lock()
     _patching_done = False
@@ -118,9 +190,6 @@ class DriversHandler:
                 patch_driver(get_chrome_main_version())
                 cls._patching_done = True
 
-    def get_driver_options(self):
-        raise NotImplementedError("a driver needs options")
-
     def _create_driver(self):
         with self._driver_count_ops:
             n_drivers = len(self._drivers) + self._n_in_creation
@@ -132,8 +201,11 @@ class DriversHandler:
             self._log_creation("CREATION", n_drivers)
             try:
                 DriversHandler._patch_driver()
-                options = self.get_driver_options()
-                driver = ChromeWithPrefs(options=options)
+                options = Options(
+                    headless=self.headless,
+                    auto_translate=self.auto_translate,
+                )
+                driver = ChromeWithPrefsAndTools(options=options)
                 self._log_creation("CREATED", n_drivers)
 
             except (SessionNotCreatedException, ProtocolError, SocketError) as e:
@@ -175,18 +247,6 @@ class DriversHandler:
             driver.quit()
             self._drivers.remove(driver)
 
-    @staticmethod
-    def add_tools_to_driver(driver, wait_elt_timeout):
-        def wait_until(until, timeout=None):
-            return WebDriverWait(driver, timeout or wait_elt_timeout).until(until)
-
-        def wait_for(xpath, expected_condition, timeout=None):
-            locator = (By.XPATH, xpath)
-            return driver.wait_until(expected_condition(locator), timeout)
-
-        driver.wait_until = wait_until
-        driver.wait_for = wait_for
-
     def _close(self):
         log(f"CLOSING {self.name}")
 
@@ -217,42 +277,11 @@ class DriversHandler:
 
 class DriversToScrape(DriversHandler):
     name = "Chromedriver (scrapper)"
-
-    options = (
-        # "--no-service-autorun",
-        "--start-maximized",
-        # "--excludeSwitches --enable-logging",
-        f"--lang={TXT.locale_driver_country_code}",
-    )
-
-    prefs = {
-        # auto translation
-        "translate.enabled": True,
-        "intl.accept_languages": f"{TXT.locale_country_code},{TXT.locale_driver_country_code}",
-        "translate_language_blacklist": [],
-        "translate_blocked_languages": [],
-        "translate_site_blacklist": [],
-        # no password popup
-        "credentials_enable_service": False,
-        "profile.password_manager_enabled": False,
-    }
-    lang_allow_list = ("en", "de", "es", "it", "und", "zh", "zh-CN")
+    headless = True
+    auto_translate = False
 
     def set_max_drivers(self, max_drivers):
         self.max_drivers = max_drivers
-
-    def get_driver_options(self):
-        options = webdriver.ChromeOptions()
-        options.headless = True
-        for option in self.options:
-            options.add_argument(option)
-
-        self.prefs["translate_allowlists"] = {
-            lang: TXT.locale_country_code for lang in self.lang_allow_list
-        }
-        self.prefs["translate_whitelists"] = self.prefs["translate_allowlists"]
-        options.add_experimental_option("prefs", self.prefs)
-        return options
 
     def get(self, page_load_timeout=100, wait_elt_timeout=30):
         """
@@ -264,8 +293,7 @@ class DriversToScrape(DriversHandler):
             def wrapper(courier, idship):
                 if driver := self._get():
                     try:
-                        self.add_tools_to_driver(driver, wait_elt_timeout)
-                        driver.set_page_load_timeout(page_load_timeout)
+                        driver.set_timeouts(page_load_timeout, wait_elt_timeout)
                         return get_content(courier, idship, driver)
 
                     except (
@@ -293,13 +321,10 @@ class DriversToScrape(DriversHandler):
 
 class DriversToShow(DriversHandler):
     name = "Chromedriver (browser)"
+    headless = False
+    auto_translate = True
 
-    def get_driver_options(self):
-        options = webdriver.ChromeOptions()
-        options.add_argument("--start-maximized")
-        return options
-
-    def get(self, page_load_timeout=10, wait_elt_timeout=15):
+    def get(self, page_load_timeout=30, wait_elt_timeout=15):
         """
         decorator to give the decorated function a driver
         and handle the deferred show with timeouts
@@ -318,8 +343,7 @@ class DriversToShow(DriversHandler):
         if driver := self._get(always_create=True):
             log(f"SHOW in {self.name}")
             try:
-                self.add_tools_to_driver(driver, wait_elt_timeout)
-                driver.set_page_load_timeout(page_load_timeout)
+                driver.set_timeouts(page_load_timeout, wait_elt_timeout)
                 show(courier, idship, driver)
                 self._wait_browser_closed(driver)
 
@@ -327,6 +351,7 @@ class DriversToShow(DriversHandler):
                 NoSuchWindowException,
                 WebDriverException,
                 SessionNotCreatedException,
+                TimeoutException,
             ) as e:
                 log(f"{self.name} SHOW failed ({e})", error=True)
 
