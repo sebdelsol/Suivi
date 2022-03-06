@@ -5,10 +5,12 @@ from windows.log import log
 
 # list of translation module (exclude translate* modules)
 PACKAGE_NAME = "translation"
-me = __name__.split(".")[1]
+this_module_name = __name__.split(".")[1]
 
 TranslationService_Modules = [
-    name for _, name, _ in pkgutil.iter_modules([PACKAGE_NAME]) if name != me
+    name
+    for _, name, _ in pkgutil.iter_modules([PACKAGE_NAME])
+    if name != this_module_name
 ]
 
 # module to cls dict populated when a TranslationService is imported
@@ -33,6 +35,7 @@ class TranslationHandler:
         if service_module in TranslationService_Modules:
             service_module = f"{PACKAGE_NAME}.{service_module}"
             __import__(service_module)
+
             service_cls = TranslationService_Classes[service_module]
             self.service = service_cls(to_lang)
             log(f"Use {service_cls.__name__} for translating into {to_lang}")

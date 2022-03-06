@@ -23,7 +23,7 @@ from windows.theme import TH
 PYTHON_REQUIREMENTS = ">=3.8"
 TRACKERS_FILENAME = "Trackers"
 LOAD_AS_JSON = True
-TRANSLATION_MODULE = "deepl"
+TRANSLATION_MODULE = "deepl"  # a module in the translation package (except translate)
 
 
 class Splash:
