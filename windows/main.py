@@ -79,7 +79,7 @@ class GreyWindow:
 
 
 class MainWindow(ShowInTaskbarWindow):
-    def __init__(self, trackers_filename, load_as_json, splash):
+    def __init__(self, trackers_filename, translation_module, load_as_json, splash):
         self.log = None
         col_kwargs = dict(
             p=0, expand_x=True, expand_y=True, background_color=TH.widget_event_bg_color
@@ -124,7 +124,11 @@ class MainWindow(ShowInTaskbarWindow):
         super().__init__(*args, **kwargs)
 
         self[Events.recenter].bind("<Double-Button-1>", "")
-        self.trackers = TrackersHandler(trackers_filename, load_as_json)
+        self.trackers = TrackersHandler(
+            filename=trackers_filename,
+            translation_module=translation_module,
+            load_as_json=load_as_json,
+        )
         self.widgets = TrackerWidgetsHandler(self, self.trackers, splash)
         self.set_event_to_action()
 

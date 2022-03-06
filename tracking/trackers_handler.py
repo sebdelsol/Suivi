@@ -1,20 +1,18 @@
 from tools.save_handler import SaveHandler
-from tools.translate import TranslationHandler
+from translation.translate import TranslationHandler
 from windows.localization import TXT
 
 from .couriers_handler import CouriersHandler
 from .tracker import Tracker, TrackerState
 
-JSON_EXT = ".json"
-PICKLE_EXT = ".trck"
-TRANSLATION_SERVICE = "DeepL"
-
 
 class TrackersHandler:
-    def __init__(self, filename, load_as_json):
+    def __init__(self, filename=None, translation_module="deepl", load_as_json=True):
         self.save_handler = SaveHandler(filename, "trackers", load_as_json)
         self.couriers_handler = CouriersHandler()
-        self.translation_handler = TranslationHandler(TXT.locale_country_code, TRANSLATION_SERVICE)
+        self.translation_handler = TranslationHandler(
+            TXT.locale_country_code, translation_module
+        )
 
         trackers = []
         if loaded_trackers := self.save_handler.load():

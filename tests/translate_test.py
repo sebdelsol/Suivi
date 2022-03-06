@@ -3,10 +3,9 @@ from os import path, sys
 if __name__ == "__main__":
     sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 
+    from translation.translate import TranslationHandler, TranslationService_Modules
     from windows.localization import TXT
     from windows.log import log, logger
-
-    from tools.translate import TranslationHandler, TranslationService_Classes
 
     logger.print_only()
     logger.close()
@@ -18,11 +17,12 @@ if __name__ == "__main__":
         "Die Rakete, die Ihre Sendung transportiert, ist erneut auf dem Mond abgestürzt",
     )
     TO_LANG = TXT.locale_country_code
-    for service_name in TranslationService_Classes:
-        print(service_name.rjust(20, "-"))
-        translation_handler = TranslationHandler(TO_LANG, service_name)
+
+    for service_module in TranslationService_Modules:
+        log(service_module.rjust(20, "-"))
+        translation_handler = TranslationHandler(TO_LANG, service_module)
         for sentence in sentences:
-            print(f"> '{sentence}'", end="")
+            log(f"> '{sentence}'", end="")
             translation = translation_handler.get(sentence)
-            print(f" --> '{translation}'")
+            log(f" --> '{translation}'")
         translation_handler.save()

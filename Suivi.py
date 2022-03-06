@@ -23,6 +23,7 @@ from windows.theme import TH
 PYTHON_REQUIREMENTS = ">=3.8"
 TRACKERS_FILENAME = "Trackers"
 LOAD_AS_JSON = True
+TRANSLATION_MODULE = "deepl"
 
 
 class Splash:
@@ -71,7 +72,9 @@ if __name__ == "__main__":
             from windows.log import logger
             from windows.main import MainWindow
 
-            main_window = MainWindow(TRACKERS_FILENAME, LOAD_AS_JSON, splash)
+            main_window = MainWindow(
+                TRACKERS_FILENAME, TRANSLATION_MODULE, LOAD_AS_JSON, splash
+            )
             main_window.addlog(logger)
 
         main_window.loop()
