@@ -11,8 +11,9 @@ PICKLE_EXT = ".trck"
 
 
 class SaveHandler:
-    def __init__(self, filename, load_as_json):
+    def __init__(self, filename, obj_name, load_as_json):
         self.filename = filename
+        self.obj_name = obj_name
         self.load = self.load_as_json if load_as_json else self.load_as_binary
 
     @staticmethod
@@ -39,7 +40,7 @@ class SaveHandler:
         if os.path.exists(filename):
             with open(filename, mode, encoding=encoding) as f:
                 obj = load(f)
-            log(f'trackers LOADED from "{filename}"')
+            log(f'{self.obj_name} LOADED from "{filename}"')
             return obj
         return None
 
@@ -47,4 +48,4 @@ class SaveHandler:
         filename = self.filename + ext
         with open(filename, mode, encoding=encoding) as f:
             save(obj, f)
-        log(f'trackers SAVED to "{filename}"')
+        log(f'{self.obj_name} SAVED to "{filename}"')

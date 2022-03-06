@@ -1,3 +1,4 @@
+git+https://github.com/ultrafunkamsterdam/googletranslate>=2.2
 google-cloud-translate>=3.6.1
 langid>=1.1.6
 lxml>=4.6.3
