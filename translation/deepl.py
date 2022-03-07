@@ -8,7 +8,7 @@ class DeepL(TranslationService):
     url = "https://api-free.deepl.com/v2/translate"
 
     def __init__(self, to_lang):
-        self.params = dict(source_lang=None, target_lang=to_lang, auth_key=DEEPL_KEY)
+        self.params = dict(target_lang=to_lang, auth_key=DEEPL_KEY)
         super().__init__(to_lang)
 
     def translate(self, txt):

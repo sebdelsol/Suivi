@@ -3,7 +3,7 @@ import pkgutil
 from tools.save_handler import SaveHandler
 from windows.log import log
 
-# list of translation module that implement TranslationService
+# list of translation modules that should implement TranslationService
 Package_Name, This_Module_Name = __name__.split(".")
 
 TranslationService_Modules = sorted(
@@ -12,7 +12,7 @@ TranslationService_Modules = sorted(
     if name != This_Module_Name
 )
 
-# lookup TranslationService classes by module name
+# lookup TranslationService classes by module names, automatically populated
 TranslationService_Classes = {}
 
 
@@ -33,17 +33,24 @@ class TranslationService:
 
 class TranslationHandler:
     def __init__(self, to_lang, service_module, do_load=True):
-        log(f"Translation services: {' . '.join(TranslationService_Modules)}")
+        log(f"Available translation services: {' . '.join(TranslationService_Modules)}")
+
         if service_module in TranslationService_Modules:
+            # import the relevant module
             service_module = f"{Package_Name}.{service_module}"
             __import__(service_module)
 
+            # instantiate its TranslationService class
             service_cls = TranslationService_Classes[service_module]
             self.service = service_cls(to_lang)
             log(
-                f"Use {service_module}.{service_cls.__name__} for translating into {to_lang}"
+                (
+                    f"Use {service_module}.{service_cls.__name__} "
+                    f"for translating into {to_lang}"
+                )
             )
 
+            # load translation dict
             filename = f"translation_{service_cls.__name__}_{to_lang}"
             self.save_handler = SaveHandler(filename, "translation", load_as_json=True)
             self.translated = {}
@@ -52,7 +59,10 @@ class TranslationHandler:
 
         else:
             raise ValueError(
-                f"translation service module '{service_module}' should be in {TranslationService_Modules}"
+                (
+                    f"translation service module '{service_module}' "
+                    f"should be in {TranslationService_Modules}"
+                )
             )
 
     def save(self):
