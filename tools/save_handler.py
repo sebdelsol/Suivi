@@ -7,7 +7,7 @@ from windows.log import log
 from .json_date import json_decode_datetime, json_encode_datetime
 
 JSON_EXT = ".json"
-PICKLE_EXT = ".trck"
+PICKLE_EXT = ".pickle"
 
 
 class SaveHandler:
