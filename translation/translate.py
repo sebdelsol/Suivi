@@ -50,7 +50,7 @@ class TranslationHandler:
                 )
             )
 
-            # load translation dict
+            # load dict of all translated sentences
             filename = f"translation_{service_cls.__name__}_{to_lang}"
             self.save_handler = SaveHandler(filename, load_as_json=True)
             self.translated = {}
@@ -66,6 +66,7 @@ class TranslationHandler:
             )
 
     def save(self):
+        # save dict of all translated sentences
         self.save_handler.save_as_json(self.translated)
 
     def get(self, txt):
