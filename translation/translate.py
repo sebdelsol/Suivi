@@ -41,8 +41,8 @@ class TranslationHandler:
             log(f"Use {service_cls.__name__} for translating into {to_lang}")
 
             filename = f"translation_{service_cls.__name__}_{to_lang}"
-            self.save_handler = SaveHandler(filename, "translation", load_as_json=True)
-            self.translated = self.save_handler.load() or {}
+            self.save_handler = SaveHandler(filename, "translation")
+            self.translated = self.save_handler.load_as_json() or {}
 
         else:
             raise ValueError(
@@ -50,7 +50,7 @@ class TranslationHandler:
             )
 
     def save(self):
-        self.save_handler.save(self.translated, save_only_json=True)
+        self.save_handler.save_as_json(self.translated)
 
     def get(self, txt):
         if txt:

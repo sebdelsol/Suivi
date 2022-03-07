@@ -8,14 +8,19 @@ from .tracker import Tracker, TrackerState
 
 class TrackersHandler:
     def __init__(self, filename=None, translation_module="deepl", load_as_json=True):
-        self.save_handler = SaveHandler(filename, "trackers", load_as_json)
         self.couriers_handler = CouriersHandler()
         self.translation_handler = TranslationHandler(
             TXT.locale_country_code, translation_module
         )
 
         trackers = []
-        if loaded_trackers := self.save_handler.load():
+        self.save_handler = SaveHandler(filename, "trackers")
+        load = (
+            self.save_handler.load_as_json
+            if load_as_json
+            else self.save_handler.load_as_binary
+        )
+        if loaded_trackers := load():
             for kwargs in loaded_trackers:
                 trackers.append(
                     Tracker(self.couriers_handler, self.translation_handler, **kwargs)
@@ -26,7 +31,8 @@ class TrackersHandler:
     def save(self):
         trackers = self.sort(self.get_not_definitly_deleted())
         to_save_trackers = [tracker.get_to_save() for tracker in trackers]
-        self.save_handler.save(to_save_trackers)
+        self.save_handler.save_as_json(to_save_trackers)
+        self.save_handler.save_as_binary(to_save_trackers)
 
     @staticmethod
     def sort(objs, get_tracker=lambda obj: obj):
