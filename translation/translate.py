@@ -12,13 +12,13 @@ TranslationService_Modules = sorted(
     if name != This_Module_Name
 )
 
-# module to cls dict populated when a TranslationService is imported
+# lookup TranslationService classes by module name
 TranslationService_Classes = {}
 
 
 class TranslationService:
     def __init_subclass__(cls):
-        """register the children class"""
+        """populate TranslationService_Classes when a module with derived TranslationService is imported"""
         TranslationService_Classes[cls.__module__] = cls
 
     def __init__(self, to_lang):
