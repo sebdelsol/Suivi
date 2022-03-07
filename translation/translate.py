@@ -3,7 +3,7 @@ import pkgutil
 from tools.save_handler import SaveHandler
 from windows.log import log
 
-# list of translation module (exclude translate* modules)
+# list of translation module that implement TranslationService
 Package_Name, This_Module_Name = __name__.split(".")
 
 TranslationService_Modules = sorted(
