@@ -116,6 +116,8 @@ class ChromeWithPrefsAndTools(webdriver.Chrome):
 class Options(webdriver.ChromeOptions):
     default_options = (
         "--no-service-autorun",
+        "--no-first-run",
+        "--password-store=basic",
         "--start-maximized",
         # "--excludeSwitches --enable-logging",
         # "--excludeSwitches --enable-automation",
