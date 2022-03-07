@@ -43,10 +43,11 @@ class TranslationHandler:
             # instantiate its TranslationService class
             service_cls = TranslationService_Classes[service_module]
             self.service = service_cls(to_lang)
+
             log(
                 (
-                    f"Use {service_module}.{service_cls.__name__} "
-                    f"for translating into {to_lang}"
+                    f"Import & use {service_module}.{service_cls.__name__} "
+                    f"for translating into {to_lang.upper()}"
                 )
             )
 
