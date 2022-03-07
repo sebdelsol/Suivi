@@ -1,7 +1,11 @@
-from os import path, sys
+import sys
+from pathlib import Path
 
-sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
+# import 2 level up
+sys.path.append(str(Path(__file__).parents[1]))
 
+
+# pylint: disable=wrong-import-position
 from translation.translate import TranslationHandler, TranslationService_Modules
 from windows.localization import TXT
 from windows.log import log, logger
@@ -17,7 +21,7 @@ sentences = (
 )
 
 TO_LANG = TXT.locale_country_code
-LOAD_AND_SAVE = True
+LOAD_AND_SAVE = False
 
 for service_module in TranslationService_Modules:
     log(service_module.rjust(20, "-"))
@@ -26,9 +30,8 @@ for service_module in TranslationService_Modules:
     )
 
     for sentence in sentences:
-        log(f"> '{sentence}'", end="")
         translation = translation_handler.get(sentence)
-        log(f" --> '{translation}'")
+        log(f"> '{sentence}' --> '{translation}'")
 
     if LOAD_AND_SAVE:
         translation_handler.save()

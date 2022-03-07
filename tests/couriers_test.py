@@ -22,20 +22,21 @@ else:
 
 
 if __name__ == "__main__":
-    from os import path, sys
+    import sys
+    from pathlib import Path
 
-    sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
+    # import 2 level up
+    sys.path.append(str(Path(__file__).parents[1]))
 
     import locale
-
-    from windows.localization import TXT
-    from windows.log import log, logger
 
     # prevent drivers to be created in subprocess
     from tracking.couriers_handler import CouriersHandler
 
     # list of tuples (courier_name, idship)
     from tracking.secrets import Couriers_to_test
+    from windows.localization import TXT
+    from windows.log import log, logger
 
     locale.setlocale(locale.LC_TIME, TXT.locale_setting)  # date in correct language
     logger.print_only()
