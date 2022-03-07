@@ -7,11 +7,11 @@ from windows.log import log
 PACKAGE_NAME = "translation"
 this_module_name = __name__.split(".")[1]
 
-TranslationService_Modules = [
+TranslationService_Modules = sorted(
     name
     for _, name, _ in pkgutil.iter_modules([PACKAGE_NAME])
     if name != this_module_name
-]
+)
 
 # module to cls dict populated when a TranslationService is imported
 TranslationService_Classes = {}
@@ -31,7 +31,7 @@ class TranslationService:
 
 class TranslationHandler:
     def __init__(self, to_lang, service_module, do_load=True):
-        log(f"Translation services: {' . '.join(sorted(TranslationService_Modules))}")
+        log(f"Translation services: {' . '.join(TranslationService_Modules)}")
         if service_module in TranslationService_Modules:
             service_module = f"{PACKAGE_NAME}.{service_module}"
             __import__(service_module)
@@ -42,11 +42,12 @@ class TranslationHandler:
 
             filename = f"translation_{service_cls.__name__}_{to_lang}"
             self.save_handler = SaveHandler(filename, "translation", load_as_json=True)
-            self.translated = (do_load and self.save_handler.load()) or {}
+            if do_load:
+                self.translated = self.save_handler.load() or {}
 
         else:
             raise ValueError(
-                f"translation service module {service_module} doesn't exists"
+                f"translation service module '{service_module}' should be in {TranslationService_Modules}"
             )
 
     def save(self):
