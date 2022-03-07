@@ -30,7 +30,7 @@ class TranslationService:
 
 
 class TranslationHandler:
-    def __init__(self, to_lang, service_module):
+    def __init__(self, to_lang, service_module, do_load=True):
         log(f"Translation services: {' . '.join(sorted(TranslationService_Modules))}")
         if service_module in TranslationService_Modules:
             service_module = f"{PACKAGE_NAME}.{service_module}"
@@ -41,8 +41,8 @@ class TranslationHandler:
             log(f"Use {service_cls.__name__} for translating into {to_lang}")
 
             filename = f"translation_{service_cls.__name__}_{to_lang}"
-            self.save_handler = SaveHandler(filename, "translation")
-            self.translated = self.save_handler.load_as_json() or {}
+            self.save_handler = SaveHandler(filename, "translation", load_as_json=True)
+            self.translated = (do_load and self.save_handler.load()) or {}
 
         else:
             raise ValueError(
