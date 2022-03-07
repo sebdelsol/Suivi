@@ -11,9 +11,10 @@ PICKLE_EXT = ".trck"
 
 
 class SaveHandler:
-    def __init__(self, filename, obj_name):
+    def __init__(self, filename, obj_name, load_as_json=True):
         self.filename = filename
         self.obj_name = obj_name
+        self.load = self.load_as_json if load_as_json else self.load_as_binary
 
     @staticmethod
     def json_load(f):

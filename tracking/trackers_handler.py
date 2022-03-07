@@ -14,13 +14,8 @@ class TrackersHandler:
         )
 
         trackers = []
-        self.save_handler = SaveHandler(filename, "trackers")
-        load = (
-            self.save_handler.load_as_json
-            if load_as_json
-            else self.save_handler.load_as_binary
-        )
-        if loaded_trackers := load():
+        self.save_handler = SaveHandler(filename, "trackers", load_as_json)
+        if loaded_trackers := self.save_handler.load():
             for kwargs in loaded_trackers:
                 trackers.append(
                     Tracker(self.couriers_handler, self.translation_handler, **kwargs)

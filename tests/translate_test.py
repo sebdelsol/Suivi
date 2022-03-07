@@ -17,14 +17,18 @@ sentences = (
 )
 
 TO_LANG = TXT.locale_country_code
+LOAD_AND_SAVE = True
 
 for service_module in TranslationService_Modules:
     log(service_module.rjust(20, "-"))
-    translation_handler = TranslationHandler(TO_LANG, service_module)
+    translation_handler = TranslationHandler(
+        TO_LANG, service_module, do_load=LOAD_AND_SAVE
+    )
 
     for sentence in sentences:
         log(f"> '{sentence}'", end="")
         translation = translation_handler.get(sentence)
         log(f" --> '{translation}'")
 
-    translation_handler.save()
+    if LOAD_AND_SAVE:
+        translation_handler.save()
