@@ -4,13 +4,12 @@ from tools.save_handler import SaveHandler
 from windows.log import log
 
 # list of translation module (exclude translate* modules)
-PACKAGE_NAME = "translation"
-this_module_name = __name__.split(".")[1]
+Package_Name, This_Module_Name = __name__.split(".")
 
 TranslationService_Modules = sorted(
     name
-    for _, name, _ in pkgutil.iter_modules([PACKAGE_NAME])
-    if name != this_module_name
+    for _, name, _ in pkgutil.iter_modules([Package_Name])
+    if name != This_Module_Name
 )
 
 # module to cls dict populated when a TranslationService is imported
@@ -33,15 +32,18 @@ class TranslationHandler:
     def __init__(self, to_lang, service_module, do_load=True):
         log(f"Translation services: {' . '.join(TranslationService_Modules)}")
         if service_module in TranslationService_Modules:
-            service_module = f"{PACKAGE_NAME}.{service_module}"
+            service_module = f"{Package_Name}.{service_module}"
             __import__(service_module)
 
             service_cls = TranslationService_Classes[service_module]
             self.service = service_cls(to_lang)
-            log(f"Use {service_cls.__name__} for translating into {to_lang}")
+            log(
+                f"Use {service_module}.{service_cls.__name__} for translating into {to_lang}"
+            )
 
             filename = f"translation_{service_cls.__name__}_{to_lang}"
             self.save_handler = SaveHandler(filename, "translation", load_as_json=True)
+            self.translated = {}
             if do_load:
                 self.translated = self.save_handler.load() or {}
 
