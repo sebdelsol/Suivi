@@ -21,7 +21,7 @@ sentences = (
 )
 
 TO_LANG = TXT.locale_country_code
-LOAD_AND_SAVE = False
+LOAD_AND_SAVE = True
 
 for service_module in TranslationService_Modules:
     log(service_module.rjust(20, "-"))

@@ -18,7 +18,10 @@ TranslationService_Classes = {}
 
 class TranslationService:
     def __init_subclass__(cls):
-        """populate TranslationService_Classes when a module with derived TranslationService is imported"""
+        """
+        populate TranslationService_Classes
+        when a module with a derived TranslationService is imported
+        """
         TranslationService_Classes[cls.__module__] = cls
 
     def __init__(self, to_lang):
