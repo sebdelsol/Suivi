@@ -44,17 +44,11 @@ class TranslationHandler:
 
             # instantiate its TranslationService class
             service_cls = TranslationService_Classes[service_module]
+            service_name = service_cls.__name__
             self.service = service_cls(to_lang)
 
-            log(
-                (
-                    f"Import & use {service_module}.{service_cls.__name__} "
-                    f"for translating into {to_lang.upper()}"
-                )
-            )
-
             # load dict of all translated sentences
-            filename = f"translation_{service_cls.__name__}_{to_lang}"
+            filename = f"translation_{service_name}_{to_lang}"
             self.save_handler = SaveHandler(filename, load_as_json=True)
 
             if do_load:
@@ -63,11 +57,18 @@ class TranslationHandler:
             else:
                 self.translated = {}
 
+            log(
+                (
+                    f"Import & use {service_module}.{service_name} "
+                    f"for translating into {to_lang.upper()}"
+                )
+            )
+
         else:
             raise ValueError(
                 (
                     f"translation service module '{service_module}' "
-                    f"should be in {TranslationService_Modules}"
+                    f"not found in {TranslationService_Modules}"
                 )
             )
 
