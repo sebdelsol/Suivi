@@ -17,6 +17,6 @@ class MyMemory(TranslationService):
         if r.status_code == 200:
             rjson = r.json()
             if rjson["responseStatus"] == 200:
-                if translation:= rjson["responseData"].get("translatedText", txt):
+                if translation := rjson["responseData"].get("translatedText", txt):
                     return html.unescape(translation)
         return None
