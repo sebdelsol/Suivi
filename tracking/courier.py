@@ -1,5 +1,6 @@
 import re
 import webbrowser
+from abc import ABC, abstractmethod
 
 from windows.localization import TXT
 from windows.log import log
@@ -24,12 +25,15 @@ def get_simple_validation(_min, _max=None):
     )
 
 
-class Courier:
+class Courier(ABC):
     driversToShow = DriversToShow()
     driversToScrape = DriversToScrape()
     r_arrow = "→"
     fromto = None
     idship_validation, idship_validation_msg = get_simple_validation(8, 20)
+    name = None
+
+    error_words = ("error", "erreur")
 
     delivered_searchs = (
         r"(?<!be )delivered",
@@ -41,8 +45,7 @@ class Courier:
         r"est disponible dans",
         r"consegnato",
     )
-
-    error_words = ("error", "erreur")
+    additional_delivered_searchs = ()
 
     subs = (
         (r"[\(\[].*?[\)\]]", ""),  # remove () and []
@@ -52,10 +55,7 @@ class Courier:
         (r"^\W", ""),  # remove leading non alphanumeric char
         (r"(\w):(\w)", r"\1: \2"),  # add space after ':'
     )
-
     additional_subs = ()
-
-    name = None
 
     def __init_subclass__(cls):
         """register subclasses"""
@@ -70,12 +70,12 @@ class Courier:
         # compile re
         self.idship_validation = re.compile(self.idship_validation).match
         self.delivered_searchs = [
-            re.compile(pattern).search for pattern in self.delivered_searchs
+            re.compile(pattern).search
+            for pattern in self.additional_delivered_searchs + self.delivered_searchs
         ]
-
-        self.subs = self.additional_subs + self.subs
         self.subs = [
-            (re.compile(pattern).sub, replace) for (pattern, replace) in self.subs
+            (re.compile(pattern).sub, replace)
+            for (pattern, replace) in self.additional_subs + self.subs
         ]
 
     def log(self, *args, **kwargs):
@@ -90,14 +90,17 @@ class Courier:
         if url := self.get_url_for_browser(idship):
             webbrowser.open(url)
 
+    @abstractmethod
     def get_url_for_browser(self, idship):
-        raise NotImplementedError("get_url_for_browser method is missing")
+        pass
 
+    @abstractmethod
     def parse_content(self, content):
-        raise NotImplementedError("parse_content method is missing")
+        pass
 
+    @abstractmethod
     def get_content(self, idship):
-        raise NotImplementedError("parse_content method is missing")
+        pass
 
     @staticmethod
     def get_txt(elt, xpath):
@@ -119,28 +122,8 @@ class Courier:
         except IndexError:
             return None
 
-    def update(self, idship):
-        if not self.name:
-            log(f"courier {type(self).__name__} miss a name", error=True)
-            return None
-
-        if not self.validate_idship(idship):
-            self.log(
-                f"invalid tracking number {idship}, ({self.idship_validation_msg})",
-                error=True,
-            )
-            return None
-
-        self.log(f"GET - {idship}")
-
-        events = []
-        infos = {}
-        content = self.get_content(idship)
-
-        if ok := content is not None:
-            self.log(f"PARSE - {idship}")
-            if result := self.parse_content(content):
-                events, infos = result
+    def update_events(self, events):
+        delivered = False
 
         # remove duplicate events while keeping insertion order, won't work with a set
         events = {tuple(evt.items()): evt for evt in events}.values()
@@ -148,8 +131,6 @@ class Courier:
         # sort by date
         events = sorted(events, key=lambda evt: evt["date"], reverse=True)
 
-        # add couriers and check for delivery & errors events
-        delivered = infos.get("delivered", False)
         for event in events:
             event["courier"] = self.name
             event["status"] = event.get("status") or ""
@@ -172,23 +153,58 @@ class Courier:
             event["warn"] = event.get("warn", False) or any(
                 error_word in whole_txt.lower() for error_word in self.error_words
             )
+        return events, delivered
+
+    @staticmethod
+    def update_status(infos, ok, events, delivered):
+        delivered = infos.get("delivered", False) or delivered
 
         if not (events or infos.get("status_label")):
             ok = False
 
-        status_date = infos.get("status_date", events[0]["date"] if events else None)
-        status_label = infos.get(
-            "status_label", events[0]["label"] if events else TXT.status_error
-        )
-        status_warn = infos.get("status_warn", not events)
+        if events:
+            last_event = events[0]
+            default_status_date = last_event["date"]
+            default_status_label = last_event["label"]
+            default_status_warn = last_event.get("warn", False)
 
-        status = dict(
+        else:
+            default_status_date = None
+            default_status_label = TXT.status_error
+            default_status_warn = True
+
+        status_date = infos.get("status_date", default_status_date)
+        status_label = infos.get("status_label", default_status_label)
+        status_warn = infos.get("status_warn", default_status_warn)
+
+        return ok, dict(
             date=status_date,
             ok_date=status_date if ok else None,
             label=get_sentences(status_label),
             warn=status_warn,
             delivered=delivered,
         )
+
+    def update(self, idship):
+        if not self.validate_idship(idship):
+            self.log(
+                f"invalid tracking number {idship}, ({self.idship_validation_msg})",
+                error=True,
+            )
+            return None
+
+        events = []
+        infos = {}
+        self.log(f"GET - {idship}")
+        content = self.get_content(idship)
+
+        if ok := content is not None:
+            self.log(f"PARSE - {idship}")
+            if result := self.parse_content(content):
+                events, infos = result
+
+        events, delivered = self.update_events(events)
+        ok, status = self.update_status(infos, ok, events, delivered)
 
         return dict(
             ok=ok,
