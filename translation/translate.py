@@ -56,9 +56,12 @@ class TranslationHandler:
             # load dict of all translated sentences
             filename = f"translation_{service_cls.__name__}_{to_lang}"
             self.save_handler = SaveHandler(filename, load_as_json=True)
-            self.translated = {}
+
             if do_load:
                 self.translated = self.save_handler.load() or {}
+
+            else:
+                self.translated = {}
 
         else:
             raise ValueError(
