@@ -1,4 +1,5 @@
 import pkgutil
+from abc import ABC, abstractmethod
 
 from tools.save_handler import SaveHandler
 from windows.log import log
@@ -16,7 +17,7 @@ TranslationService_Modules = sorted(
 TranslationService_Classes = {}
 
 
-class TranslationService:
+class TranslationService(ABC):
     def __init_subclass__(cls):
         """
         populate TranslationService_Classes
@@ -27,8 +28,9 @@ class TranslationService:
     def __init__(self, to_lang):
         self.to_lang = to_lang
 
+    @abstractmethod
     def translate(self, txt):
-        raise NotImplementedError("translate method is missing")
+        pass
 
 
 class TranslationHandler:
@@ -78,5 +80,9 @@ class TranslationHandler:
             if translation := self.service.translate(txt):
                 self.translated[txt] = translation
                 return translation
-
+        if txt:
+            log(
+                f"Error translating '{txt}' with {type(self.service).__name__}",
+                error=True,
+            )
         return txt
