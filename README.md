@@ -29,8 +29,8 @@
 • [_Google Translate_](https://github.com/ultrafunkamsterdam/googletranslate) 
 • [_MyMemory_](https://mymemory.translated.net/doc/spec.php)
 
-### Sloc ?
- [here it is](https://api.codetabs.com/v1/loc/?github=sebdelsol/suivi)
+### _Sloc_
+ [here](https://api.codetabs.com/v1/loc/?github=sebdelsol/suivi)
 
 [^1]: [What does Suivi mean ?](https://www.linguee.com/english-french/search?source=auto&query=suivi)
 [^2]: [Add courier](couriers)
