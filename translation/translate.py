@@ -35,7 +35,8 @@ class TranslationService(ABC):
 
 class TranslationHandler:
     def __init__(self, to_lang, service_module, do_load=True):
-        log(f"Available translation services: {' . '.join(TranslationService_Modules)}")
+        available = " . ".join(TranslationService_Modules)
+        log(f"Available translation services: {available}")
 
         if service_module in TranslationService_Modules:
             # import the relevant module
@@ -44,33 +45,31 @@ class TranslationHandler:
 
             # instantiate its TranslationService class
             service_cls = TranslationService_Classes[service_module]
-            service_name = service_cls.__name__
+            self.service_name = service_cls.__name__
             self.service = service_cls(to_lang)
 
-            # load dict of all translated sentences
-            filename = f"translation_{service_name}_{to_lang}"
-            self.save_handler = SaveHandler(filename, load_as_json=True)
-
-            if do_load:
-                self.translated = self.save_handler.load() or {}
-
-            else:
-                self.translated = {}
+            filename = f"translation_{self.service_name}_{to_lang}"
+            self.translated = self.load(filename, do_load) or {}
 
             log(
                 (
-                    f"Import & use {service_module}.{service_name} "
-                    f"for translating into {to_lang.upper()}"
+                    f"Import & use {service_module}.{self.service_name}"
+                    f" for translating into {to_lang.upper()}"
                 )
             )
 
         else:
             raise ValueError(
                 (
-                    f"translation service module '{service_module}' "
-                    f"not found in {TranslationService_Modules}"
+                    f"translation service module '{service_module}'"
+                    f" not in {TranslationService_Modules}"
                 )
             )
+
+    def load(self, filename, do_load):
+        # load dict of all translated sentences
+        self.save_handler = SaveHandler(filename, load_as_json=True)
+        return self.save_handler.load() if do_load else None
 
     def save(self):
         # save dict of all translated sentences
@@ -84,9 +83,10 @@ class TranslationHandler:
             if translation := self.service.translate(txt):
                 self.translated[txt] = translation
                 return translation
-        if txt:
+
             log(
-                f"Error translating '{txt}' with {type(self.service).__name__}",
+                f"Error translating '{txt}' with {self.service_name}",
                 error=True,
             )
+
         return txt

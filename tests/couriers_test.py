@@ -25,7 +25,7 @@ if __name__ == "__main__":
     import sys
     from pathlib import Path
 
-    # import 2 level up
+    # import 2 levels up
     sys.path.append(str(Path(__file__).parents[1]))
 
     import locale
