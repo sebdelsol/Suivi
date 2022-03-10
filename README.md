@@ -29,8 +29,9 @@
 • [_Google Translate_](https://github.com/ultrafunkamsterdam/googletranslate) 
 • [_MyMemory_](https://mymemory.translated.net/doc/spec.php)
 
-### _Sloc_ • [here](https://api.codetabs.com/v1/loc/?github=sebdelsol/suivi)
+### _Sloc_[^4]
 
 [^1]: [What does Suivi mean ?](https://www.linguee.com/english-french/search?source=auto&query=suivi)
 [^2]: [Add courier](couriers)
 [^3]: [UI localization](https://github.com/sebdelsol/Suivi/blob/a3363a8791f45714099bf5765edc3ba2b565205d/windows/localization.py)
+[^4]: [Sloc](https://api.codetabs.com/v1/loc/?github=sebdelsol/suivi)
