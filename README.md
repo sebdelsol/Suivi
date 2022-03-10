@@ -1,4 +1,4 @@
-### _Suivi is a tracking desktop App_[^1] • Suivi est une App pour suivre ses colis.
+### _Suivi is a tracking desktop App_[^1] • Suivi est une App pour suivre ses colis
 [<img src="https://i.imgur.com/VOngj2e.jpeg" width="500">](https://i.imgur.com/v6LZNJ3.jpeg)
 
 ### _Couriers_[^2] • Transporteurs.
@@ -23,13 +23,13 @@
 • [_UPS_](https://www.ups.com/)
 • [_USPS_](https://www.usps.com/)
 
-### _Translation_[^3] • Traduction.
+### _Translation_[^3] • Traduction
 [_DeepL_](https://www.deepl.com/en/docs-api/) 
 • [_Google Cloud_](https://cloud.google.com/translate) 
 • [_Google Translate_](https://github.com/ultrafunkamsterdam/googletranslate) 
 • [_MyMemory_](https://mymemory.translated.net/doc/spec.php)
 
-### _Sloc_ • [here](https://api.codetabs.com/v1/loc/?github=sebdelsol/suivi).
+### _Sloc_ • [here](https://api.codetabs.com/v1/loc/?github=sebdelsol/suivi)
 
 [^1]: [What does Suivi mean ?](https://www.linguee.com/english-french/search?source=auto&query=suivi)
 [^2]: [Add courier](couriers)
