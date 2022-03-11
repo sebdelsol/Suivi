@@ -18,10 +18,11 @@ sentences = (
     "il pacco è definitivamente perso",
     "Your letter has been shredded by a dog",
     "Die Rakete, die Ihre Sendung transportiert, ist erneut auf dem Mond abgestürzt",
+    "Votre colis a été remis en liberté",
 )
 
 TO_LANG = TXT.locale_country_code
-DO_LOAD = True
+DO_LOAD = False
 
 for service_module in TranslationService_Modules:
     log(service_module.rjust(20, "-"))

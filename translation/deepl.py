@@ -1,7 +1,7 @@
 import requests
 from tracking.secrets import DEEPL_KEY
 
-from .translate import TranslationService
+from .translate import SameLanguageError, TranslationService
 
 
 class DeepL(TranslationService):
@@ -17,5 +17,8 @@ class DeepL(TranslationService):
         if r.status_code == 200:
             if translations := r.json().get("translations"):
                 if len(translations) > 0:
-                    return translations[0]["text"]
+                    translation = translations[0]
+                    if translation["detected_source_language"].lower() == self.to_lang:
+                        raise SameLanguageError
+                    return translation["text"]
         return None

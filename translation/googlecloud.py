@@ -1,23 +1,25 @@
 import os
 
-from google.cloud import translate as google_translate
-from tracking.secrets import GOOGLE_CREDENTIAL_PATH, GOOGLE_PROJECT_ID
+from google.cloud import translate_v2 as translate
+from tracking.secrets import GOOGLE_CREDENTIAL_PATH
 
-from .translate import TranslationService
+from .translate import SameLanguageError, TranslationService
 
 
 class GoogleCloud(TranslationService):
     def __init__(self, to_lang):
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = GOOGLE_CREDENTIAL_PATH
-        self.google_client = google_translate.TranslationServiceClient()
+        self.client = translate.Client()
         self.kwargs = dict(
-            target_language_code=to_lang,
-            mime_type="text/plain",
-            parent=f"projects/{GOOGLE_PROJECT_ID}",
+            target_language=to_lang,
+            format_="text",
         )
         super().__init__(to_lang)
 
     def translate(self, txt):
-        self.kwargs["contents"] = [txt]
-        response = self.google_client.translate_text(**self.kwargs)
-        return response.translations[0].translated_text
+        result = self.client.translate(txt, **self.kwargs)
+
+        if result["detectedSourceLanguage"] == self.to_lang:
+            raise SameLanguageError
+
+        return result["translatedText"]

@@ -33,6 +33,10 @@ class TranslationService(ABC):
         pass
 
 
+class SameLanguageError(Exception):
+    pass
+
+
 class TranslationHandler:
     def __init__(self, to_lang, service_module, do_load=True):
         available = " . ".join(TranslationService_Modules)
@@ -80,9 +84,13 @@ class TranslationHandler:
             if translation := self.translated.get(txt):
                 return translation
 
-            if translation := self.service.translate(txt):
-                self.translated[txt] = translation
-                return translation
+            try:
+                if translation := self.service.translate(txt):
+                    self.translated[txt] = translation
+                    return translation
+
+            except SameLanguageError:
+                return txt
 
             log(
                 f"Error translating '{txt}' with {self.service_name}",
