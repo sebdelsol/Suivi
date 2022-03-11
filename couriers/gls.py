@@ -51,7 +51,7 @@ class GLS(Courier):
                         )
 
                     if len(countries) > 0:
-                        fromto = f"{countries[-1]} {Courier.r_arrow}"
+                        fromto = f"{countries[-1]}{Courier.r_arrow}"
                         if len(countries) > 1:
                             fromto += countries[0]
 
