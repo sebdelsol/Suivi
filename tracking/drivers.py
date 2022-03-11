@@ -9,6 +9,7 @@ import time
 from functools import reduce
 from socket import error as SocketError
 
+import lxml.html
 import psutil
 import undetected_chromedriver as webdriver
 from selenium.common.exceptions import (
@@ -56,6 +57,7 @@ class ChromeWithPrefsAndTools(webdriver.Chrome):
         # remove the user_data_dir when quitting
         self.keep_user_data_dir = False
         self._wait_elt_timeout = 0
+        self._driver_wait = None
 
     @staticmethod
     def _handle_prefs(options):
@@ -89,17 +91,46 @@ class ChromeWithPrefsAndTools(webdriver.Chrome):
             # remove the experimental_options to avoid an error
             del options._experimental_options["prefs"]
 
-    # wait tools
+    # find & wait tools
     def set_timeouts(self, page_load_timeout, wait_elt_timeout):
         self.set_page_load_timeout(page_load_timeout)
         self._wait_elt_timeout = wait_elt_timeout
+        self._driver_wait = WebDriverWait(self, wait_elt_timeout)
 
     def wait_until(self, until, timeout=None):
-        return WebDriverWait(self, timeout or self._wait_elt_timeout).until(until)
+        if timeout and timeout != self._wait_elt_timeout:
+            return WebDriverWait(self, timeout).until(until)
 
-    def wait_for(self, xpath, expected_condition, timeout=None):
-        locator = (By.XPATH, xpath)
-        return self.wait_until(expected_condition(locator), timeout)
+        return self._driver_wait.until(until)
+
+    def wait_for(self, xpath, expected_condition, timeout=None, safe=False):
+        try:
+            locator = (By.XPATH, xpath)
+            return self.wait_until(expected_condition(locator), timeout)
+
+        except TimeoutException as e:
+            if not safe:
+                raise e
+            return None
+
+    def wait_for_visibility(self, xpath, timeout=None, safe=False):
+        return self.wait_for(xpath, EC.visibility_of_element_located, timeout, safe)
+
+    def wait_for_clickable(self, xpath, timeout=None, safe=False):
+        return self.wait_for(xpath, EC.element_to_be_clickable, timeout, safe)
+
+    def wait_for_presence_of_all(self, xpath, timeout=None, safe=False):
+        return self.wait_for(xpath, EC.presence_of_all_elements_located, timeout, safe)
+
+    def wait_for_css_in_shadow_root(self, shadow_root, css, timeout=None):
+        shadow_root = shadow_root.shadow_root
+
+        # wait for the element in the shadow-root
+        def css_present(_):
+            timeline_loc = (By.CSS_SELECTOR, css)
+            return shadow_root.find_element(*timeline_loc)
+
+        return self.wait_until(css_present, timeout)
 
     def wait_for_translation(self):
         """detect if it's needed to wait for an automatic translation"""
@@ -111,6 +142,24 @@ class ChromeWithPrefsAndTools(webdriver.Chrome):
 
         except NoSuchElementException:
             pass
+
+    def xpath(self, xpath, safe=False):
+        try:
+            return self.find_element(By.XPATH, xpath)
+
+        except NoSuchElementException as e:
+            if not safe:
+                raise e
+            return None
+
+    def xpaths(self, xpath, safe=False):
+        try:
+            return self.find_elements(By.XPATH, xpath)
+
+        except NoSuchElementException as e:
+            if not safe:
+                raise e
+            return None
 
 
 class Options(webdriver.ChromeOptions):
@@ -294,11 +343,13 @@ class DriversToScrape(DriversHandler):
         def inner(get_content):
             def wrapper(courier, idship):
                 if driver := self._get():
+                    driver.set_timeouts(page_load_timeout, wait_elt_timeout)
                     try:
-                        driver.set_timeouts(page_load_timeout, wait_elt_timeout)
-                        return get_content(courier, idship, driver)
+                        content = get_content(courier, idship, driver)
+                        return lxml.html.fromstring(content)
 
                     except (
+                        NoSuchElementException,
                         WebDriverException,
                         TimeoutException,
                         ProtocolError,
@@ -350,12 +401,13 @@ class DriversToShow(DriversHandler):
                 self._wait_browser_closed(driver)
 
             except (
+                NoSuchElementException,
                 NoSuchWindowException,
                 WebDriverException,
                 SessionNotCreatedException,
                 TimeoutException,
             ) as e:
-                log(f"{self.name} SHOW failed ({e})", error=True)
+                log(f"{self.name} SHOW failed ({type(e).__name__})", error=True)
 
             finally:
                 self._destroy(driver)

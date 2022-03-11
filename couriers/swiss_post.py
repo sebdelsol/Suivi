@@ -1,6 +1,3 @@
-import lxml.html
-from selenium.common.exceptions import TimeoutException
-from selenium.webdriver.support import expected_conditions as EC
 from tools.date_parser import get_local_time
 from tracking.courier import Courier
 from windows.localization import TXT
@@ -28,27 +25,24 @@ class SwissPost(Courier):
 
         self.log(f"driver get SHIPMENT - {idship}")
         input_locator = '//input[@aria-label="searchValue"]'
-        input_idship = driver.wait_for(input_locator, EC.element_to_be_clickable)
+        input_idship = driver.wait_for_clickable(input_locator)
         input_idship.send_keys(idship)
 
         search_locator = '//button[@aria-label="searchButton"]'
-        search = driver.wait_for(search_locator, EC.element_to_be_clickable)
+        search = driver.wait_for_clickable(search_locator)
         search.click()
 
         show_details_locator = "//ekp-shipment-item//button"
-        show_details = driver.wait_for(show_details_locator, EC.element_to_be_clickable)
+        show_details = driver.wait_for_clickable(show_details_locator)
         show_details.click()
 
         self.log(f"driver get DETAILS - {idship}")
         details_locator = "//ekp-shipment-detail"
-        details = driver.wait_for(details_locator, EC.element_to_be_clickable)
+        details = driver.wait_for_clickable(details_locator)
 
-        try:
-            more_locator = details_locator + '//*[contains(@class, "moreEvents")]'
-            more = driver.wait_for(more_locator, EC.element_to_be_clickable, 2)
+        more_locator = details_locator + '//*[contains(@class, "moreEvents")]'
+        if more := driver.wait_for_clickable(more_locator, 2, safe=True):
             more.click()
-        except TimeoutException:
-            pass
 
         return details
 
@@ -56,7 +50,7 @@ class SwissPost(Courier):
     @Courier.driversToScrape.get(wait_elt_timeout=30)
     def get_content(self, idship, driver):
         details = self.find_shipment(idship, driver)
-        return lxml.html.fromstring(details.get_attribute("innerHTML"))
+        return details.get_attribute("innerHTML")
 
     def parse_content(self, content):
         events = []

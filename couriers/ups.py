@@ -1,5 +1,3 @@
-import lxml.html
-from selenium.webdriver.support import expected_conditions as EC
 from tools.date_parser import get_local_time
 from tracking.courier import Courier
 from windows.localization import TXT
@@ -19,13 +17,13 @@ class UPS(Courier):
 
         self.log(f"driver get DETAILS - {idship}")
         details_locator = "//modal-shipment-view-details/button"
-        details = driver.wait_for(details_locator, EC.element_to_be_clickable)
+        details = driver.wait_for_clickable(details_locator)
         driver.execute_script("arguments[0].click();", details)
 
         self.log(f"driver get TIMELINE - {idship}")
         timeline_locator = '//*[@class="ups-simplified_tracking_wrap-inner"]'
-        driver.wait_for(timeline_locator, EC.element_to_be_clickable)
-        return lxml.html.fromstring(driver.page_source)
+        driver.wait_for_clickable(timeline_locator)
+        return driver.page_source
 
     def parse_content(self, content):
         events = []

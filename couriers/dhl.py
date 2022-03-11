@@ -1,4 +1,4 @@
-from selenium.webdriver.support import expected_conditions as EC
+
 from tools.date_parser import get_local_time
 from tracking.courier import Courier, get_simple_validation
 from tracking.requests_handler import RequestsHandler
@@ -20,18 +20,17 @@ class DHL(Courier):
         driver.get(url)
 
         rgpd_locator = '//button[contains(@class, "save-preference-btn")]'
-        btn_rgpd = driver.wait_for(rgpd_locator, EC.element_to_be_clickable)
+        btn_rgpd = driver.wait_for_clickable(rgpd_locator)
         btn_rgpd.click()
 
         submit_locator = '//button[contains(@class, "tracking-input")]'
-        submit = driver.wait_for(submit_locator, EC.element_to_be_clickable)
+        submit = driver.wait_for_clickable(submit_locator)
         submit.click()
 
     @RequestsHandler()
     def get_content(self, idship, request):
         url = f"https://api-eu.dhl.com/track/shipments?trackingNumber={idship}&language=FR"
-        r = request.request("GET", url, headers=self.headers)
-        return r.json()
+        return request.request_json("GET", url, headers=self.headers)
 
     def parse_content(self, content):
         events = []

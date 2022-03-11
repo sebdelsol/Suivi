@@ -59,8 +59,8 @@ class Fedex(Courier):
             "version": "1",
         }
 
-        r = request.request("POST", self.url, headers=self.headers, data=data)
-        return r.json(), int(track_no)
+        r_json = request.request_json("POST", self.url, headers=self.headers, data=data)
+        return r_json, int(track_no)
 
     def parse_content(self, content):
         events = []

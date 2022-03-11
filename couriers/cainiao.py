@@ -1,7 +1,3 @@
-import lxml.html
-from selenium.common.exceptions import NoSuchElementException
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
 from tools.actions_chain import EnhancedActionChains
 from tools.date_parser import get_local_time
 from tracking.courier import Courier
@@ -21,30 +17,26 @@ class Cainiao(Courier):
         driver.get(url)
 
         data_locator = f'//p[@class="waybill-num"][contains(text(),"{idship}")]'
-        try:
-            is_data = driver.find_elements(By.XPATH, data_locator)
-
-        except NoSuchElementException:
-            is_data = None
-
-        if not is_data:
+        if not driver.xpaths(data_locator, safe=True):
             self.log(f"driver WAIT slider - {idship}")
-            slider = driver.wait_for(
-                '//span[@class="nc_iconfont btn_slide"]', EC.element_to_be_clickable
+
+            slider_loc = '//span[@class="nc_iconfont btn_slide"]'
+            slider = driver.wait_for_clickable(slider_loc)
+            slide_loc = (
+                '//div[@class="scale_text slidetounlock"]'
+                '/span[contains(text(),"slide")]'
             )
-            slide = driver.wait_for(
-                '//div[@class="scale_text slidetounlock"]/span[contains(text(),"slide")]',
-                EC.element_to_be_clickable,
-            )
+            slide = driver.wait_for_clickable(slide_loc)
+
             action = EnhancedActionChains(driver)
             action.click_and_hold(slider)
             action.smooth_move_mouse(slide.size["width"] + 10, 0)
             action.release().perform()
 
             self.log(f"driver WAIT datas - {idship}")
-            driver.wait_for(data_locator, EC.visibility_of_element_located, 5)
+            driver.wait_for_visibility(data_locator, 5)
 
-        return lxml.html.fromstring(driver.page_source)
+        return driver.page_source
 
     def parse_content(self, content):
         events = []

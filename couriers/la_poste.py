@@ -38,8 +38,7 @@ class LaPoste(Courier):
     @RequestsHandler()
     def get_content(self, idship, request):
         url = f"https://api.laposte.fr/suivi/v2/idships/{idship}?lang=fr_FR"
-        r = request.request("GET", url, headers=self.headers)
-        return r.json()
+        return request.request_json("GET", url, headers=self.headers)
 
     def parse_content(self, content):
         events = []

@@ -22,10 +22,9 @@ class RelaisColis(Courier):
 
     @RequestsHandler()
     def get_content(self, idship, request):
-        r = request.request(
+        return request.request_json(
             "POST", self.url, data={"valeur": idship, "typeRecherche": "EXP"}
         )
-        return r.json()
 
     def parse_content(self, content):
         events = []

@@ -16,13 +16,12 @@ class Asendia(Courier):
 
     @RequestsHandler(max_retry=1)
     def get_content(self, idship, request):
-        r = request.request(
+        return request.request_json(
             "POST",
             self.url,
             json={"criteria": [idship], "shipped": False},
             headers=self.headers,
         )
-        return r.json()
 
     def parse_content(self, content):
         events = []

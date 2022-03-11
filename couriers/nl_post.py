@@ -1,4 +1,3 @@
-import lxml.html
 from tools.date_parser import get_local_time
 from tracking.courier import Courier
 from tracking.requests_handler import RequestsHandler
@@ -13,8 +12,7 @@ class NLPost(Courier):
     @RequestsHandler()
     def get_content(self, idship, request):
         url = self.get_url_for_browser(idship)
-        r = request.request("GET", url)
-        return lxml.html.fromstring(r.content)
+        return request.request_tree("GET", url)
 
     def parse_content(self, content):
         events = []

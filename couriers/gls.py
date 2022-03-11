@@ -12,8 +12,7 @@ class GLS(Courier):
     @RequestsHandler()
     def get_content(self, idship, request):
         url = f"https://gls-group.eu/app/service/open/rest/FR/fr/rstt001?match={idship}"
-        r = request.request("GET", url)
-        return r.json()
+        return request.request_json("GET", url)
 
     def parse_content(self, content):
         events = []

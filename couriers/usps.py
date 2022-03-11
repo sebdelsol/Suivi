@@ -1,6 +1,4 @@
-import lxml.html
 from dateutil.parser import ParserError
-from selenium.webdriver.support import expected_conditions as EC
 from tools.date_parser import get_local_time
 from tracking.courier import Courier
 
@@ -17,9 +15,9 @@ class USPS(Courier):
         url = self.get_url_for_browser(idship)
         driver.get(url)
         self.log(f"driver WAIT timeline - {idship}")
-        driver.wait_for(self.timeline_xpath, EC.presence_of_all_elements_located)
+        driver.wait_for_presence_of_all(self.timeline_xpath)
 
-        return lxml.html.fromstring(driver.page_source)
+        return driver.page_source
 
     def parse_content(self, content):
         events = []

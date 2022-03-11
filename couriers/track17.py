@@ -1,5 +1,3 @@
-import lxml.html
-from selenium.webdriver.support import expected_conditions as EC
 from tools.date_parser import get_local_time
 from tracking.courier import Courier, get_sentences
 from windows.localization import TXT
@@ -21,8 +19,8 @@ class Track17(Courier):
         url = self.get_url_for_browser(idship)
         driver.get(url)
         self.log(f"driver WAIT timeline - {idship}")
-        driver.wait_for(self.timeline_loc, EC.visibility_of_element_located)
-        return lxml.html.fromstring(driver.page_source)
+        driver.wait_for_visibility(self.timeline_loc)
+        return driver.page_source
 
     def parse_content(self, content):
         events = []

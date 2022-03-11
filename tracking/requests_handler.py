@@ -1,5 +1,6 @@
 import time
 
+import lxml.html
 import requests
 from requests.exceptions import HTTPError, Timeout
 
@@ -17,6 +18,14 @@ class RequestsHandler:
         r = requests.request(method, *args, timeout=self.request_timeout, **kwargs)
         r.raise_for_status()
         return r
+
+    def request_json(self, method, *args, **kwargs):
+        r = self.request(method, *args, **kwargs)
+        return r.json()
+
+    def request_tree(self, method, *args, **kwargs):
+        r = self.request(method, *args, **kwargs)
+        return lxml.html.fromstring(r.content)
 
     def __call__(self, get_content):
         def wrapper(courier, idship):
