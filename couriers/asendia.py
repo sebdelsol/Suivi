@@ -1,6 +1,4 @@
-from datetime import datetime
-
-import pytz
+from tools.date_parser import get_utc_from_timestamp
 from tracking.courier import Courier
 from tracking.requests_handler import RequestsHandler
 
@@ -36,9 +34,7 @@ class Asendia(Courier):
                 if country not in location:
                     location = ", ".join((location, country))
 
-                date = datetime.utcfromtimestamp(event["date"] / 1000).replace(
-                    tzinfo=pytz.utc
-                )
+                date = get_utc_from_timestamp(event["date"] / 1000)
 
                 events.append(dict(date=date, status=location, label=label))
 

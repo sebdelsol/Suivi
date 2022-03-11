@@ -47,5 +47,13 @@ def get_utc_time(date, locale_country=None):
     )
 
 
+def get_utc_from_timestamp(time_stamp):
+    return _round_minute(
+        datetime.utcfromtimestamp(time_stamp)
+        .replace(tzinfo=pytz.utc)
+        .astimezone(get_localzone())
+    )
+
+
 def get_local_now():
     return datetime.now().astimezone(get_localzone())
