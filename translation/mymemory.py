@@ -15,6 +15,7 @@ class MyMemory(TranslationService):
         if from_lang == self.to_lang:
             raise SameLanguageError
 
+        # With a valid email you get 10 times more words/day to translate
         params = dict(q=txt, langpair=f"{from_lang}|{self.to_lang}", de=VALID_EMAIL)
         r = requests.get(self.url, params=params)
         if r.status_code == 200:
