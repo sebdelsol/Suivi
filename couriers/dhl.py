@@ -31,9 +31,7 @@ class DHL(Courier):
     def get_content(self, idship, request):
         url = f"https://api-eu.dhl.com/track/shipments?trackingNumber={idship}&language=FR"
         r = request.request("GET", url, headers=self.headers)
-        if r.status_code == 200:
-            return r.json()
-        return None
+        return r.json()
 
     def parse_content(self, content):
         events = []

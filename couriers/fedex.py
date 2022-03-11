@@ -60,9 +60,7 @@ class Fedex(Courier):
         }
 
         r = request.request("POST", self.url, headers=self.headers, data=data)
-        if r.status_code == 200:
-            return r.json(), int(track_no)
-        return None
+        return r.json(), int(track_no)
 
     def parse_content(self, content):
         events = []

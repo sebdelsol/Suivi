@@ -1,6 +1,7 @@
 import time
 
 import requests
+from requests.exceptions import HTTPError, Timeout
 
 
 class RequestsHandler:
@@ -13,7 +14,9 @@ class RequestsHandler:
         self.time_between_retry = time_between_retry
 
     def request(self, method, *args, **kwargs):
-        return requests.request(method, *args, timeout=self.request_timeout, **kwargs)
+        r = requests.request(method, *args, timeout=self.request_timeout, **kwargs)
+        r.raise_for_status()
+        return r
 
     def __call__(self, get_content):
         def wrapper(courier, idship):
@@ -22,8 +25,8 @@ class RequestsHandler:
                 try:
                     content = get_content(courier, idship, self)
 
-                except requests.exceptions.Timeout:
-                    courier.log(f"request TIMEOUT for {idship}", error=True)
+                except (Timeout, HTTPError) as e:
+                    courier.log(f"request {type(e).__name__} for {idship}", error=True)
                     content = None
 
                 if n_retry <= 0 or content is not None:

@@ -22,9 +22,7 @@ class Asendia(Courier):
             json={"criteria": [idship], "shipped": False},
             headers=self.headers,
         )
-        if r.status_code == 200:
-            return r.json()
-        return None
+        return r.json()
 
     def parse_content(self, content):
         events = []

@@ -15,9 +15,7 @@ class ColisPrive(Courier):
     def get_content(self, idship, request):
         url = self.get_url_for_browser(idship)
         r = request.request("GET", url)
-        if r.status_code == 200:
-            return lxml.html.fromstring(r.content)
-        return None
+        return lxml.html.fromstring(r.content)
 
     def parse_content(self, content):
         events = []

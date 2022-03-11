@@ -25,9 +25,7 @@ class RelaisColis(Courier):
         r = request.request(
             "POST", self.url, data={"valeur": idship, "typeRecherche": "EXP"}
         )
-        if r.status_code == 200:
-            return r.json()
-        return None
+        return r.json()
 
     def parse_content(self, content):
         events = []
