@@ -47,7 +47,7 @@ def patch_driver(version):
     log("chromedriver PATCHED")
 
 
-class ChromeWithPrefsAndTools(webdriver.Chrome):
+class ChromeWithPrefs(webdriver.Chrome):
     def __init__(self, *args, options=None, **kwargs):
         if options:
             self._handle_prefs(options)
@@ -91,7 +91,15 @@ class ChromeWithPrefsAndTools(webdriver.Chrome):
             # remove the experimental_options to avoid an error
             del options._experimental_options["prefs"]
 
-    # find & wait tools
+
+class ChromeWithTools(webdriver.Chrome):
+    """find & wait tools"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._wait_elt_timeout = 0
+        self._driver_wait = None
+
     def set_timeouts(self, page_load_timeout, wait_elt_timeout):
         self.set_page_load_timeout(page_load_timeout)
         self._wait_elt_timeout = wait_elt_timeout
@@ -160,6 +168,10 @@ class ChromeWithPrefsAndTools(webdriver.Chrome):
             if not safe:
                 raise e
             return None
+
+
+class ChromeWithPrefsAndTools(ChromeWithPrefs, ChromeWithTools):
+    pass
 
 
 class Options(webdriver.ChromeOptions):
