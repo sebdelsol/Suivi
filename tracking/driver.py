@@ -61,6 +61,10 @@ class EnhancedOptions(webdriver.ChromeOptions):
             self.default_prefs.update(self.translate_prefs)
         self.add_experimental_option("prefs", self.default_prefs)
 
+    def remove_experimental_option(self, key):
+        if key in self._experimental_options:
+            del self._experimental_options[key]
+
 
 def patch_driver(version):
     """
@@ -137,9 +141,8 @@ class ChromeWithPrefs(webdriver.Chrome):
             with open(prefs_file, encoding="latin1", mode="w") as f:
                 json.dump(undot_prefs, f)
 
-            # pylint: disable=protected-access
             # remove the experimental_options to avoid an error
-            del options._experimental_options["prefs"]
+            options.remove_experimental_option("prefs")
 
 
 class ChromeWithTools(webdriver.Chrome):
