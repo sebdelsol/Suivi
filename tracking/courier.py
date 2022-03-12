@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from windows.localization import TXT
 from windows.log import log
 
-from .drivers import DriversToScrape, DriversToShow
+from .drivers_handler import DriversToScrape, DriversToShow
 
 # auto register all Courier subclasses
 Couriers_classes = []
