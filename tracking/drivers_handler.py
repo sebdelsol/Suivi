@@ -1,7 +1,6 @@
 import atexit
 import queue
 import threading
-import time
 from socket import error as SocketError
 
 import lxml.html

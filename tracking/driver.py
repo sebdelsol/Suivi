@@ -214,23 +214,21 @@ class ChromeWithTools(webdriver.Chrome):
                     log("Chrome closed by the user")
                     break
 
-    def xpath(self, xpath, safe=False):
+    @staticmethod
+    def _find(find_func, xpath, safe=False):
         try:
-            return self.find_element(By.XPATH, xpath)
+            return find_func(By.XPATH, xpath)
 
         except NoSuchElementException as e:
             if not safe:
                 raise e
             return None
+
+    def xpath(self, xpath, safe=False):
+        return self._find(self.find_element, xpath, safe)
 
     def xpaths(self, xpath, safe=False):
-        try:
-            return self.find_elements(By.XPATH, xpath)
-
-        except NoSuchElementException as e:
-            if not safe:
-                raise e
-            return None
+        return self._find(self.find_elements, xpath, safe)
 
 
 # pylint: disable=too-many-ancestors
