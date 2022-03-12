@@ -181,6 +181,9 @@ class ChromeWithTools(webdriver.Chrome):
     def wait_for_clickable(self, xpath, timeout=None, safe=False):
         return self.wait_for(xpath, EC.element_to_be_clickable, timeout, safe)
 
+    def wait_for_presence(self, xpath, timeout=None, safe=False):
+        return self.wait_for(xpath, EC.presence_of_element_located, timeout, safe)
+
     def wait_for_presence_of_all(self, xpath, timeout=None, safe=False):
         return self.wait_for(xpath, EC.presence_of_all_elements_located, timeout, safe)
 
@@ -195,15 +198,11 @@ class ChromeWithTools(webdriver.Chrome):
         return self.wait_until(css_present, timeout)
 
     def wait_for_translation(self):
-        """detect if it's needed to wait for an automatic translation"""
-        try:
-            translation_loc = '//*[@class="goog-te-spinner-pos"]'
-            if self.find_elements(By.XPATH, translation_loc):
-                lang_loc = '/html[contains(@class,"translated")]'
-                self.wait_for(lang_loc, EC.presence_of_element_located)
-
-        except NoSuchElementException:
-            pass
+        """wait for an automatic browser translation"""
+        translation_loc = '//*[@class="goog-te-spinner-pos"]'
+        if self.xpaths(translation_loc, safe=True):
+            lang_loc = '/html[contains(@class,"translated")]'
+            self.wait_for_presence(lang_loc, safe=True)
 
     def wait_for_browser_closed(self):
         disconnected_msg = "disconnected: not connected to DevTools"
