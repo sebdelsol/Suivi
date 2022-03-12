@@ -197,7 +197,7 @@ class DriversToShow(DriversHandler):
             try:
                 driver.set_timeouts(page_load_timeout, wait_elt_timeout)
                 show(courier, idship, driver)
-                self._wait_browser_closed(driver)
+                driver.wait_for_browser_closed()
 
             except (
                 NoSuchElementException,
@@ -210,13 +210,3 @@ class DriversToShow(DriversHandler):
 
             finally:
                 self._destroy(driver)
-
-    @staticmethod
-    def _wait_browser_closed(driver):
-        disconnected_msg = "disconnected: not connected to DevTools"
-        while True:
-            time.sleep(0.5)
-            if msg := driver.get_log("driver"):
-                if disconnected_msg in msg[-1]["message"]:
-                    log("Chrome window closed by user")
-                    break

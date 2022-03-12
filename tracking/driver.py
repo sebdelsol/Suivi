@@ -3,6 +3,7 @@ import os
 import stat
 import tempfile
 import threading
+import time
 from functools import reduce
 
 import undetected_chromedriver as webdriver
@@ -203,6 +204,15 @@ class ChromeWithTools(webdriver.Chrome):
 
         except NoSuchElementException:
             pass
+
+    def wait_for_browser_closed(self):
+        disconnected_msg = "disconnected: not connected to DevTools"
+        while True:
+            time.sleep(0.5)
+            if msg := self.get_log("driver"):
+                if disconnected_msg in msg[-1]["message"]:
+                    log("Chrome closed by the user")
+                    break
 
     def xpath(self, xpath, safe=False):
         try:
