@@ -7,7 +7,7 @@ from windows.log import log
 
 from .drivers_handler import DriversToScrape, DriversToShow
 
-# auto register all Courier subclasses
+# auto register all Courier subclasses, check Courier.__init_subclass__
 Couriers_classes = []
 
 
