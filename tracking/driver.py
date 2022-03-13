@@ -47,11 +47,7 @@ class EnhancedOptions(webdriver.ChromeOptions):
         },
     }
 
-    def __init__(
-        self,
-        headless=False,
-        auto_translate=False,
-    ):
+    def __init__(self, headless=False, auto_translate=False):
         super().__init__()
         self.headless = headless
 
