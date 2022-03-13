@@ -26,7 +26,7 @@
 ### _Translation_[^3] • Traduction
 [_DeepL_](https://www.deepl.com/en/docs-api/) 
 • [_Google Cloud_](https://cloud.google.com/translate) 
-• [_Google Translate_](https://github.com/ultrafunkamsterdam/googletranslate) 
+• [_Google Translate_](https://github.com/ssut/py-googletrans) 
 • [_MyMemory_](https://mymemory.translated.net/doc/spec.php)
 
 ### _Sloc_[^4]
