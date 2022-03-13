@@ -1,7 +1,7 @@
-### _Suivi is a tracking desktop App_[^1] • Suivi est une App pour suivre ses colis
+### _Suivi is a tracking desktop App_ • Suivi est une App pour suivre ses colis[^1]
 [<img src="https://i.imgur.com/VOngj2e.jpeg" width="500">](https://i.imgur.com/v6LZNJ3.jpeg)
 
-### _Couriers_[^2] • Transporteurs.
+### _Couriers_ • Transporteurs[^2]
 [_4PX_](http://en.4px.com/) 
 • [_Amazon_](https://www.amazon.fr/) 
 • [_Asendia_](https://www.asendia.fr/)
@@ -23,7 +23,7 @@
 • [_UPS_](https://www.ups.com/)
 • [_USPS_](https://www.usps.com/)
 
-### _Translation_[^3] • Traduction
+### _Translation_ • Traduction[^3]
 [_DeepL_](https://www.deepl.com/en/docs-api/) 
 • [_Google Cloud_](https://cloud.google.com/translate) 
 • [_Google Translate_](https://github.com/ssut/py-googletrans) 
