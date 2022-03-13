@@ -57,7 +57,6 @@ class DriversHandler:
                 self._log_creation("CREATED", n_drivers)
 
             except (SessionNotCreatedException, ProtocolError, SocketError) as e:
-                print(e)
                 self._log_creation(f"creation FAILED ({e})", n_drivers, error=True)
 
             finally:
