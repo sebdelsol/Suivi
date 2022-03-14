@@ -2,7 +2,7 @@ import html
 
 import langid
 import requests
-from tracking.secrets import VALID_EMAIL
+from tracking.config import VALID_EMAIL
 
 from .translate import SameLanguageError, TranslationService
 

@@ -1,7 +1,7 @@
 import os
 
 from google.cloud import translate_v2 as translate
-from tracking.secrets import GOOGLE_CREDENTIAL_PATH
+from tracking.config import GOOGLE_CREDENTIAL_PATH
 
 from .translate import SameLanguageError, TranslationService
 

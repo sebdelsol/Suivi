@@ -30,11 +30,11 @@ if __name__ == "__main__":
 
     import locale
 
+    # list of tuples (courier_name, idship)
+    from tracking.config import Couriers_to_test
+
     # prevent drivers to be created in subprocess
     from tracking.couriers_handler import CouriersHandler
-
-    # list of tuples (courier_name, idship)
-    from tracking.secrets import Couriers_to_test
     from windows.localization import TXT
     from windows.log import log, logger
 

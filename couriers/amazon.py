@@ -1,6 +1,6 @@
 from tools.date_parser import get_local_time
+from tracking.config import AMAZON_ID, AMAZON_PASSWORD
 from tracking.courier import Courier
-from tracking.secrets import AMAZON_ID, AMAZON_PASSWORD
 from windows.localization import TXT
 
 
