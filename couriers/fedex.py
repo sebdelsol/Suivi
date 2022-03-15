@@ -22,6 +22,8 @@ class Fedex(Courier):
     }
 
     def get_url_for_browser(self, idship):
+        if "-" in idship:
+            idship = idship.split("-")[0]
         return f"https://www.fedex.com/fedextrack/?trknbr={idship}"
 
     @RequestsHandler(request_timeout=20)
