@@ -44,6 +44,7 @@ class Courier(ABC):
         r"livraison effectuée",
         r"est disponible dans",
         r"consegnato",
+        r"Arrival at the Destination",
     )
     additional_delivered_searchs = ()
 
@@ -70,7 +71,7 @@ class Courier(ABC):
         # compile re
         self.idship_validation = re.compile(self.idship_validation).match
         self.delivered_searchs = [
-            re.compile(pattern).search
+            re.compile(pattern.lower()).search
             for pattern in self.additional_delivered_searchs + self.delivered_searchs
         ]
         self.subs = [
