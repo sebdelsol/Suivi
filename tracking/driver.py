@@ -156,10 +156,10 @@ if PATCH_ONLY_ONCE:
                     patcher = webdriver.Patcher(version_main=version)
                     patcher.auto()
                     webdriver.Patcher.is_binary_patched = lambda self, path: True
-                    log(f"chromedriver PATCHED {version=}")
                     cls._patcher = patcher
+                    log(f"chromedriver PATCHED {version=}")
 
-                return cls._patcher.executable_path
+            return cls._patcher.executable_path
 
         def __init__(self, *args, **kwargs):
             executable_path = PatchOnceChrome._patch_driver()
