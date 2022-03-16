@@ -30,7 +30,7 @@ for service_module in TranslationService_Modules:
 
     for sentence in sentences:
         translation = translation_handler.get(sentence)
-        log(f"> '{sentence}' --> '{translation}'")
+        log(f"> '{sentence}' -> '{translation}'")
 
     if DO_LOAD:
         translation_handler.save()
