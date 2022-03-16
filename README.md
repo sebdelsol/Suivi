@@ -29,7 +29,7 @@
 • [_Google Translate_](https://github.com/ssut/py-googletrans) 
 • [_MyMemory_](https://mymemory.translated.net/doc/spec.php)
 
-### _Sloc_[^4]
+### _Sloc_ • Lignes de code[^4]
 
 [^1]: [What does Suivi mean ?](https://www.linguee.com/english-french/search?source=auto&query=suivi)
 [^2]: [Add courier](couriers)
