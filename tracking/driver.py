@@ -1,6 +1,5 @@
 import json
 import os
-import stat
 import tempfile
 import threading
 import time
@@ -15,6 +14,8 @@ from windows.localization import TXT
 from windows.log import log
 
 from .chrome import get_chrome_main_version
+
+PATCH_ONLY_ONCE = True
 
 
 class EnhancedOptions(webdriver.ChromeOptions):
@@ -63,39 +64,37 @@ class EnhancedOptions(webdriver.ChromeOptions):
             del self._experimental_options[key]
 
 
-def patch_driver(version):
-    """
-    patch chromedriver then prevent any further patching,
-    driver patching is not thread safe
-    """
-    log(f"PATCHING chromedriver {version=}")
-    patcher = webdriver.Patcher(version_main=version)
-    # unlock chromedriver.exe and patch it
-    if os.path.exists(patcher.executable_path):
-        os.chmod(patcher.executable_path, stat.S_IWRITE)
-    patcher.auto()
-    # lock chromedriver.exe & monkey patch Patcher
-    # to prevent the patcher from reading or writing on the driver
-    os.chmod(patcher.executable_path, stat.S_IREAD)
-    webdriver.Patcher.is_binary_patched = lambda self: True
-    log(f"chromedriver PATCHED {version=}")
+if PATCH_ONLY_ONCE:
 
+    class SafeThreadPatcherChrome(webdriver.Chrome):
+        _patching_lock = threading.Lock()
+        _patcher = None
 
-class SafeThreadPatcherChrome(webdriver.Chrome):
-    _patching_lock = threading.Lock()
-    _patching_done = False
+        @classmethod
+        def _patch_driver(cls):
+            """
+            patch chromedriver only once with the current chrome version,
+            then prevent any further patching, thread safe
+            """
+            with cls._patching_lock:
+                if not cls._patcher:
+                    version = get_chrome_main_version()
+                    log(f"PATCHING chromedriver {version=}")
+                    patcher = webdriver.Patcher(version_main=version)
+                    patcher.auto()
+                    webdriver.Patcher.is_binary_patched = lambda self, path: True
+                    log(f"chromedriver PATCHED {version=}")
+                    cls._patcher = patcher
 
-    @classmethod
-    def _patch_driver(cls):
-        """patch chromedriver only once with the current chrome version, thread safe"""
-        with cls._patching_lock:
-            if not cls._patching_done:
-                patch_driver(get_chrome_main_version())
-                cls._patching_done = True
+                return cls._patcher.executable_path
 
-    def __init__(self, *args, **kwargs):
-        self._patch_driver()
-        super().__init__(*args, **kwargs)
+        def __init__(self, *args, **kwargs):
+            driver_executable_path = SafeThreadPatcherChrome._patch_driver()
+            super().__init__(
+                *args,
+                driver_executable_path=driver_executable_path,
+                **kwargs,
+            )
 
 
 class ChromeWithPrefs(webdriver.Chrome):
@@ -226,6 +225,12 @@ class ChromeWithTools(webdriver.Chrome):
         return self._find(self.find_elements, xpath, safe)
 
 
-# pylint: disable=too-many-ancestors
-class EnhancedChrome(SafeThreadPatcherChrome, ChromeWithPrefs, ChromeWithTools):
-    pass
+if PATCH_ONLY_ONCE:
+    # pylint: disable=too-many-ancestors
+    class EnhancedChrome(SafeThreadPatcherChrome, ChromeWithPrefs, ChromeWithTools):
+        pass
+
+else:
+
+    class EnhancedChrome(ChromeWithPrefs, ChromeWithTools):
+        pass
