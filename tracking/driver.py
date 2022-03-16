@@ -1,9 +1,5 @@
-import json
-import os
-import tempfile
 import threading
 import time
-from functools import reduce
 
 import undetected_chromedriver as webdriver
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
@@ -24,9 +20,6 @@ class EnhancedOptions(webdriver.ChromeOptions):
         "--no-first-run",
         "--password-store=basic",
         "--start-maximized",
-        # "--excludeSwitches --enable-logging",
-        # "--excludeSwitches --enable-automation",
-        # "--disable-gpu",
         f"--lang={TXT.locale_driver_country_code}",
     )
 
@@ -36,7 +29,6 @@ class EnhancedOptions(webdriver.ChromeOptions):
     }
 
     translate_prefs = {  # auto translation
-        # "useAutomationExtension": True,
         # "translate.enabled": True,
         # "intl.accept_languages": f"{TXT.locale_country_code},{TXT.locale_driver_country_code}",
         "translate_language_blacklist": [],
@@ -62,83 +54,6 @@ class EnhancedOptions(webdriver.ChromeOptions):
     def remove_experimental_option(self, key):
         if key in self._experimental_options:
             del self._experimental_options[key]
-
-
-if PATCH_ONLY_ONCE:
-
-    class SafeThreadPatcherChrome(webdriver.Chrome):
-        _patching_lock = threading.Lock()
-        _patcher = None
-
-        @classmethod
-        def _patch_driver(cls):
-            """
-            patch chromedriver only once with the current chrome version,
-            then prevent any further patching, thread safe
-            """
-            with cls._patching_lock:
-                if not cls._patcher:
-                    version = get_chrome_main_version()
-                    log(f"PATCHING chromedriver {version=}")
-                    patcher = webdriver.Patcher(version_main=version)
-                    patcher.auto()
-                    webdriver.Patcher.is_binary_patched = lambda self, path: True
-                    log(f"chromedriver PATCHED {version=}")
-                    cls._patcher = patcher
-
-                return cls._patcher.executable_path
-
-        def __init__(self, *args, **kwargs):
-            driver_executable_path = SafeThreadPatcherChrome._patch_driver()
-            super().__init__(
-                *args,
-                driver_executable_path=driver_executable_path,
-                **kwargs,
-            )
-
-
-class ChromeWithPrefs(webdriver.Chrome):
-    def __init__(self, *args, options=None, **kwargs):
-        if options:
-            self._handle_prefs(options)
-
-        super().__init__(*args, options=options, **kwargs)
-
-        # remove the user_data_dir when quitting
-        self.keep_user_data_dir = False
-        self._wait_elt_timeout = 0
-        self._driver_wait = None
-
-    @staticmethod
-    def _handle_prefs(options):
-        if prefs := options.experimental_options.get("prefs"):
-            # turn a (dotted key, value) into a proper nested dict
-            def undot_key(key, value):
-                if "." in key:
-                    key, rest = key.split(".", 1)
-                    value = undot_key(rest, value)
-                return {key: value}
-
-            # undot prefs dict keys
-            undot_prefs = reduce(
-                lambda d1, d2: {**d1, **d2},  # merge dicts
-                (undot_key(key, value) for key, value in prefs.items()),
-            )
-
-            # create an user_data_dir and add its path to the options
-            user_data_dir = os.path.normpath(tempfile.mkdtemp())
-            options.add_argument(f"--user-data-dir={user_data_dir}")
-
-            # create the preferences json file in its default directory
-            default_dir = os.path.join(user_data_dir, "Default")
-            os.mkdir(default_dir)
-
-            prefs_file = os.path.join(default_dir, "Preferences")
-            with open(prefs_file, encoding="latin1", mode="w") as f:
-                json.dump(undot_prefs, f)
-
-            # remove the experimental_options to avoid an error
-            options.remove_experimental_option("prefs")
 
 
 class ChromeWithTools(webdriver.Chrome):
@@ -202,7 +117,7 @@ class ChromeWithTools(webdriver.Chrome):
     def wait_for_browser_closed(self):
         disconnected_msg = "disconnected: not connected to DevTools"
         while True:
-            time.sleep(0.5)
+            time.sleep(0.25)
             if msg := self.get_log("driver"):
                 if disconnected_msg in msg[-1]["message"]:
                     log("Chrome closed by the user")
@@ -226,11 +141,34 @@ class ChromeWithTools(webdriver.Chrome):
 
 
 if PATCH_ONLY_ONCE:
-    # pylint: disable=too-many-ancestors
-    class EnhancedChrome(SafeThreadPatcherChrome, ChromeWithPrefs, ChromeWithTools):
+
+    class PatchOnceChrome(webdriver.Chrome):
+        _patching_lock = threading.Lock()
+        _patcher = None
+
+        @classmethod
+        def _patch_driver(cls):
+            """patch chromedriver then prevent any further patching, thread safe"""
+            with cls._patching_lock:
+                if not cls._patcher:
+                    version = get_chrome_main_version()
+                    log(f"PATCHING chromedriver {version=}")
+                    patcher = webdriver.Patcher(version_main=version)
+                    patcher.auto()
+                    webdriver.Patcher.is_binary_patched = lambda self, path: True
+                    log(f"chromedriver PATCHED {version=}")
+                    cls._patcher = patcher
+
+                return cls._patcher.executable_path
+
+        def __init__(self, *args, **kwargs):
+            executable_path = PatchOnceChrome._patch_driver()
+            super().__init__(*args, driver_executable_path=executable_path, **kwargs)
+
+    class EnhancedChrome(PatchOnceChrome, ChromeWithTools):
         pass
 
 else:
 
-    class EnhancedChrome(ChromeWithPrefs, ChromeWithTools):
+    class EnhancedChrome(ChromeWithTools):
         pass
