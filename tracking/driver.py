@@ -138,7 +138,7 @@ class ChromeWithTools(webdriver.Chrome):
 if PATCH_ONLY_ONCE:
     import threading
 
-    class PatchOnceChrome(webdriver.Chrome):
+    class EnhancedChrome(ChromeWithTools):
         _patching_lock = threading.Lock()
         _patcher = None
 
@@ -156,11 +156,8 @@ if PATCH_ONLY_ONCE:
             return cls._patcher.executable_path
 
         def __init__(self, *args, **kwargs):
-            executable_path = PatchOnceChrome._patch_driver()
+            executable_path = EnhancedChrome._patch_driver()
             super().__init__(*args, driver_executable_path=executable_path, **kwargs)
-
-    class EnhancedChrome(PatchOnceChrome, ChromeWithTools):
-        pass
 
 else:
 
