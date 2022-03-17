@@ -1,4 +1,3 @@
-import threading
 import time
 
 import undetected_chromedriver as webdriver
@@ -8,8 +7,6 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from windows.localization import TXT
 from windows.log import log
-
-from .chrome import get_chrome_main_version
 
 PATCH_ONLY_ONCE = True
 
@@ -141,6 +138,9 @@ class ChromeWithTools(webdriver.Chrome):
 
 
 if PATCH_ONLY_ONCE:
+    import threading
+
+    from .chrome import get_chrome_main_version
 
     class PatchOnceChrome(webdriver.Chrome):
         _patching_lock = threading.Lock()
