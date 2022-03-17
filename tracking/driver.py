@@ -48,10 +48,6 @@ class EnhancedOptions(webdriver.ChromeOptions):
             self.default_prefs.update(self.translate_prefs)
         self.add_experimental_option("prefs", self.default_prefs)
 
-    def remove_experimental_option(self, key):
-        if key in self._experimental_options:
-            del self._experimental_options[key]
-
 
 class ChromeWithTools(webdriver.Chrome):
     """find & wait tools"""
