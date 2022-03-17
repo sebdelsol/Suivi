@@ -8,6 +8,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from windows.localization import TXT
 from windows.log import log
 
+from .chrome import Chrome_Version
+
 PATCH_ONLY_ONCE = True
 
 
@@ -136,8 +138,6 @@ class ChromeWithTools(webdriver.Chrome):
 if PATCH_ONLY_ONCE:
     import threading
 
-    from .chrome import get_chrome_main_version
-
     class PatchOnceChrome(webdriver.Chrome):
         _patching_lock = threading.Lock()
         _patcher = None
@@ -147,13 +147,11 @@ if PATCH_ONLY_ONCE:
             """patch chromedriver then prevent any further patching, thread safe"""
             with cls._patching_lock:
                 if not cls._patcher:
-                    version = get_chrome_main_version()
-                    log(f"PATCHING chromedriver {version=}")
-                    patcher = webdriver.Patcher(version_main=version)
+                    log(f"PATCHING chromedriver version={Chrome_Version}")
+                    patcher = webdriver.Patcher(version_main=Chrome_Version)
                     patcher.auto()
                     webdriver.Patcher.is_binary_patched = lambda self, path: True
                     cls._patcher = patcher
-                    log(f"chromedriver PATCHED {version=}")
 
             return cls._patcher.executable_path
 
@@ -167,4 +165,5 @@ if PATCH_ONLY_ONCE:
 else:
 
     class EnhancedChrome(ChromeWithTools):
-        pass
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, version_main=Chrome_Version, **kwargs)

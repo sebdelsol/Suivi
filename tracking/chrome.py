@@ -22,3 +22,5 @@ def check_chrome():
 
     print(f"this app needs chrome >={CHROME_MIN_VERSION}")
     return False
+
+Chrome_Version = get_chrome_main_version()
