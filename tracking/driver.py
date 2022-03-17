@@ -22,14 +22,14 @@ class EnhancedOptions(webdriver.ChromeOptions):
         f"--lang={TXT.locale_driver_country_code}",
     )
 
-    default_prefs = {  # no password popup
+    # no password popup
+    default_prefs = {
         "credentials_enable_service": False,
         "profile.password_manager_enabled": False,
     }
 
-    translate_prefs = {  # auto translation
-        # "translate.enabled": True,
-        # "intl.accept_languages": f"{TXT.locale_country_code},{TXT.locale_driver_country_code}",
+    # auto translation
+    translate_prefs = {
         "translate_language_blacklist": [],
         "translate_blocked_languages": [],
         "translate_site_blacklist": [],
