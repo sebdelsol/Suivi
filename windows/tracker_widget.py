@@ -5,8 +5,8 @@ from bisect import bisect
 
 import PySimpleGUI as sg
 import timeago
-from tools.img_tool import resize_and_colorize_gif, resize_and_colorize_img
 from tools.date_parser import get_local_now
+from tools.img_tool import resize_and_colorize_gif, resize_and_colorize_img
 from tracking.tracker import TrackerState
 
 from . import popup
@@ -543,7 +543,7 @@ class ElapsedWidget:
 
     def show(self, content):
         elapsed = content.get("elapsed")
-        if elapsed:
+        if elapsed is not None:
             round_elapsed_days = elapsed.days
             if elapsed.seconds >= 43200:  # half a day in sec
                 round_elapsed_days += 1

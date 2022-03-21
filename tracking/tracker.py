@@ -2,6 +2,7 @@ import atexit
 import concurrent.futures
 import concurrent.futures.thread
 import copy
+import datetime
 import threading
 import traceback
 
@@ -119,8 +120,11 @@ class Contents:
             consolidated["status"]["delivered"] = delivered
 
             if events:
-                last_date = events[0]["date"] if delivered else now
-                consolidated["elapsed"] = last_date - events[-1]["date"]
+                end_date = events[0]["date"] if delivered else now
+                begin_date = self._no_future(events[-1]["date"])
+                elapsed = end_date - begin_date
+                # positive elapsed
+                consolidated["elapsed"] = max(elapsed, datetime.timedelta(0))
 
             else:
                 consolidated["elapsed"] = None
