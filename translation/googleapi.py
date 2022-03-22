@@ -1,4 +1,4 @@
-from googletrans import Translator
+from pygoogletranslation import Translator
 
 from .translate import SameLanguageError, TranslationService
 
