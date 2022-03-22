@@ -50,13 +50,11 @@ class Splash:
 
 def check_python(min_version):
     print(f"Python {'.'.join(str(v) for v in sys.version_info[:3])} running")
-    try:
-        assert sys.version_info >= tuple(int(r) for r in min_version.split("."))
+    if sys.version_info >= tuple(int(r) for r in min_version.split(".")):
         return True
 
-    except AssertionError:
-        print(f"Python {min_version} as least required")
-        return False
+    print(f"Python {min_version} as least required")
+    return False
 
 
 if __name__ == "__main__":
