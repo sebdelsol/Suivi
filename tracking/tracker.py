@@ -2,7 +2,6 @@ import atexit
 import concurrent.futures
 import concurrent.futures.thread
 import copy
-import datetime
 import threading
 import traceback
 
@@ -88,9 +87,9 @@ class Contents:
         return any(content["status"].get("delivered") for content in contents_ok)
 
     @staticmethod
-    def _no_future(date):
+    def _no_future(date, now =None):
         if date:  # not in future
-            return min(date, get_local_now())
+            return min(date, now or get_local_now())
         return None
 
     def get_consolidated(self, idship, courier_names):
@@ -121,10 +120,8 @@ class Contents:
 
             if events:
                 end_date = events[0]["date"] if delivered else now
-                begin_date = self._no_future(events[-1]["date"])
-                elapsed = end_date - begin_date
-                # positive elapsed
-                consolidated["elapsed"] = max(elapsed, datetime.timedelta(0))
+                begin_date = self._no_future(events[-1]["date"], now)
+                consolidated["elapsed"] = end_date - begin_date
 
             else:
                 consolidated["elapsed"] = None
