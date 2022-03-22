@@ -13,14 +13,13 @@
 import sys
 
 import PySimpleGUI as sg
-from packaging.specifiers import SpecifierSet
 
 from tools.img_tool import resize_and_colorize_img
 from tracking.chrome import check_chrome
 from windows.localization import TXT
 from windows.theme import TH
 
-PYTHON_REQUIREMENTS = ">=3.8"
+PYTHON_MIN_VERSION = "3.8"
 TRACKERS_FILENAME = "Trackers"
 LOAD_AS_JSON = True
 TRANSLATION_MODULE = "deepl"  # a module in the translation package (except translate)
@@ -49,20 +48,19 @@ class Splash:
         self.window.close()
 
 
-def check_python(requirements):
-    current_version = ".".join(str(n) for n in sys.version_info[:3])
-    print(f"Python {current_version} running")
-
-    if current_version in SpecifierSet(requirements):
+def check_python(min_version):
+    print(f"Python {'.'.join(str(v) for v in sys.version_info[:3])} running")
+    try:
+        assert sys.version_info >= tuple(int(r) for r in min_version.split("."))
         return True
 
-    require = " and ".join(req.strip() for req in requirements.split(","))
-    print(f"this app requires Python {require}")
-    return False
+    except AssertionError:
+        print(f"Python {min_version} as least required")
+        return False
 
 
 if __name__ == "__main__":
-    if check_python(PYTHON_REQUIREMENTS) and check_chrome():
+    if check_python(PYTHON_MIN_VERSION) and check_chrome():
         sg.theme(TH.theme)
 
         # create splash before importing to reduce startup time
