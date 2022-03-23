@@ -23,9 +23,8 @@ for country, settings in LOCALE_SETTINGS.items():
 
 
 def _round_minute(dt):
-    return dt.replace(second=0, microsecond=0) + timedelta(
-        minutes=(dt.second + dt.microsecond * 0.001) // 30
-    )
+    minutes = (dt.second + dt.microsecond * 0.001) // 30
+    return dt.replace(second=0, microsecond=0) + timedelta(minutes=minutes)
 
 
 def _get_time(date, locale_country=None):
