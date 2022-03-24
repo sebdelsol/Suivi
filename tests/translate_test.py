@@ -4,7 +4,6 @@ from pathlib import Path
 # import 2 levels up
 sys.path.append(str(Path(__file__).parents[1]))
 
-
 # pylint: disable=wrong-import-position
 from translation.translate import TranslationHandler, TranslationService_Modules
 from windows.localization import TXT
