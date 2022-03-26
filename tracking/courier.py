@@ -104,9 +104,9 @@ class Courier(ABC):
         pass
 
     @staticmethod
-    def get_txt(elt, xpath):
+    def get_txt(elt, xpath, index=0):
         try:
-            return elt.xpath(xpath)[0].xpath("normalize-space()")
+            return elt.xpath(xpath)[index].xpath("normalize-space()")
 
         except IndexError:
             return None

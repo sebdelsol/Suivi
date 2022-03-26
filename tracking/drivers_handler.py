@@ -142,8 +142,9 @@ class DriversToScrape(DriversHandler):
                 if driver := self._get():
                     driver.set_timeouts(page_load_timeout, wait_elt_timeout)
                     try:
-                        content = get_content(courier, idship, driver)
-                        return lxml.html.fromstring(content)
+                        if content := get_content(courier, idship, driver):
+                            return lxml.html.fromstring(content)
+                        error = "No Content"
 
                     except (
                         NoSuchElementException,

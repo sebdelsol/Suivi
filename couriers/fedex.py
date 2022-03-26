@@ -1,8 +1,9 @@
-import json
+import random
+import time
 
+from selenium.webdriver.common.action_chains import ActionChains
 from tools.date_parser import get_local_time
 from tracking.courier import Courier
-from tracking.requests_handler import RequestsHandler
 from windows.localization import TXT
 
 
@@ -12,94 +13,126 @@ class Fedex(Courier):
     idship_validation = r"^\d{12}(-\d{1})?$"
     idship_validation_msg = f"12 {TXT.digits}[-{TXT.digit}]"
 
-    url = "https://www.fedex.com/trackingCal/track"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko)"
-        " Chrome/59.0.3071.115 Safari/537.36",
-        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-        "X-Requested-With": "XMLHttpRequest",
-        "Referer": "https://www.fedex.com/apps/fedextrack/?tracknumbers=&locale=fr_FR",
-    }
-
     def get_url_for_browser(self, idship):
-        if "-" in idship:
-            idship = idship.split("-")[0]
-        return f"https://www.fedex.com/fedextrack/?trknbr={idship}"
+        return True  # so that show button is displayed
 
-    @RequestsHandler(request_timeout=20)
-    def get_content(self, idship, request):
+    @Courier.driversToShow.get(wait_elt_timeout=15)
+    def open_in_browser(self, idship, driver):
+        self.find_shipment(idship, driver)
 
+    @staticmethod
+    def get_idship_track_no(idship):
+        track_no = 0
         if "-" in idship:
             idship, track_no = idship.split("-")
+        return idship, int(track_no)
 
+    def send_keys_one_by_one(self, driver, elt_loc, txt):
+        elt = driver.wait_for_clickable(elt_loc)
+        for t in txt:
+            elt.send_keys(t)
+            self.rnd_wait(0.2)
+
+    @staticmethod
+    def rnd_wait(wait):
+        time.sleep(random.uniform(wait * 0.5, wait))
+
+    def find_shipment(self, idship, driver):
+        idship, track_no = self.get_idship_track_no(idship)
+
+        for _ in range(2):
+            action = ActionChains(driver)
+            url = "https://www.fedex.com/fr-fr/home.html"
+            driver.get(url)
+
+            self.log(f"driver check RGPD - {idship}")
+            rgpd_loc = '//button[contains(@class,"cookie-consent__accept")]'
+            if rgpd := driver.wait_for_clickable(rgpd_loc, timeout=1, safe=True):
+                self.rnd_wait(1)
+                action.move_to_element(rgpd).click().perform()
+
+            form = '//div[@class="fxg-app__single-tracking"]'
+
+            self.log(f"driver fill FORM - {idship}")
+            input_loc = f"{form}//input"
+            input_ = driver.wait_for_clickable(input_loc)
+            self.rnd_wait(1)
+            action.reset_actions()
+            action.move_to_element(input_).click().perform()
+            self.rnd_wait(3)
+            self.send_keys_one_by_one(driver, input_loc, idship)
+
+            self.log(f"driver submit FORM - {idship}")
+            submit_locator = f'{form}//button[@type="submit"]'
+            submit = driver.xpath(submit_locator)
+            action.reset_actions()
+            self.rnd_wait(1)
+            action.move_to_element(submit).click().perform()
+
+            self.log(f"driver TRK - {idship}")
+            tracking_loc = '//div[@class="wtrk-wrapper"]'
+            driver.wait_for_presence_of_all(tracking_loc)
+
+            print(driver.current_url)
+            if "system-error" in driver.current_url:
+                driver.reconnect(5)
+
+            else:
+                break
         else:
-            track_no = 0
+            return False
 
-        json_data = {
-            "TrackPackagesRequest": {
-                "appType": "WTRK",
-                "appDeviceType": "DESKTOP",
-                "uniqueKey": "",
-                "processingParameters": {},
-                "trackingInfoList": [
-                    {
-                        "trackNumberInfo": {
-                            "trackingNumber": idship,
-                            "trackingQualifier": "",
-                            "trackingCarrier": "",
-                        }
-                    }
-                ],
-            }
-        }
+        if "duplicate-results" in driver.current_url:
+            self.log(f"driver handle DUPS - {idship}")
+            duplicate_locator = '//div[@role="alert"]/following-sibling::ul//a'
+            dup_link = driver.xpath(duplicate_locator)
+            dup_link.click()
 
-        data = {
-            "action": "trackpackages",
-            "data": json.dumps(json_data),
-            "format": "json",
-            "locale": "fr_FR",
-            "version": "1",
-        }
+            dups_loc = '//app-duplicate-results//button[@class="button-link"]'
+            dups = driver.wait_for_presence_of_all(dups_loc)
+            dups[track_no].click()
 
-        r_json = request.request_json("POST", self.url, headers=self.headers, data=data)
-        return r_json, int(track_no)
+        return True
+
+    #  do not return any selenium objects, the driver is disposed after
+    @Courier.driversToScrape.get(wait_elt_timeout=40)
+    def get_content(self, idship, driver):
+        self.log(f"driver wait TIMELINE - {idship}")
+        if self.find_shipment(idship, driver):
+            history_loc = "//trk-shared-travel-history"
+            driver.wait_for_presence(history_loc)
+            return driver.page_source
+        return None
 
     def parse_content(self, content):
         events = []
 
-        json_content, track_no = content
-        package = json_content["TrackPackagesResponse"]["packageList"][track_no]
+        details_loc = "//trk-shared-key-value-list//li/div"
+        if product := self.get_txt(content, details_loc, 1):
+            if weight := self.get_txt(content, details_loc, 3):
+                product = f"{product} { weight}"
 
-        if product := package.get("trackingCarrierDesc"):
-            if weight := package.get("displayPkgKgsWgt"):
-                product += f" {weight}"
+        day = ""
+        time_loc = './/td[@headers="time_header"]'
+        status_loc = './/td[@headers="location_header"]'
+        label_loc = './/td[@headers="status_header"]'
 
-        from_ = package.get("shipperCntryCD", "")
-        to_ = package.get("recipientCntryCD", "")
-        if from_ or to_:
-            fromto = f"{from_}{Courier.r_arrow}{to_}"
+        timeline_loc = '//table[@class="travel-history-table full-width"]//tr'
+        for tr in content.xpath(timeline_loc):
+            if cls := tr.attrib.get("class"):
+                if "scan-event-date-row" in cls:
+                    day = self.get_txt(tr, time_loc)
 
-        else:
-            fromto = None
+                elif "scan-event-details-row" in cls:
+                    hour = self.get_txt(tr, time_loc)
+                    date = f"{day} {hour}"
+                    date = get_local_time(date, locale_country=TXT.locale_country_code)
+                    events.append(
+                        dict(
+                            date=date,
+                            status=self.get_txt(tr, status_loc),
+                            label=self.get_txt(tr, label_loc),
+                        )
+                    )
 
-        status_label = package.get("statusWithDetails")
-
-        timeline = package["scanEventList"]
-        for event in timeline:
-            day = event["date"]
-            hour = event["time"]
-            offset = event["gmtOffset"]
-
-            events.append(
-                dict(
-                    date=get_local_time(f"{day} {hour} {offset}"),
-                    label=event["status"],
-                    status=event["scanLocation"],
-                    delivered=event["isDelivered"],
-                    warn=event["isClearanceDelay"]
-                    or event["isDelException"]
-                    or event["isException"],
-                )
-            )
-
-        return events, dict(product=product, fromto=fromto, status_label=status_label)
+        return events, dict(product=product)
