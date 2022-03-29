@@ -55,7 +55,7 @@ class LaPoste(Courier):
             else:
                 fromto = None
 
-            timeline = list(filter(lambda t: t["shortLabel"], shipment.get("timeline")))
+            timeline = list(filter(lambda t: t["status"], shipment.get("timeline")))
             status_label = timeline[-1]["shortLabel"]
             if date := timeline[-1].get("date"):
                 date = get_local_time(date)
