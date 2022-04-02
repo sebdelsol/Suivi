@@ -73,9 +73,10 @@ class Fedex(Courier):
             tracking_loc = '//div[@class="wtrk-wrapper"]'
             driver.wait_for_presence_of_all(tracking_loc)
 
-            print(driver.current_url)
             if "system-error" in driver.current_url:
-                driver.reconnect(5)
+                self.log(f"driver ERROR - {driver.current_url}", error=True)
+                # driver.reconnect(5)
+                self.rnd_wait(6)
 
             else:
                 break
@@ -95,7 +96,7 @@ class Fedex(Courier):
         return True
 
     #  do not return any selenium objects, the driver is disposed after
-    @Courier.driversToScrape.get(wait_elt_timeout=40)
+    @Courier.driversToScrape.get(wait_elt_timeout=60)
     def get_content(self, idship, driver):
         self.log(f"driver wait TIMELINE - {idship}")
         if self.find_shipment(idship, driver):
