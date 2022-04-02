@@ -1,3 +1,4 @@
+import random
 import time
 
 import undetected_chromedriver as webdriver
@@ -15,6 +16,7 @@ PATCH_ONLY_ONCE = True
 
 class EnhancedOptions(webdriver.ChromeOptions):
     default_options = (
+        "--disable-features=ChromeWhatsNewUI",  # prevent WhatsNew when Chrome has been updated
         "--no-service-autorun",
         "--no-first-run",
         "--password-store=basic",
@@ -133,6 +135,10 @@ class ChromeWithTools(webdriver.Chrome):
 
     def xpaths(self, xpath, safe=False):
         return self._find(self.find_elements, xpath, safe)
+
+    @staticmethod
+    def rnd_wait(wait):
+        time.sleep(random.uniform(wait * 0.5, wait))
 
 
 if PATCH_ONLY_ONCE:
