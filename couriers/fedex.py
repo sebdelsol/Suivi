@@ -1,6 +1,4 @@
-import random
-import time
-
+from retry import retry
 from selenium.webdriver.common.action_chains import ActionChains
 from tools.date_parser import get_local_time
 from tracking.courier import Courier
@@ -12,6 +10,7 @@ class Fedex(Courier):
 
     idship_validation = r"^\d{12}(-\d{1})?$"
     idship_validation_msg = f"12 {TXT.digits}[-{TXT.digit}]"
+    url = "https://www.fedex.com/fr-fr/home.html"
 
     def get_url_for_browser(self, idship):
         return True  # so that show button is displayed
@@ -27,61 +26,62 @@ class Fedex(Courier):
             idship, track_no = idship.split("-")
         return idship, int(track_no)
 
-    def send_keys_one_by_one(self, driver, elt_loc, txt):
+    @staticmethod
+    def send_keys_one_by_one(driver, elt_loc, txt):
         elt = driver.wait_for_clickable(elt_loc)
         for t in txt:
             elt.send_keys(t)
-            self.rnd_wait(0.2)
+            driver.rnd_wait(0.2)
 
-    @staticmethod
-    def rnd_wait(wait):
-        time.sleep(random.uniform(wait * 0.5, wait))
-
+    @retry(ValueError, tries=2, delay=5, jitter=(0, 1))
     def find_shipment(self, idship, driver):
         idship, track_no = self.get_idship_track_no(idship)
+        driver.get(self.url)
 
-        for _ in range(2):
-            action = ActionChains(driver)
-            url = "https://www.fedex.com/fr-fr/home.html"
-            driver.get(url)
+        # print("--------------")
+        # print(driver.execute_script("return window.chrome"))
+        # print(driver.execute_script("return navigator.connection.rtt"))
+        # print(driver.execute_script("return Notification.permission"))
+        # print(driver.execute_script("return navigator.plugins.length"))
+        # print(driver.execute_script("return window.navigator.userAgent"))
+        # print(driver.execute_script("return navigator.appVersion"))
+        # print(driver.execute_script("return navigator.webdriver"))
+        # print("--------------")
 
-            self.log(f"driver check RGPD - {idship}")
-            rgpd_loc = '//button[contains(@class,"cookie-consent__accept")]'
-            if rgpd := driver.wait_for_clickable(rgpd_loc, timeout=1, safe=True):
-                self.rnd_wait(1)
-                action.move_to_element(rgpd).click().perform()
+        action = ActionChains(driver)
 
-            form = '//div[@class="fxg-app__single-tracking"]'
+        self.log(f"driver check RGPD - {idship}")
+        rgpd_loc = '//button[contains(@class,"cookie-consent__accept")]'
+        if rgpd := driver.wait_for_clickable(rgpd_loc, timeout=1, safe=True):
+            driver.rnd_wait(1)
+            action.move_to_element(rgpd).click().perform()
 
-            self.log(f"driver fill FORM - {idship}")
-            input_loc = f"{form}//input"
-            input_ = driver.wait_for_clickable(input_loc)
-            self.rnd_wait(1)
-            action.reset_actions()
-            action.move_to_element(input_).click().perform()
-            self.rnd_wait(3)
-            self.send_keys_one_by_one(driver, input_loc, idship)
+        form = '//div[@class="fxg-app__single-tracking"]'
 
-            self.log(f"driver submit FORM - {idship}")
-            submit_locator = f'{form}//button[@type="submit"]'
-            submit = driver.xpath(submit_locator)
-            action.reset_actions()
-            self.rnd_wait(1)
-            action.move_to_element(submit).click().perform()
+        self.log(f"driver fill FORM - {idship}")
+        input_loc = f"{form}//input"
+        input_ = driver.wait_for_clickable(input_loc)
+        driver.rnd_wait(1)
+        action.reset_actions()
+        action.move_to_element(input_).click().perform()
+        driver.rnd_wait(3)
+        self.send_keys_one_by_one(driver, input_loc, idship)
 
-            self.log(f"driver TRK - {idship}")
-            tracking_loc = '//div[@class="wtrk-wrapper"]'
-            driver.wait_for_presence_of_all(tracking_loc)
+        self.log(f"driver submit FORM - {idship}")
+        submit_locator = f'{form}//button[@type="submit"]'
+        submit = driver.xpath(submit_locator)
+        action.reset_actions()
+        driver.rnd_wait(1)
+        action.move_to_element(submit).click().perform()
 
-            if "system-error" in driver.current_url:
-                self.log(f"driver ERROR - {driver.current_url}", error=True)
-                # driver.reconnect(5)
-                self.rnd_wait(6)
+        self.log(f"driver TRK - {idship}")
+        tracking_loc = '//div[@class="wtrk-wrapper"]'
+        driver.wait_for_presence_of_all(tracking_loc)
 
-            else:
-                break
-        else:
-            return False
+        if "system-error" in driver.current_url:
+            self.log(f"driver ERROR - {driver.current_url}", error=True)
+            # driver.reconnect(5)
+            raise ValueError
 
         if "duplicate-results" in driver.current_url:
             self.log(f"driver handle DUPS - {idship}")
@@ -93,17 +93,18 @@ class Fedex(Courier):
             dups = driver.wait_for_presence_of_all(dups_loc)
             dups[track_no].click()
 
-        return True
-
     #  do not return any selenium objects, the driver is disposed after
     @Courier.driversToScrape.get(wait_elt_timeout=60)
     def get_content(self, idship, driver):
         self.log(f"driver wait TIMELINE - {idship}")
-        if self.find_shipment(idship, driver):
+        try:
+            self.find_shipment(idship, driver)
             history_loc = "//trk-shared-travel-history"
             driver.wait_for_presence(history_loc)
             return driver.page_source
-        return None
+
+        except ValueError:
+            return None
 
     def parse_content(self, content):
         events = []
@@ -120,11 +121,11 @@ class Fedex(Courier):
 
         timeline_loc = '//table[@class="travel-history-table full-width"]//tr'
         for tr in content.xpath(timeline_loc):
-            if cls := tr.attrib.get("class"):
-                if "scan-event-date-row" in cls:
+            if attrib_class := tr.attrib.get("class"):
+                if "scan-event-date-row" in attrib_class:
                     day = self.get_txt(tr, time_loc)
 
-                elif "scan-event-details-row" in cls:
+                elif "scan-event-details-row" in attrib_class:
                     hour = self.get_txt(tr, time_loc)
                     date = f"{day} {hour}"
                     date = get_local_time(date, locale_country=TXT.locale_country_code)
