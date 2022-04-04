@@ -34,8 +34,8 @@ class PostNord(Courier):
 
         # get innerHTML in the shadow-root
         self.log(f"driver COLLECT timeline - {idship}")
-        get_shadow_html = "return arguments[0].shadowRoot.innerHTML"
-        tracking_html = driver.execute_script(get_shadow_html, shadow_root)
+        get_shadow_js = "return arguments[0].shadowRoot.innerHTML"
+        tracking_html = driver.execute_script(get_shadow_js, shadow_root)
         return tracking_html
 
     def parse_content(self, content):
