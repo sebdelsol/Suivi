@@ -65,8 +65,9 @@ class Fedex(Courier):
             dup_link.click()
 
             dups_loc = '//app-duplicate-results//button[@class="button-link"]'
-            dups = driver.wait_for_presence_of_all(dups_loc)
-            dups[track_no].click()
+            dup_no_loc = f"({dups_loc})[{track_no+1}]"
+            dup_no = driver.wait_for_clickable(dup_no_loc)
+            dup_no.click()
 
     #  do not return any selenium objects, the driver is disposed after
     @Courier.driversToScrape.get(wait_elt_timeout=60)
