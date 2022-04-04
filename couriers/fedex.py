@@ -24,7 +24,6 @@ class Fedex(Courier):
         track_n = 0
         if "-" in idship:
             idship, track_n = idship.split("-")
-            track_n = int(track_n)
 
         driver.get(self.url)
         action = EnhancedActionChains(driver)
@@ -64,9 +63,9 @@ class Fedex(Courier):
             dup_link.click()
 
             dups_loc = '//app-duplicate-results//button[@class="button-link"]'
-            dup_no_loc = f"({dups_loc})[{track_n+1}]"
-            dup_no = driver.wait_for_clickable(dup_no_loc)
-            dup_no.click()
+            dup_n_loc = f"({dups_loc})[{int(track_n) + 1}]"
+            dup_n = driver.wait_for_clickable(dup_n_loc)
+            dup_n.click()
 
     # do not return any selenium objects, the driver is disposed after
     @Courier.driversToScrape.get(wait_elt_timeout=60)
