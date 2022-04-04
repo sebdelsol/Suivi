@@ -1,4 +1,5 @@
 import atexit
+import os
 import queue
 import threading
 from socket import error as SocketError
@@ -116,11 +117,15 @@ class DriversHandler:
                 if "chromedriver.exe" in child.name().lower():
                     log(f"TERMINATE {child.name()} {child.pid}")
                     child.terminate()
-                    terminated.append(child)
+                    terminated.append((child, child.exe()))
+
             # wait for actual termination to avoid collisions
             # from _terminate in different threads
-            for proc in terminated:
+            for proc, exe_path in terminated:
                 proc.wait(2)
+                if os.path.exists(exe_path):
+                    print(f"remove {exe_path}")
+                    os.remove(exe_path)
 
 
 class DriversToScrape(DriversHandler):

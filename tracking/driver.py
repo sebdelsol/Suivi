@@ -1,3 +1,4 @@
+import os
 import time
 
 import undetected_chromedriver as webdriver
@@ -158,8 +159,17 @@ if PATCH_ONLY_ONCE:
             return cls._patcher.executable_path
 
         def __init__(self, *args, **kwargs):
-            executable_path = EnhancedChrome._patch_driver()
-            super().__init__(*args, driver_executable_path=executable_path, **kwargs)
+            path = self.executable_path = EnhancedChrome._patch_driver()
+            super().__init__(*args, driver_executable_path=path, **kwargs)
+
+        def quit(self):
+            super().quit()
+            if os.path.exists(self.executable_path):
+                try:
+                    print(f"remove {self.executable_path}")
+                    os.remove(self.executable_path)
+                except PermissionError:
+                    print(f"can't remove {self.executable_path}")
 
 else:
 
