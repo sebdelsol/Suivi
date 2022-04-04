@@ -28,7 +28,7 @@ class EnhancedActionChains(ActionChains):
         super().pause(delay)
         return self
 
-    def send_keys_pause(self, keys_to_send, time_s=0.2):
+    def send_keys_1by1(self, keys_to_send, time_s=0.2):
         typing = keys_to_typing(keys_to_send)
 
         for key in typing:

@@ -42,7 +42,7 @@ class Fedex(Courier):
         input_ = driver.wait_for_clickable(input_loc)
         action.reset_actions()
         action.rnd_pause(1).move_to_element(input_).click()
-        action.rnd_pause(3).send_keys_pause(idship).perform()
+        action.rnd_pause(3).send_keys_1by1(idship).perform()
 
         self.log(f"driver submit FORM - {idship}")
         submit_locator = f'{form}//button[@type="submit"]'
