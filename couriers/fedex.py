@@ -94,8 +94,8 @@ class Fedex(Courier):
         time_loc = './/td[@headers="time_header"]'
         status_loc = './/td[@headers="location_header"]'
         label_loc = './/td[@headers="status_header"]'
-
         timeline_loc = '//table[@class="travel-history-table full-width"]//tr'
+
         for tr in content.xpath(timeline_loc):
             if attrib_class := tr.attrib.get("class"):
                 if "scan-event-date-row" in attrib_class:
@@ -104,10 +104,9 @@ class Fedex(Courier):
                 elif "scan-event-details-row" in attrib_class:
                     hour = self.get_txt(tr, time_loc)
                     date = f"{day} {hour}"
-                    date = get_local_time(date, locale_country=TXT.locale_country_code)
                     events.append(
                         dict(
-                            date=date,
+                            date=get_local_time(date, locale_country=TXT.locale_country_code),
                             status=self.get_txt(tr, status_loc),
                             label=self.get_txt(tr, label_loc),
                         )
