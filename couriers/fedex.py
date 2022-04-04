@@ -1,5 +1,5 @@
 from retry import retry
-from selenium.webdriver.common.action_chains import ActionChains
+from tools.actions_chain import EnhancedActionChains
 from tools.date_parser import get_local_time
 from tracking.courier import Courier
 from windows.localization import TXT
@@ -19,60 +19,36 @@ class Fedex(Courier):
     def open_in_browser(self, idship, driver):
         self.find_shipment(idship, driver)
 
-    @staticmethod
-    def get_idship_track_no(idship):
+    @retry(ValueError, tries=2, delay=5, jitter=(0, 1))
+    def find_shipment(self, idship, driver):
         track_no = 0
         if "-" in idship:
             idship, track_no = idship.split("-")
-        return idship, int(track_no)
+            track_no = int(track_no)
 
-    @staticmethod
-    def send_keys_one_by_one(driver, elt_loc, txt):
-        elt = driver.wait_for_clickable(elt_loc)
-        for t in txt:
-            elt.send_keys(t)
-            driver.rnd_wait(0.2)
-
-    @retry(ValueError, tries=2, delay=5, jitter=(0, 1))
-    def find_shipment(self, idship, driver):
-        idship, track_no = self.get_idship_track_no(idship)
         driver.get(self.url)
 
-        # print("--------------")
-        # print(driver.execute_script("return window.chrome"))
-        # print(driver.execute_script("return navigator.connection.rtt"))
-        # print(driver.execute_script("return Notification.permission"))
-        # print(driver.execute_script("return navigator.plugins.length"))
-        # print(driver.execute_script("return window.navigator.userAgent"))
-        # print(driver.execute_script("return navigator.appVersion"))
-        # print(driver.execute_script("return navigator.webdriver"))
-        # print("--------------")
-
-        action = ActionChains(driver)
+        action = EnhancedActionChains(driver)
 
         self.log(f"driver check RGPD - {idship}")
         rgpd_loc = '//button[contains(@class,"cookie-consent__accept")]'
         if rgpd := driver.wait_for_clickable(rgpd_loc, timeout=1, safe=True):
-            driver.rnd_wait(1)
-            action.move_to_element(rgpd).click().perform()
+            action.rnd_pause(1).move_to_element(rgpd).click().perform()
 
         form = '//div[@class="fxg-app__single-tracking"]'
 
         self.log(f"driver fill FORM - {idship}")
         input_loc = f"{form}//input"
         input_ = driver.wait_for_clickable(input_loc)
-        driver.rnd_wait(1)
         action.reset_actions()
-        action.move_to_element(input_).click().perform()
-        driver.rnd_wait(3)
-        self.send_keys_one_by_one(driver, input_loc, idship)
+        action.rnd_pause(1).move_to_element(input_).click()
+        action.rnd_pause(3).send_keys_pause(idship).perform()
 
         self.log(f"driver submit FORM - {idship}")
         submit_locator = f'{form}//button[@type="submit"]'
         submit = driver.xpath(submit_locator)
         action.reset_actions()
-        driver.rnd_wait(1)
-        action.move_to_element(submit).click().perform()
+        action.rnd_pause(1).move_to_element(submit).click().perform()
 
         self.log(f"driver TRK - {idship}")
         tracking_loc = '//div[@class="wtrk-wrapper"]'
@@ -80,7 +56,6 @@ class Fedex(Courier):
 
         if "system-error" in driver.current_url:
             self.log(f"driver ERROR - {driver.current_url}", error=True)
-            # driver.reconnect(5)
             raise ValueError
 
         if "duplicate-results" in driver.current_url:
