@@ -21,10 +21,10 @@ class Fedex(Courier):
 
     @retry(ValueError, tries=2, delay=5, jitter=(0, 1))
     def find_shipment(self, idship, driver):
-        track_no = 0
+        track_n = 0
         if "-" in idship:
-            idship, track_no = idship.split("-")
-            track_no = int(track_no)
+            idship, track_n = idship.split("-")
+            track_n = int(track_n)
 
         driver.get(self.url)
 
@@ -38,10 +38,10 @@ class Fedex(Courier):
         form = '//div[@class="fxg-app__single-tracking"]'
 
         self.log(f"driver fill FORM - {idship}")
-        input_loc = f"{form}//input"
-        input_ = driver.wait_for_clickable(input_loc)
+        form_input_loc = f"{form}//input"
+        form_input = driver.wait_for_clickable(form_input_loc)
         action.reset_actions()
-        action.rnd_pause(1).move_to_element(input_).click()
+        action.rnd_pause(1).move_to_element(form_input).click()
         action.rnd_pause(3).send_keys_1by1(idship).perform()
 
         self.log(f"driver submit FORM - {idship}")
@@ -65,7 +65,7 @@ class Fedex(Courier):
             dup_link.click()
 
             dups_loc = '//app-duplicate-results//button[@class="button-link"]'
-            dup_no_loc = f"({dups_loc})[{track_no+1}]"
+            dup_no_loc = f"({dups_loc})[{track_n+1}]"
             dup_no = driver.wait_for_clickable(dup_no_loc)
             dup_no.click()
 
@@ -106,7 +106,9 @@ class Fedex(Courier):
                     date = f"{day} {hour}"
                     events.append(
                         dict(
-                            date=get_local_time(date, locale_country=TXT.locale_country_code),
+                            date=get_local_time(
+                                date, locale_country=TXT.locale_country_code
+                            ),
                             status=self.get_txt(tr, status_loc),
                             label=self.get_txt(tr, label_loc),
                         )
