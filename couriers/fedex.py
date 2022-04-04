@@ -27,7 +27,6 @@ class Fedex(Courier):
             track_n = int(track_n)
 
         driver.get(self.url)
-
         action = EnhancedActionChains(driver)
 
         self.log(f"driver check RGPD - {idship}")
@@ -69,7 +68,7 @@ class Fedex(Courier):
             dup_no = driver.wait_for_clickable(dup_no_loc)
             dup_no.click()
 
-    #  do not return any selenium objects, the driver is disposed after
+    # do not return any selenium objects, the driver is disposed after
     @Courier.driversToScrape.get(wait_elt_timeout=60)
     def get_content(self, idship, driver):
         self.log(f"driver wait TIMELINE - {idship}")
