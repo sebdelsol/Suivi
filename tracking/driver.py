@@ -48,9 +48,10 @@ class EnhancedOptions(webdriver.ChromeOptions):
         for option in self.default_options:
             self.add_argument(option)
 
+        prefs = self.default_prefs.copy()
         if auto_translate:
-            self.default_prefs.update(self.translate_prefs)
-        self.add_experimental_option("prefs", self.default_prefs)
+            prefs.update(self.translate_prefs)
+        self.add_experimental_option("prefs", prefs)
 
 
 class ChromeWithTools(webdriver.Chrome):
