@@ -35,7 +35,8 @@ class RequestsHandler:
                     content = get_content(courier, idship, self)
 
                 except (Timeout, HTTPError) as e:
-                    courier.log(f"request {type(e).__name__} for {idship}", error=True)
+                    err = type(e).__name__
+                    courier.log(f"request FAILURE {err} for {idship}", error=True)
                     content = None
 
                 if n_retry <= 0 or content is not None:
