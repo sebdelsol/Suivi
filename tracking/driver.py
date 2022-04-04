@@ -165,10 +165,14 @@ if PATCH_ONLY_ONCE:
         def quit(self):
             super().quit()
             if os.path.exists(self.executable_path):
-                try:
-                    print(f"remove {self.executable_path}")
-                    os.remove(self.executable_path)
-                except PermissionError:
+                for _ in range(2):
+                    try:
+                        print(f"remove {self.executable_path}")
+                        os.remove(self.executable_path)
+                        break
+                    except PermissionError:
+                        time.sleep(0.5)
+                else:
                     print(f"can't remove {self.executable_path}")
 
 else:
