@@ -1,4 +1,3 @@
-import random
 import time
 
 import undetected_chromedriver as webdriver
@@ -136,10 +135,6 @@ class ChromeWithTools(webdriver.Chrome):
 
     def xpaths(self, xpath, safe=False):
         return self._find(self.find_elements, xpath, safe)
-
-    @staticmethod
-    def rnd_wait(wait):
-        time.sleep(random.uniform(wait * 0.5, wait))
 
 
 if PATCH_ONLY_ONCE:
