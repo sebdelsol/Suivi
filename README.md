@@ -30,7 +30,10 @@
 • [_MyMemory_](https://mymemory.translated.net/doc/spec.php)
 
 ### _Small is beautiful_ • Petit et mignon[^4]
-![total](https://sloc.xyz/github/sebdelsol/suivi) ![code](https://sloc.xyz/github/sebdelsol/suivi?category=code) ![blanks](https://sloc.xyz/github/sebdelsol/suivi?category=blanks) ![comments](https://sloc.xyz/github/sebdelsol/suivi?category=comments)
+![total](https://sloc.xyz/github/sebdelsol/suivi) 
+![code](https://sloc.xyz/github/sebdelsol/suivi?category=code) 
+![blanks](https://sloc.xyz/github/sebdelsol/suivi?category=blanks) 
+![comments](https://sloc.xyz/github/sebdelsol/suivi?category=comments)
 
 [^1]: [What does Suivi mean ?](https://www.linguee.com/english-french/search?source=auto&query=suivi)
 [^2]: [Add courier](couriers)
