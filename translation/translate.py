@@ -97,8 +97,11 @@ class TranslationHandler:
 
             try:
                 if translation := self.service.translate(txt):
-                    self.translated[txt] = translation
-                    return translation
+                    if txt != translation:
+                        self.translated[txt] = translation
+                        return translation
+
+                    raise SameLanguageError
 
             except SameLanguageError:
                 self.skip.add(txt)
