@@ -51,6 +51,7 @@ class Courier(ABC):
     subs = (
         (r"[\(\[].*?[\)\]]", ""),  # remove () and []
         (r"[\.\,]$", ""),  # remove ending '.' or ','
+        (r"\xa0", " "),  # non breaking space
         (r" +", " "),  # remove extra spaces
         (r"[\n\r]", ""),  # remove line return
         (r"^\W", ""),  # remove leading non alphanumeric char
@@ -123,7 +124,12 @@ class Courier(ABC):
         except IndexError:
             return None
 
-    def update_events(self, events):
+    def _apply_subs(self, txt):
+        for sub, replace in self.subs:
+            txt = sub(replace, txt.strip())
+        return txt
+
+    def _update_events(self, events):
         delivered = False
 
         # remove duplicate events while keeping insertion order, won't work with a set
@@ -137,9 +143,8 @@ class Courier(ABC):
             event["status"] = event.get("status") or ""
 
             # clean label
-            for sub, replace in self.subs:
-                event["label"] = sub(replace, event["label"].strip())
-                event["status"] = sub(replace, event["status"].strip())
+            event["label"] = self._apply_subs(event["label"])
+            event["status"] = self._apply_subs(event["status"])
 
             # delivered ?
             whole_txt = " ".join((event["status"], event["label"]))
@@ -156,8 +161,7 @@ class Courier(ABC):
             )
         return events, delivered
 
-    @staticmethod
-    def update_status(infos, ok, events, delivered):
+    def _update_status(self, infos, ok, events, delivered):
         delivered = infos.get("delivered", False) or delivered
 
         if not (events or infos.get("status_label")):
@@ -181,7 +185,7 @@ class Courier(ABC):
         return ok, dict(
             date=status_date,
             ok_date=status_date if ok else None,
-            label=get_sentences(status_label),
+            label=get_sentences(self._apply_subs(status_label)),
             warn=status_warn,
             delivered=delivered,
         )
@@ -204,8 +208,8 @@ class Courier(ABC):
             if result := self.parse_content(content):
                 events, infos = result
 
-        events, delivered = self.update_events(events)
-        ok, status = self.update_status(infos, ok, events, delivered)
+        events, delivered = self._update_events(events)
+        ok, status = self._update_status(infos, ok, events, delivered)
 
         return dict(
             ok=ok,
