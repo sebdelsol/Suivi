@@ -32,8 +32,6 @@
 ### _Lean_ • Allégé<sup>[^4]</sup>
 ![total](https://sloc.xyz/github/sebdelsol/suivi) 
 ![code](https://sloc.xyz/github/sebdelsol/suivi?category=code) 
-![blanks](https://sloc.xyz/github/sebdelsol/suivi?category=blanks) 
-![comments](https://sloc.xyz/github/sebdelsol/suivi?category=comments)
 
 [^1]: [What does Suivi mean ?](https://www.linguee.com/english-french/search?source=auto&query=suivi)
 [^2]: [Add courier](couriers)
