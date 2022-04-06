@@ -25,6 +25,10 @@ def get_simple_validation(_min, _max=None):
     )
 
 
+class CourierRetryError(Exception):
+    pass
+
+
 class Courier(ABC):
     driversToShow = DriversToShow()
     driversToScrape = DriversToScrape()
@@ -201,7 +205,11 @@ class Courier(ABC):
         events = []
         infos = {}
         self.log(f"GET - {idship}")
-        content = self.get_content(idship)
+        try:
+            content = self.get_content(idship)
+
+        except CourierRetryError:
+            content = None
 
         if ok := content is not None:
             self.log(f"PARSE - {idship}")

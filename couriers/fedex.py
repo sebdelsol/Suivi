@@ -1,7 +1,7 @@
 from retry import retry
 from tools.actions_chain import EnhancedActionChains
 from tools.date_parser import get_local_time
-from tracking.courier import Courier
+from tracking.courier import Courier, CourierRetryError
 from windows.localization import TXT
 
 
@@ -19,7 +19,7 @@ class Fedex(Courier):
     def open_in_browser(self, idship, driver):
         self.find_shipment(idship, driver)
 
-    @retry(ValueError, tries=2, delay=5, jitter=(0, 1))
+    @retry(CourierRetryError, tries=2, delay=5, jitter=(0, 1))
     def find_shipment(self, idship, driver):
         track_n = 0
         if "-" in idship:
@@ -54,7 +54,7 @@ class Fedex(Courier):
 
         if "system-error" in driver.current_url:
             self.log(f"driver ERROR - {driver.current_url}", error=True)
-            raise ValueError
+            raise CourierRetryError
 
         if "duplicate-results" in driver.current_url:
             self.log(f"driver handle DUPS - {idship}")
@@ -71,14 +71,10 @@ class Fedex(Courier):
     @Courier.driversToScrape.get(wait_elt_timeout=60)
     def get_content(self, idship, driver):
         self.log(f"driver wait TIMELINE - {idship}")
-        try:
-            self.find_shipment(idship, driver)
-            history_loc = "//trk-shared-travel-history"
-            driver.wait_for_presence(history_loc)
-            return driver.page_source
-
-        except ValueError:
-            return None
+        self.find_shipment(idship, driver)
+        history_loc = "//trk-shared-travel-history"
+        driver.wait_for_presence(history_loc)
+        return driver.page_source
 
     def parse_content(self, content):
         events = []
