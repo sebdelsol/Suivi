@@ -1,4 +1,4 @@
-### Suivi is a tracking App • _Suivi est une App pour suivre ses colis_<sup>[^1]</sup>
+### Suivi is a parcel tracking App • _Suivi est une App pour suivre ses colis_<sup>[^1]</sup>
 [<img src="https://i.imgur.com/VOngj2e.jpeg" width="500">](https://i.imgur.com/v6LZNJ3.jpeg)
 
 ### Couriers • _Transporteurs_<sup>[^2]</sup>
