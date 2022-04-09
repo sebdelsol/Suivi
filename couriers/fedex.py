@@ -70,7 +70,6 @@ class Fedex(Courier):
     # do not return any selenium objects, the driver is disposed after
     @Courier.driversToScrape.get(wait_elt_timeout=60)
     def get_content(self, idship, driver):
-        self.log(f"driver wait TIMELINE - {idship}")
         self.find_shipment(idship, driver)
         history_loc = "//trk-shared-travel-history"
         driver.wait_for_presence(history_loc)
@@ -98,11 +97,10 @@ class Fedex(Courier):
                 elif "scan-event-details-row" in attrib_class:
                     hour = self.get_txt(tr, time_loc)
                     date = f"{day} {hour}"
+                    date = get_local_time(date, locale_country=TXT.locale_country_code)
                     events.append(
                         dict(
-                            date=get_local_time(
-                                date, locale_country=TXT.locale_country_code
-                            ),
+                            date=date,
                             status=self.get_txt(tr, status_loc),
                             label=self.get_txt(tr, label_loc),
                         )
