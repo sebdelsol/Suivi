@@ -29,7 +29,7 @@
 • [_Google Translate_](https://github.com/ssut/py-googletrans) 
 • [_MyMemory_](https://mymemory.translated.net/doc/spec.php)
 
-### Lean • _Allégé<sup>[^4]</sup>_
+### Light • _Allégé<sup>[^4]</sup>_
 ![total](https://sloc.xyz/github/sebdelsol/suivi) 
 ![code](https://sloc.xyz/github/sebdelsol/suivi?category=code) 
 
