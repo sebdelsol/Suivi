@@ -21,9 +21,10 @@ class Fedex(Courier):
 
     @retry(CourierRetryError, tries=2, delay=5, jitter=(0, 1))
     def find_shipment(self, idship, driver):
-        track_n = 0
         if "-" in idship:
             idship, track_n = idship.split("-")
+        else:
+            track_n = 0
 
         driver.get(self.url)
         action = EnhancedActionChains(driver)
