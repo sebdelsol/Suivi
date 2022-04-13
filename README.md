@@ -1,7 +1,7 @@
-### Suivi is a parcel tracking App • _Suivi est une App pour suivre ses colis <sup>[^1]</sup>_
+### Suivi is a parcel tracking App • _Suivi est une App pour suivre ses colis_ <sup>[^1]</sup>
 [<img src="https://i.imgur.com/VOngj2e.jpeg" width="500">](https://i.imgur.com/v6LZNJ3.jpeg)
 
-### Couriers • _Transporteurs <sup>[^2]</sup>_
+### Couriers • _Transporteurs_ <sup>[^2]</sup>
 [_4PX_](http://en.4px.com/) 
 • [_Amazon_](https://www.amazon.fr/) 
 • [_Asendia_](https://www.asendia.fr/)
@@ -23,13 +23,13 @@
 • [_UPS_](https://www.ups.com/)
 • [_USPS_](https://www.usps.com/)
 
-### Translation • _Traduction <sup>[^3]</sup>_
+### Translation • _Traduction_ <sup>[^3]</sup>
 [_DeepL_](https://www.deepl.com/en/docs-api/) 
 • [_Google Cloud_](https://cloud.google.com/translate) 
 • [_Google Translate_](https://github.com/ssut/py-googletrans) 
 • [_MyMemory_](https://mymemory.translated.net/doc/spec.php)
 
-### Light • _Allégé <sup>[^4]</sup>_
+### Light • _Allégé_ <sup>[^4]</sup>
 ![total](https://sloc.xyz/github/sebdelsol/suivi) 
 ![code](https://sloc.xyz/github/sebdelsol/suivi?category=code) 
 
