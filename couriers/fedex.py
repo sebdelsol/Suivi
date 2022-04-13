@@ -58,7 +58,7 @@ class Fedex(Courier):
             raise CourierRetryError
 
         if "duplicate-results" in driver.current_url:
-            self.log(f"driver handle DUPS - {idship}")
+            self.log(f"driver get DUPS #{track_n} - {idship}")
             duplicate_locator = '//div[@role="alert"]/following-sibling::ul//a'
             dup_link = driver.xpath(duplicate_locator)
             dup_link.click()
