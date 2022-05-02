@@ -236,6 +236,7 @@ class MainWindow(ShowInTaskbarWindow):
         self.grey_windows.append(GreyWindow(log_))
 
     def close(self):
+        log("Exiting")
         for grey_window in self.grey_windows:
             grey_window.close()
 

@@ -26,16 +26,16 @@ TRANSLATION_MODULE = "deepl"  # a module in the translation package (except tran
 
 
 class Splash:
+    log_font = TH.var_font, TH.splash_font_size
+    splash_args = TH.splash_img, TH.splash_img_height, TH.splash_color
+
     def __init__(self):
-        self.log = sg.T(
-            "", font=(TH.var_font, TH.splash_font_size), text_color=TH.splash_color
-        )
-        img_data = resize_and_colorize_img(
-            TH.mail_img, TH.splash_img_height, TH.splash_color
-        )
+        self.log = sg.T("", font=self.log_font, text_color=TH.splash_color)
+        img_data = resize_and_colorize_img(*self.splash_args)
         layout = [[sg.Image(data=img_data)], [self.log]]
         args, kwargs = TH.get_window_params(layout)
         self.window = sg.Window(*args, **kwargs)
+        self.update(TXT.init)
 
     def update(self, txt):
         self.log.update(f"{txt.capitalize()} ...")
@@ -63,19 +63,13 @@ if __name__ == "__main__":
 
         # create splash before importing to reduce startup time
         with Splash() as splash:
-            splash.update(TXT.init)
-
             from windows.log import logger
             from windows.main import MainWindow
 
-            main_window = MainWindow(
-                TRACKERS_FILENAME, TRANSLATION_MODULE, LOAD_AS_JSON, splash
-            )
+            window_args = TRACKERS_FILENAME, TRANSLATION_MODULE, LOAD_AS_JSON, splash
+            main_window = MainWindow(*window_args)
             main_window.addlog(logger)
 
         main_window.loop()
-        print("Exiting")
         main_window.close()
         logger.close()
-
-    print("Exit")

@@ -6,7 +6,9 @@ import PySimpleGUI as sg
 class TH:
     _is_debugger = sys.gettrace()
     no_frame_kwargs = dict(keep_on_top=not _is_debugger, no_titlebar=not _is_debugger)
-    frame_kwargs = dict(p=0, border_width=1, relief=sg.RELIEF_SOLID, expand_x=True, expand_y=True)
+    frame_kwargs = dict(
+        p=0, border_width=1, relief=sg.RELIEF_SOLID, expand_x=True, expand_y=True
+    )
     window_kwargs = dict(
         **no_frame_kwargs,
         return_keyboard_events=True,
@@ -47,7 +49,7 @@ class TH:
     refresh_img = "icons/refresh.png"
     archives_img = "icons/archive.png"
     trash_img = "icons/trash.png"
-    mail_img = "icons/mail.png"
+    splash_img = "icons/mail.png"
     warn_img = "icons/warn.png"
 
     window_height_screen_margin = 0  # for recenter
