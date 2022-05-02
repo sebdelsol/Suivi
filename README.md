@@ -1,7 +1,7 @@
-### _Suivi is a parcel tracking App_ • Suivi est une App pour suivre ses colis <sup>[^1]</sup>
+### _Suivi is a parcel tracking App_ • Suivi est une App pour suivre ses colis<sup>[^1]</sup>
 [<img src="https://i.imgur.com/VOngj2e.jpeg" width="500">](https://i.imgur.com/v6LZNJ3.jpeg)
 
-### _Couriers_ • Transporteurs <sup>[^2]</sup>
+### _Couriers_ • Transporteurs<sup>[^2]</sup>
 [_4PX_](http://en.4px.com/) 
 • [_Amazon_](https://www.amazon.fr/) 
 • [_Asendia_](https://www.asendia.fr/)
@@ -23,14 +23,13 @@
 • [_UPS_](https://www.ups.com/)
 • [_USPS_](https://www.usps.com/)
 
-### _Translation_ • Traduction <sup>[^3]</sup>
+### _Translation_ • Traduction<sup>[^3]</sup>
 [_DeepL_](https://www.deepl.com/en/docs-api/) 
 • [_Google Cloud_](https://cloud.google.com/translate) 
 • [_Google Translate_](https://github.com/ssut/py-googletrans) 
 • [_MyMemory_](https://mymemory.translated.net/doc/spec.php)
 
-### _Lean_ • Sans gras <sup>[^4]</sup>
-![total](https://sloc.xyz/github/sebdelsol/suivi) 
+### _Lean_ • Sans gras<sup>[^4]</sup>
 ![code](https://sloc.xyz/github/sebdelsol/suivi?category=code) 
 
 [^1]: [What does Suivi mean ?](https://www.linguee.com/english-french/search?source=auto&query=suivi)
