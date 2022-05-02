@@ -11,6 +11,7 @@
 
 # the less import, the better for startup time
 import sys
+from contextlib import contextmanager
 
 import PySimpleGUI as sg
 
@@ -25,27 +26,22 @@ LOAD_AS_JSON = True
 TRANSLATION_MODULE = "deepl"  # a module in the translation package (except translate)
 
 
-class Splash:
+@contextmanager
+def get_splash():
     log_font = TH.var_font, TH.splash_font_size
+    log_txt = sg.T("", font=log_font, text_color=TH.splash_color)
     splash_args = TH.splash_img, TH.splash_img_height, TH.splash_color
+    img_data = resize_and_colorize_img(*splash_args)
+    args, kwargs = TH.get_window_params([[sg.Image(data=img_data)], [log_txt]])
+    window = sg.Window(*args, **kwargs)
 
-    def __init__(self):
-        self.log = sg.T("", font=self.log_font, text_color=TH.splash_color)
-        img_data = resize_and_colorize_img(*self.splash_args)
-        layout = [[sg.Image(data=img_data)], [self.log]]
-        args, kwargs = TH.get_window_params(layout)
-        self.window = sg.Window(*args, **kwargs)
-        self.update(TXT.init)
+    def update(txt):
+        log_txt.update(f"{txt.capitalize()} ...")
+        window.refresh()  # needed since there's no window loop
 
-    def update(self, txt):
-        self.log.update(f"{txt.capitalize()} ...")
-        self.window.refresh()  # needed since there's no window loop
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, atype, value, traceback):
-        self.window.close()
+    update(TXT.init)
+    yield update
+    window.close()
 
 
 def check_python(min_version):
@@ -62,7 +58,7 @@ if __name__ == "__main__":
         sg.theme(TH.theme)
 
         # create splash before importing to reduce startup time
-        with Splash() as splash:
+        with get_splash() as splash:
             from windows.log import logger
             from windows.main import MainWindow
 
