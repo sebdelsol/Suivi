@@ -9,7 +9,7 @@
    "Y8888P"   "Y88888 888   Y88P   888
 """
 
-# the less, the better for startup time
+# the less import, the better for startup time
 import sys
 
 import PySimpleGUI as sg
@@ -53,7 +53,7 @@ def check_python(min_version):
     if sys.version_info >= tuple(int(r) for r in min_version.split(".")):
         return True
 
-    print(f"Python {min_version} as least required")
+    print(f"Python {min_version} at least required")
     return False
 
 
