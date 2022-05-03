@@ -29,19 +29,21 @@ TRANSLATION_MODULE = "deepl"  # a module in the translation package (except tran
 @contextmanager
 def get_splash():
     log_font = TH.var_font, TH.splash_font_size
-    log_txt = sg.T("", font=log_font, text_color=TH.splash_color)
     splash_args = TH.splash_img, TH.splash_img_height, TH.splash_color
-    img_data = resize_and_colorize_img(*splash_args)
-    args, kwargs = TH.get_window_params([[sg.Image(data=img_data)], [log_txt]])
+    log_txt = sg.T("", font=log_font, text_color=TH.splash_color)
+    img = sg.Image(data=resize_and_colorize_img(*splash_args))
+    args, kwargs = TH.get_window_params([[img], [log_txt]])
     window = sg.Window(*args, **kwargs)
 
-    def update(txt):
+    def splash_update(txt):
         log_txt.update(f"{txt.capitalize()} ...")
         window.refresh()  # needed since there's no window loop
 
-    update(TXT.init)
-    yield update
-    window.close()
+    splash_update(TXT.init)
+    try:
+        yield splash_update
+    finally:
+        window.close()
 
 
 def check_python(min_version):
