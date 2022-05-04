@@ -50,9 +50,8 @@ class Fedex(Courier):
         action.rnd_pause(3).move_to_element(submit).click().perform()
 
         self.log(f"driver TRK - {idship}")
-        tracking_loc = '//div[@class="wtrk-wrapper"]'
-        tracking_loc += ' | //div[@class="track-shared-wrapper"]'
-        driver.wait_for_presence_of_all(tracking_loc)
+        tracking_loc = '//div[@class="track-shared-wrapper"]'
+        driver.wait_for_visibility(tracking_loc)
 
         if "system-error" in driver.current_url:
             self.log(f"driver ERROR - {driver.current_url}", error=True)
