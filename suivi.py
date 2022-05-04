@@ -11,39 +11,17 @@
 
 # the less import, the better for startup time
 import sys
-from contextlib import contextmanager
 
 import PySimpleGUI as sg
 
-from tools.img_tool import resize_and_colorize_img
 from tracking.chrome import check_chrome
-from windows.localization import TXT
+from windows.splash import Splash
 from windows.theme import TH
 
 PYTHON_MIN_VERSION = "3.8"
 TRACKERS_FILENAME = "Trackers"
 LOAD_AS_JSON = True
 TRANSLATION_MODULE = "deepl"  # a module in the translation package (except translate)
-
-
-@contextmanager
-def get_splash():
-    log_font = TH.var_font, TH.splash_font_size
-    splash_args = TH.splash_img, TH.splash_img_height, TH.splash_color
-    log_txt = sg.T("", font=log_font, text_color=TH.splash_color)
-    img = sg.Image(data=resize_and_colorize_img(*splash_args))
-    args, kwargs = TH.get_window_params([[img], [log_txt]])
-    window = sg.Window(*args, **kwargs)
-
-    def splash_update(txt):
-        log_txt.update(f"{txt.capitalize()} ...")
-        window.refresh()  # needed since there's no window loop
-
-    splash_update(TXT.init)
-    try:
-        yield splash_update
-    finally:
-        window.close()
 
 
 def check_python(min_version):
@@ -60,12 +38,13 @@ if __name__ == "__main__":
         sg.theme(TH.theme)
 
         # create splash before importing to reduce startup time
-        with get_splash() as splash:
+        with Splash() as splash:
             from windows.log import logger
             from windows.main import MainWindow
 
-            window_args = TRACKERS_FILENAME, TRANSLATION_MODULE, LOAD_AS_JSON, splash
-            main_window = MainWindow(*window_args)
+            main_window = MainWindow(
+                TRACKERS_FILENAME, TRANSLATION_MODULE, LOAD_AS_JSON, splash
+            )
             main_window.addlog(logger)
 
         main_window.loop()

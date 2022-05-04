@@ -33,7 +33,7 @@ class TrackerWidgetsHandler:
 
         n_trackers = len(trackers.trackers)
         for i, tracker in enumerate(trackers.trackers):
-            splash(f"{TXT.tracker_creation} {i + 1}/{n_trackers}")
+            splash.update(f"{TXT.tracker_creation} {i + 1}/{n_trackers}")
             self._create_widget(window, tracker, new=False)
 
         self.update_window_size(window)
