@@ -119,8 +119,7 @@ class MainWindow(ShowInTaskbarWindow):
         layout = [[menu], [all_trackers], [pin_empty]]
 
         args, kwargs = TH.get_window_params(layout, alpha_channel=0)
-        kwargs["keep_on_top"] = False
-        kwargs["no_titlebar"] = True
+        kwargs.update(dict(keep_on_top=False, no_titlebar=True))
         super().__init__(*args, **kwargs)
 
         self[Events.recenter].bind("<Double-Button-1>", "")
@@ -260,21 +259,18 @@ class MainWindow(ShowInTaskbarWindow):
             log(f"TCL error ({e})", error=True)
 
     def set_event_to_action(self):
+        widgets = self.widgets
         self.event_to_action = {
             Events.minimize: self.minimize,
-            Events.recenter: lambda window=self: self.widgets.recenter(
-                window, force=True
-            ),
-            Events.updating: self.widgets.updating_changed,
-            Events.archives_updated: self.widgets.archives_updated,
-            Events.trash_updated: self.widgets.deleted_updated,
-            Events.update_window_size: lambda window=self: self.widgets.update_window_size(
-                window
-            ),
-            Events.new: lambda window=self: self.widgets.new(window),
-            Events.refresh: lambda window=self: self.widgets.update(window),
-            Events.archives: lambda window=self: self.widgets.show_archives(window),
-            Events.trash: lambda window=self: self.widgets.show_deleted(window),
+            Events.recenter: lambda w=self: widgets.recenter(w, force=True),
+            Events.updating: widgets.updating_changed,
+            Events.archives_updated: widgets.archives_updated,
+            Events.trash_updated: widgets.deleted_updated,
+            Events.update_window_size: lambda w=self: widgets.update_window_size(w),
+            Events.new: lambda w=self: widgets.new(w),
+            Events.refresh: lambda w=self: widgets.update(w),
+            Events.archives: lambda w=self: widgets.show_archives(w),
+            Events.trash: lambda w=self: widgets.show_deleted(w),
         }
 
     def event_handler(self):
@@ -304,7 +300,8 @@ class MainWindow(ShowInTaskbarWindow):
                 action()
 
         else:
-            return (
-                window.event_handler(event) if event else False
-            )  # exit, see Popup.loop
+            if event:
+                return window.event_handler(event)  # exit, see Popup.loop
+            return False
+
         return None
