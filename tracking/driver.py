@@ -76,6 +76,7 @@ class EnhancedChrome(webdriver.Chrome):
             return self.wait_until(expected_condition(locator), timeout)
 
         except TimeoutException as e:
+            log(f"Error waiting for '{xpath}'", error=True)
             if not safe:
                 raise e
             return None
@@ -124,6 +125,7 @@ class EnhancedChrome(webdriver.Chrome):
             return find_func(By.XPATH, xpath)
 
         except NoSuchElementException as e:
+            log(f"Did not find '{xpath}'", error=True)
             if not safe:
                 raise e
             return None
