@@ -47,10 +47,11 @@ class Fedex(Courier):
         submit_locator = f'{form}//button[@type="submit"]'
         submit = driver.xpath(submit_locator)
         action.reset_actions()
-        action.rnd_pause(1).move_to_element(submit).click().perform()
+        action.rnd_pause(3).move_to_element(submit).click().perform()
 
         self.log(f"driver TRK - {idship}")
         tracking_loc = '//div[@class="wtrk-wrapper"]'
+        tracking_loc += ' | //div[@class="track-shared-wrapper"]'
         driver.wait_for_presence_of_all(tracking_loc)
 
         if "system-error" in driver.current_url:
@@ -61,12 +62,18 @@ class Fedex(Courier):
             self.log(f"driver get DUPS #{track_n} - {idship}")
             duplicate_locator = '//div[@role="alert"]/following-sibling::ul//a'
             dup_link = driver.xpath(duplicate_locator)
-            dup_link.click()
+            action.reset_actions()
+            action.rnd_pause(2).move_to_element(dup_link).click().perform()
 
             dups_loc = '//app-duplicate-results//button[@class="button-link"]'
             dup_n_loc = f"({dups_loc})[{int(track_n) + 1}]"
             dup_n = driver.wait_for_clickable(dup_n_loc)
             dup_n.click()
+
+        else:
+            details_loc = '//a[@id="seeFullDetails"]'
+            details = driver.wait_for_clickable(details_loc)
+            details.click()
 
     # do not return any selenium objects, the driver is disposed after
     @Courier.driversToScrape.get(wait_elt_timeout=60)
