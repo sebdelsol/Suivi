@@ -1,4 +1,3 @@
-import os
 import time
 
 import undetected_chromedriver as webdriver
@@ -10,8 +9,6 @@ from windows.localization import TXT
 from windows.log import log
 
 from .chrome import Chrome_Version
-
-PATCH_ONLY_ONCE = True
 
 
 class EnhancedOptions(webdriver.ChromeOptions):
@@ -54,11 +51,11 @@ class EnhancedOptions(webdriver.ChromeOptions):
         self.add_experimental_option("prefs", prefs)
 
 
-class ChromeWithTools(webdriver.Chrome):
+class EnhancedChrome(webdriver.Chrome):
     """find & wait tools"""
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, version_main=Chrome_Version, **kwargs)
         self._wait_elt_timeout = 0
         self._driver_wait = None
 
@@ -136,47 +133,3 @@ class ChromeWithTools(webdriver.Chrome):
 
     def xpaths(self, xpath, safe=False):
         return self._find(self.find_elements, xpath, safe)
-
-
-if PATCH_ONLY_ONCE:
-    import threading
-
-    class EnhancedChrome(ChromeWithTools):
-        _patching_lock = threading.Lock()
-        _patcher = None
-
-        @classmethod
-        def _patch_driver(cls):
-            """patch chromedriver then prevent any further patching, thread safe"""
-            with cls._patching_lock:
-                if not cls._patcher:
-                    log(f"PATCHING chromedriver version={Chrome_Version}")
-                    patcher = webdriver.Patcher(version_main=Chrome_Version)
-                    patcher.auto()
-                    webdriver.Patcher.is_binary_patched = lambda self, path: True
-                    cls._patcher = patcher
-
-            return cls._patcher.executable_path
-
-        def __init__(self, *args, **kwargs):
-            path = self.executable_path = EnhancedChrome._patch_driver()
-            super().__init__(*args, driver_executable_path=path, **kwargs)
-
-        def quit(self):
-            super().quit()
-            if os.path.exists(self.executable_path):
-                for _ in range(2):
-                    try:
-                        print(f"remove {self.executable_path}")
-                        os.remove(self.executable_path)
-                        break
-                    except PermissionError:
-                        time.sleep(0.5)
-                else:
-                    print(f"can't remove {self.executable_path}")
-
-else:
-
-    class EnhancedChrome(ChromeWithTools):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, version_main=Chrome_Version, **kwargs)
