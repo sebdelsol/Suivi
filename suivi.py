@@ -42,9 +42,8 @@ if __name__ == "__main__":
             from windows.log import logger
             from windows.main import MainWindow
 
-            main_window = MainWindow(
-                TRACKERS_FILENAME, TRANSLATION_MODULE, LOAD_AS_JSON, splash
-            )
+            args = TRACKERS_FILENAME, TRANSLATION_MODULE, LOAD_AS_JSON, splash
+            main_window = MainWindow(*args)
             main_window.addlog(logger)
 
         main_window.loop()
