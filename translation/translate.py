@@ -53,8 +53,6 @@ class TranslationHandler:
             self.service = service_cls(to_lang)
 
             # load cache
-            self.translated = {}
-            self.skip = set()
             filename = f"translation_{self.service_name}_{to_lang}"
             self.load(filename, do_load)
 
@@ -76,16 +74,17 @@ class TranslationHandler:
     def load(self, filename, do_load):
         # load cache of translated sentences
         self.save_handler = SaveHandler(filename, load_as_json=True)
-        if do_load:
-            if cache := self.save_handler.load():
-                self.translated = cache["translated"]
-                self.skip = set(cache["skip"])
+        if do_load and (cache := self.save_handler.load()):
+            self.translated = cache["translated"]
+            self.skip = set(cache["skip"])
+        else:
+            self.translated = {}
+            self.skip = set()
 
     def save(self):
         # save cache translated sentences
-        self.save_handler.save_as_json(
-            dict(translated=self.translated, skip=list(self.skip))
-        )
+        cache = dict(translated=self.translated, skip=list(self.skip))
+        self.save_handler.save_as_json(cache)
 
     def get(self, txt):
         if txt:
