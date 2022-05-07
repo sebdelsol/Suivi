@@ -70,13 +70,19 @@ class EnhancedChrome(webdriver.Chrome):
 
         return self._driver_wait.until(until)
 
+    @staticmethod
+    def _get_xpath_loc(xpath):
+        if type(xpath) in (tuple, list):
+            xpath = " | ".join(xpath)
+        return By.XPATH, xpath
+
     def wait_for(self, xpath, expected_condition, timeout=None, safe=False):
         try:
-            locator = (By.XPATH, xpath)
+            locator = self._get_xpath_loc(xpath)
             return self.wait_until(expected_condition(locator), timeout)
 
         except TimeoutException as e:
-            log(f"Error waiting for '{xpath}'", error=True)
+            log(f"Error waiting for {xpath}", error=True)
             if not safe:
                 raise e
             return None
@@ -122,10 +128,10 @@ class EnhancedChrome(webdriver.Chrome):
     @staticmethod
     def _find(find_func, xpath, safe=False):
         try:
-            return find_func(By.XPATH, xpath)
+            return find_func(*EnhancedChrome._get_xpath_loc(xpath))
 
         except NoSuchElementException as e:
-            log(f"Did not find '{xpath}'", error=True)
+            log(f"Did not find {xpath}", error=True)
             if not safe:
                 raise e
             return None
