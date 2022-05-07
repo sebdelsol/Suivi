@@ -13,15 +13,15 @@ def get_chrome_main_version():
     return HIWORD(info["FileVersionMS"])
 
 
+Chrome_Version = get_chrome_main_version()
+
+
 def check_chrome():
     """check chrome exists and is a good enough version"""
     if webdriver.find_chrome_executable():
-        if (version := get_chrome_main_version()) >= CHROME_MIN_VERSION:
-            print(f"found chrome {version}")
+        if Chrome_Version >= CHROME_MIN_VERSION:
+            print(f"found chrome {Chrome_Version}")
             return True
 
     print(f"this app needs chrome >={CHROME_MIN_VERSION}")
     return False
-
-
-Chrome_Version = get_chrome_main_version()
