@@ -72,7 +72,7 @@ class TranslationHandler:
             )
 
     def load(self, filename, do_load):
-        # load cache of translated sentences
+        """load cache of translated sentences"""
         self.save_handler = SaveHandler(filename, load_as_json=True)
         if do_load and (cache := self.save_handler.load()):
             self.translated = cache["translated"]
@@ -82,7 +82,7 @@ class TranslationHandler:
             self.skip = set()
 
     def save(self):
-        # save cache translated sentences
+        """save cache translated sentences"""
         cache = dict(translated=self.translated, skip=list(self.skip))
         self.save_handler.save_as_json(cache)
 
