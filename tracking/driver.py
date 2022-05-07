@@ -70,12 +70,6 @@ class EnhancedChrome(webdriver.Chrome):
 
         return self._driver_wait.until(until)
 
-    @staticmethod
-    def _get_xpath_loc(xpath):
-        if type(xpath) in (tuple, list):
-            xpath = " | ".join(xpath)
-        return By.XPATH, xpath
-
     def wait_for(self, xpath, expected_condition, timeout=None, safe=False):
         try:
             locator = self._get_xpath_loc(xpath)
@@ -104,8 +98,8 @@ class EnhancedChrome(webdriver.Chrome):
 
         # wait for the element in the shadow-root
         def css_present(_):
-            timeline_loc = (By.CSS_SELECTOR, css)
-            return shadow_root.find_element(*timeline_loc)
+            locator = (By.CSS_SELECTOR, css)
+            return shadow_root.find_element(*locator)
 
         return self.wait_until(css_present, timeout)
 
@@ -126,9 +120,16 @@ class EnhancedChrome(webdriver.Chrome):
                     break
 
     @staticmethod
+    def _get_xpath_loc(xpath):
+        if type(xpath) in (tuple, list):
+            xpath = " | ".join(xpath)
+        return By.XPATH, xpath
+
+    @staticmethod
     def _find(find_func, xpath, safe=False):
         try:
-            return find_func(*EnhancedChrome._get_xpath_loc(xpath))
+            locator = EnhancedChrome._get_xpath_loc(xpath)
+            return find_func(*locator)
 
         except NoSuchElementException as e:
             log(f"Did not find {xpath}", error=True)
