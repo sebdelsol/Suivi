@@ -7,7 +7,7 @@
 ### _Translation_ • Traduction<sup>[^3]</sup>
 [_DeepL_](https://www.deepl.com/en/docs-api/) • [_Google Cloud_](https://cloud.google.com/translate) • [_Google Translate_](https://github.com/ssut/py-googletrans) • [_MyMemory_](https://mymemory.translated.net/doc/spec.php)
 
-### _Lean_ • Sans gras<sup>[^4]</sup>
+### _Lean_ • Simple et efficace<sup>[^4]</sup>
 ![code](https://sloc.xyz/github/sebdelsol/suivi?category=code) 
 
 [^1]: [What does Suivi mean ?](https://www.linguee.com/english-french/search?source=auto&query=suivi)
