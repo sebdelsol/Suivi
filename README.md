@@ -14,4 +14,4 @@
 [^2]: Add a courier [here](couriers)
 [^3]: [UI localization](windows/localization.py)
 [^4]: [Sloc](https://api.codetabs.com/v1/loc/?github=sebdelsol/suivi)
-[^api]: An API key is needed for thoses services
+[^api]: An API key is needed for those services
