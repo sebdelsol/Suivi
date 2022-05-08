@@ -18,18 +18,18 @@ from tracking.chrome import check_chrome
 from windows.splash import Splash
 from windows.theme import TH
 
-PYTHON_MIN_VERSION = "3.8"
+PYTHON_MIN_VERSION = (3, 8)
 TRACKERS_FILENAME = "Trackers"
 LOAD_AS_JSON = True
 TRANSLATION_MODULE = "deepl"  # a module in the translation package (except translate)
 
 
 def check_python(min_version):
-    print(f"Python {'.'.join(str(v) for v in sys.version_info[:3])} running")
-    if sys.version_info >= tuple(int(r) for r in min_version.split(".")):
+    print(f"Python {'.'.join(map(str, sys.version_info[:4]))} running")
+    if sys.version_info >= min_version:
         return True
 
-    print(f"Python {min_version} at least required")
+    print(f"Python >= {'.'.join(map(str, min_version))} required")
     return False
 
 
