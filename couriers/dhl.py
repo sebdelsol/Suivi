@@ -1,5 +1,5 @@
+from config import DHL_KEY
 from tools.date_parser import get_local_time
-from tracking.config import DHL_KEY
 from tracking.courier import Courier, get_simple_validation
 from tracking.requests_handler import RequestsHandler
 

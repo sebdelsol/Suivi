@@ -30,7 +30,7 @@ if __name__ == "__main__":
     sys.path.append(str(Path(__file__).parents[1]))
 
     # list of tuples (courier_name, idship)
-    from tracking.config import Couriers_to_test
+    from config import Couriers_to_test
     from tracking.couriers_handler import CouriersHandler
     from windows.localization import TXT
     from windows.log import log, logger

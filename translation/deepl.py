@@ -1,5 +1,5 @@
 import requests
-from tracking.config import DEEPL_KEY
+from config import DEEPL_KEY
 
 from .translate import SameLanguageError, TranslationService
 
