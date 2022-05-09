@@ -1,3 +1,5 @@
+import re
+
 from tools.date_parser import get_local_time
 from tracking.courier import Courier
 from windows.localization import TXT
@@ -39,11 +41,12 @@ class CanadaPost(Courier):
 
         for tr in content.xpath(timeline_loc):
             day = self.get_txt(tr, ".//td", 0) or day
-            hour = self.get_txt(tr, ".//td", 1).replace(" h", "h").replace("h ", "h")
+            hour = self.get_txt(tr, ".//td", 1)
+            label = self.get_txt(tr, ".//td", 2)
+
+            hour = re.sub(r"\s?h\s?", "h", hour)
             date = f"{day} {hour}"
             date = get_local_time(date, locale_country=TXT.locale_country_code)
-
-            label = self.get_txt(tr, ".//td", 2)
             label = label.split("Plus de renseignements")[0].strip()
 
             events.append(dict(date=date, label=label))
