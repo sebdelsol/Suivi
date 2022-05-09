@@ -126,7 +126,7 @@ class TH:
     widget_button_size = 22
     widget_button_img_margin = 5
     widget_updating_gif_height = 15
-    widget_event_max_width = 90
+    widget_event_max_width = 100
     widget_min_events_shown = 1
     elapsed_days_intervals = [10, 20, 30]
     elapsed_days_colors = ["lime green", "dark orange", "red", "purple"]
