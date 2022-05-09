@@ -6,16 +6,16 @@
 • [_Amazon_](https://www.amazon.fr/) 
 • [_Asendia_](https://www.asendia.fr/) 
 • [_Cainiao_](https://global.cainiao.com/) 
-• [_Canada Post_](https://www.canadapost-postescanada.ca/) 
+• [_Canada Post_](https://www.canadapost-postescanada.ca/) :new:
 • [_China Post_](http://yjcx.ems.com.cn/qps/english/yjcx) 
 • [_Chronopost_](https://www.chronopost.fr/) 
 • [_Colis Privé_](https://www.colisprive.fr/) 
 • [_DPD_](https://www.dpd.com/) 
-• [_DHL_](https://developer.dhl.com/)<sup>[^api]</sup> 
-• [_EMS_](https://www.ems.post/en/global-network/tracking/) 
+• [_DHL_](https://developer.dhl.com/):key:<sup>[^api]</sup> 
+• [_EMS_](https://www.ems.post/en/global-network/tracking/) :new:
 • [_Fedex_](https://www.fedex.com/) 
 • [_GLS_](https://gls-group.eu/) 
-• [_La Poste_](https://developer.laposte.fr/)<sup>[^api]</sup> 
+• [_La Poste_](https://developer.laposte.fr/):key:<sup>[^api]</sup> 
 • [_Mondial Relay_](https://www.mondialrelay.fr/) 
 • [_NL Post_](https://postnl.post/) 
 • [_Postnord_](https://postnord.se/) 
@@ -26,8 +26,8 @@
 • [_USPS_](https://www.usps.com/)
 
 ### _Translation_ • Traduction<sup>[^3]</sup>
-[_DeepL_](https://www.deepl.com/en/docs-api/)<sup>[^api]</sup> 
-• [_Google Cloud_](https://cloud.google.com/translate)<sup>[^api]</sup> 
+[_DeepL_](https://www.deepl.com/en/docs-api/):key:<sup>[^api]</sup> 
+• [_Google Cloud_](https://cloud.google.com/translate):key:<sup>[^api]</sup> 
 • [_Google Translate_](https://github.com/ssut/py-googletrans) 
 • [_MyMemory_](https://mymemory.translated.net/doc/spec.php)
 
@@ -38,4 +38,4 @@
 [^2]: Add a courier [here](couriers)
 [^3]: [UI localization](windows/localization.py)
 [^4]: [Sloc](https://api.codetabs.com/v1/loc/?github=sebdelsol/suivi)
-[^api]: An API key is needed for those services
+[^api]: :key: An API key is needed for those services
