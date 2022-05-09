@@ -19,17 +19,12 @@ class CanadaPost(Courier):
 
     @Courier.driversToShow.get(wait_elt_timeout=15)
     def open_in_browser(self, idship, driver):
-        self.find_shipment(idship, driver)
-
-    def find_shipment(self, idship, driver):
-
-        url = self.get_url_for_browser(idship)
-        driver.get(url)
+        driver.get(self.get_url_for_browser(idship))
 
     # do not return any selenium objects, the driver is disposed after
     @Courier.driversToScrape.get(wait_elt_timeout=60)
     def get_content(self, idship, driver):
-        self.find_shipment(idship, driver)
+        driver.get(self.get_url_for_browser(idship))
         history_loc = "//app-track-delivery-results"
         driver.wait_for_presence(history_loc)
         return driver.page_source
