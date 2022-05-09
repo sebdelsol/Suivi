@@ -172,7 +172,7 @@ class TrackerWidgetsHandler:
         self._set_min_width(menu_w)
 
         # wanted size
-        scrollbar = self.widgets_frame.TKColFrame.vscrollbar
+        scrollbar = self.widgets_frame.vsb
         if shown:
             w = max(widget.get_pixel_width() for widget in shown)
             h = sum(widget.get_pixel_height() for widget in self.widgets) + menu_h + 5
@@ -183,7 +183,7 @@ class TrackerWidgetsHandler:
 
             if h > max_h:
                 scrollbar.pack(side=sg.tk.RIGHT, fill="y")
-                w += int(scrollbar["width"])
+                w += scrollbar.winfo_width()
 
             else:
                 scrollbar.pack_forget()
