@@ -31,7 +31,7 @@
 • [_Google Translate_](https://github.com/ssut/py-googletrans) 
 • [_MyMemory_](https://mymemory.translated.net/doc/spec.php)
 
-### _Lean_ • Simple et efficace<sup>:wrench:[^4]</sup>
+### _Lean_ • Simple<sup>:wrench:[^4]</sup>
 ![code](https://sloc.xyz/github/sebdelsol/suivi?category=code) 
 
 [^1]: :mailbox_with_no_mail: [What does Suivi mean ?](https://www.linguee.com/english-french/search?source=auto&query=suivi)
