@@ -6,6 +6,7 @@
 • [_Amazon_](https://www.amazon.fr/) 
 • [_Asendia_](https://www.asendia.fr/) 
 • [_Cainiao_](https://global.cainiao.com/) 
+• [_Canada Post_](https://www.canadapost-postescanada.ca/) 
 • [_China Post_](http://yjcx.ems.com.cn/qps/english/yjcx) 
 • [_Chronopost_](https://www.chronopost.fr/) 
 • [_Colis Privé_](https://www.colisprive.fr/) 

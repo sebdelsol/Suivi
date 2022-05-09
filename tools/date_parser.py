@@ -16,8 +16,13 @@ for country, settings in LOCALE_SETTINGS.items():
     locale.setlocale(locale.LC_TIME, settings["lc_time"])  # date in correct language
 
     class _LocaleParserInfo(parser.parserinfo):
-        WEEKDAYS = list(zip(calendar.day_abbr, calendar.day_name))
-        MONTHS = list(zip(calendar.month_abbr, calendar.month_name))[1:]
+        day_abbr = calendar.day_abbr
+        day_abbr2 = (d.replace(".", "") for d in day_abbr)
+        WEEKDAYS = list(zip(day_abbr, day_abbr2, calendar.day_name))
+
+        month_abbr = calendar.month_abbr
+        month_abbr2 = (m.replace(".", "") for m in month_abbr)
+        MONTHS = list(zip(month_abbr, month_abbr2, calendar.month_name))[1:]
 
     _locale_parsers[country] = _LocaleParserInfo(dayfirst=settings["day_first"])
 
