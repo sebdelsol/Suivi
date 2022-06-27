@@ -104,3 +104,8 @@ class AmazonFr(Amazon):
 class AmazonIt(Amazon):
     name = "Amazon.it"
     domain = "it"
+
+
+class AmazonDe(Amazon):
+    name = "Amazon.de"
+    domain = "de"

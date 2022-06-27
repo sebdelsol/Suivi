@@ -6,9 +6,11 @@ import pytz
 from dateutil import parser
 from tzlocal import get_localzone
 
+# https://docs.moodle.org/dev/Table_of_locales
 LOCALE_SETTINGS = dict(
     fr=dict(lc_time="French_France.1252", day_first=True),
     it=dict(lc_time="Italian_Italy.1252", day_first=True),
+    de=dict(lc_time="English_Australia.1252", day_first=True),
 )
 _locale_parsers = {}
 
