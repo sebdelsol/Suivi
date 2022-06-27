@@ -32,6 +32,7 @@
 • [_MyMemory_](https://mymemory.translated.net/doc/spec.php)
 
 ### _Lean_ • Simple<sup>:wrench:[^4]</sup>
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 ![code](https://sloc.xyz/github/sebdelsol/suivi?category=code) 
 
 [^1]: :mailbox_with_no_mail: [What does Suivi mean ?](https://www.linguee.com/english-french/search?source=auto&query=suivi)
