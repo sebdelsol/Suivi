@@ -41,7 +41,7 @@ class Courier(ABC):
 
     delivered_searchs = (
         r"(?<!be )delivered",
-        r"final delivery",
+        r"final delivery(?! station)",
         r"(?<!être )livré",
         r"(?<!être )distribué",
         r"mis à disposition",
