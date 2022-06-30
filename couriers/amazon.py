@@ -96,16 +96,11 @@ class Amazon(Courier):
         return events, dict(product=product)
 
 
-class AmazonFr(Amazon):
-    name = "Amazon.fr"
-    domain = "fr"
-
-
-class AmazonIt(Amazon):
-    name = "Amazon.it"
-    domain = "it"
-
-
-class AmazonDe(Amazon):
-    name = "Amazon.de"
-    domain = "de"
+# create localized classes
+for country in ("fr", "it", "de"):
+    cls_name = f"Amazon{country.capitalize()}"
+    globals()[cls_name] = type(
+        cls_name,
+        (Amazon,),
+        dict(name=f"Amazon.{country}", domain=country),
+    )
