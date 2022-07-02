@@ -1,13 +1,22 @@
 from config import LAPOSTE_KEY
 from tools.date_parser import get_local_time
-from tracking.courier import Courier, get_sentences, get_simple_validation
+from tracking.courier import Courier, get_sentences
 from tracking.requests_handler import RequestsHandler
 from windows.localization import TXT
 
 
+def get_validation(_min, _max, _max2):
+    return (
+        rf"^(\w{{{_min},{_max}}})|(\d{{{_max2}}}\^)$",
+        f"{TXT.from_} {_min} {TXT.to_} {_max} {TXT.letters} {TXT.or_} {TXT.digits}"
+        f", {TXT.or_} {_max2} {TXT.digits} {TXT.and_} '^'",
+    )
+
+
 class LaPoste(Courier):
     name = "La Poste"
-    idship_validation, idship_validation_msg = get_simple_validation(11, 15)
+    idship_validation, idship_validation_msg = get_validation(11, 15, 18)
+
     headers = {"X-Okapi-Key": LAPOSTE_KEY, "Accept": "application/json"}
 
     codes = dict(
