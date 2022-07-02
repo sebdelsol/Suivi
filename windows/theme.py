@@ -77,7 +77,7 @@ class TH:
     popup_max_choices = 20
 
     edit_font_size = 10
-    edit_msg_font_size = 8
+    edit_msg_font_size = 7
     edit_show_button_font_size = 8
     edit_show_button_color = "grey90"
     edit_courier_font_size = 12

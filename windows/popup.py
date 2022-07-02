@@ -122,7 +122,7 @@ class Edit(Popup):
                 k=name,
             )
             msg = sg.T(
-                f"({self.couriers_handler.get_idship_validation_msg(name)})",
+                self.couriers_handler.get_idship_validation_msg(name),
                 font=self.msg_font[is_checked],
                 expand_x=True,
                 justification="r",
