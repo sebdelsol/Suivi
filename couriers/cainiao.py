@@ -1,3 +1,5 @@
+import re
+
 from tools.actions_chain import EnhancedActionChains
 from tools.date_parser import get_local_time
 from tracking.courier import Courier
@@ -46,6 +48,7 @@ class Cainiao(Courier):
         for event in timeline:
             txts = event.xpath("./p/text()")
             label, date = txts[:2]
+            label = re.sub(r"[\[\]]", " ", label)
             events.append(dict(date=get_local_time(date), label=label))
 
         return events, dict(status_label=status_label)
