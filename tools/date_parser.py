@@ -39,7 +39,9 @@ def _get_time(date, locale_country=None):
     # today at noon
     default = datetime.now().replace(hour=12, minute=0, second=0, microsecond=0)
     parserinfo = _locale_parsers.get(locale_country) if locale_country else None
-    return _round_minute(parser.parse(date, parserinfo=parserinfo, default=default))
+    return _round_minute(
+        parser.parse(date, parserinfo=parserinfo, default=default, fuzzy=True)
+    )
 
 
 def get_local_time(date, locale_country=None):

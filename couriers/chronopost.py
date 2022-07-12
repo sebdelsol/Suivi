@@ -27,7 +27,13 @@ class Chronopost(Courier):
         for tr in content.xpath(self.timeline_xpath):
             tds = tr.xpath("./td")
             day, hour = tds[0].xpath("./text()")
-            location, label = tds[1].xpath("./text()")
+
+            infos = tds[1].xpath("./text()")
+            if len(infos) > 1:
+                location, label = infos
+            else:
+                location, label = "", infos[0]
+
             date = get_local_time(
                 f"{day} {hour}", locale_country=TXT.locale_country_code
             )
