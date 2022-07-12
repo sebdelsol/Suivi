@@ -97,7 +97,7 @@ class Amazon(Courier):
 
 
 # create localized classes
-for country in ("fr", "it", "de"):
+for country in ("fr", "it", "de", "es"):
     cls_name = f"Amazon{country.capitalize()}"
     globals()[cls_name] = type(
         cls_name,

@@ -11,6 +11,7 @@ LOCALE_SETTINGS = dict(
     fr=dict(lc_time="French_France.1252", day_first=True),
     it=dict(lc_time="Italian_Italy.1252", day_first=True),
     de=dict(lc_time="English_Australia.1252", day_first=True),
+    es=dict(lc_time="Spanish_Spain.1252", day_first=True),
 )
 _locale_parsers = {}
 

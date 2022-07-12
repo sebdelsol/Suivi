@@ -74,7 +74,7 @@ def get_event_labels(event, tab_width):
             event_label = event_label.capitalize()
 
     # create a fake status if missing with firstwords of label
-    status_length = 25
+    status_length = 30
     if event_label and not event_status:
         wrap = textwrap.wrap(event_label, status_length)
         if len(wrap) > 1:
