@@ -1,0 +1,62 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Clean",
+            "type": "shell",
+            "command": ".\\batches\\clean.bat",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "dedicated",
+                "showReuseMessage": false,
+                "clear": true
+            },
+        },
+        {
+            "label": "CheckUpgrade",
+            "type": "shell",
+            "command": ".\\batches\\checkUpgrade.bat",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "dedicated",
+                "showReuseMessage": false,
+                "clear": true
+            },
+        },
+        {
+            "label": "CreateEnv",
+            "type": "shell",
+            "command": ".\\batches\\createEnv.bat",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "dedicated",
+                "showReuseMessage": false,
+                "clear": true
+            },
+        }
+    ]
+}
+// // Place your key bindings in this file to override the defaults
+// [
+//     {
+//         "key": "ctrl+alt+c",
+//         "command": "workbench.action.tasks.runTask",
+//         "args": "Clean"
+//     },
+//     {
+//         "key": "ctrl+alt+u",
+//         "command": "workbench.action.tasks.runTask",
+//         "args": "CheckUpgrade"
+//     },
+//     {
+//         "key": "ctrl+alt+e",
+//         "command": "workbench.action.tasks.runTask",
+//         "args": "CreateEnv"
+//     }
+// ]

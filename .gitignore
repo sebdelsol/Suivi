@@ -1,0 +1,7 @@
+.suivi/
+*.pyc
+config.py
+trackers.*
+translation_*.json
+
+

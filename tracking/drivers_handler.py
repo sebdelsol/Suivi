@@ -3,6 +3,7 @@ import os
 import queue
 import threading
 from socket import error as SocketError
+from subprocess import CREATE_NO_WINDOW
 
 import lxml.html
 import psutil
@@ -54,7 +55,9 @@ class DriversHandler:
                     headless=self.headless,
                     auto_translate=self.auto_translate,
                 )
-                driver = EnhancedChrome(options=options)
+                driver = EnhancedChrome(
+                    options=options, service_creationflags=CREATE_NO_WINDOW
+                )
                 self._log_creation("CREATED", n_drivers)
 
             except (SessionNotCreatedException, ProtocolError, SocketError) as e:
