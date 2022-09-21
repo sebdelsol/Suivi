@@ -11,7 +11,7 @@ class TXT:
     log = "Log"
     new = "Nouveau"
     several_new = "Nouveaux"
-    refresh = "Rafraichir"
+    refresh = "MàJ"
     archives = "Archives"
     trash = "Poubelle"
     exit = " X "
